@@ -5,18 +5,80 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
+    CITY_CHOICES = [
+    ('Ajax', 'Ajax'),
+    ('Aurora', 'Aurora'),
+    ('Barrie', 'Barrie'),
+    ('Belleville', 'Belleville'),
+    ('Brampton', 'Brampton'),
+    ('Brantford', 'Brantford'),
+    ('Burlington', 'Burlington'),
+    ('Cambridge', 'Cambridge'),
+    ('Chatham-Kent', 'Chatham-Kent'),
+    ('Clarington', 'Clarington'),
+    ('Collingwood', 'Collingwood'),
+    ('Cornwall', 'Cornwall'),
+    ('Dryden', 'Dryden'),
+    ('Georgina', 'Georgina'),
+    ('Grimsby', 'Grimsby'),
+    ('Guelph', 'Guelph'),
+    ('Hamilton', 'Hamilton'),
+    ('Huntsville', 'Huntsville'),
+    ('Innisfil', 'Innisfil'),
+    ('Kawartha Lakes', 'Kawartha Lakes'),
+    ('Kenora', 'Kenora'),
+    ('Kingston', 'Kingston'),
+    ('Kitchener', 'Kitchener'),
+    ('Leamington', 'Leamington'),
+    ('London', 'London'),
+    ('Markham', 'Markham'),
+    ('Midland', 'Midland'),
+    ('Milton', 'Milton'),
+    ('Mississauga', 'Mississauga'),
+    ('Newmarket', 'Newmarket'),
+    ('Niagara Falls', 'Niagara Falls'),
+    ('Niagara-on-the-Lake', 'Niagara-on-the-Lake'),
+    ('North Bay', 'North Bay'),
+    ('Oakville', 'Oakville'),
+    ('Orangeville', 'Orangeville'),
+    ('Orillia', 'Orillia'),
+    ('Oshawa', 'Oshawa'),
+    ('Ottawa', 'Ottawa'),
+    ('Peterborough', 'Peterborough'),
+    ('Pickering', 'Pickering'),
+    ('Quinte West', 'Quinte West'),
+    ('Richmond Hill', 'Richmond Hill'),
+    ('Sarnia', 'Sarnia'),
+    ('St. Catharines', 'St. Catharines'),
+    ('St. Thomas', 'St. Thomas'),
+    ('Stratford', 'Stratford'),
+    ('Sudbury', 'Sudbury'),
+    ('Tecumseh', 'Tecumseh'),
+    ('Thunder Bay', 'Thunder Bay'),
+    ('Timmins', 'Timmins'),
+    ('Toronto', 'Toronto'),
+    ('Vaughan', 'Vaughan'),
+    ('Wasaga Beach', 'Wasaga Beach'),
+    ('Waterloo', 'Waterloo'),
+    ('Welland', 'Welland'),
+    ('Whitby', 'Whitby'),
+    ('Windsor', 'Windsor'),
+    ('Woodstock', 'Woodstock'),
+]
+
     # Additional custom fields
-    roles = models.CharField(max_length=100, default='parent')
+    firstName = models.CharField(max_length=50, default="None", null=False, blank=True)
+    lastName = models.CharField(max_length=50, default="None", null=False, blank=True)
+    address = models.CharField(max_length=60, default="Unknown", null=False, blank=True)
+    city = models.CharField(max_length=20, choices=CITY_CHOICES, default="None", blank=True)
+    roles = models.CharField(max_length=20, default='parent', blank=True)
     email = models.EmailField(unique=True, blank=True, null=True)
-    ##parent = models.ForeignKey(
-        ##'self',
-        ##on_delete=models.SET_NULL,
-        ##null=True,
-        ##blank=True,
-        ##related_name='children',
-        ##default=None
-    ##)
     parent = models.CharField(max_length=100, default=None, blank=True, null=True)
+    rateOnline = models.DecimalField(max_digits=10, decimal_places=2, default=35.00 ,blank=False, null=False)
+    rateInPerson = models.DecimalField(max_digits=10, decimal_places=2, default = 60.00, blank=False, null=False)
+    last_login = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.username
@@ -203,9 +265,10 @@ class TutoringRequest(models.Model):
 
 
 class TutorResponse(models.Model):
-    request = models.CharField(max_length=50)
+    request = models.ForeignKey(TutoringRequest, on_delete=models.CASCADE)
     tutor = models.CharField(max_length=50)
     message = models.TextField()
+    rejected = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -216,10 +279,40 @@ class AcceptedTutor(models.Model):
     request = models.ForeignKey(
         TutoringRequest,
         on_delete=models.CASCADE,
-        related_name="accepted_tutors"
+        related_name="accepted_tutorsRequest" #Used to access the relation from the other side of the relationship
     )
-    tutor = models.CharField(max_length=50)
+    parent = models.CharField(max_length=50, default="ERROR")
+    student = models.CharField(max_length=50, default="ERROR")
+    tutor = models.CharField(max_length=50, default="ERROR")
     accepted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.tutor.username} accepted for {self.request.subject}"
+
+class Hours(models.Model):
+
+    LOCATION_CHOICES = [
+        ('Online', 'online'),
+        ('In-Person', 'in-person'),
+        ('---', '---'),
+    ]
+    
+    student = models.CharField(max_length=50)
+    parent = models.CharField(max_length=50)
+    tutor = models.CharField(max_length=50)
+    date = models.DateField()
+    startTime = models.TimeField()
+    endTime = models.TimeField()
+    totalTime = models.DecimalField(max_digits=5, decimal_places=2)
+    location = models.CharField(max_length=15, choices=LOCATION_CHOICES, default='---')
+    subject = models.CharField(max_length=50)
+    notes = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class WeeklyHours(models.Model):
+    date = models.DateField()
+    parent = models.CharField(max_length=50)
+    OnlineHours = models.DecimalField(max_digits=5, decimal_places=2)
+    InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
+    TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)

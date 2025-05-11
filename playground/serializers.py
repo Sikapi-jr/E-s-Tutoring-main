@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError  # Useful for validating form
 from .models import Note
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours
+from datetime import timedelta
 
 
 User = get_user_model()  # Move this outside the class definition for better performance
@@ -16,11 +17,32 @@ User = get_user_model()  # Move this outside the class definition for better per
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["username", "password", "roles", "email", "parent"] 
+        fields = [
+            "username",
+            "password",
+            "firstName",
+            "lastName",
+            "address",
+            "city",
+            "roles",
+            "email",
+            "parent",
+            "rateOnline",
+            "rateInPerson",
+            "is_active"
+        ]
         extra_kwargs = {
-            "password": {"write_only": True},
+            "password": {"write_only": True, "required": True},
             "email": {"required": True},
-            "username": {"required": True}
+            "username": {"required": True},
+            "firstName": {"required": False, "allow_blank": True},
+            "lastName": {"required": False, "allow_blank": True},
+            "address": {"required": False, "allow_blank": True},
+            "city": {"required": False, "allow_blank": True},
+            "roles": {"required": False, "allow_blank": True},
+            "parent": {"required": False, "allow_null": True, "allow_blank": True},
+            "rateOnline": {"required": False},
+            "rateInPerson": {"required": False},
         }
     
     def validate_username(self, value):
@@ -96,3 +118,63 @@ class RequestReplySerializer(serializers.ModelSerializer):
 
         def create(self, validated_data):
             return TutorResponse.objects.create(**validated_data)
+
+class AcceptedTutorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AcceptedTutor
+        fields = ['id', 'request','parent', 'student', 'tutor', 'accepted_at']
+        extra_kwargs = {
+            "request": {"required": True},
+            "tutor": {"required": True},
+            "student": {"required": True},
+            "parent": {"required": True},
+            "accepted_at": {"required": True},
+        }
+
+        def create(self, validated_data):
+            return AcceptedTutor.objects.create(**validated_data)
+        
+class HoursSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hours
+        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'created_at']
+        extra_kwargs = {
+            "student": {"required": True},
+            "parent": {"required": False},
+            "tutor": {"required": True},
+            "date": {"required": True},
+            "startTime": {"required": True},
+            "endTime": {"required": True},
+            "totalTime": {"required": True},
+            "location": {"required": True},
+            "subject": {"required": True},
+            "notes": {"required": True},
+        }
+
+        def validate_totalTime(self, value):
+            if value < timedelta(0):
+                raise serializers.ValidationError("Total time cannot be negative.")
+            if value > timedelta(hours=10):
+                raise serializers.ValidationError("Total time cannot exceed 10 hours.")
+            return value
+    
+        def create(self, validated_data):
+            return Hours.objects.create(**validated_data)
+
+class WeeklyCounterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hours
+        fields = ['id','parent','totalTime', 'location',]
+        extra_kwargs = {
+     
+            "parent": {"required": False},
+           
+        }
+
+        def create(self, validated_data):
+            return WeeklyHours.objects.create(**validated_data)
+        
+class WeeklyHoursSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeeklyHours
+        fields = '__all__'

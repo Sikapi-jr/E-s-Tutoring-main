@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import api from "../api";
 import { useUser } from '../components/UserProvider';
 import { useNavigate } from "react-router-dom";
 
@@ -21,20 +20,19 @@ const ParentDashboard = () => {
   //}
 
   const handleMessageClick = (request) => {
-    setShowReplyBox(!showReplyBox) //Will toggle the reply box on and off
     setSelectedRequestID(request.id)
+    setMessage(null)
+    setShowReplyBox(!showReplyBox) //Will toggle the reply box on and off
     console.log(request.id)
     console.log(tutor)
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted")
     console.log("Handle submit:" + message)
     
 
     try {
-        console.log("Form love you")
 
         const payload = { 
             request: selectedRequestID,  
@@ -43,8 +41,11 @@ const ParentDashboard = () => {
             
         };  //Payload to be sent to backend as a POST request
         const response = await axios.post('http://127.0.0.1:8000/api/requests/reply/', payload)
+        console.log("BACKEND RECEIVED");
+        navigate(0) //Refresh page
+ 
       }        
-        //navigate("/parent-dashboard");  
+         
         catch (error) {
         if (error.response) {
             // The request was made and the server responded with a status code
@@ -95,15 +96,14 @@ const ParentDashboard = () => {
                         <strong>Created At:</strong> {new Date(request.created_at).toLocaleString()}
                         <div>
                             <button onClick={() => handleMessageClick(request)}>
-                                {showReplyBox ? 'Cancel' : 'Reply'}
+                                {selectedRequestID === request.id && showReplyBox ? 'Cancel' : 'Reply'}  
                             </button>
                         </div>
-                    </li>
-                ))}
-            </ul>
-        )}
-
-        {showReplyBox && (
+                        <br></br>
+                        <br></br>
+                        <br></br>
+                        
+                        {selectedRequestID === request.id && showReplyBox && (
             <form onSubmit={handleSubmit}>
                 <input
                     className="form-input"
@@ -113,9 +113,19 @@ const ParentDashboard = () => {
                     placeholder="Write your message! Introduce yourself, your best subjects, and years of experience."
                     required
                 />
+                
                 <button type="submit">Send Message</button>
+                <br></br>
+                <br></br>
+                <br></br>
+                <br></br>
             </form>
         )}
+                    </li>
+                ))}
+            </ul>
+        )}
+
         <p>{error}</p>
     </div>
 );

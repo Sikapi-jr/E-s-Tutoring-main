@@ -30,9 +30,14 @@ function LoginForm() {
             const userResponse = await api.get("/api/user/", {
                 headers: { Authorization: `Bearer ${res.data.access}` },
             });
+
+            if(userResponse.data.is_active===false){
+                setError(`Error! Account not verified, check your email.`)
+                return;
+            }
             setUser(userResponse.data);
             navigate("/");  // Redirect to home after successful Login
-           
+        
         } catch (error) {
             if (error.response) {
                 // The request was made and the server responded with a status code

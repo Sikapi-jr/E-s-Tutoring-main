@@ -9,7 +9,14 @@ import Request from "./pages/ParentRequest"
 import NotFound from "./pages/NotFound"
 import ProtectedRoute from "./components/ProtectedRoute"
 import ParentDashboard from "./pages/ParentDashboard"
+import ViewReply from "./pages/ViewReply"
 import Profile from "./components/Profile"
+import LogHours from "./pages/LogHours"
+import SendWeekly from "./pages/SendWeekly"
+import Navbar from "./components/Navbar"
+import VerifyEmail from "./components/VerifyEmail"
+import CalendarApp from './components/CalendarApp'
+import './components/CalendarApp.css'
 import { UserProvider } from "./components/UserProvider"
 
 
@@ -25,8 +32,8 @@ function App() {
   return (
     <UserProvider>
       <BrowserRouter>
+      <Navbar />
         <Routes>
-          
             <Route
               path="/"
               element={
@@ -42,6 +49,15 @@ function App() {
             <Route path="/parent-dashboard" element={<ParentDashboard />} />
             <Route path="/request" element={<Request />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/Log" element={<LogHours />} />
+            <Route path="/request-reply" element={<ViewReply />} />
+            <Route path="/calendar" element={<CalendarApp />} />
+            <Route path="/WeeklyHours" element={<SendWeekly />} />
+            <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
+
+            
+  
+
         </Routes>
       </BrowserRouter>
     </UserProvider>
