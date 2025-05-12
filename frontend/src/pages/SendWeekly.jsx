@@ -50,6 +50,16 @@ const SendWeekly = () => {
 
     }
 
+    const handleCheckout = async (currentDay) => {
+        try {
+            const response = await axios.post(`http://127.0.0.1:8000/api/checkout/?currentDay=${currentDay}`);
+        }
+        catch (error) {
+            console.error("Error fetching sending stripe invoices: ", error);
+            }
+
+    }
+
     return (
         <div>
           <h1>Weekly Hours</h1>
@@ -110,6 +120,7 @@ const SendWeekly = () => {
           
           <p>{error}</p>
           <button onClick={() =>  confirmButtonClick(hours)}>Looks good?</button>
+          <button onClick={() =>  handleCheckout(currentDay)}>CHECKOUT</button>
         </div>
       );
     

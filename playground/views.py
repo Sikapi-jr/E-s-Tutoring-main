@@ -39,7 +39,7 @@ import stripe
 # Use get_user_model() to reference the active user model.
 User = get_user_model()
 current_time = now()
-stripe = settings.STRIPE_SECRET_KEY
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -309,12 +309,15 @@ class WeeklyHoursListView(APIView):
     def post(self, request):
             entries = request.data
             created = False
-
             for entry in entries:
                 #Makes sure that even if button pressed multiple times, it wont create duplicate tuples
+                email = User.objects.filter(username=entry['parent']).values('email').first()
+                if email:
+                    email = email['email']
                 exists = WeeklyHours.objects.filter(
                     date=entry['date'],
                     parent=entry['parent'],
+                    email=email,
                     OnlineHours=entry['OnlineHours'],
                     InPersonHours=entry['InPersonHours']
                 ).exists()
@@ -323,6 +326,7 @@ class WeeklyHoursListView(APIView):
                     WeeklyHours.objects.create(
                         date=entry['date'],
                         parent=entry['parent'],
+                        email=email,
                         OnlineHours=entry['OnlineHours'],
                         InPersonHours=entry['InPersonHours'],
                         TotalBeforeTax=entry['TotalBeforeTax']
@@ -396,34 +400,82 @@ class calculateTotal(APIView):
 
             return Response(results)
 
-class CreateCheckoutSessionView(APIView):
-    def post(self, request, *args, **kwargs):
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card']
-            line_items=[
-                {
-                    # Provide the exact Price ID (for example, price_1234) of the product you want to sell
-                    'price_data': {
-                        'currency': 'CAD',
-                        'price': '{{PRICE_ID}}',
-                        'product_data': {
-                            'name': 'Tutoring',
-                        },
-                        
-                    },
-                    'quantity': 1,
-
-                    },
-                ],
-                mode='payment',
-                success_url=YOUR_DOMAIN + '?success=true',
-                cancel_url=YOUR_DOMAIN + '?canceled=true',
-            )
-        return Response('id': checkout_session.id)
-    
-class SendHours(APIView):
+class CreateInvoiceView(APIView):
     permission_classes = [AllowAny]
 
+    def post(self, request):
+        existing_customer = []
+        today = request.query_params.get('currentDay', None)
+        customersEmail = WeeklyHours.objects.filter(date=today).values('email')
+        for email_entry in customersEmail:
+            email_str = email_entry['email'] #Convert from email = ... to just example@gmail.com
+            result = stripe.Customer.list(email=email_str)
+            if result:
+                existing_customer.append(result.data[0]) #[0] ensures it only grabs the first matching data.
+
+                    
+        
+        for parent in existing_customer:
+            amount_S = WeeklyHours.objects.filter(date=today, email=parent.email).values('TotalBeforeTax').first()
+            if not amount_S or 'TotalBeforeTax' not in amount_S:
+                continue  
+
+            amountS = Decimal(Decimal(amount_S['TotalBeforeTax']) * 100)
+
+            invoice = stripe.Invoice.create(
+                customer=parent.id,
+                collection_method='send_invoice',
+                days_until_due=7
+            )
+            stripe.InvoiceItem.create(
+                customer=parent.id,
+                quantity=1,
+                unit_amount_decimal=amountS,
+                currency='cad',
+                description='Tutoring Sessions',
+                invoice=invoice.id
+            )
+
+            
+
+            stripe.Invoice.finalize_invoice(invoice.id) #Stripe does not need to link invoice item with the invoice, it automatically links the latest item to the newest invoice
+
+            stripe.Invoice.send_invoice(invoice.id)
+
+            print('Invoice for ', parent.email, ' was sent.' )
+            print('Amount: ', type(amountS) )
+
+        return Response("All done!")
+       
+        
+class InvoiceListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        response = []
+        result = []
+        customerEmail = request.query_params.get("email", None)
+        result = stripe.Customer.list(email=customerEmail)
+        firstResult = result.data[0]
+        invoices = stripe.Invoice.list(customer=firstResult.id, limit=55)
+        for invoice in invoices.auto_paging_iter():
+            if not invoice:
+                return Response("No Invoices")
+            readable_time = datetime.fromtimestamp(invoice.created)
+            readable_due = datetime.fromtimestamp(invoice.due_date)
+            response.append({
+                "id": invoice.id,
+                "date": readable_time,
+                "amount": invoice.amount_due,
+                "due_date": readable_due,
+                "status": invoice.status,
+                "link": invoice.hosted_invoice_url, 
+            })
+            print(invoice.id, readable_time, invoice.amount_due, invoice.status)
+        return Response(response)
+class SendHours(APIView):
+    permission_classes = [AllowAny]
+            
     def get(self, request):
         currentDay = request.query_params.get('currentDay', None)
         hours = WeeklyHours.objects.filter(date=currentDay).order_by('TotalBeforeTax')

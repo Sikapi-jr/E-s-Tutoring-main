@@ -17,6 +17,7 @@ const Navbar = () => {
         <li><Link to="/calendar">Calendar</Link></li>
         <li><Link to="/WeeklyHours">Weekly Hours</Link></li>
         <li><Link to="/verify-email">Verify Email</Link></li>
+        <li><Link to="/ViewInvoices">View Invoices</Link></li>
 
       </ul>
     </nav>

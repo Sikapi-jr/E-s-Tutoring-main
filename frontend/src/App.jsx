@@ -13,6 +13,7 @@ import ViewReply from "./pages/ViewReply"
 import Profile from "./components/Profile"
 import LogHours from "./pages/LogHours"
 import SendWeekly from "./pages/SendWeekly"
+import ViewInvoices from "./pages/ViewInvoices"
 import Navbar from "./components/Navbar"
 import VerifyEmail from "./components/VerifyEmail"
 import CalendarApp from './components/CalendarApp'
@@ -54,6 +55,7 @@ function App() {
             <Route path="/calendar" element={<CalendarApp />} />
             <Route path="/WeeklyHours" element={<SendWeekly />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
+            <Route path="/ViewInvoices" element={<ViewInvoices />} />
 
             
   

@@ -77,7 +77,7 @@ class User(AbstractUser):
     rateOnline = models.DecimalField(max_digits=10, decimal_places=2, default=35.00 ,blank=False, null=False)
     rateInPerson = models.DecimalField(max_digits=10, decimal_places=2, default = 60.00, blank=False, null=False)
     last_login = models.DateTimeField(default=timezone.now)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
 
     def __str__(self):
@@ -312,6 +312,7 @@ class Hours(models.Model):
 class WeeklyHours(models.Model):
     date = models.DateField()
     parent = models.CharField(max_length=50)
+    email = models.CharField(max_length=70, default='None')
     OnlineHours = models.DecimalField(max_digits=5, decimal_places=2)
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)

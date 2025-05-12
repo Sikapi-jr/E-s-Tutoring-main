@@ -20,5 +20,9 @@ urlpatterns = [
     path("parentCalendar/", views.ParentHoursListView.as_view(), name="ParentCalendar"),
     path("weeklyHours/", views.WeeklyHoursListView.as_view(), name="weeklyHours"),
     path("calculateHours/", views.calculateTotal.as_view(), name="calculateHours"),
-    path("sendHours/", views.SendHours.as_view(), name="sendHours"),
+    path("sendHours/", views.SendHours.as_view(), name="sendHours"), 
+    path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
+    path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList")
+
+
 ]
