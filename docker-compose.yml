@@ -26,3 +26,9 @@ services:
       - .:/app #Mount entire project root to not lose db data after every build
     ports:
       - "8000:8000"
+
+  mq: 
+    image: rabbitmq:3.13.7.-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=mquser
+      - RABBITMQ_DEFAULT_PASS=aaasss12
