@@ -4,6 +4,7 @@ venv/
 # Ignore sensitive configuration files
 .env
 env
+egstutorting/settings.py
 
 # Ignore compiled files
 *.pyc
