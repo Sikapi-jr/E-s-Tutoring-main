@@ -22,6 +22,8 @@ services:
       dockerfile: Dockerfile.backend
     container_name: backend
     command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     ports:
@@ -32,3 +34,17 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=mquser
       - RABBITMQ_DEFAULT_PASS=aaasss12
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    command: sh -c "celery -A backend worker -l INFO"
+    environment:
+      - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
+    volumes:
+      - .:/app #Mount entire project root to not lose db data after every build
+    depends_on:
+      - backend
+      - mq
