@@ -24,6 +24,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     ports:
@@ -42,6 +43,7 @@ services:
     command: sh -c "celery -A egstutorting worker -l INFO"
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     depends_on:

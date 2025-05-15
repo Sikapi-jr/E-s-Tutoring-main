@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-
+from openai import OpenAI
 
 class User(AbstractUser):
     CITY_CHOICES = [
@@ -317,3 +317,47 @@ class WeeklyHours(models.Model):
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+class AiChatSession(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class AiRequest(models.Model):
+
+    PENDING = 'pending'
+    RUNNING = 'running'
+    COMPLETE = 'complete'
+    FAILED = 'failed'
+    STATUS_OPTIONS = (
+        (PENDING, 'Pending'),
+        (RUNNING, 'Running'),
+        (COMPLETE, 'Complete'),
+        (FAILED, 'Failed'),
+    )
+    status = models.CharField(choices=STATUS_OPTIONS, default=PENDING)
+    session = models.ForeignKey(
+        AiChatSession,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    messages = models.JSONField()
+    response = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def handle(self):
+
+        self.status=self.RUNNING
+        self.save()
+        client = OpenAI() #Create instance of openAi client
+        try: #Code to create a new request
+            completion = client.chat.completions.create(
+                model = "gpt-4o-mini",
+                messages=self.messages
+            )
+            self.response = completion.to_dict() #When we get a response its stored into a dictionary, allowing the contents to be extracted
+            self.status=self.COMPLETE #Update status of this request to complete
+        except Exception: 
+            self.status = self.FAILED
+
+        self.save
