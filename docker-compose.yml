@@ -30,7 +30,7 @@ services:
       - "8000:8000"
 
   mq: 
-    image: rabbitmq:3.13.7.-alpine
+    image: rabbitmq:3.13.7-alpine
     environment:
       - RABBITMQ_DEFAULT_USER=mquser
       - RABBITMQ_DEFAULT_PASS=aaasss12
@@ -39,8 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: backend
-    command: sh -c "celery -A backend worker -l INFO"
+    command: sh -c "celery -A egstutorting worker -l INFO"
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
     volumes:

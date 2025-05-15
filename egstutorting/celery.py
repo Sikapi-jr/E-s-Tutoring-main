@@ -16,6 +16,14 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
+#To run the shell: 
+# docker compose run --rm playground sh -c "python manage.py shell"
+# from playground import tasks
+# task.hello_task("Mark")  -> This will be ran by the program
+# task.hello_task.delay("Mark") -> This will queue the task in the message queue (Worker)
+
+#To add a task for background processing, take the logic code from the view, and place it into the task.py file. Then, in the view section
+#replace the code that was there with task.TASKNAME.delay(ARGUMENTS)
 
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
