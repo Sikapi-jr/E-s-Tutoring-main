@@ -12,3 +12,4 @@ django-rest-passwordreset
 stripe
 openai==1.16.1
 celery==5.4.0
+httpx==0.27.2

@@ -21,10 +21,14 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+         python manage.py makemigrations &&
+         python manage.py runserver 0.0.0.0:8000 "
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=egstutorting.settings
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     ports:
@@ -44,6 +48,7 @@ services:
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=egstutorting.settings
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     depends_on:

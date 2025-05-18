@@ -1,8 +1,12 @@
 from django.conf import settings
+import os
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from openai import OpenAI
+from playground.tasks import handle_ai_request_job
+from django.forms.models import model_to_dict
+
 
 class User(AbstractUser):
     CITY_CHOICES = [
@@ -317,6 +321,7 @@ class WeeklyHours(models.Model):
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+
 class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -333,7 +338,7 @@ class AiRequest(models.Model):
         (COMPLETE, 'Complete'),
         (FAILED, 'Failed'),
     )
-    status = models.CharField(choices=STATUS_OPTIONS, default=PENDING)
+    status = models.CharField(max_length=50, choices=STATUS_OPTIONS, default=PENDING)
     session = models.ForeignKey(
         AiChatSession,
         on_delete=models.CASCADE,
@@ -341,23 +346,43 @@ class AiRequest(models.Model):
         blank=True,
     )
     messages = models.JSONField()
-    response = models.JSONField()
+    response = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def handle(self):
+    def _queue_job(self):
+        print("Qeueing Job Sikapi...")
+        handle_ai_request_job.delay(self.id)
 
+    def handle(self):
+        print("Starting handle...")
+
+        if self.status in [self.RUNNING, self.COMPLETE, self.FAILED]:
+            print("Already handled or in progress.")
+            return
+        
         self.status=self.RUNNING
-        self.save()
-        client = OpenAI() #Create instance of openAi client
+        self.save(update_fields=["status"])
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) #Create instance of openAi client
         try: #Code to create a new request
             completion = client.chat.completions.create(
                 model = "gpt-4o-mini",
                 messages=self.messages
             )
-            self.response = completion.to_dict() #When we get a response its stored into a dictionary, allowing the contents to be extracted
+            self.response = completion.model_dump() #When we get a response its stored into a dictionary, allowing the contents to be extracted
             self.status=self.COMPLETE #Update status of this request to complete
-        except Exception: 
+            print("HANDLE DONE")
+        except Exception:
+            print("HANDLE FAILED")
             self.status = self.FAILED
 
-        self.save
+        self.save(update_fields=["response", "status"])
+
+    
+    #def save(self, **kwargs):
+        #print("Starting Save...")
+        #is_new = self.pk is None #tells us if the request is a new model
+        #super().save(**kwargs) #Save is always ran whenever an object is created/updated. Super().save calls the original save method
+        #if is_new:
+            #print("Starting New...")
+            #self._queue_job() #WIth this logic, new requests are always saved, but jobs ar eonly queued if they are new

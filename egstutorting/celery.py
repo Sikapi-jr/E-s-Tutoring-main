@@ -1,6 +1,10 @@
 import os
+import django
+from celery import Celery, shared_task
 
-from celery import Celery
+django.setup() #Forces django to be fully setup before any commands are ran
+
+from playground import models
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'egstutorting.settings')
@@ -24,7 +28,3 @@ app.autodiscover_tasks()
 
 #To add a task for background processing, take the logic code from the view, and place it into the task.py file. Then, in the view section
 #replace the code that was there with task.TASKNAME.delay(ARGUMENTS)
-
-@app.task(bind=True, ignore_result=True)
-def debug_task(self):
-    print(f'Request: {self.request!r}')
