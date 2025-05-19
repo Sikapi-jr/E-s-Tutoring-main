@@ -326,6 +326,50 @@ class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_last_request(self):
+        """"Gets most recent request linked to current session"""
+        return self.airequest_set.all().order_by('-created_at').first()
+    
+    def _create_message(self, message, role="user"):
+        return{"role":role, "content":message}
+    
+    def create_first_message(self, message):
+        return [
+            self._create_message(
+                "You are support bot for EGS Tutoring"
+                "system"
+            ),
+            self._create_message(message, "user")]
+    
+    def messages(self):
+        all_messages=[]
+        request = self.get_last_request() #Get last request made for this session
+
+        if request:
+            all_messages.extend(request.messages) #exend adds items of the list into the list, while append adds the whole list as a nested list
+            try:
+                all_messages.append(request.response["choices"][0]["message"]) #API returns a list of choices, we pick the first one
+            except (KeyError, TypeError, IndexError):
+                pass
+        return all_messages
+    
+    def send(self, message):
+        last_request=self.get_last_request() #Fetching last request. Want to determine is this first message or are there existing messages? (Different logic)
+
+        if not last_request: #If no last request, assume this is first request and create a new request
+            AiRequest.objects.create(
+                session=self, messages=self.create_first_message(message) 
+            )
+        elif last_request.status in [AiRequest.COMPLETE, AiRequest.FAILED]: #Make sure last request isnt pending/running
+            AiRequest.objects.create(
+                session=self,
+                messages=self.messages() + [ #Pass in existing messages + new message to be sent
+                    self._create_message(message, "user")
+                ]
+            )
+        else:
+            return
+
 class AiRequest(models.Model):
 
     PENDING = 'pending'
