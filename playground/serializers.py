@@ -10,6 +10,7 @@ from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
 from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours
 from datetime import timedelta
+from playground.models import AiChatSession
 
 
 User = get_user_model()  # Move this outside the class definition for better performance
@@ -178,3 +179,23 @@ class WeeklyHoursSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeeklyHours
         fields = '__all__'
+
+class AiChatSessionMessagesSerializer(serializers.Serializer):
+    role = serializers.CharField()
+    content = serializers.CharField()
+
+class AiChatSessionSerializer(serializers.ModelSerializer): #Model Serializer, auto-generates serializer class based on model, fields, validation, methods included
+    messages = AiChatSessionMessagesSerializer(many=True)
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance) #to_representation is native to DRF, method controling how model instance is turned into JSON when sending API responses
+        representation['messages'] = [
+            msg for msg in representation["messages"]   #List of messages only returns non system messages.
+            if msg['role'] != 'system'
+        ]
+        return representation
+
+    class Meta:
+        model = AiChatSession
+        fields = ['id', 'messages']
+        read_only_fields=['messages'] #Dont want users to be able to write data from serializer

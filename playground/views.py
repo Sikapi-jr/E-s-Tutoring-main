@@ -1,14 +1,14 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from django.contrib.auth import get_user_model  # Correct way to import the user model
-from rest_framework import generics
+from rest_framework import generics, status
 from .serializers import UserSerializer, NoteSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Note
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer
+from .serializers import RequestSerializer, AiChatSessionSerializer
 from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer 
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
@@ -33,6 +33,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.conf import settings
 import stripe
+
 
 
 
@@ -481,3 +482,29 @@ class SendHours(APIView):
         hours = WeeklyHours.objects.filter(date=currentDay).order_by('TotalBeforeTax')
         serializer = WeeklyHoursSerializer(hours, many=True)
         return Response(serializer.data)
+    
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_chat_session(request):
+    
+    session = AiChatSession.objects.create()
+    serializer = AiChatSessionSerializer(session)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def chat_session(request, session_id):
+    session = get_object_or_404(AiChatSession, id=session_id)
+    serializer = AiChatSessionSerializer(session)
+
+    if request.method== 'POST':
+        message = request.data.get('message')
+        if not message:
+            return Response(
+                {'error: ' 'Message is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        session.send(message)
+    return Response(serializer.data)

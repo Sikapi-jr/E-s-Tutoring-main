@@ -1,6 +1,7 @@
 #URLS from egstutoring/url.py/ are forwarded here
 from django.urls import path
 from . import views
+from playground.views import create_chat_session, chat_session
 
 urlpatterns = [
     path("notes/", views.NoteListCreate.as_view(), name="note-list"),
@@ -22,7 +23,10 @@ urlpatterns = [
     path("calculateHours/", views.calculateTotal.as_view(), name="calculateHours"),
     path("sendHours/", views.SendHours.as_view(), name="sendHours"), 
     path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
-    path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList")
+    path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList"),
+    path("chat/sessions/", create_chat_session),
+    path("chat/sessions/<str:session_id>", chat_session),
+
 
 
 ]
