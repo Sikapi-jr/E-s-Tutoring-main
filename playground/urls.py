@@ -25,7 +25,7 @@ urlpatterns = [
     path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
     path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList"),
     path("chat/sessions/", create_chat_session),
-    path("chat/sessions/<str:session_id>", chat_session),
+    path("chat/sessions/<str:session_id>/", chat_session),
 
 
 

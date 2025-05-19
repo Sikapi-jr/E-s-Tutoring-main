@@ -18,6 +18,7 @@ const Navbar = () => {
         <li><Link to="/WeeklyHours">Weekly Hours</Link></li>
         <li><Link to="/verify-email">Verify Email</Link></li>
         <li><Link to="/ViewInvoices">View Invoices</Link></li>
+        <li><Link to="/chatgpt">Chat</Link></li>
 
       </ul>
     </nav>

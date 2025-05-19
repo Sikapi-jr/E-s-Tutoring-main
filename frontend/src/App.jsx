@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import ParentDashboard from "./pages/ParentDashboard"
 import ViewReply from "./pages/ViewReply"
 import Profile from "./components/Profile"
+import Chatgpt from "./components/Chatgpt"
 import LogHours from "./pages/LogHours"
 import SendWeekly from "./pages/SendWeekly"
 import ViewInvoices from "./pages/ViewInvoices"
@@ -56,10 +57,7 @@ function App() {
             <Route path="/WeeklyHours" element={<SendWeekly />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
             <Route path="/ViewInvoices" element={<ViewInvoices />} />
-
-            
-  
-
+            <Route path="/chatgpt" element={<Chatgpt />} />
         </Routes>
       </BrowserRouter>
     </UserProvider>
