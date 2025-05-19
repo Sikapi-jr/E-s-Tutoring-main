@@ -336,8 +336,7 @@ class AiChatSession(models.Model):
     def create_first_message(self, message):
         return [
             self._create_message(
-                "You are support bot for EGS Tutoring"
-                "system"
+                "You are a support bot for EGS Tutoring", "system"
             ),
             self._create_message(message, "user")]
     
