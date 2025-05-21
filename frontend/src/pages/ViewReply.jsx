@@ -13,6 +13,10 @@ const ViewReply = () => {
     const [error, setError] = useState("");
     const parent = user.username;
     const navigate = useNavigate();
+
+    if (user.roles !== "parent" && user.is_superuser===0){
+        navigate("/login");
+    }
     
 
     useEffect(() => {

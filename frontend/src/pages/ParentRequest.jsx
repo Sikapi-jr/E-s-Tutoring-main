@@ -4,6 +4,10 @@ import Form from "../components/RequestForm";
 
 function Request() {
 
+    if (user.roles !== "parent" && user.is_superuser===0){
+        navigate("/login");
+    }
+    
     const { user } = useUser();
     return (
         <div>

@@ -4,16 +4,12 @@ import { useUser } from '../components/UserProvider';
 import { useNavigate } from "react-router-dom";
 
 
-const SendWeekly = () => {
+const SendMonthly = () => {
     const { user } = useUser();
     const [currentDay, setcurrentDay] = useState(new Date());
-    const [replies, setreplies] = useState([]);
-    const [showReplies, setShowReplies] = useState(false);
     const [hours, setHours] = useState([]);
     const [total, setTotal] = useState([]);
-    const [selectedRequestID, setSelectedRequestID] = useState(null);
     const [error, setError] = useState("");
-    const parent = user.username;
     const navigate = useNavigate();
     
     if (user.is_superuser===0){
@@ -22,9 +18,9 @@ const SendWeekly = () => {
     
     const confirmButtonClick = async (hours) => {
         try {
-            const response = await axios.post(`http://127.0.0.1:8000/api/weeklyHours/`, total);
+            const response = await axios.post(`http://127.0.0.1:8000/api/monthlyHours/`, total);
             if (response.status === 201){
-              alert("Weekly hours created!");
+              alert("Monthly hours created!");
             }
             else if(response.status === 301){
               alert("Duplicate. Nothing created");
@@ -43,13 +39,13 @@ const SendWeekly = () => {
     
     const handleButtonClick = async (currentDay) => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/api/weeklyHours/?currentDay=${currentDay}`);
+            const response = await axios.get(`http://127.0.0.1:8000/api/monthlyHours/?currentDay=${currentDay}`);
             setHours(response.data);
-            const responseB = await axios.get(`http://127.0.0.1:8000/api/calculateHours/?currentDay=${currentDay}`);
+            const responseB = await axios.get(`http://127.0.0.1:8000/api/calculateMonthlyHours/?currentDay=${currentDay}`);
             setTotal(responseB.data);
         }
         catch (error) {
-            console.error("Error fetching weekly hours: ", error);
+            console.error("Error fetching monthly hours: ", error);
             }
 
     }
@@ -66,7 +62,7 @@ const SendWeekly = () => {
 
     return (
         <div>
-          <h1>Weekly Hours</h1>
+          <h1>Monthly Hours</h1>
           <form onSubmit={(e) => {
             e.preventDefault(); // prevent reload
             handleButtonClick(currentDay)}
@@ -131,4 +127,4 @@ const SendWeekly = () => {
 };
     
 
-export default SendWeekly
+export default SendMonthly

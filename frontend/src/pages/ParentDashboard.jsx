@@ -15,9 +15,10 @@ const ParentDashboard = () => {
 
 
 
-  //if (user.roles !== 'tutor'){
-    //navigate('/login')
-  //}
+  if (user.roles !== "tutor" && user.is_superuser===0){
+        navigate("/login");
+    }
+    
 
   const handleMessageClick = (request) => {
     setSelectedRequestID(request.id)

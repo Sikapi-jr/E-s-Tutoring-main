@@ -15,9 +15,10 @@ const ViewInvoices = () => {
 
 
 
-  //if (user.roles !== 'tutor'){
-    //navigate('/login')
-  //}
+  if (user.roles !== "parent" && user.is_superuser===0){
+        navigate("/login");
+    }
+    
 
   const handleMessageClick = (request) => {
     window.location.href = (request.link);

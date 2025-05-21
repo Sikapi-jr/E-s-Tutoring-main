@@ -8,7 +8,7 @@ from .models import Note
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -353,10 +353,11 @@ class calculateTotal(APIView):
 
             # Get last week's Monday 00:00:00 and Sunday 23:59:59
             start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            last_date = (target_date - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
             # Query for objects in that date range
-            weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date') #"order-by" breaks the uniqueness of parent. set() helps with
+            weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date') #"order-by" breaks the uniqueness of parent. set() helps with that
             parents = set(weekly_hours.values_list('parent', flat=True))
             print("This is list of parents: ")
             print(list(parents))
@@ -474,17 +475,126 @@ class InvoiceListView(APIView):
             })
             print(invoice.id, readable_time, invoice.amount_due, invoice.status)
         return Response(response)
-class SendHours(APIView):
-    permission_classes = [AllowAny]
-            
-    def get(self, request):
-        currentDay = request.query_params.get('currentDay', None)
-        hours = WeeklyHours.objects.filter(date=currentDay).order_by('TotalBeforeTax')
-        serializer = WeeklyHoursSerializer(hours, many=True)
-        return Response(serializer.data)
     
+class MonthlyHoursListView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        # Input string (Should take the current date [Monday])
+        date_str = request.query_params.get("currentDay")
+        target_date = datetime.strptime(date_str, "%Y-%m-%d") #Converts date_str into a dateTime object
+
+        # Ensure datetime is timezone-aware
+        target_date = make_aware(target_date) #Makes target_date time_aware
+
+        # Get last week's Monday 00:00:00 and Sunday 23:59:59
+        last_date = (target_date - timedelta(days=1))
+        start_date = last_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        # Query for objects in that date range
+        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date') #"order-by" breaks the uniqueness of parent. set() helps with
+
+        serializer = HoursSerializer(monthly_hours, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+            entries = request.data
+            created = False
+            for entry in entries:
+                #Makes sure that even if button pressed multiple times, it wont create duplicate tuples
+                email = User.objects.filter(username=entry['parent']).values('email').first()
+                if email:
+                    email = email['email']
+                exists = MonthlyHours.objects.filter(
+                    date=entry['date'],
+                    tutor=entry['tutor'],
+                    email=email,
+                    OnlineHours=entry['OnlineHours'],
+                    InPersonHours=entry['InPersonHours']
+                ).exists()
+
+                if not exists:
+                    MonthlyHours.objects.create(
+                        date=entry['date'],
+                        tutor=entry['tutor'],
+                        email=email,
+                        OnlineHours=entry['OnlineHours'],
+                        InPersonHours=entry['InPersonHours'],
+                        TotalBeforeTax=entry['TotalBeforeTax']
+                    )
+                    created = True #Cant have the return here or else after 1 entry it will automatically return without checking the other entries.
+
+                   
+            if created:
+                return Response({"status": "created"}, status=201)
+            else:
+                return Response({"status": "Not Created, Duplicate"}, status=301)
+            
+
+class calculateMonthlyTotal(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+            # Input string (Should take the current date [Monday])
+            date_str = request.query_params.get("currentDay")
+            target_date = datetime.strptime(date_str, "%Y-%m-%d") #Converts date_str into a dateTime object
+
+            # Ensure datetime is timezone-aware
+            target_date = make_aware(target_date) #Makes target_date time_aware
+
+            # Get last week's Monday 00:00:00 and Sunday 23:59:59
+            start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+            last_date = (target_date - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+            # Query for objects in that date range
+            monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date') #"order-by" breaks the uniqueness of parent. set() helps with that
+            tutors = set(monthly_hours.values_list('tutor', flat=True))
+            print("This is list of tutors: ")
+            print(list(tutors))
+            print(current_time)
+            rate = User.objects.filter(roles='tutor', is_active=1)
+            
+
+            #online_rate_dict = {
+                #item['parent']: Decimal(item['rateOnline']) if item['rateOnline'] is not None else Decimal('0')
+                #for item in rate.values('parent', 'rateOnline')
+            #}
+
+            #inperson_rate_dict = {
+                #item['parent']: Decimal(item['rateInPerson']) if item['rateInPerson'] is not None else Decimal('0')
+                #for item in rate.values('parent', 'rateInPerson')
+            #}
+
+            results = []
+
+            for tutor in tutors:
+                tutor_hours = monthly_hours.filter(tutor=tutor)
+                online_hours =  tutor_hours.filter(location='Online').aggregate(Sum('totalTime'))['totalTime__sum'] or 0
+                inperson_hours = tutor_hours.filter(location='In-Person').aggregate(Sum('totalTime'))['totalTime__sum'] or 0
+                #online_rate = online_rate_dict.get(parent)
+                #inperson_rate = inperson_rate_dict.get(parent)
+
+                online_hours = Decimal(online_hours)
+                inperson_hours = Decimal(inperson_hours)
 
 
+                totalOnline = online_hours * 60
+                totalInPerson = inperson_hours * 35
+                totalBeforeTax = totalOnline + totalInPerson
+
+                results.append({
+                    "date": target_date.date(),
+                    "tutor": tutor,
+                    "OnlineHours": float(online_hours),
+                    "InPersonHours": float(inperson_hours),
+                    "TotalBeforeTax": float(totalBeforeTax)
+                })
+
+            return Response(results)
+    
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_chat_session(request):

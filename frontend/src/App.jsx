@@ -14,6 +14,7 @@ import Profile from "./components/Profile"
 import Chatgpt from "./components/Chatgpt"
 import LogHours from "./pages/LogHours"
 import SendWeekly from "./pages/SendWeekly"
+import SendMonthly from "./pages/SendMonthly"
 import ViewInvoices from "./pages/ViewInvoices"
 import Navbar from "./components/Navbar"
 import VerifyEmail from "./components/VerifyEmail"
@@ -57,6 +58,7 @@ function App() {
             <Route path="/WeeklyHours" element={<SendWeekly />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
             <Route path="/ViewInvoices" element={<ViewInvoices />} />
+            <Route path="/MonthlyHours" element={<SendMonthly />} />
             <Route path="/chatgpt" element={<Chatgpt />} />
         </Routes>
       </BrowserRouter>

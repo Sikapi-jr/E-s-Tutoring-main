@@ -322,6 +322,15 @@ class WeeklyHours(models.Model):
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
 
+class MonthlyHours(models.Model):
+    date = models.DateField() #Enddate
+    tutor = models.CharField(max_length=50)
+    email = models.CharField(max_length=70, default='None')
+    OnlineHours = models.DecimalField(max_digits=5, decimal_places=2)
+    InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
+    TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
 class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

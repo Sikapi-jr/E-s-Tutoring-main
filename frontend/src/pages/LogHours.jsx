@@ -26,9 +26,10 @@ function LogHours() {
     const [error, setError] = useState(""); // Added missing state for error
     const [users, setUsers] = useState([]); // Store user list
 
-    //if (user.roles !== 'tutor'){
-        //navigate('/login');
-    //}
+    if (user.roles !== "tutor" && user.is_superuser===0){
+        navigate("/login");
+    }
+    
 
 
     useEffect(() => {
