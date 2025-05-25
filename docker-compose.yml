@@ -1,0 +1,56 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - 5173:5173 #Default port for vite server
+    volumes: 
+      - ./frontend:/app
+    develop: 
+      watch: #Syncs local files to ones inside the container. Need one for backend
+        - action: sync
+          path: ./frontend
+          target: /frontend
+          ignore:
+           - node_modules
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    command: >
+      sh -c "python manage.py migrate &&
+         python manage.py makemigrations &&
+         python manage.py runserver 0.0.0.0:8000 "
+    environment:
+      - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=egstutorting.settings
+    volumes:
+      - .:/app #Mount entire project root to not lose db data after every build
+    ports:
+      - "8000:8000"
+
+  mq: 
+    image: rabbitmq:3.13.7-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=mquser
+      - RABBITMQ_DEFAULT_PASS=aaasss12
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: sh -c "celery -A egstutorting worker -l INFO"
+    environment:
+      - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=egstutorting.settings
+    volumes:
+      - .:/app #Mount entire project root to not lose db data after every build
+    depends_on:
+      - backend
+      - mq

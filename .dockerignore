@@ -1,0 +1,7 @@
+README.md
+frontend/node-modules/
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.log
