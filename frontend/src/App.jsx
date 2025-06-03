@@ -47,23 +47,71 @@ function App() {
                 </ProtectedRoute>
               }
             />
+          <Route path="/parent-dashboard" element={
+            <ProtectedRoute>
+              <ParentDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/request" element={
+            <ProtectedRoute>
+              <Request />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/Log" element={
+            <ProtectedRoute>
+              <LogHours />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/request-reply" element={
+            <ProtectedRoute>
+              <ViewReply />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/calendar" element={
+            <ProtectedRoute>
+              <CalendarApp />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/WeeklyHours" element={
+            <ProtectedRoute>
+              <SendWeekly />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/verify-email/:uid/:token" element={<VerifyEmail />}></Route>
+
+          <Route path="/ViewInvoices" element={
+            <ProtectedRoute>
+              <ViewInvoices />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/MonthlyHours" element={
+            <ProtectedRoute>
+              <SendMonthly />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/chatgpt" element={
+            <ProtectedRoute>
+              <Chatgpt />
+            </ProtectedRoute>
+          } />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />}></Route> 
-            <Route path="/parent-dashboard" element={<ParentDashboard />} />
-            <Route path="/request" element={<Request />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/Log" element={<LogHours />} />
-            <Route path="/request-reply" element={<ViewReply />} />
-            <Route path="/calendar" element={<CalendarApp />} />
-            <Route path="/WeeklyHours" element={<SendWeekly />} />
-            <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
-            <Route path="/ViewInvoices" element={<ViewInvoices />} />
-            <Route path="/MonthlyHours" element={<SendMonthly />} />
-            <Route path="/chatgpt" element={<Chatgpt />} />
-            <Route path="/passwordReset" element={<PasswordReset />} />
-            <Route path="/reset-password" element={<PasswordResetConfirm />} />
         </Routes>
       </BrowserRouter>
     </UserProvider>

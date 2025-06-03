@@ -25,6 +25,7 @@ urlpatterns = [
     path("calculateMonthlyHours/", views.calculateMonthlyTotal.as_view(), name="calculateMonthlyHours"),
     path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
     path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList"),
+    path("dispute/", views.DisputeHours.as_view(), name="dispute"),
     path("chat/sessions/", create_chat_session),
     path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),

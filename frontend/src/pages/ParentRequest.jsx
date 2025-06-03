@@ -3,12 +3,12 @@ import { useUser } from '../components/UserProvider';
 import Form from "../components/RequestForm";
 
 function Request() {
+    
+    const { user } = useUser();
 
     if (user.roles !== "parent" && user.is_superuser===0){
         navigate("/login");
     }
-    
-    const { user } = useUser();
     return (
         <div>
             <h1>Hi!</h1>

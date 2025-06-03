@@ -300,6 +300,13 @@ class Hours(models.Model):
         ('In-Person', 'in-person'),
         ('---', '---'),
     ]
+
+    STATUS_CHOICES = [
+        ('Accepted', 'ACCEPTED'),
+        ('Disputed', 'DISPUTED'),
+        ('Resolved', 'RESOLVED'),
+        ('Void', 'VOID'),
+    ]
     
     student = models.CharField(max_length=50)
     parent = models.CharField(max_length=50)
@@ -311,6 +318,7 @@ class Hours(models.Model):
     location = models.CharField(max_length=15, choices=LOCATION_CHOICES, default='---')
     subject = models.CharField(max_length=50)
     notes = models.TextField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ACCPETED')
     created_at = models.DateTimeField(auto_now_add=True)
 
 class WeeklyHours(models.Model):

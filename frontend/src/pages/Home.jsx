@@ -3,6 +3,8 @@ import { useUser } from '../components/UserProvider';
 
 function Home() {
     const { user } = useUser();
+    console.log("Role:", user.roles);
+    console.log("Is superuser:", user.is_superuser);
 
     return (
         <div>

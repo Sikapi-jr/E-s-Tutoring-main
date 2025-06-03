@@ -52,14 +52,16 @@ def current_user_view(request):
     print("Auth Token:", request.auth)  # Should show the JWT token
     print("is_active:", request.user.is_active)  # Should show if active
 
-
+    #Data sent to frontend for current user
     if request.user:
         user_data = {
             "username": request.user.username,
             "email": request.user.email,
             "roles": request.user.roles,
             "parent": request.user.parent,
-            "is_active": request.user.is_active
+            "is_active": request.user.is_active,
+            "is_superuser": request.user.is_superuser
+            
         }
         request.user.last_login = current_time
         print(request.user) 
@@ -284,6 +286,33 @@ class ParentHoursListView(APIView):
         ).order_by('-created_at')  # Fetch requests from the database
         serializer = HoursSerializer(requests, many=True)
         return Response(serializer.data)
+    
+class DisputeHours(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        print("Dispute post received")
+        disputeID = request.data.get('eventId')
+        print(disputeID)
+        disputeMessage = request.data.get('message')
+        print(disputeMessage)
+
+        selectedHour = Hours.objects.filter(id=disputeID).update(status='DISPUTE')
+        self.send_dispute_email(self.request)
+        return Response("Status changed to 'DISPUTE'")
+
+    def send_dispute_email(self, request):
+        #Hey Elvis, get user email via queury
+        print("Dispute send email received")
+        to_email = request.data.get('email')  # safer than query param
+
+        subject = "Dispute Received!"
+        message = f"Our team is currently reviewing your dispute. Thank you for bringing this to our attention,"
+        from_email = "egstutor@gmail.com"
+
+        send_mail(subject, message, from_email, [to_email])
+        return Response("Dispute Email Sent")
+
 
 class WeeklyHoursListView(APIView):
     permission_classes = [AllowAny]
@@ -365,15 +394,15 @@ class calculateTotal(APIView):
             rate = User.objects.filter(roles='parent', is_active=1)
             
 
-            #online_rate_dict = {
-                #item['parent']: Decimal(item['rateOnline']) if item['rateOnline'] is not None else Decimal('0')
-                #for item in rate.values('parent', 'rateOnline')
-            #}
+            online_rate_dict = {
+                item['parent']: Decimal(item['rateOnline']) if item['rateOnline'] is not None else Decimal('0')
+                for item in rate.values('parent', 'rateOnline')
+            }
 
-            #inperson_rate_dict = {
-                #item['parent']: Decimal(item['rateInPerson']) if item['rateInPerson'] is not None else Decimal('0')
-                #for item in rate.values('parent', 'rateInPerson')
-            #}
+            inperson_rate_dict = {
+                item['parent']: Decimal(item['rateInPerson']) if item['rateInPerson'] is not None else Decimal('0')
+                for item in rate.values('parent', 'rateInPerson')
+            }
 
             results = []
 
@@ -381,15 +410,15 @@ class calculateTotal(APIView):
                 parent_hours = weekly_hours.filter(parent=parent)
                 online_hours =  parent_hours.filter(location='Online').aggregate(Sum('totalTime'))['totalTime__sum'] or 0
                 inperson_hours = parent_hours.filter(location='In-Person').aggregate(Sum('totalTime'))['totalTime__sum'] or 0
-                #online_rate = online_rate_dict.get(parent)
-                #inperson_rate = inperson_rate_dict.get(parent)
+                online_rate = online_rate_dict.get(parent)
+                inperson_rate = inperson_rate_dict.get(parent)
 
                 online_hours = Decimal(online_hours)
                 inperson_hours = Decimal(inperson_hours)
 
 
-                totalOnline = online_hours * 60
-                totalInPerson = inperson_hours * 35
+                totalOnline = online_hours * online_rate
+                totalInPerson = inperson_hours * inperson_rate
                 totalBeforeTax = totalOnline + totalInPerson
 
                 results.append({

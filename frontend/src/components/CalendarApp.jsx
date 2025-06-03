@@ -25,6 +25,10 @@ const CalendarApp = () => {
   //
   const { user } = useUser('');
   const parent = user.username;
+  const email = user.email;
+  const [eventId, setEventId] = useState("");
+  const [message, setMessage] = useState("");
+  const [showReplyBox, setShowReplyBox] = useState(false);
   //
 
   const eventRefs = useRef({});
@@ -159,10 +163,30 @@ const CalendarApp = () => {
     setShowEventPopup(true)
   }
 
-  const handleDeleteEvent = (eventId) => {
-    const updatedEvents = events.filter((event) => event.id !== eventId)
+  const handleDeleteEvent = async (eventId) => {
+    //const updatedEvents = events.filter((event) => event.id !== eventId)
+    //setEvents(updatedEvents)
 
-    setEvents(updatedEvents)
+    setShowReplyBox(true);
+    setEventId(eventId);
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Starting submit");
+    const payload = {
+      eventId,
+      message,
+      email
+    }
+    try{
+      const response = await axios.post(`http://127.0.0.1:8000/api/dispute/`, payload);
+    }
+    catch (error){
+      console.error("Could not send dispute");
+    }
+    
+
   }
 
   const handleTimeChange = (e) => {
@@ -172,6 +196,7 @@ const CalendarApp = () => {
   }
 
   return (
+    
     <div className="calendar-app">
       <div className="calendar">
         <h1 className="heading">Calendar</h1>
@@ -265,9 +290,26 @@ const CalendarApp = () => {
             </div>
             <div className="event-text">{event.notes}</div>
             <div className="event-buttons">
-              <i className="bx bxs-edit-alt" onClick={() => handleEditEvent(event)}></i>
-              <i className="bx bxs-message-alt-x" onClick={() => handleDeleteEvent(event.id)}></i>
+              <i className="bx bxs-edit-alt" onClick={() => handleEditEvent(event)}>EDIT</i>
+              <i className="bx bxs-message-alt-x" onClick={() => handleDeleteEvent(event.id)}>DISPUTE</i>
+              {eventId === event.id && showReplyBox ? 'Cancel' : 'Reply'}
             </div>
+            {eventId === event.id && showReplyBox && (
+            <form onSubmit={handleSubmit}>
+                <input
+                    className="form-input"
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Think we made a mistake? Tell us!"
+                    required
+                />
+                
+                <button type="submit">Send Message</button>
+                <br></br>
+
+            </form>
+        )}
           </div>
         ))}
       </div>

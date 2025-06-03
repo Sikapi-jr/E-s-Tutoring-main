@@ -30,7 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
             "parent",
             "rateOnline",
             "rateInPerson",
-            "is_active"
+            "is_active",
+            "is_superuser",
         ]
         extra_kwargs = {
             "password": {"write_only": True, "required": True},
