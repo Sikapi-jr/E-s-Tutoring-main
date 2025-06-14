@@ -13,6 +13,7 @@ import ViewReply from "./pages/ViewReply"
 import Profile from "./components/Profile"
 import Chatgpt from "./components/Chatgpt"
 import LogHours from "./pages/LogHours"
+import Settings from "./pages/Settings"
 import SendWeekly from "./pages/SendWeekly"
 import SendMonthly from "./pages/SendMonthly"
 import ViewInvoices from "./pages/ViewInvoices"
@@ -106,6 +107,11 @@ function App() {
           <Route path="/chatgpt" element={
             <ProtectedRoute>
               <Chatgpt />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           } />
             <Route path="/login" element={<Login />} />

@@ -55,6 +55,8 @@ def current_user_view(request):
     #Data sent to frontend for current user
     if request.user:
         user_data = {
+            "firstName": request.user.firstName,
+            "lastName": request.user.lastName,
             "username": request.user.username,
             "email": request.user.email,
             "roles": request.user.roles,
@@ -242,8 +244,13 @@ class AcceptReplyCreateView(generics.CreateAPIView):
             tutoring_request.is_accepted = "Accepted"
             tutoring_request.save()
         except TutoringRequest.DoesNotExist:
-            pass 
-
+            pass
+    def get(self, request):
+        parentUsername = request.query_params.get("parent")
+        tutorsList = AcceptedTutor.objects.filter(parent = parentUsername) #.get only returns one object (many=true will return error). Use .filter instead
+        serializer = AcceptedTutorSerializer(tutorsList, many=True)
+        return Response(serializer.data)
+    
 class RejectUpdateView(APIView):
     permission_classes = [AllowAny]
 
@@ -259,6 +266,37 @@ class RejectUpdateView(APIView):
             pass
         
         return Response("Success! Reply has been deleted")
+    
+class ChangeTutor(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        #use validated_data instead of .save to simply modify existing data
+        student = request.data.get('student')
+        value = request.data.get('value')
+        try:
+            change = AcceptedTutor.objects.get(student=student)
+            currentStatus = change.status
+            if(value==False):
+                change.status = "DISPUTED"
+                change.save()
+                return Response({
+            "message": "Success! Status changed.",
+            "student": student,
+            "previous_status": currentStatus,
+            "new_status": change.status,
+        })
+            if(value==True):
+                change.status = "ACCEPTED"
+                change.save()
+                return Response({
+        "message": "Changed to ACCEPTED",
+        "student": student,
+        "current_status": currentStatus,
+    })
+        except AcceptedTutor.DoesNotExist:
+            pass
+        return Response("END of POST")
 
 class LogHoursCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]

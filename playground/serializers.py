@@ -124,13 +124,14 @@ class RequestReplySerializer(serializers.ModelSerializer):
 class AcceptedTutorSerializer(serializers.ModelSerializer):
     class Meta:
         model = AcceptedTutor
-        fields = ['id', 'request','parent', 'student', 'tutor', 'accepted_at']
+        fields = ['id', 'request','parent', 'student', 'tutor', 'accepted_at', 'status']
         extra_kwargs = {
             "request": {"required": True},
             "tutor": {"required": True},
             "student": {"required": True},
             "parent": {"required": True},
             "accepted_at": {"required": True},
+            "status": {"required": False},
         }
 
         def create(self, validated_data):

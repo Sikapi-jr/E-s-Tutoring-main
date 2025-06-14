@@ -264,9 +264,6 @@ class TutoringRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.CharField(max_length=15, choices=ACCEPTED_CHOICES, default='Not Accepted')
 
-    def __str__(self):
-        return f"{self.parent.username} - {self.subject}"
-
 
 class TutorResponse(models.Model):
     request = models.ForeignKey(TutoringRequest, on_delete=models.CASCADE)
@@ -280,6 +277,12 @@ class TutorResponse(models.Model):
 
 
 class AcceptedTutor(models.Model):
+    STATUS_CHOICES = [
+        ('Accepted', 'ACCEPTED'),
+        ('Disputed', 'DISPUTED'),
+        ('Resolved', 'RESOLVED'),
+        ('Void', 'VOID'),
+    ]
     request = models.ForeignKey(
         TutoringRequest,
         on_delete=models.CASCADE,
@@ -289,9 +292,7 @@ class AcceptedTutor(models.Model):
     student = models.CharField(max_length=50, default="ERROR")
     tutor = models.CharField(max_length=50, default="ERROR")
     accepted_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.tutor.username} accepted for {self.request.subject}"
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACCEPTED')
 
 class Hours(models.Model):
 

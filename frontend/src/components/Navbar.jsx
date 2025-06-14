@@ -21,6 +21,7 @@ const Navbar = () => {
         <li><Link to="/ViewInvoices">View Invoices</Link></li>
         <li><Link to="/MonthlyHours">View Monthly Hours</Link></li>
         <li><Link to="/chatgpt">Chat</Link></li>
+        <li><Link to="/settings">Settings</Link></li>
       </ul>
     </nav>
   );
@@ -35,6 +36,7 @@ const Navbar = () => {
           <li><Link to="/profile">Profile</Link></li>
           <li><Link to="/calendar">Calendar</Link></li>
           <li><Link to="/chatgpt">Chat</Link></li>
+          <li><Link to="/settings">Settings</Link></li>
         </ul>
       </nav>
   );}
@@ -57,6 +59,7 @@ const Navbar = () => {
           <li><Link to="/verify-email">Verify Email</Link></li>
           <li><Link to="/ViewInvoices">View Invoices</Link></li>
           <li><Link to="/chatgpt">Chat</Link></li>
+          <li><Link to="/settings">Settings</Link></li>
 
         </ul>
     </nav>
