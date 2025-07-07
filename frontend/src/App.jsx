@@ -24,6 +24,7 @@ import VerifyEmail from "./components/VerifyEmail"
 import CalendarApp from './components/CalendarApp'
 import './components/CalendarApp.css'
 import { UserProvider } from "./components/UserProvider"
+import StripeReauth from "./pages/stripeComplete"
 
 
 function Logout() {
@@ -31,8 +32,6 @@ function Logout() {
   return <Navigate to="/login" />
 
 }
-
-//Logs out by removing the tokens first
 
 function App() {
   return (
@@ -113,6 +112,9 @@ function App() {
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
+          } />
+          <Route path="/stripe-reauth/:uid/:token" element={
+              <StripeReauth />
           } />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />

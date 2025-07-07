@@ -1,11 +1,9 @@
 #URLS from egstutoring/url.py/ are forwarded here
 from django.urls import path, include
 from . import views
-from playground.views import create_chat_session, chat_session
+from playground.views import create_chat_session, chat_session, stripe_reauth_token
 
 urlpatterns = [
-    path("notes/", views.NoteListCreate.as_view(), name="note-list"),
-    path("notes/delete/<int:pk>/", views.NoteDelete.as_view(), name="delete-note"),
     path('user/', views.current_user_view, name='current-user'),
     path('students/', views.StudentsListView.as_view(), name='students-list'),
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
@@ -30,4 +28,6 @@ urlpatterns = [
     path("chat/sessions/", create_chat_session),
     path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
+    path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),
+
 ]

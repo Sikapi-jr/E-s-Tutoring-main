@@ -49,6 +49,7 @@ function RegisterForm() {
             const res = await api.post("/api/user/register/", payload);
             localStorage.setItem(ACCESS_TOKEN, res.data.access);
             localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
+            alert(`Verification email sent to ${email}`)
             //navigate("/verify-email");  // Redirect to home after successful registration
         } catch (error) {
             if (error.response) {
@@ -77,8 +78,9 @@ function RegisterForm() {
             <div>
                 <button onClick={() => handleRoleSelection("student")}>Student</button>
                 <button onClick={() => handleRoleSelection("parent")}>Parent</button>
+                <button onClick={() => handleRoleSelection("tutor")}>Tutor</button>
             </div>
-            {roles === 'parent' && (  // Render form only if a parent is selected
+            {roles === 'parent' || roles === 'tutor' && (  // Render form only if a parent is selected
                 <form onSubmit={handleSubmit}>
                     <input
                         className="form-input"

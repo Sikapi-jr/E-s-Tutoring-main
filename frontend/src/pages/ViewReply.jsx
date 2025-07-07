@@ -11,7 +11,7 @@ const ViewReply = () => {
     const [requests, setrequests] = useState([]);
     const [selectedRequestID, setSelectedRequestID] = useState(null);
     const [error, setError] = useState("");
-    const parent = user.username;
+    const parent = user.account_id;
     const navigate = useNavigate();
 
     if (user.roles !== "parent" && user.is_superuser===0){

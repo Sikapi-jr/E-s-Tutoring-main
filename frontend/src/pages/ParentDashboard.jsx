@@ -37,7 +37,7 @@ const ParentDashboard = () => {
 
         const payload = { 
             request: selectedRequestID,  
-            tutor: user.username,
+            tutor: user.account_id,
             message,
             
         };  //Payload to be sent to backend as a POST request

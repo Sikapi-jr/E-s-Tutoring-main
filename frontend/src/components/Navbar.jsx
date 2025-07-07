@@ -19,7 +19,6 @@ const Navbar = () => {
         <li><Link to="/request-reply">Replies</Link></li>
         <li><Link to="/calendar">Calendar</Link></li>
         <li><Link to="/ViewInvoices">View Invoices</Link></li>
-        <li><Link to="/MonthlyHours">View Monthly Hours</Link></li>
         <li><Link to="/chatgpt">Chat</Link></li>
         <li><Link to="/settings">Settings</Link></li>
       </ul>
@@ -40,6 +39,29 @@ const Navbar = () => {
         </ul>
       </nav>
   );}
+
+   if (role === "tutor" && user.is_superuser === false){
+    return (
+      <nav className="navbar">
+        <h2 className="logo">EGS Tutoring</h2>
+        <ul className="nav-links">
+          <li><Link to="/">Home</Link></li>
+          <li><Link to="/profile">Profile</Link></li>
+          <li><Link to="/login">login</Link></li>
+          <li><Link to="/register">Register</Link></li>
+          <li><Link to="/parent-dashboard">Dashboard</Link></li>
+          <li><Link to="/log">Log Hours</Link></li>
+          <li><Link to="/calendar">Calendar</Link></li>
+          <li><Link to="/verify-email">Verify Email</Link></li>
+          <li><Link to="/chatgpt">Chat</Link></li>
+          <li><Link to="/settings">Settings</Link></li>
+
+        </ul>
+    </nav>
+
+  );}
+
+  
 
   if (user.is_superuser === true){
     return (

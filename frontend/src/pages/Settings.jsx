@@ -67,7 +67,7 @@ const Settings = () => {
                     {replyStudents.map((student, index) =>{
                         return (
                         <li key={student.id}>
-                            <strong>Username:</strong> {student.student} <p>  -  </p><strong>Tutor:</strong> {student.tutor}<button onClick={() => handleTutorChange(student)}>{showCancel ? 'Cancel' : 'Change Tutor'} </button><br />
+                            <strong>Username:</strong> {student.student_user} <p>  -  </p><strong>Tutor:</strong> {student.tutor}<button onClick={() => handleTutorChange(student)}>{showCancel ? 'Cancel' : 'Change Tutor'} </button><br />
                             <p>---------------------------------------------</p>
                             <br></br>
                         </li>

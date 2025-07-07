@@ -8,7 +8,8 @@ import "../styles/Form.css";
 function RequestForm() {
     const navigate = useNavigate();
     const { user } = useUser();
-    const parent = user.username;
+    const parentUser = user.username;
+    const parent = user.account_id;
     console.log("Parent from useUser:", parent);
     const [student, setStudent] = useState("");
     const [students, setStudents] = useState([]);
@@ -42,6 +43,7 @@ function RequestForm() {
       }, [parent]);
 
     const handleSubmit = async (e) => {
+        console.log("singe", student.id)
         e.preventDefault();
         setLoading(true);
 
@@ -76,7 +78,9 @@ function RequestForm() {
                 <select
                     className="form-input"
                     value={student}
-                    onChange={(e) => setStudent(e.target.value)}
+                    onChange={(e) => {
+                        setStudent(e.target.value);
+                    }}
                 >
                     <option value="">-- Select Student --</option>
                         {students.map((stud) => (

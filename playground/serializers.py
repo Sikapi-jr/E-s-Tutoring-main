@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import serializers
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
-from .models import Note
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
 from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours
@@ -16,9 +16,12 @@ from playground.models import AiChatSession
 User = get_user_model()  # Move this outside the class definition for better performance
 
 class UserSerializer(serializers.ModelSerializer):
+    parent = serializers.CharField(required=False, allow_blank=True) #Temporarily turn parent into a string for username checking.
+
     class Meta:
         model = User
         fields = [
+            "id",
             "username",
             "password",
             "firstName",
@@ -30,10 +33,12 @@ class UserSerializer(serializers.ModelSerializer):
             "parent",
             "rateOnline",
             "rateInPerson",
+            "stripe_account_id",
             "is_active",
             "is_superuser",
         ]
         extra_kwargs = {
+            "id": {"read_only": True},
             "password": {"write_only": True, "required": True},
             "email": {"required": True},
             "username": {"required": True},
@@ -42,7 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
             "address": {"required": False, "allow_blank": True},
             "city": {"required": False, "allow_blank": True},
             "roles": {"required": False, "allow_blank": True},
-            "parent": {"required": False, "allow_null": True, "allow_blank": True},
+            "parent": {"required": False, "allow_null": True},
             "rateOnline": {"required": False},
             "rateInPerson": {"required": False},
         }
@@ -57,40 +62,68 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Password must be at least 8 characters long")
         return value
     
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("This email is already in use.")
+    def validate(self, attrs):
+        value = attrs.get('email')
+        role = attrs.get('roles')
+        parent_user = attrs.get('parent')
+
+        # Validate email format first
         try:
             validate_email(value)
-        except ValidationError:
+        except DjangoValidationError:
             raise serializers.ValidationError("Verify email format")
-        return value
+
+        # Parent and tutor must have unique email
+        if role in ['parent', 'tutor']:
+            if User.objects.filter(email=value).exists():
+                raise serializers.ValidationError("This email is already in use.")
+
+        # Student must validate parent username and email combo
+        if role == 'student':
+            try:
+                parent_obj_by_username = User.objects.get(username=parent_user)
+                parent_obj_by_email = User.objects.filter(email=value).first()
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid parent username or email")
+
+            if parent_obj_by_username.email != value or parent_obj_by_email.username != parent_user:
+                raise serializers.ValidationError("Parent email and parent username do not match")
+
+        return attrs
     
     def validate_parent(self, value):
         if value in [None, '']:
             return None
-        elif not User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("This Parent does not exist")
+
+        try:
+            if not User.objects.filter(username=value).exists():
+                raise serializers.ValidationError("This Parent does not exist")
+
+            parent_data = User.objects.filter(username=value).values('roles').first()
+            if not parent_data:
+                raise serializers.ValidationError("Unable to retrieve parent information")
+
+            parent_role = parent_data.get('roles')
+            if parent_role != 'parent':
+                raise serializers.ValidationError("Invalid Username: Must be a parent")
+
+        except Exception as e:
+            raise serializers.ValidationError(f"Error validating parent: {str(e)}")
+
         return value
+
 
     def create(self, validated_data):
         parent_username = validated_data.pop('parent', None)
-        parent_user = ''
+        parent_user = None
         if not parent_username in [None, '']:
             try:
                 parent_user = User.objects.get(username=parent_username)
             except User.DoesNotExist:
                 raise serializers.ValidationError({"parent": "Parent user not found."})
-
-        student_user = User.objects.create_user(**validated_data, parent=parent_user)
+        validated_data['parent'] = parent_user
+        student_user = User.objects.create_user(**validated_data)
         return student_user
-
-
-class NoteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Note
-        fields = ["id", "title", "content", "created_at", "author"]
-        extra_kwargs = {"author": {"read_only": True}}
 
 
 class RequestSerializer(serializers.ModelSerializer):
@@ -122,9 +155,10 @@ class RequestReplySerializer(serializers.ModelSerializer):
             return TutorResponse.objects.create(**validated_data)
 
 class AcceptedTutorSerializer(serializers.ModelSerializer):
+    student_username = serializers.CharField(source='student.username', read_only=True)
     class Meta:
         model = AcceptedTutor
-        fields = ['id', 'request','parent', 'student', 'tutor', 'accepted_at', 'status']
+        fields = ['id', 'request','parent', 'student', 'student_username', 'tutor', 'accepted_at', 'status']
         extra_kwargs = {
             "request": {"required": True},
             "tutor": {"required": True},
