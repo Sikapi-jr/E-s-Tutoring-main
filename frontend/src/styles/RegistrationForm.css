@@ -1,0 +1,112 @@
+:root {
+  --color-primary: #192A88;
+  --color-accent:  #FFB31B;
+  --color-dark:    #292929;
+  --color-bg:      #ffffff;
+  --color-text:    #292929;
+}
+
+.form-container {
+  width: 90%;
+  max-width: 700px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background-color: var(--color-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--color-text);
+}
+
+.role-buttons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+}
+
+.role-buttons button {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.role-buttons button:hover,
+.role-buttons button:focus {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.form-section {
+  margin-top: 1rem;
+}
+
+.form-input,
+select {
+  width: 100% !important;
+  margin: 1rem 0;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  color: var(--color-text);
+}
+
+.form-button {
+  display: block;
+  width: 100% !important;
+  margin: 1rem 0 !important;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: var(--color-text) !important;
+  color: var(--color-bg) !important;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.form-button:hover {
+  opacity: 0.9 !important;
+}
+
+.form-button:active {
+  opacity: 0.8 !important;
+}
+
+.form-button.clicked {
+  background-color: var(--color-accent) !important;
+}
+
+.login-prompt {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--color-dark);
+}
+
+.login-link {
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.login-link:hover {
+  color: var(--color-primary);
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background-color: #ffe6e6;
+  border: 1px solid #d33;
+  color: #d33;
+  font-size: 0.9rem;
+}

@@ -4,6 +4,11 @@ import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const { user } = useUser();
+  
+  if (!user){
+    return null;
+  }
+  
   const role = user.roles;
 
   if (role === "parent" && user.is_superuser === false){
