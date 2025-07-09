@@ -9,3 +9,4 @@ egstutorting/settings.py
 # Ignore compiled files
 *.pyc
 __pycache__/
+node_modules
