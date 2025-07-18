@@ -1,10 +1,13 @@
 #URLS from egstutoring/url.py/ are forwarded here
 from django.urls import path, include
 from . import views
-from playground.views import create_chat_session, chat_session, stripe_reauth_token
+from django.conf import settings
+from django.conf.urls.static import static
+from playground.views import create_chat_session, chat_session, stripe_reauth_token, create_event, google_status
 
 urlpatterns = [
     path('user/', views.current_user_view, name='current-user'),
+    path('homeParent/', views.ParentHomeCreateView.as_view(), name='parent-home'),
     path('students/', views.StudentsListView.as_view(), name='students-list'),
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
     path("requests/create/", views.RequestListCreateView.as_view(), name="perform_create"),
@@ -29,5 +32,15 @@ urlpatterns = [
     path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
     path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),
+    path('announcements/create/', views.AnnouncementCreateView.as_view(), name='create-announcement'),
+    path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
+    path('google/oauth/init', views.GoogleOAuthInitView.as_view()),
+    path('google/oauth2callback', views.GoogleOAuthCallbackView.as_view()),
+    path('create-event/', create_event),
+    path('google/status/', google_status),
+
 
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,6 +3,7 @@ Django
 django-cors-headers
 djangorestframework
 djangorestframework-simplejwt
+django-cryptography
 PyJWT
 pytz
 sqlparse
@@ -15,3 +16,4 @@ celery==5.4.0
 httpx==0.27.2
 argon2-cffi
 django-ratelimit
+Pillow

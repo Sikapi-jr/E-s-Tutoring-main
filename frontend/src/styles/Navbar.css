@@ -1,0 +1,60 @@
+/* src/styles/Navbar.css */
+
+/* reset body margins so navbar truly spans edge-to-edge */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+.navbar {
+  width: 100%;
+  min-height: 80px;
+  padding: 0 2rem;
+  background-color: #292929;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.navbar .logo a {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.navbar .nav-links {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar .nav-links li {
+  list-style: none;
+}
+
+.navbar .nav-links a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.navbar .nav-links a:hover {
+  color: #ffffff;
+}
+
+.navbar .nav-links a.active-link {
+  color: #E8E496;   
+}
+
+.nav-links li a.active-link {
+  color: #E8E496;
+}
+
+/* ensure non-active keep normal padding */
+.nav-links li a:not(.active-link) {
+  padding: 0.6rem 1.2rem;
+}

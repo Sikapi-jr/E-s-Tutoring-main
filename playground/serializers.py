@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -125,6 +125,11 @@ class UserSerializer(serializers.ModelSerializer):
         student_user = User.objects.create_user(**validated_data)
         return student_user
 
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcements
+        fields = '__all__'
 
 class RequestSerializer(serializers.ModelSerializer):
     class Meta:

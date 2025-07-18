@@ -1,4 +1,7 @@
 from django.shortcuts import render
+import requests, os
+from django.shortcuts import redirect
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.decorators import api_view
 from django.contrib.auth import get_user_model  # Correct way to import the user model
 from rest_framework import generics, status
@@ -6,22 +9,23 @@ from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours
+from django.http import JsonResponse, HttpResponseRedirect
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import make_aware, now
+from rest_framework.parsers import MultiPartParser, FormParser
 import json
 from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AiChatSessionSerializer
+from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer
 from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer 
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from decimal import Decimal, InvalidOperation
 #Email verification
 from django.contrib.auth.tokens import default_token_generator
@@ -125,7 +129,157 @@ class CreateUserView(generics.CreateAPIView):
             recipient_list=[user.email]
         )
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI") or "http://localhost:8000/api/google/oauth2callback"
+GOOGLE_AUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.readonly"
 
+class GoogleOAuthInitView(APIView):
+    permission_classes=[AllowAny]
+    def get(self, request):
+        raw_token = request.query_params.get("token")
+        if not raw_token:
+            return Response({"error": "Missing token"}, status=403)
+
+        try:
+            validated_token = AccessToken(raw_token)
+            user_id = validated_token["user_id"]
+        except Exception:
+            return Response({"error": "Invalid token"}, status=403)
+
+        request.session["oauth_user_id"] = user_id
+        auth_url = (
+            f"https://accounts.google.com/o/oauth2/v2/auth?"
+            f"client_id={GOOGLE_CLIENT_ID}&"
+            f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+            f"response_type=code&"
+            f"scope={GOOGLE_AUTH_SCOPE}&"
+            f"access_type=offline&prompt=consent"
+        )
+        return HttpResponseRedirect(auth_url)
+
+class GoogleOAuthCallbackView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        code = request.GET.get("code")
+        user_id = request.session.get("oauth_user_id")
+
+        token_data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
+
+        r = requests.post("https://oauth2.googleapis.com/token", data=token_data)
+        if r.status_code != 200:
+            return JsonResponse({"error": "Token exchange failed", "details": r.json()}, status=400)
+
+        tokens = r.json()
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+
+        profile = User.objects.get(id=user_id)
+        profile.google_access_token = access_token
+        profile.google_refresh_token = refresh_token
+        profile.save()
+
+        return redirect("http://localhost:5173/calendarConnect")
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def google_status(request):
+    user_id = request.query_params.get('id', None)
+    profile = User.objects.get(id=user_id)
+    return Response({"connected": bool(profile._encrypted_google_access_token)})
+
+def refresh_google_access_token(user):
+    refresh_token = user._encrypted_google_refresh_token
+    data = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+    }
+    response = requests.post("https://oauth2.googleapis.com/token", data=data)
+    if response.status_code == 200:
+        new_token = response.json()["access_token"]
+        user.google_access_token = new_token
+        user.save()
+        return new_token
+    return None
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_event(request):
+    user_id = request.data.get('id')
+    profile = User.objects.get(id=user_id)
+    access_token = profile._encrypted_google_access_token
+
+    if not access_token:
+        return Response({"error": "Google not connected for this user."}, status=403)
+
+    data = request.data
+
+    try:
+        start = datetime.fromisoformat(f"{data['date']}T{data['startTime']}")
+        end = datetime.fromisoformat(f"{data['date']}T{data['endTime']}")
+    except Exception:
+        return Response({"error": "Invalid date/time."}, status=400)
+
+    recurrence = data.get("recurrence")
+    recurrence_rule = None
+    if recurrence == "weekly":
+        recurrence_rule = "RRULE:FREQ=WEEKLY"
+    elif recurrence == "biweekly":
+        recurrence_rule = "RRULE:FREQ=WEEKLY;INTERVAL=2"
+
+    event = {
+        "summary": data["subject"],
+        "description": data.get("description", ""),
+        "start": {
+            "dateTime": start.isoformat(),
+            "timeZone": "America/Toronto"
+        },
+        "end": {
+            "dateTime": end.isoformat(),
+            "timeZone": "America/Toronto"
+        },
+        "attendees": [{"email": data["parentEmail"]}],
+        "conferenceData": {
+            "createRequest": {
+                "requestId": f"meet-{datetime.now().timestamp()}",
+                "conferenceSolutionKey": {"type": "hangoutsMeet"}
+            }
+        }
+    }
+
+    if recurrence_rule:
+        event["recurrence"] = [recurrence_rule]
+
+    def post_event(token):
+        return requests.post(
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            },
+            params={"conferenceDataVersion": 1},
+            data=json.dumps(event)
+        )
+
+    response = post_event(access_token)
+
+    if response.status_code == 401:
+        new_token = refresh_google_access_token(profile)
+        if new_token:
+            response = post_event(new_token)
+        else:
+            return Response({"error": "Google token expired and refresh failed."}, status=403)
+
+    return Response(response.json())
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def stripe_reauth_token(request, uidb64, token):
@@ -168,6 +322,75 @@ class VerifyEmailView(APIView):
             user.save()
             return Response({"message": "Email verified."}, status=200)
         return Response({"error": "Invalid token"}, status=400)
+
+class ParentHomeCreateView(generics.ListCreateAPIView):
+    permission_classes=[AllowAny]
+
+    def get(self, request):
+        user_id = request.query_params.get('id', None)
+
+        if not user_id:
+            return Response({"error": "Missing 'id' query parameter"}, status=400)
+        try:
+            user = User.objects.get(id=user_id)
+            user_role = user.roles
+            user_email = user.email
+        except User.DoesNotExist:
+            pass
+
+        if not user_role:
+            return Response({"error": "Missing 'role' query parameter"}, status=400)
+        if not user_email:
+            return Response({"error": "Missing 'email' query parameter"}, status=400)
+
+        if user_role == 'parent':
+            resultStripe = stripe.Customer.list(email=user_email)
+            if not resultStripe.data:
+                return Response({"error": "No Stripe customer found with this email"}, status=404)
+
+            customer = resultStripe.data[0]
+            invoices = stripe.Invoice.list(customer=customer.id, limit=55)
+            students = User.objects.filter(roles='student', parent=user_id)
+            hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
+
+            responseStudents = UserSerializer(students, many=True).data
+            responseHours = HoursSerializer(hours, many=True).data
+            #One last one for report
+
+            return Response({
+                "invoices": invoices.data,
+                "students": responseStudents,
+                "hours": responseHours
+            })
+
+class AnnouncementCreateView(APIView):
+    permission_classes=[AllowAny]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        serializer = AnnouncementSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AnnouncementListView(APIView):
+    permission_classes=[AllowAny]
+    def get(self, request):
+        user_id = request.query_params.get('id', None)
+        try:
+            user_role = User.objects.get(id=user_id).roles
+        except User.DoesNotExist:
+            pass
+        if user_role == 'parent':
+            announcements = Announcements.objects.filter(Q(audience='all') | Q(audience='parent') | Q(audience='student')).order_by('-created_at')[:7]
+            serializer = AnnouncementSerializer(announcements, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if user_role == 'Tutor' or user_role == 'admin':
+            announcements = Announcements.objects.filter(Q(audience='all') | Q(audience='tutor')).order_by('-created_at')[:7]
+            serializer = AnnouncementSerializer(announcements, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class RequestListCreateView(generics.ListCreateAPIView):
     queryset = TutoringRequest.objects.all()

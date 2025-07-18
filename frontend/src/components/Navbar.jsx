@@ -1,99 +1,81 @@
+// src/components/Navbar.jsx
 import React from "react";
-import { useUser } from './UserProvider';
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import { useUser } from "./UserProvider";
+import "../styles/Navbar.css";
 
-const Navbar = () => {
+const NAV_ITEMS = {
+  superuser: [
+    { to: "/",              label: "Home" },
+    { to: "/profile",       label: "Profile" },
+    { to: "/request",       label: "Request a Tutor" },
+    { to: "/request-reply", label: "Replies" },
+    { to: "/create-announcement",      label: "announcement" },
+    { to: "/log",           label: "Log Hours" },
+    { to: "/calendar",      label: "Calendar" },
+    { to: "/WeeklyHours",   label: "Weekly Hours" },
+    { to: "/ViewInvoices",  label: "View Invoices" },
+    { to: "/calendarConnect",           label: "CalendarConnect" },
+    { to: "/chatgpt",       label: "Chat" },
+    { to: "/settings",      label: "Settings" },
+  ],
+  parent: [
+    { to: "/",              label: "Home" },
+    { to: "/profile",       label: "Profile" },
+    { to: "/request",       label: "Request a Tutor" },
+    { to: "/request-reply", label: "Replies" },
+    { to: "/calendar",      label: "Calendar" },
+    { to: "/calendarConnect",           label: "CalendarConnect" },
+    { to: "/ViewInvoices",  label: "View Invoices" },
+    { to: "/chatgpt",       label: "Chat" },
+    { to: "/settings",      label: "Settings" },
+  ],
+  tutor: [
+    { to: "/",                label: "Home" },
+    { to: "/profile",         label: "Profile" },
+    { to: "/parent-dashboard",label: "Dashboard" },
+    { to: "/log",             label: "Log Hours" },
+    { to: "/calendar",        label: "Calendar" },
+    { to: "/chatgpt",         label: "Chat" },
+    { to: "/calendarConnect",           label: "CalendarConnect" },
+    { to: "/settings",        label: "Settings" },
+  ],
+  student: [
+    { to: "/",         label: "Home" },
+    { to: "/profile",  label: "Profile" },
+    { to: "/calendar", label: "Calendar" },
+    { to: "/calendarConnect",           label: "CalendarConnect" },
+    { to: "/chatgpt",  label: "Chat" },
+    { to: "/settings", label: "Settings" },
+  ],
+};
+
+export default function Navbar() {
   const { user } = useUser();
-  
-  if (!user){
-    return null;
-  }
-  
-  const role = user.roles;
+  if (!user) return null;
 
-  if (role === "parent" && user.is_superuser === false){
-    return (
+  const roleKey = user.is_superuser ? "superuser" : user.roles;
+  const links   = NAV_ITEMS[roleKey] || [];
+
+  return (
     <nav className="navbar">
-      <h2 className="logo">EGS Tutoring</h2>
+      <NavLink to="/" className="logo">
+        EGS Tutoring
+      </NavLink>
       <ul className="nav-links">
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/profile">Profile</Link></li>
-        <li><Link to="/login">login</Link></li>
-        <li><Link to="/register">Register</Link></li>
-        <li><Link to="/request">Request a tutor</Link></li>
-        <li><Link to="/request-reply">Replies</Link></li>
-        <li><Link to="/calendar">Calendar</Link></li>
-        <li><Link to="/ViewInvoices">View Invoices</Link></li>
-        <li><Link to="/chatgpt">Chat</Link></li>
-        <li><Link to="/settings">Settings</Link></li>
+        {links.map(({ to, label }) => (
+          <li key={to}>
+            <NavLink
+              to={to}
+              className={({ isActive }) =>
+                isActive ? "active-link" : undefined
+              }
+            >
+              {label}
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </nav>
   );
-  }
-
-  if (role === "student" && user.is_superuser === false){
-    return (
-      <nav className="navbar">
-        <h2 className="logo">EGS Tutoring</h2>
-        <ul className="nav-links">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/calendar">Calendar</Link></li>
-          <li><Link to="/chatgpt">Chat</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-        </ul>
-      </nav>
-  );}
-
-   if (role === "tutor" && user.is_superuser === false){
-    return (
-      <nav className="navbar">
-        <h2 className="logo">EGS Tutoring</h2>
-        <ul className="nav-links">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/login">login</Link></li>
-          <li><Link to="/register">Register</Link></li>
-          <li><Link to="/parent-dashboard">Dashboard</Link></li>
-          <li><Link to="/log">Log Hours</Link></li>
-          <li><Link to="/calendar">Calendar</Link></li>
-          <li><Link to="/verify-email">Verify Email</Link></li>
-          <li><Link to="/chatgpt">Chat</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-
-        </ul>
-    </nav>
-
-  );}
-
-  
-
-  if (user.is_superuser === true){
-    return (
-      <nav className="navbar">
-        <h2 className="logo">EGS Tutoring</h2>
-        <ul className="nav-links">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/login">login</Link></li>
-          <li><Link to="/register">Register</Link></li>
-          <li><Link to="/parent-dashboard">Dashboard</Link></li>
-          <li><Link to="/request">Request a tutor</Link></li>
-          <li><Link to="/request-reply">Replies</Link></li>
-          <li><Link to="/log">Log Hours</Link></li>
-          <li><Link to="/calendar">Calendar</Link></li>
-          <li><Link to="/WeeklyHours">Weekly Hours</Link></li>
-          <li><Link to="/verify-email">Verify Email</Link></li>
-          <li><Link to="/ViewInvoices">View Invoices</Link></li>
-          <li><Link to="/chatgpt">Chat</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-
-        </ul>
-    </nav>
-
-  );}
-
-
-};
-
-export default Navbar;
+}

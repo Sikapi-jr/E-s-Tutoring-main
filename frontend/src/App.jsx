@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ParentDashboard from "./pages/ParentDashboard";
 import ViewReply from "./pages/ViewReply";
 import Profile from "./components/Profile";
+import Announcement from "./pages/CreateAnnouncement";
 import Chatgpt from "./components/Chatgpt";
 import LogHours from "./pages/LogHours";
 import Settings from "./pages/Settings";
@@ -22,14 +23,15 @@ import PasswordReset from "./pages/PasswordReset";
 import VerifyEmail from "./components/VerifyEmail";
 import CalendarApp from "./components/CalendarApp";
 import Navbar from "./components/Navbar";
-import UnauthNavbar from "./components/UnauthNavbar";  // <-- import
+import UnauthNavbar from "./components/UnauthNavBar";  
 import StripeReauth from "./pages/stripeComplete";
+import CalendarConnect from "./pages/CalendarConnect";
 import { UserProvider } from "./components/UserProvider";
 
 import "./styles/App.css";
 import "./styles/UnauthNavbar.css";
+import "./styles/Navbar.css";
 import "./components/CalendarApp.css";
-
 
 function Logout() {
   localStorage.clear();
@@ -54,121 +56,141 @@ function AppRoutes() {
   );
 
   return (
-    <>
+    <div className="page-wrapper">
+      {/* Top navbar */}
       {isUnauthenticatedRoute ? <UnauthNavbar /> : <Navbar />}
 
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/parent-dashboard"
-          element={
-            <ProtectedRoute>
-              <ParentDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/request"
-          element={
-            <ProtectedRoute>
-              <Request />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/log"
-          element={
-            <ProtectedRoute>
-              <LogHours />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/request-reply"
-          element={
-            <ProtectedRoute>
-              <ViewReply />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calendar"
-          element={
-            <ProtectedRoute>
-              <CalendarApp />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/weeklyhours"
-          element={
-            <ProtectedRoute>
-              <SendWeekly />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/monthlyhours"
-          element={
-            <ProtectedRoute>
-              <SendMonthly />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/viewinvoices"
-          element={
-            <ProtectedRoute>
-              <ViewInvoices />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chatgpt"
-          element={
-            <ProtectedRoute>
-              <Chatgpt />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+      {/* Main route content */}
+      <main className="main-content">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/parent-dashboard"
+            element={
+              <ProtectedRoute>
+                <ParentDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/request"
+            element={
+              <ProtectedRoute>
+                <Request />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-announcement"
+            element={
+              <ProtectedRoute>
+                <Announcement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/log"
+            element={
+              <ProtectedRoute>
+                <LogHours />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/request-reply"
+            element={
+              <ProtectedRoute>
+                <ViewReply />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarApp />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/weeklyhours"
+            element={
+              <ProtectedRoute>
+                <SendWeekly />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/monthlyhours"
+            element={
+              <ProtectedRoute>
+                <SendMonthly />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/viewinvoices"
+            element={
+              <ProtectedRoute>
+                <ViewInvoices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendarConnect"
+            element={
+              <ProtectedRoute>
+                <CalendarConnect />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chatgpt"
+            element={
+              <ProtectedRoute>
+                <Chatgpt />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/logout" element={<Logout />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/password-reset" element={<PasswordReset />} />
+          <Route
+            path="/password-reset-confirm/:uid/:token"
+            element={<PasswordResetConfirm />}
+          />
+          <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
+          <Route path="/stripe-reauth/:uid/:token" element={<StripeReauth />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
 
-        {/* Unauthenticated/Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/password-reset" element={<PasswordReset />} />
-        <Route
-          path="/password-reset-confirm/:uid/:token"
-          element={<PasswordResetConfirm />}
-        />
-        <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
-        <Route path="/stripe-reauth/:uid/:token" element={<StripeReauth />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </>
+    </div>
   );
 }
 

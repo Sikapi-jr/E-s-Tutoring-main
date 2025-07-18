@@ -1,11 +1,13 @@
+from django.db import models
 from django.conf import settings
 import os
-from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
-from openai import OpenAI
-from playground.tasks import handle_ai_request_job
 from django.forms.models import model_to_dict
+from cryptography.fernet import Fernet
+
+print("LOADING MODELS.PY...")
+
 
 class User(AbstractUser):
     CITY_CHOICES = [
@@ -89,10 +91,63 @@ class User(AbstractUser):
     last_login = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
 
+    _encrypted_google_access_token = models.TextField(blank=True, null=True)
+    _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
+
+    def _get_fernet(self):
+        return Fernet(settings.FERNET_SECRET)
+
+    @property
+    def access_token(self):
+        if self._encrypted_access_token:
+            return self._get_fernet().decrypt(self._encrypted_access_token.encode()).decode()
+        return None
+
+    @access_token.setter
+    def access_token(self, value):
+        if value:
+            self._encrypted_access_token = self._get_fernet().encrypt(value.encode()).decode()
+
+    @property
+    def refresh_token(self):
+        if self._encrypted_refresh_token:
+            return self._get_fernet().decrypt(self._encrypted_refresh_token.encode()).decode()
+        return None
+
+    @refresh_token.setter
+    def refresh_token(self, value):
+        if value:
+            self._encrypted_refresh_token = self._get_fernet().encrypt(value.encode()).decode()
+
     def __str__(self):
-        return self.username
+        return self.id
 
 
+class Announcements(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    description = models.TextField(blank=True)
+
+    address = models.CharField(max_length=255, blank=True)
+    start_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True)
+
+    image = models.ImageField(upload_to='announcements/', blank=True, null=True)
+    link = models.URLField(blank=True)
+
+    audience_choices = [
+        ('all', 'Everyone'),
+        ('parent', 'Parents'),
+        ('student', 'Students'),
+        ('tutor', 'Tutors'),
+    ]
+    audience = models.CharField(max_length=20, choices=audience_choices, default='all')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name or f"Announcement #{self.id}"
+        
 class Session(models.Model):
     STATUS_CHOICES = [
         ('completed', 'Completed'),
@@ -352,9 +407,9 @@ class AiChatSession(models.Model):
             )
         else:
             return
-        
-class AiRequest(models.Model):
 
+       
+class AiRequest(models.Model):
     PENDING = 'pending'
     RUNNING = 'running'
     COMPLETE = 'complete'
@@ -379,10 +434,12 @@ class AiRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def _queue_job(self):
+        from playground.tasks import handle_ai_request_job
         print("Queueing Job Sikapi...")
         handle_ai_request_job.delay(self.id)
 
     def handle(self):
+        from openai import OpenAI
         print("Starting handle...")
 
         if self.status in [self.RUNNING, self.COMPLETE, self.FAILED]:
@@ -434,10 +491,12 @@ class AiRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def _queue_job(self):
+        from playground.tasks import handle_ai_request_job
         print("Queueing Job Sikapi...")
         handle_ai_request_job.delay(self.id)
 
     def handle(self):
+        from openai import OpenAI
         print("Starting handle...")
 
         if self.status in [self.RUNNING, self.COMPLETE, self.FAILED]:

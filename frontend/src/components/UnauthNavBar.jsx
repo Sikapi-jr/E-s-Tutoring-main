@@ -1,23 +1,35 @@
-import { Link } from "react-router-dom";
+// src/components/UnauthNavbar.jsx
+import { NavLink } from "react-router-dom";
 import "../styles/UnauthNavbar.css";
 
 export default function UnauthNavbar() {
   return (
     <nav className="unauth-nav">
       <div className="brand">
-        <Link to="/">Home</Link>
+        <NavLink to="/" className="nav-link">
+          Home
+        </NavLink>
       </div>
       <ul className="nav-links">
         <li>
-          <Link to="/faq">FAQ</Link>
+          <NavLink to="/faq" className="nav-link">
+            FAQ
+          </NavLink>
         </li>
         <li>
-          <Link to="/login">Login</Link>
+          <NavLink to="/login" className="nav-link">
+            Login
+          </NavLink>
         </li>
         <li>
-          <Link className="btn-register" to="/register">
+          <NavLink
+            to="/register"
+            className={({ isActive }) =>
+              `btn-register${isActive ? " active-link" : ""}`
+            }
+          >
             Register
-          </Link>
+          </NavLink>
         </li>
       </ul>
     </nav>

@@ -110,3 +110,29 @@ select {
   color: #d33;
   font-size: 0.9rem;
 }
+
+/* 1. keyframes */
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeInContent {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 2. fade in container */
+.form-container {
+  opacity: 0;
+  animation: fadeInBg 0.3s ease-out forwards;
+}
+
+/* 3. fade in the main content blocks slightly after */
+.form-container .role-buttons,
+.form-container .form-section,
+.form-container .form-button,
+.form-container .login-prompt {
+  opacity: 0;
+  animation: fadeInContent 0.3s ease-out 0.2s forwards;
+}
+
