@@ -1,320 +1,271 @@
-import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { useUser } from '../components/UserProvider';
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import api from "../api";
+import { useUser } from "../components/UserProvider";
+import "../styles/EventsFilters.css";
 
-const CalendarApp = () => {
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const monthsOfYear = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ]
+/**
+ * Small multiselect dropdown for statuses
+ */
+function StatusMulti({ value, onChange }) {
+  const [open, setOpen] = useState(false);
 
-  const currentDate = new Date()
-
-  //
-  const { user } = useUser('');
-  const parent = user.username;
-  const email = user.email;
-  const [eventId, setEventId] = useState("");
-  const [message, setMessage] = useState("");
-  const [showReplyBox, setShowReplyBox] = useState(false);
-  //
-
-  const eventRefs = useRef({});
-  const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth())
-  const [currentYear, setCurrentYear] = useState(currentDate.getFullYear())
-  const [selectedDate, setSelectedDate] = useState(currentDate)
-  const [showEventPopup, setShowEventPopup] = useState(false)
-  const [events, setEvents] = useState([])
-  const [eventTime, setEventTime] = useState({ hours: '00', minutes: '00' })
-  const [eventText, setEventText] = useState('')
-  const [editingEvent, setEditingEvent] = useState(null)
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
-  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay()
-
-  const prevMonth = () => {
-    setCurrentMonth((prevMonth) => (prevMonth === 0 ? 11 : prevMonth - 1))
-    setCurrentYear((prevYear) => (currentMonth === 0 ? prevYear - 1 : prevYear))
-  }
-
-  const nextMonth = () => {
-    setCurrentMonth((prevMonth) => (prevMonth === 11 ? 0 : prevMonth + 1))
-    setCurrentYear((prevYear) => (currentMonth === 11 ? prevYear + 1 : prevYear))
-  }
-
-  
-  useEffect(() => {
-    const fetchRequests = async () => {
-        try {
-            const response = await axios.get(`http://127.0.0.1:8000/api/parentCalendar/?parent=${parent}`);
-            //const response = await axios.get(`http://127.0.0.1:8000/api/weeklyHours`);
-            const eventsWithParsedDates = response.data.map(event => ({
-              ...event, 
-              date: new Date(event.date),
-            }));
-
-                  // Create a ref for each event
-            eventsWithParsedDates.forEach(event => {
-              const dateKey = event.date.toDateString(); 
-              if (!eventRefs.current[dateKey]) {
-                eventRefs.current[dateKey] = React.createRef();
-              }
-            });
-
-            setEvents(eventsWithParsedDates);
-            
-        }
-        catch (error) {
-            console.error("Error fetching user requests:", error);
-          }
-    }
-    if (parent) {
-        fetchRequests();
-      }
-
-}, [parent]);
-
-  const handleDayClick = (day) => {
-    const clickedDate = new Date(currentYear, currentMonth, day)
-    const today = new Date()
-
-    if (clickedDate <= today || isSameDay(clickedDate, today)) {
-      setSelectedDate(clickedDate)
-      const dateKey = clickedDate.toDateString();
-      const ref = eventRefs.current[dateKey];
-
-      if (ref && ref.current) {
-        ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-
-      //setShowEventPopup(true)
-      //setEventTime({ hours: '00', minutes: '00' })
-      //setEventText('')
-      //setEditingEvent(null)
-    }
-  }
-
-  const isSameDay = (date1, date2) => {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    )
-  }
-
-  const isEventDay = (day) => {
-    return events.some(event => {
-      const eventDate = new Date(event.date);
-      return (
-        eventDate.getFullYear() === currentYear &&
-        eventDate.getMonth() === currentMonth &&
-        eventDate.getDate() === day
-      );
-    });
+  const toggle = (name) => {
+    onChange(
+      value.includes(name)
+        ? value.filter((v) => v !== name)
+        : [...value, name]
+    );
   };
 
-  const handleEventSubmit = () => {
-    const newEvent = {
-      id: editingEvent ? editingEvent.id : Date.now(),
-      date: selectedDate,
-      time: `${eventTime.hours.padStart(2, '0')}:${eventTime.minutes.padStart(2, '0')}`,
-      text: eventText,
-    }
-
-    let updatedEvents = [...events]
-
-    if (editingEvent) {
-      updatedEvents = updatedEvents.map((event) =>
-        event.id === editingEvent.id ? newEvent : event,
-      )
-    } else {
-      updatedEvents.push(newEvent)
-    }
-
-    updatedEvents.sort((a, b) => new Date(a.date) - new Date(b.date))
-
-    setEvents(updatedEvents)
-    setEventTime({ hours: '00', minutes: '00' })
-    setEventText('')
-    setShowEventPopup(false)
-    setEditingEvent(null)
-  }
-
-  const handleEditEvent = (event) => {
-    setSelectedDate(new Date(event.date))
-    setEventTime({
-      hours: event.time.split(':')[0],
-      minutes: event.time.split(':')[1],
-    })
-    setEventText(event.text)
-    setEditingEvent(event)
-    setShowEventPopup(true)
-  }
-
-  const handleDeleteEvent = async (eventId) => {
-    //const updatedEvents = events.filter((event) => event.id !== eventId)
-    //setEvents(updatedEvents)
-
-    setShowReplyBox(true);
-    setEventId(eventId);
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Starting submit");
-    const payload = {
-      eventId,
-      message,
-      email
-    }
-    try{
-      const response = await axios.post(`http://127.0.0.1:8000/api/dispute/`, payload);
-    }
-    catch (error){
-      console.error("Could not send dispute");
-    }
-    
-
-  }
-
-  const handleTimeChange = (e) => {
-    const { name, value } = e.target
-
-    setEventTime((prevTime) => ({ ...prevTime, [name]: value.padStart(2, '0') }))
-  }
-
   return (
-    
-    <div className="calendar-app">
-      <div className="calendar">
-        <h1 className="heading">Calendar</h1>
-        <div className="navigate-date">
-          <h2 className="month">{monthsOfYear[currentMonth]},</h2>
-          <h2 className="year">{currentYear}</h2>
-          <div className="buttons">
-            <i className="bx bx-chevron-left" onClick={prevMonth}></i>
-            <i className="bx bx-chevron-right" onClick={nextMonth}></i>
-          </div>
-        </div>
-        <div className="weekdays">
-          {daysOfWeek.map((day) => (
-            <span key={day}>{day}</span>
-          ))}
-        </div>
-        <div className="days">
-          {[...Array(firstDayOfMonth).keys()].map((_, index) => (
-            <span key={`empty-${index}`} />
-          ))}
-          {[...Array(daysInMonth).keys()].map((day) => (
-            <span
-              key={day + 1}
-              className={`day-cell
-                ${day + 1 === currentDate.getDate() &&
-                 currentMonth === currentDate.getMonth() &&
-                 currentYear === currentDate.getFullYear() ? 'current-day' : ''}
-                ${isEventDay(day + 1) ? 'has-event' : ''}
-              `}
-              onClick={() => handleDayClick(day + 1)}
-            >
-              {day + 1}
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className="events">
-        {showEventPopup && (
-          <div className="event-popup">
-            <div className="time-input">
-              <div className="event-popup-time">Time</div>
-              <input
-                type="number"
-                name="hours"
-                min={0}
-                max={24}
-                className="hours"
-                value={eventTime.hours}
-                onChange={handleTimeChange}
-              />
-              <input
-                type="number"
-                name="minutes"
-                min={0}
-                max={60}
-                className="minutes"
-                value={eventTime.minutes}
-                onChange={handleTimeChange}
-              />
-            </div>
-            <textarea
-              placeholder="Enter Event Text (Maximum 60 Characters)"
-              value={eventText}
-              onChange={(e) => {
-                if (e.target.value.length <= 60) {
-                  setEventText(e.target.value)
-                }
-              }}
-            ></textarea>
-            <button className="event-popup-btn" onClick={handleEventSubmit}>
-              {editingEvent ? 'Update Event' : 'Add Event'}
-            </button>
-            <button className="close-event-popup" onClick={() => setShowEventPopup(false)}>
-              <i className="bx bx-x"></i>
-            </button>
-          </div>
-        )}
-        {events.map((event, index) => (
-          <div className="event" key={index}>
-            <div className="event-date-wrapper">
-              <div 
-                className="event-date"
-                key={index}
-                ref={eventRefs.current[event.date.toDateString()]}
-                >{`${
-                monthsOfYear[event.date.getMonth()]
-              } ${event.date.getDate() + 1}, ${event.date.getFullYear()}`}</div>
-              <div className="event-time">{event.startTime}</div>
-              <div className="event-time">{event.endTime}</div>
-              <div className="event-time">{event.totalTime}</div>
-            </div>
-            <div className="event-text">{event.notes}</div>
-            <div className="event-buttons">
-              <i className="bx bxs-edit-alt" onClick={() => handleEditEvent(event)}>EDIT</i>
-              <i className="bx bxs-message-alt-x" onClick={() => handleDeleteEvent(event.id)}>DISPUTE</i>
-              {eventId === event.id && showReplyBox ? 'Cancel' : 'Reply'}
-            </div>
-            {eventId === event.id && showReplyBox && (
-            <form onSubmit={handleSubmit}>
-                <input
-                    className="form-input"
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Think we made a mistake? Tell us!"
-                    required
-                />
-                
-                <button type="submit">Send Message</button>
-                <br></br>
+    <div className="msel" onBlur={(e)=> !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}>
+      <button
+        type="button"
+        className="msel__btn"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {value.length ? value.join(", ") : "All statuses"} ▾
+      </button>
 
-            </form>
-        )}
-          </div>
-        ))}
-      </div>
+      {open && (
+        <div className="msel__menu">
+          <label className="msel__row">
+            <input
+              type="checkbox"
+              checked={value.includes("default")}
+              onChange={() => toggle("default")}
+            />
+            Default
+          </label>
+          <label className="msel__row">
+            <input
+              type="checkbox"
+              checked={value.includes("declined")}
+              onChange={() => toggle("declined")}
+            />
+            Declined
+          </label>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default CalendarApp
+export default function EventsPage() {
+  const { user } = useUser();
+  const { t } = useTranslation();
+
+  const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [err, setErr]           = useState(null);
+
+  // filters
+  const [filters, setFilters] = useState({
+    q: "",
+    statuses: [],          // [] => show all, otherwise ["default","declined"]
+    cantAttendOnly: false,
+    start: "",
+    end: ""
+  });
+
+  /** fetch once */
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const resp = await api.get(
+          `/api/google/events/all?id=${user.account_id}`
+        );
+        const items = Array.isArray(resp.data?.items) ? resp.data.items : [];
+        setAllEvents(items);
+      } catch (e) {
+        console.error(e);
+        setErr("Failed to load events");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  /** Helper to find my attendee status */
+  const getMyStatus = useCallback(
+    (ev) => {
+      const me = user?.email?.toLowerCase();
+      if (!me) return "needsAction";
+      const att = (ev.attendees || []).find(
+        (a) => a.email?.toLowerCase() === me
+      );
+      return att?.responseStatus || "needsAction";
+    },
+    [user]
+  );
+
+  const isDefaultStatus = (googleStatus) => googleStatus !== "declined";
+
+  /** client filtering */
+  const filteredEvents = useMemo(() => {
+    return allEvents.filter((ev) => {
+      const text = `${ev.summary || ""} ${ev.description || ""}`.toLowerCase();
+      if (filters.q && !text.includes(filters.q.toLowerCase())) return false;
+
+      const sDate = new Date(ev.start?.dateTime || ev.start?.date);
+      if (filters.start && sDate < new Date(filters.start)) return false;
+      if (filters.end && sDate > new Date(filters.end)) return false;
+
+      if (filters.cantAttendOnly) {
+        const cant =
+          ev.extendedProperties?.private?.cant_attend === "true" ||
+          getMyStatus(ev) === "declined";
+        if (!cant) return false;
+      }
+
+      if (filters.statuses.length) {
+        const tag = isDefaultStatus(getMyStatus(ev)) ? "default" : "declined";
+        if (!filters.statuses.includes(tag)) return false;
+      }
+
+      return true;
+    });
+  }, [allEvents, filters, getMyStatus]);
+
+  /** mark can't attend */
+  const markCantAttend = async (eventId) => {
+    try {
+      await api.post(
+        `/api/google/update-rsvp/?id=${eventId}&action=decline`
+      );
+      // update in place
+      setAllEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId
+            ? {
+                ...e,
+                attendees: (e.attendees || []).map((a) =>
+                  a.email?.toLowerCase() === user.email.toLowerCase()
+                    ? { ...a, responseStatus: "declined" }
+                    : a
+                ),
+                extendedProperties: {
+                  ...(e.extendedProperties || {}),
+                  private: {
+                    ...(e.extendedProperties?.private || {}),
+                    cant_attend: "true",
+                  },
+                },
+              }
+            : e
+        )
+      );
+    } catch (e) {
+      console.error(e);
+      alert("Could not update RSVP.");
+    }
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="ev-spinner-wrap">
+        <div className="ev-spinner" />
+        <p>Loading…</p>
+      </div>
+    );
+  }
+  if (err) return <p style={{ padding: "2rem" }}>{err}</p>;
+
+  return (
+    <div className="events-page">
+      <h2 className="ev-title">Scheduled EGS Tutoring Events</h2>
+
+      {/* FILTER BAR */}
+      <form
+        className="ev-filter-bar"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <input
+          className="ev-input"
+          type="text"
+          placeholder="Search title/description…"
+          value={filters.q}
+          onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+        />
+
+        <StatusMulti
+          value={filters.statuses}
+          onChange={(statuses) => setFilters((f) => ({ ...f, statuses }))}
+        />
+
+        <label className="inline-check">
+          <input
+            type="checkbox"
+            checked={filters.cantAttendOnly}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, cantAttendOnly: e.target.checked }))
+            }
+          />
+          Can’t attend only
+        </label>
+
+        <input
+          className="ev-input"
+          type="date"
+          value={filters.start}
+          onChange={(e) => setFilters((f) => ({ ...f, start: e.target.value }))}
+        />
+        <input
+          className="ev-input"
+          type="date"
+          value={filters.end}
+          onChange={(e) => setFilters((f) => ({ ...f, end: e.target.value }))}
+        />
+      </form>
+
+      {/* TABLE */}
+      <div className="table-wrapper">
+        {filteredEvents.length ? (
+          <table className="events-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Description</th>
+                <th>Can’t attend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEvents.map((ev) => {
+                const s = new Date(ev.start?.dateTime || ev.start?.date);
+                const e = new Date(ev.end?.dateTime || ev.end?.date);
+                return (
+                  <tr key={ev.id}>
+                    <td>{ev.summary || "No Title"}</td>
+                    <td>{s.toLocaleDateString()}</td>
+                    <td>{s.toLocaleTimeString()}</td>
+                    <td>{e.toLocaleTimeString()}</td>
+                    <td>{ev.description || ""}</td>
+                    <td>
+                      <button
+                        onClick={() => markCantAttend(ev.id)}
+                        className="cant-btn"
+                      >
+                        Can’t attend
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ textAlign: "center", color: "#888" }}>
+            No events match your filters.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

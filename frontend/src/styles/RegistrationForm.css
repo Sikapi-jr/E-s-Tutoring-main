@@ -136,3 +136,7 @@ select {
   animation: fadeInContent 0.3s ease-out 0.2s forwards;
 }
 
+body,
+h1, h2, h3 {
+  font-family: "Google Sans Text", "Product Sans", sans-serif;
+}

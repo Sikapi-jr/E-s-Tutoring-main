@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../api";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 import "../styles/Form.css";
 
-function LogHours() {
+const LogHours = memo(() => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useUser();
     //////////////////////////////////////////
-    const tutor = user.username;
+    const tutor_id = user.account_id;
     const [student, setStudent] = useState("");
         //WIll add logic to find parent in view/serializer
     const [subject, setSubject] = useState("");
@@ -23,7 +24,7 @@ function LogHours() {
     //////////////////////////////////////////
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(""); // Added missing state for error
+    const [error, setError] = useState("");
     const [users, setUsers] = useState([]); // Store user list
 
     if (user.roles !== "tutor" && user.is_superuser===0){
@@ -35,50 +36,40 @@ function LogHours() {
     useEffect(() => {
         const fetchStudents = async () => {
           try {
-            // Replace the URL with your actual endpoint that returns the student list
-            const response = await axios.get(`http://127.0.0.1:8000/api/TutorStudents/?tutor=${tutor}`);
+            const response = await api.get(`/api/TutorStudents/?tutor=${tutor_id}`);
             setStudents(response.data);
           } catch (error) {
             console.error("Error fetching students:", error);
           }
         };
     
-        if (tutor) {
+        if (tutor_id) {
           fetchStudents();
         }
-      }, [tutor]);
+      }, [tutor_id]);
 
-    const getTotalTime = (startTime, endTime) => {
-        console.log("IM in")
+    const getTotalTime = useCallback((startTime, endTime) => {
+        if (!startTime || !endTime) return 0;
+        
         const [startHours, startMinutes] = startTime.split(":").map(Number);
         const [endHours, endMinutes] = endTime.split(":").map(Number);
 
         const start = startHours * 60 + startMinutes;
         const end = endHours * 60 + endMinutes;
-      
         const diffMinutes = end - start;
-      
-        if (diffMinutes < 0) return 0; 
-        console.log("start: ", start)
-        console.log("end: ", end)
-        console.log("Difference: ", diffMinutes)
-
-      
-        return ((diffMinutes / 60).toFixed(2)); 
-
-    };
+        
+        return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
+    }, []);
 
     const handleSubmit = async (e) => {
         const decimalHours = getTotalTime(startTime, endTime)
-        console.log("Decimal Hours: ", decimalHours)
         e.preventDefault();
-        console.log("Student: ", student)
 
 
         try {
             const payload = {
                 student,
-                tutor,
+                tutor: tutor_id,
                 date,
                 startTime : startTime,
                 endTime : endTime,
@@ -87,15 +78,14 @@ function LogHours() {
                 subject,
                 notes,
             };
-            const res = await axios.post("http://127.0.0.1:8000/api/log/", payload);
-            console.log("Hours logged successfully:", res.data);
+            const res = await api.post("/api/log/", payload);
         } catch (error) {
             if (error.response) {
-                setError(`Server responded with: ${error.response.status} - ${error.response.data.message}`);
+                setError(t('errors.serverError'));
             } else if (error.request) {
-                setError("No response from server. Please check your network.");
+                setError(t('errors.networkError'));
             } else {
-                setError("Error logging the hours: " + error.message);
+                setError(t('logHours.errorLogging'));
             }
         } finally {
             setLoading(false);
@@ -103,18 +93,18 @@ function LogHours() {
     };
 
     return (
-        <div className="form-container">
-            <h1>Finished a session? Log your hours</h1>
+        <div className="form-container" style={{ marginBottom: "2rem" }}>
+            <h1>{t('logHours.sessionTitle')}</h1>
             <form onSubmit={handleSubmit}>
                 <select
                     className="form-input"
                     value={student}
                     onChange={(e) => setStudent(e.target.value)}
                 >
-                    <option value="">-- Select Student --</option>
+                    <option value="">{t('logHours.selectStudent')}</option>
                         {students.map((stud) => (
                             <option key={stud.id} value={stud.username}>
-                                {stud.student} {/* or any other student display name */}
+                                {stud.student}
                             </option>
                 ))}
                 </select>
@@ -125,14 +115,14 @@ function LogHours() {
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Subject"
+                    placeholder={t('logHours.subject')}
                 />
 
                 {/* Grade Selection */}
                 <select id="form-input" name="selectedLocation" onChange={(e) => setLocation(e.target.value)}>
-                    <option value="">Select Location</option>
-                    <option value="Online">Online</option>
-                    <option value="In-Person">In-Person</option>
+                    <option value="">{t('logHours.selectLocation')}</option>
+                    <option value="Online">{t('logHours.online')}</option>
+                    <option value="In-Person">{t('logHours.inPerson')}</option>
                 </select>
 
                 <input
@@ -140,7 +130,7 @@ function LogHours() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    placeholder="Date"
+                    placeholder={t('common.date')}
                 />
 
                 {/* Description Input */}
@@ -149,7 +139,7 @@ function LogHours() {
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    placeholder="Start Time"
+                    placeholder={t('logHours.startTime')}
                 />
 
                 <input
@@ -157,7 +147,7 @@ function LogHours() {
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    placeholder="End Time"
+                    placeholder={t('logHours.endTime')}
                 />
 
                 <input
@@ -165,12 +155,12 @@ function LogHours() {
                     type="text"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Describe how the session went, what did you work on? (IMPORTANT)"
+                    placeholder={t('logHours.sessionDescription')}
                 />
 
                 {/* Submit Button */}
                 <button className="form-button" type="submit" disabled={loading}>
-                    LOG HOURS
+                    {loading ? t('common.loading') : t('logHours.logHoursButton')}
                 </button>
             </form>
 
@@ -178,6 +168,8 @@ function LogHours() {
             {error && <p className="error-message">{error}</p>}
         </div>
     );
-}
+});
+
+LogHours.displayName = 'LogHours';
 
 export default LogHours;

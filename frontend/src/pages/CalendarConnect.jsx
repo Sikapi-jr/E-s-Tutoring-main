@@ -1,15 +1,23 @@
 // src/components/CalendarConnect.jsx
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
-import { useUser } from '../components/UserProvider';
+import { useUser } from "../components/UserProvider";
 
 export default function CalendarConnect() {
+  const { t } = useTranslation();
   const { user } = useUser();
+  const tutor_id = user.account_id;
+
+  /* ─────────────────────────  local state ───────────────────────── */
+  const [students, setStudents] = useState([]);
+  const [parentEmail, setParentEmail] = useState("");       // hidden option value
   const [isConnected, setIsConnected] = useState(false);
+
   const [formData, setFormData] = useState({
     subject: "",
-    description: "",
+    description: "",      // auto‑filled with student username
     date: "",
     startTime: "",
     endTime: "",
@@ -19,28 +27,59 @@ export default function CalendarConnect() {
 
   const token = localStorage.getItem(ACCESS_TOKEN);
 
+  /* ───────────────────────  initial data fetch ──────────────────── */
   useEffect(() => {
     if (!token) return;
 
-    api.get(`http://localhost:8000/api/google/status/?id=${user.account_id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setIsConnected(res.data.connected))
-    .catch(err => {
-      console.error("Google status check failed:", err);
-      setIsConnected(false);
-    });
-  }, [token]);
+    // 1) check Google Calendar status
+    api
+      .get(
+        `/api/google/status/?id=${user.account_id}`
+      )
+      .then(res => setIsConnected(res.data.connected))
+      .catch(err => {
+        console.error("Google status check failed:", err);
+        setIsConnected(false);
+      });
 
-    const handleConnect = () => {
-        window.location.href = `http://localhost:8000/api/google/oauth/init?token=${token}`;
-    };
+    // 2) fetch tutor’s students
+    (async () => {
+      try {
+        const res = await api.get(
+          `/api/TutorStudents/?tutor=${tutor_id}`
+        );
+        setStudents(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      }
+    })();
+  }, [token, tutor_id, user.account_id]);
 
-  const handleChange = (e) => {
+  /* ─────────────────────────  helpers ───────────────────────────── */
+  const handleConnect = () => {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    window.location.href = `${API_BASE_URL}/api/google/oauth/init?token=${token}`;
+  };
+
+  const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  // grab both hidden email and visible username
+  const handleStudentSelect = e => {
+    const email = e.target.value;
+    const username =
+      e.target.options[e.target.selectedIndex].dataset.username;
+
+    setParentEmail(email);
+    setFormData(prev => ({
+      ...prev,
+      parentEmail: email,
+      description: username         // auto‑fill description
+    }));
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
 
     const payload = {
@@ -51,60 +90,67 @@ export default function CalendarConnect() {
       startTime: formData.startTime,
       endTime: formData.endTime,
       recurrence: formData.recurrence,
-      parentEmail: formData.parentEmail
+      parentEmail: parentEmail
     };
 
     try {
-      await api.post("http://localhost:8000/api/create-event/", payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      alert("✅ Event created successfully!");
+      await api.post("/api/create-event/", payload);
+      alert(t('calendar.eventCreatedSuccessfully'));
     } catch (err) {
       console.error("Error creating event:", err);
-      alert("❌ Failed to create event.");
+      alert(t('calendar.failedToCreateEvent'));
     }
   };
 
+  /* ─────────────────────────  render ────────────────────────────── */
   return (
     <div className="form-container">
-      <h1>Google Calendar</h1>
+      <h1>{t('calendar.googleCalendar')}</h1>
 
       {!isConnected ? (
         <>
-          <p>🔌 You haven't linked your Google Calendar.</p>
+          <p>{t('calendar.notLinked')}</p>
           <button className="form-button" onClick={handleConnect}>
-            Connect Google Account
+            {t('calendar.connectGoogleAccount')}
           </button>
         </>
       ) : (
         <>
-          <p>✅ Google Calendar is connected!</p>
+          <p>{t('calendar.connected')}</p>
 
           <form onSubmit={handleSubmit} className="form-section">
             <input
               name="subject"
-              placeholder="Subject (event title)"
+              placeholder={t('calendar.subjectPlaceholder')}
               className="form-input"
               required
               onChange={handleChange}
             />
 
-            <textarea
-              name="description"
-              placeholder="Description (optional)"
-              className="form-input"
-              onChange={handleChange}
-            />
-
+            {/* hidden description (auto‑filled) */}
             <input
-              name="parentEmail"
-              placeholder="Parent email"
-              type="email"
-              className="form-input"
-              required
-              onChange={handleChange}
+              type="hidden"
+              name="description"
+              value={formData.description}
             />
+
+            {/* student selector */}
+            <select
+              className="form-input"
+              value={parentEmail}
+              onChange={handleStudentSelect}
+            >
+              <option value="">{t('requests.selectStudent')}</option>
+              {students.map(stud => (
+                <option
+                  key={stud.id}
+                  value={stud.parent_email}           /* hidden payload */
+                  data-username={stud.student_username}
+                >
+                  {stud.student_username}            {/* visible label */}
+                </option>
+              ))}
+            </select>
 
             <input
               type="date"
@@ -135,13 +181,13 @@ export default function CalendarConnect() {
               className="form-input"
               onChange={handleChange}
             >
-              <option value="none">One-time</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Every 2 Weeks</option>
+              <option value="none">{t('calendar.oneTime')}</option>
+              <option value="weekly">{t('calendar.weekly')}</option>
+              <option value="biweekly">{t('calendar.every2Weeks')}</option>
             </select>
 
             <button type="submit" className="form-button">
-              📅 Schedule Tutoring Session
+              {t('calendar.scheduleTutoringSession')}
             </button>
           </form>
         </>

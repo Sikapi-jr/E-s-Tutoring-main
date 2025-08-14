@@ -17,3 +17,4 @@ httpx==0.27.2
 argon2-cffi
 django-ratelimit
 Pillow
+google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib

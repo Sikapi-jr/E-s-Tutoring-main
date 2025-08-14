@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 function CreateAnnouncement() {
     const [formData, setFormData] = useState({
@@ -33,7 +33,7 @@ function CreateAnnouncement() {
         });
 
         try {
-            const res = await axios.post('http://127.0.0.1:8000/api/announcements/create/', data, {
+            const res = await api.post('/api/announcements/create/', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert('Announcement created successfully!');

@@ -3,14 +3,18 @@ from django.urls import path, include
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from playground.views import create_chat_session, chat_session, stripe_reauth_token, create_event, google_status
+from playground.views import create_chat_session, chat_session, stripe_reauth_token, create_event, google_status, list_egs_tutoring_events, list_egs_tutoring_events_unfiltered, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
 
 urlpatterns = [
+    path('tutor/upload-document/', views.upload_tutor_document, name='tutor-upload-document'),
     path('user/', views.current_user_view, name='current-user'),
+    path('profile/<int:pk>/', change_settings_parent, name='change-settings-parent'),
     path('homeParent/', views.ParentHomeCreateView.as_view(), name='parent-home'),
     path('students/', views.StudentsListView.as_view(), name='students-list'),
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
-    path("requests/create/", views.RequestListCreateView.as_view(), name="perform_create"),
+    path('referral/create/', views.ReferralCreateView.as_view(), name='referral-create'),
+    path('referral/list/', views.ReferralListView.as_view(), name='referral-list'),
+    path("requests/create/", views.RequestListCreateView.as_view(), name="referral-create"),
     path("requests/list/", views.RequestListView.as_view(), name="request-list"),
     path('requests/RejectReply/', views.RejectUpdateView.as_view(), name='request-RejectReply'),
     path("requests/reply/", views.RequestResponseCreateView.as_view(), name="request-reply"),
@@ -20,10 +24,15 @@ urlpatterns = [
     path("requests/TutorChange/", views.ChangeTutor.as_view(), name="changeTutor"),
     path("log/", views.LogHoursCreateView.as_view(), name="logHours"),
     path("verifyEmail/", views.VerifyEmailView.as_view(), name="logHours"),
-    path("parentCalendar/", views.ParentHoursListView.as_view(), name="ParentCalendar"),
+    path("parentHours/", views.ParentHoursListView.as_view(), name="ParentCalendar"),
+    path('monthly-reports/create/', views.MonthlyReportCreateView.as_view(), name='monthly-report-create'),
+    path('monthly-reports/', views.MonthlyReportListView.as_view(), name='monthly-reports-list'),
+    path('monthly-reports/<int:report_id>/', views.MonthlyReportDetailView.as_view(), name='monthly-report-detail'),
+    path('tutor-student-hours/', views.TutorStudentHoursView.as_view(), name='tutor-student-hours'),
     path("weeklyHours/", views.WeeklyHoursListView.as_view(), name="weeklyHours"),
     path("calculateHours/", views.calculateTotal.as_view(), name="calculateHours"),
     path("monthlyHours/", views.MonthlyHoursListView.as_view(), name="monthlyHours"),
+    path("monthlyPayout/", views.BatchMonthlyHoursPayoutView.as_view(), name="monthlyPayout"),
     path("calculateMonthlyHours/", views.calculateMonthlyTotal.as_view(), name="calculateMonthlyHours"),
     path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
     path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList"),
@@ -36,8 +45,15 @@ urlpatterns = [
     path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
     path('google/oauth/init', views.GoogleOAuthInitView.as_view()),
     path('google/oauth2callback', views.GoogleOAuthCallbackView.as_view()),
+    path('errorTicket/', views.ErrorView.as_view()),
+    path('google/update-rsvp/', views.UpdateEventRsvpView.as_view(), name='update-rsvp'),
     path('create-event/', create_event),
+    path('google/events/', list_egs_tutoring_events),
+    path('google/events/all/', list_egs_tutoring_events_unfiltered),
     path('google/status/', google_status),
+    path('tutor/upload-document/', upload_tutor_document, name='tutor-upload-document'),
+    path('tutor/documents/', get_tutor_documents, name='get-tutor-documents'),
+    path('tutor/documents/<int:document_id>/', delete_tutor_document, name='delete-tutor-document'),
 
 
 ]

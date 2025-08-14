@@ -10,3 +10,6 @@ egstutorting/settings.py
 *.pyc
 __pycache__/
 node_modules/
+
+# Ignore Claude Code configuration
+.claude/

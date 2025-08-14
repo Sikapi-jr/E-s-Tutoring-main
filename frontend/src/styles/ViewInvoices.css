@@ -1,0 +1,88 @@
+/* —— backdrop —— */
+body { background: #f8fafb; }
+
+/* outer flex wrapper */
+.inv-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 1rem;
+  box-sizing: border-box;
+  font-family: "Google Sans Text", "Product Sans", sans-serif;
+}
+
+/* white card */
+.inv-card {
+  width: 100%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  padding: 2rem 3rem;
+  box-sizing: border-box;
+}
+
+.inv-card h1 {
+  margin: 0 0 1.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* scrollable list */
+.inv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* invoice box */
+.inv-box {
+  border: 2px solid #0d6efd;          /* default blue */
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  background: transparent;
+}
+.inv-box strong { min-width: 110px; display: inline-block; }
+
+/* coloured variants */
+.inv-open {
+  border-color: #dc3545;                            /* red */
+  background: rgba(220, 53, 69, 0.06);
+}
+.inv-paid {
+  border-color: #198754;                            /* green */
+  background: rgba(25, 135, 84, 0.06);
+}
+
+/* button */
+.open-btn {
+  margin-top: .75rem;
+  padding: .45rem 1rem;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: .9rem;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.open-btn:hover { opacity: .85; }
+
+/* error */
+.error-message {
+  color: #e03131;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* optional scrollbar */
+.inv-list::-webkit-scrollbar { width: 8px; }
+.inv-list::-webkit-scrollbar-thumb {
+  background: #b4b4b4;
+  border-radius: 4px;
+}

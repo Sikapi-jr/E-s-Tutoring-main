@@ -1,11 +1,11 @@
 import { useState } from "react";
 import api from "../api";
-import { useNavigate, useSearchParams  } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 
 function PasswordResetConfirm() {
-
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [password, setPassword] = useState("");
     const [passwordValid, setPasswordValid] = useState("");    
@@ -13,7 +13,6 @@ function PasswordResetConfirm() {
     const [error, setError] = useState(null);
 
     
-    console.log("Reset Token: ", token)
 
     
     const handleReset = async (e) => {
@@ -33,7 +32,7 @@ function PasswordResetConfirm() {
         }
         
         try{
-            const response = await api.post('http://127.0.0.1:8000/api/password_reset/confirm/', payload);
+            const response = await api.post('/api/password_reset/confirm/', payload);
             alert("Password reset successful!");
             navigate("/login");
         }

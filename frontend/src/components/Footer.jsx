@@ -1,36 +1,113 @@
 // src/components/Footer.jsx
-import React from "react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import "../styles/Footer.css";
+import api from "../api";
+import { useUser } from "../components/UserProvider";
 
-export default function Footer(){
+
+export default function Footer() {
+  
+  const { user } = useUser();
+  const { t } = useTranslation();
+  const [showModal, setShowModal] = useState(false);
+  const [message, setMessage] = useState("");
+  const [file, setFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("message", message);
+      formData.append("user", user.account_id); 
+      if (file) formData.append("file", file);
+
+      // do NOT set Content-Type; Axios will set proper multipart boundary
+      await api.post("/api/errorTicket/", formData);
+
+      setShowModal(false);
+      setMessage("");
+      setFile(null);
+      alert("Ticket submitted!");
+    } catch (err) {
+      console.error("Ticket submission failed:", err);
+      alert("Error submitting ticket");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <footer className="footer">
-      <div className="footer-column">
-        <h4>About</h4>
-        <ul>
-          <li><a href="/about">Our Mission</a></li>
-          <li><a href="/team">Team</a></li>
-          <li><a href="/careers">Careers</a></li>
-        </ul>
-      </div>
+    <>
+      <footer className="footer">
+        <div className="footer-inner">
+          <div className="footer-column">
+            <h4>{t('footer.company')}</h4>
+            <ul>
+              <li><a href="/">{t('navigation.home')}</a></li>
+              <li><a href="/settings">{t('navigation.settings')}</a></li>
+            </ul>
+          </div>
 
-      <div className="footer-column">
-        <h4>Services</h4>
-        <ul>
-          <li><a href="/tutoring">Tutoring</a></li>
-          <li><a href="/pricing">Pricing</a></li>
-          <li><a href="/faq">FAQ</a></li>
-        </ul>
-      </div>
+          <div className="footer-column">
+            <h4>{t('footer.help')}</h4>
+            <ul>
+              <li><a href="/faq">{t('footer.faq')}</a></li>
+              <li><a href="/contact">{t('footer.contact')}</a></li>
+            </ul>
+          </div>
 
-      <div className="footer-column">
-        <h4>Contact</h4>
-        <ul>
-          <li><a href="/contact">Email Us</a></li>
-          <li><a href="/support">Support</a></li>
-          <li><a href="/terms">Terms of Use</a></li>
-        </ul>
-      </div>
-    </footer>
+          <div className="footer-column">
+            <h4>{t('footer.legal')}</h4>
+            <ul>
+              <li><a href="/terms">{t('footer.terms')}</a></li>
+              <li><a href="/privacy">{t('footer.privacy')}</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-column">
+            <h4>{t('footer.dispute')}</h4>
+            <button
+              className="report-warning"
+              onClick={() => setShowModal(true)}
+            >
+              {t('footer.reportIssue')}
+            </button>
+            <p className="screenshot-tip">
+              {t('footer.screenshotTip')}
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {showModal && (
+        <div className="modal-backdrop" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>{t('footer.reportIssue')}</h2>
+            <textarea
+              rows={4}
+              placeholder={t('disputes.disputeReason')}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+            <div className="modal-actions">
+              <button className="cancel" onClick={() => setShowModal(false)}>
+                {t('common.cancel')}
+              </button>
+              <button className="save" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? t('common.loading') : t('common.submit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
-};
+}

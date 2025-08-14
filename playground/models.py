@@ -6,10 +6,9 @@ from django.contrib.auth.models import AbstractUser
 from django.forms.models import model_to_dict
 from cryptography.fernet import Fernet
 
-print("LOADING MODELS.PY...")
-
 
 class User(AbstractUser):
+
     CITY_CHOICES = [
         ('Ajax', 'Ajax'),
         ('Aurora', 'Aurora'),
@@ -90,38 +89,129 @@ class User(AbstractUser):
     stripe_account_id = models.CharField(max_length=100, blank=True, null=True)
     last_login = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
+    files = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='user_files',
+        null=True,
+        blank=True,
+        default=None
+    )
+    profile_picture = models.FileField(upload_to='profile_picture/', default='profile_picture/default-profile-picture.jpeg')
+
 
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
+    google_token_expiry = models.DateTimeField(null=True, blank=True)
 
     def _get_fernet(self):
         return Fernet(settings.FERNET_SECRET)
 
     @property
     def access_token(self):
-        if self._encrypted_access_token:
-            return self._get_fernet().decrypt(self._encrypted_access_token.encode()).decode()
+        if self._encrypted_google_access_token:
+            try:
+                # Try to decrypt (new tokens)
+                return self._get_fernet().decrypt(self._encrypted_google_access_token.encode()).decode()
+            except Exception:
+                # If decryption fails, assume it's plain (legacy or during migration)
+                return self._encrypted_google_access_token
         return None
 
     @access_token.setter
     def access_token(self, value):
         if value:
-            self._encrypted_access_token = self._get_fernet().encrypt(value.encode()).decode()
+            self._encrypted_google_access_token = self._get_fernet().encrypt(value.encode()).decode()
 
     @property
     def refresh_token(self):
-        if self._encrypted_refresh_token:
-            return self._get_fernet().decrypt(self._encrypted_refresh_token.encode()).decode()
+        if self._encrypted_google_refresh_token:
+            try:
+                return self._get_fernet().decrypt(self._encrypted_google_refresh_token.encode()).decode()
+            except Exception:
+                return self._encrypted_google_refresh_token
         return None
 
     @refresh_token.setter
     def refresh_token(self, value):
         if value:
-            self._encrypted_refresh_token = self._get_fernet().encrypt(value.encode()).decode()
+            self._encrypted_google_refresh_token = self._get_fernet().encrypt(value.encode()).decode()
 
     def __str__(self):
-        return self.id
+        return self.username
 
+class Referral(models.Model):
+    code         = models.CharField(max_length=16, unique=True)
+    referrer     = models.ForeignKey(User, related_name="referrals_made",
+                                     on_delete=models.CASCADE)
+    prospective_email = models.EmailField()
+    referred     = models.ForeignKey(User, null=True, blank=True,
+                                     related_name="referral_used",
+                                     on_delete=models.SET_NULL)
+    reward_applied = models.BooleanField(default=False)   # sender’s reward
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def generate_code(self):
+        import secrets
+        self.code = secrets.token_urlsafe(8)
+
+class UserDocument(models.Model):
+        user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='documents')
+        file = models.FileField(upload_to='user_documents/')
+        uploaded_at = models.DateTimeField(auto_now_add=True)
+
+class ErrorTicket(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='error_tickets_user')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    file = models.FileField(upload_to='user_error/')
+
+class MonthlyReport(models.Model):
+    HOMEWORK_COMPLETION_CHOICES = [
+        ('excellent', 'Excellent'),
+        ('good', 'Good'),
+        ('satisfactory', 'Satisfactory'),
+        ('needs_improvement', 'Needs Improvement'),
+    ]
+    
+    PARTICIPATION_LEVEL_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+    
+    tutor = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_tutor')
+    student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_student')
+    month = models.PositiveSmallIntegerField()
+    year = models.PositiveSmallIntegerField()
+    
+    # Report content fields
+    progress_summary = models.TextField(default="", help_text="Overall summary of the student's progress this month")
+    strengths = models.TextField(default="", help_text="Student's strengths observed during tutoring sessions")
+    areas_for_improvement = models.TextField(default="", help_text="Areas where the student needs to improve")
+    homework_completion = models.CharField(
+        max_length=20, 
+        choices=HOMEWORK_COMPLETION_CHOICES,
+        default="good",
+        help_text="How well the student completes homework assignments"
+    )
+    participation_level = models.CharField(
+        max_length=10,
+        choices=PARTICIPATION_LEVEL_CHOICES,
+        default="medium",
+        help_text="Student's level of participation during sessions"
+    )
+    goals_for_next_month = models.TextField(default="", help_text="Goals and objectives for the upcoming month")
+    additional_comments = models.TextField(blank=True, default="", help_text="Any additional comments or observations")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('tutor', 'student', 'month', 'year')
+        ordering = ['-year', '-month', '-created_at']
+    
+    def __str__(self):
+        return f"Report for {self.student.firstName} {self.student.lastName} - {self.month}/{self.year}"
 
 class Announcements(models.Model):
     name = models.CharField(max_length=255, blank=True)
@@ -234,6 +324,7 @@ class TutoringRequest(models.Model):
         ("Renew", "Renew"),
     ]
     subject = models.CharField(max_length=100)
+    city = models.CharField(max_length=30, choices=User.CITY_CHOICES, default="Toronto")
     grade = models.CharField(max_length=15, choices=GRADE_CHOICES, default='Kindergarten')
     service = models.CharField(max_length=30, choices=SERVICE_CHOICES, default='Online')
     description = models.TextField()
@@ -305,7 +396,10 @@ class Hours(models.Model):
         ('Resolved', 'RESOLVED'),
         ('Void', 'VOID'),
     ]
-
+    ELIGIBLE_CHOICES = [
+        ('Submitted', 'SUBMITTED'),
+        ('Late', 'LATE'),
+    ]
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -329,6 +423,7 @@ class Hours(models.Model):
     subject = models.CharField(max_length=50)
     notes = models.TextField()
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Accepted')
+    eligible = models.CharField(max_length=15, choices=ELIGIBLE_CHOICES, default='Eligible')
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -339,7 +434,6 @@ class WeeklyHours(models.Model):
         on_delete=models.CASCADE,
         related_name='weekly_hours'
     )
-    email = models.CharField(max_length=70, default='None')
     OnlineHours = models.DecimalField(max_digits=5, decimal_places=2)
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
@@ -347,18 +441,29 @@ class WeeklyHours(models.Model):
 
 
 class MonthlyHours(models.Model):
-    date = models.DateField()  # Enddate
+    end_date = models.DateField(default=timezone.now)  # Enddate
+    start_date = models.DateField(default=timezone.now)
     tutor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='monthly_hours'
     )
-    email = models.CharField(max_length=70, default='None')
     OnlineHours = models.DecimalField(max_digits=5, decimal_places=2)
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
 
+class StripePayout(models.Model):
+    tutor          = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stripe_payouts")
+    monthly_hours  = models.ForeignKey('MonthlyHours', on_delete=models.PROTECT, related_name='payout_record')
+    amount_cents   = models.PositiveIntegerField()
+    currency       = models.CharField(max_length=5, default="cad")
+    stripe_transfer_id = models.CharField(max_length=120, blank=True, null=True)
+    status         = models.CharField(max_length=20, default="created")  
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("monthly_hours", "stripe_transfer_id")
 
 class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

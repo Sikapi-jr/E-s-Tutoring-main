@@ -1,0 +1,94 @@
+/* ============ SendMonthly page ============ */
+
+.monthly-wrapper {
+  max-width: 1100px;
+  margin: 2rem auto 3rem;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.monthly-title {
+  margin: 0 0 1.25rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: #272727;
+}
+
+/* form row */
+.monthly-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.monthly-form .form-input {
+  max-width: 200px;
+}
+.monthly-form button {
+  padding: 0.55rem 1.1rem;
+}
+
+/* section divider */
+.monthly-divider {
+  margin: 2rem 0 1.25rem;
+  border: 0;
+  border-top: 2px dashed #e1e1e1;
+}
+
+/* list containers */
+.hours-list,
+.total-list {
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fff;
+  border: 3px solid #E1E1E1;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.hours-list li,
+.total-list li {
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+.hours-list li:last-child,
+.total-list li:last-child {
+  margin-bottom: 0;
+}
+
+.hours-list strong,
+.total-list strong {
+  color: #192A88;
+}
+
+/* action buttons under lists */
+.monthly-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.monthly-actions button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: #fff;
+  background: #192A88;
+  transition: opacity .15s;
+}
+.monthly-actions button:hover {
+  opacity: 0.9;
+}
+
+/* error display */
+.monthly-error {
+  color: #b00020;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}

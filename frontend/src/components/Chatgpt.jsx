@@ -11,7 +11,8 @@ function Chatgpt(){
         if (!sessionId) return;
 
         const intervalId = setInterval(async () => {  //setInterval allows a function to be ran on a polling system, on an interval
-            const response = await fetch(`http://localhost:8000/api/chat/sessions/${sessionId}`, {method: "GET"}
+            const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+            const response = await fetch(`${API_BASE_URL}/api/chat/sessions/${sessionId}`, {method: "GET"}
             );
             const data = await response.json()
             setMessages(data.messages)
@@ -21,7 +22,8 @@ function Chatgpt(){
     }, [sessionId])
 
     const postMessage = async (sessionId, message) => {
-        await fetch(`http://localhost:8000/api/chat/sessions/${sessionId}/`, {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        await fetch(`${API_BASE_URL}/api/chat/sessions/${sessionId}/`, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json", //Tells backend to expect content to be json content
@@ -37,7 +39,8 @@ function Chatgpt(){
             setMessage("");
 
             if (!sessionId) {
-                const response = await fetch("http://localhost:8000/api/chat/sessions/", {
+                const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+                const response = await fetch(`${API_BASE_URL}/api/chat/sessions/`, {
                     method: 'POST',
                 });
                 const data = await response.json();

@@ -1,0 +1,73 @@
+/* EventsTable.css */
+:root {
+  --color-primary: #1A74E8 ;   /* navy */
+  --color-accent:  #FFB31B;   /* gold */
+  --color-light:   #f6f8fc;   /* zebra stripe bg */
+  --color-dark:    #292929;   /* text */
+}
+
+/* ───────── wrapper around the table ───────── */
+.table-wrapper {
+  /* scrolling */
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 500px;
+
+  /* NEW – match the left card */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+
+  /* tidy spacing */
+  margin-top: 2rem;
+  box-sizing: border-box;
+}
+
+/* nicer scrollbar */
+.table-wrapper::-webkit-scrollbar { width: 6px; }
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+/* ───────── core table ───────── */
+.events-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+}
+
+/* header bar now sits inside the rounded wrapper – no own radius */
+.events-table thead {
+  background: var(--color-primary);
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* cells */
+.events-table th,
+.events-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.events-table tbody tr:nth-child(even) td { background: var(--color-light); }
+.events-table tbody tr:hover td {
+  background: rgba(255, 179, 27, 0.15);
+}
+.events-table td { border-bottom: 1px solid #e1e1e1; color: var(--color-dark); }
+
+/* ───────── “What’s New?” card — unchanged ───────── */
+.egs-box { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-top: 0; max-width: 500px; font-family: "Segoe UI", sans-serif; }
+.egs-box__title { font-weight: bold; border-bottom: 1px solid #aaa; margin-bottom: 1rem; }
+.egs-box__scroll { max-height: 400px; overflow-y: auto; }
+.egs-box__card { border: 1px solid #ccc; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem; background: #f9f9f9; }
+.egs-box__scroll::-webkit-scrollbar { width: 6px; }
+.egs-box__scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.3); border-radius: 3px; }
+
+body,
+h1, h2, h3 {
+  font-family: "Google Sans Text", "Product Sans", sans-serif;
+}

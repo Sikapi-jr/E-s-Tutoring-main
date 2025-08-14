@@ -1,128 +1,80 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useUser } from '../components/UserProvider';
+import { useTranslation } from "react-i18next";
+import api from "../api";
+import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
+import "../styles/ViewInvoices.css";          // stylings below
 
 const ViewInvoices = () => {
-  const [requests, setRequests] = useState([]);
   const { user } = useUser();
-  const email = user.email;
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [showReplyBox, setShowReplyBox] = useState(false);
-  const [message, setMessage] = useState("");
+  const email = user.email;
+
+  /* gate‑keep */
+  if (user.roles !== "parent" && user.is_superuser === 0) {
+    navigate("/login");
+  }
+
+  /* state */
+  const [invoices, setInvoices] = useState([]);
   const [error, setError] = useState("");
-  const [selectedRequestID, setSelectedRequestID] = useState(null);
 
-
-
-  if (user.roles !== "parent" && user.is_superuser===0){
-        navigate("/login");
-    }
-    
-
-  const handleMessageClick = (request) => {
-    window.location.href = (request.link);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Handle submit:" + message)
-    
-
-    try {
-
-        const payload = { 
-            request: selectedRequestID,  
-            tutor: user.username,
-            message,
-            
-        };  //Payload to be sent to backend as a POST request
-        const response = await axios.post('http://127.0.0.1:8000/api/requests/reply/', payload)
-        console.log("BACKEND RECEIVED");
-        navigate(0) //Refresh page
- 
-      }        
-         
-        catch (error) {
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            setError(`Server responded with: ${error.response.status} - ${error.response.data.message}`);
-        } else if (error.request) {
-            // The request was made but no response was received
-            setError("No response from server. Please check your network.");
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            setError("Error setting up registration request: " + error.message);
-        }
-    }
-  };
-  
-  
-
+  /* fetch list */
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/invoiceList/?email=${email}`);
-        console.log("Response data:", response.data);
-        setRequests(response.data); 
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      }
-    };
+    api
+      .get(`/api/invoiceList/?email=${email}`)
+      .then(res => setInvoices(res.data))
+      .catch(() => setError(t('errors.couldNotLoadInvoices')));
+  }, [email]);
 
-    fetchRequests();
-  }, []);
+  /* view hosted invoice */
+  const handleOpen = inv => {
+    window.location.href = inv.link;
+  };
+
+  /* helper for colour class */
+  const rowClass = status => {
+    const s = String(status).toLowerCase();
+    if (s === "open") return "inv-open";
+    if (s === "paid") return "inv-paid";
+    return "";
+  };
 
   return (
-    <div>
-        <h1>Parent Dashboard</h1>
-        {requests.length === 0 ? (
-            <p>No requests available.</p>
+    <div className="inv-wrapper">
+      <div className="inv-card">
+        <h1>{t('invoices.title')}</h1>
+
+        {invoices.length === 0 ? (
+          <p>{t('invoices.noInvoices')}</p>
         ) : (
-            <ul>
-                {requests.map((request, index) => (
-                    <li key={index}>
-                        <strong>ID:</strong> {request.id} <br />
-                        <strong>Created:</strong> {request.date} <br />
-                        <strong>Amount:</strong> {request.amount} <br />
-                        <strong>Due Date:</strong> {request.due_date} <br />
-                        <strong>Status:</strong> {request.status} <br />
-                        <div>
-                            <button onClick={() => handleMessageClick(request)}>
-                              View Invoice
-                            </button>
-                        </div>
-                        <br></br>
-                        <br></br>
-                        <br></br>
-                        
-                        {selectedRequestID === request.id && showReplyBox && (
-            <form onSubmit={handleSubmit}>
-                <input
-                    className="form-input"
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Write your message! Introduce yourself, your best subjects, and years of experience."
-                    required
-                />
-                
-                <button type="submit">Send Message</button>
-                <br></br>
-                <br></br>
-                <br></br>
-                <br></br>
-            </form>
-        )}
-                    </li>
-                ))}
-            </ul>
+          <ul className="inv-list">
+            {invoices.map(inv => (
+              <li
+                key={inv.id}
+                className={`inv-box ${rowClass(inv.status)}`}
+              >
+                <strong>{t('invoices.invoiceNumber')}</strong> {inv.id} <br />
+                <strong>{t('invoices.createdDate')}:</strong> {inv.date} <br />
+                <strong>{t('invoices.amount')}:</strong> {inv.amount/100}$ <br />
+                <strong>{t('invoices.dueDate')}:</strong> {inv.due_date} <br />
+                <strong>{t('common.status')}:</strong> {inv.status} <br />
+                <button
+                  className="open-btn"
+                  onClick={() => handleOpen(inv)}
+                >
+                  {t('invoices.viewInvoice')}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
 
-        <p>{error}</p>
+        {error && <p className="error-message">{error}</p>}
+      </div>
     </div>
-);
+  );
 };
 
 export default ViewInvoices;

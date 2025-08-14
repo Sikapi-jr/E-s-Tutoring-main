@@ -1,23 +1,25 @@
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
-import axios from "axios";
+import api from "../api";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 export default function VerifyEmail() {
+  const { t } = useTranslation();
   const { uid, token } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios
-      .post("http://localhost:8000/api/verifyEmail/", { uid, token })
+    api
+      .post("/api/verifyEmail/", { uid, token })
       .then((res) => {
-        alert("Email verified!");
+        alert(t('auth.emailVerified'));
         navigate("/");
       })
       .catch((err) => {
-        alert("Verification failed.");
+        alert(t('auth.verificationFailed'));
       });
   }, [uid, token]);
 
-  return <p>Verifying your email...</p>;
+  return <p>{t('auth.verifyingEmail')}</p>;
 }

@@ -1,0 +1,128 @@
+/* page backdrop (matches your other forms) */
+body { background: #f8fafb; }   /* super‑light grey */
+
+/* outer flex wrapper keeps card centred */
+.view-reply-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 1rem;
+  box-sizing: border-box;
+  font-family: "Google Sans Text", "Product Sans", sans-serif;
+}
+
+/* white card identical to the request form */
+.reply-card {
+  width: 100%;
+  max-width: 900px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  padding: 2rem 3rem;
+  box-sizing: border-box;
+}
+
+/* heading */
+.reply-card h1 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* tutor documents section */
+.tutor-documents {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.tutor-documents .documents-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.tutor-documents .document-item {
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tutor-documents .document-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tutor-documents .document-link:hover {
+  text-decoration: underline;
+}
+
+.tutor-documents .document-date {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.reply-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* scrollable list of request boxes */
+.requests-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;        /* scroll inside card */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* each request box */
+.request-box {
+  border: 2px solid #0d6efd;   /* blue outline */
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  background: transparent;     /* see‑through */
+}
+
+/* key/val layout */
+.request-box strong {
+  display: inline-block;
+  min-width: 110px;
+}
+
+.request-box button {
+  margin-right: .75rem;
+  margin-top: .5rem;
+  padding: .4rem .9rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: .9rem;
+  transition: opacity .15s;
+}
+.request-box button:hover { opacity: .85; }
+
+.toggle-btn  { background: #0d6efd; color: #fff; }
+.accept-btn  { background: #198754; color: #fff; }
+.decline-btn { background: #dc3545; color: #fff; }
+
+/* replies list */
+.replies-list {
+  list-style: none;
+  margin-top: .75rem;
+  padding-left: 0;
+}
+.reply-item {
+  border-top: 1px solid #d0d0d0;
+  padding-top: .75rem;
+  margin-top: .75rem;
+}
+.reply-item:first-child { border-top: 0; padding-top: 0; }

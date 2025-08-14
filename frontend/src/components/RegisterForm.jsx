@@ -1,11 +1,13 @@
 // src/components/RegisterForm.jsx
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import "../styles/RegistrationForm.css";
 
 function RegisterForm() {
+  const { t } = useTranslation();
   const CITY_CHOICES = [
     "Ajax", "Aurora", "Barrie", "Belleville", "Brampton", "Brantford", "Burlington",
     "Cambridge", "Chatham-Kent", "Clarington", "Collingwood", "Cornwall", "Dryden",
@@ -53,15 +55,15 @@ function RegisterForm() {
       const res = await api.post("/api/user/register/", payload);
       localStorage.setItem(ACCESS_TOKEN, res.data.access);
       localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-      alert(`Verification email sent to ${email}`);
+      alert(t('auth.verificationEmailSent', { email }));
       navigate("/login");
     } catch (err) {
       if (err.response) {
-        setError(`Server responded with: ${err.response.status} - ${err.response.data.message}`);
+        setError(t('errors.serverError'));
       } else if (err.request) {
-        setError("No response from server. Please check your network.");
+        setError(t('errors.networkError'));
       } else {
-        setError("Error setting up registration request: " + err.message);
+        setError(t('errors.somethingWentWrong'));
       }
     } finally {
       setLoading(false);
@@ -74,12 +76,12 @@ function RegisterForm() {
 
   return (
     <div className="form-container">
-      <h1>Register</h1>
+      <h1>{t('auth.registerTitle')}</h1>
 
       <div className="role-buttons">
-        <button onClick={() => handleRoleSelection("student")}>Student</button>
-        <button onClick={() => handleRoleSelection("parent")}>Parent</button>
-        <button onClick={() => handleRoleSelection("tutor")}>Tutor</button>
+        <button onClick={() => handleRoleSelection("student")}>{t('auth.student')}</button>
+        <button onClick={() => handleRoleSelection("parent")}>{t('auth.parent')}</button>
+        <button onClick={() => handleRoleSelection("tutor")}>{t('auth.tutor')}</button>
       </div>
 
       {(roles === "parent" || roles === "tutor") && (
@@ -90,7 +92,7 @@ function RegisterForm() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
+              placeholder={t('auth.username')}
               required
             />
             <input
@@ -98,7 +100,7 @@ function RegisterForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t('common.password')}
               required
             />
             <input
@@ -106,18 +108,18 @@ function RegisterForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
+              placeholder={t('common.email')}
               required
             />
 
-            <h2>Your Private Information</h2>
+            <h2>{t('auth.privateInformation')}</h2>
 
             <input
               className="form-input"
               type="text"
               value={firstName}
               onChange={(e) => setFname(e.target.value)}
-              placeholder="First Name"
+              placeholder={t('common.firstName')}
               required
             />
             <input
@@ -125,7 +127,7 @@ function RegisterForm() {
               type="text"
               value={lastName}
               onChange={(e) => setLname(e.target.value)}
-              placeholder="Last Name"
+              placeholder={t('common.lastName')}
               required
             />
             <input
@@ -133,7 +135,7 @@ function RegisterForm() {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="Home Address"
+              placeholder={t('auth.homeAddress')}
               required
             />
             <select
@@ -142,7 +144,7 @@ function RegisterForm() {
               onChange={(e) => setCity(e.target.value)}
               required
             >
-              <option value="" disabled>Select a city</option>
+              <option value="" disabled>{t('auth.selectCity')}</option>
               {CITY_CHOICES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -153,7 +155,7 @@ function RegisterForm() {
               type="submit"
               disabled={loading}
             >
-              Register as {roles.charAt(0).toUpperCase() + roles.slice(1)}
+              {loading ? t('common.loading') : t('auth.registerAs', { role: roles.charAt(0).toUpperCase() + roles.slice(1) })}
             </button>
           </form>
         </div>
@@ -167,7 +169,7 @@ function RegisterForm() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
+              placeholder={t('auth.username')}
               required
             />
             <input
@@ -175,7 +177,7 @@ function RegisterForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t('common.password')}
               required
             />
             <input
@@ -183,7 +185,7 @@ function RegisterForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
+              placeholder={t('auth.parentEmail')}
               required
             />
             <input
@@ -191,24 +193,62 @@ function RegisterForm() {
               type="text"
               value={parent}
               onChange={(e) => setParent(e.target.value)}
-              placeholder="Parent Username"
+              placeholder={t('auth.parentUsername')}
               required
             />
+            <h2>{t('auth.privateInformation')}</h2>
+
+            <input
+              className="form-input"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFname(e.target.value)}
+              placeholder={t('common.firstName')}
+              required
+            />
+            <input
+              className="form-input"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLname(e.target.value)}
+              placeholder={t('common.lastName')}
+              required
+            />
+            <input
+              className="form-input"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder={t('auth.homeAddress')}
+              required
+            />
+            <select
+              className="form-input"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+            >
+              <option value="" disabled>{t('auth.selectCity')}</option>
+              {CITY_CHOICES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+
             <button
               className={`form-button${clicked ? " clicked" : ""}`}
               type="submit"
               disabled={loading}
             >
-              Register as Student
+              {loading ? t('common.loading') : t('auth.registerAs', { role: roles.charAt(0).toUpperCase() + roles.slice(1) })}
             </button>
           </form>
         </div>
       )}
 
       <p className="login-prompt">
-        Already have an account?{" "}
+        {t('auth.alreadyHaveAccount')}{" "}
         <span className="login-link" onClick={() => navigate("/login")}>
-          Login
+          {t('auth.signInHere')}
         </span>
       </p>
 

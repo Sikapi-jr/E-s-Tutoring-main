@@ -10,7 +10,7 @@ function PasswordReset() {
     
 
     const handleReset = async (e) => {
-        const response = await api.post('http://127.0.0.1:8000/api/password_reset/', { email });
+        const response = await api.post('/api/password_reset/', { email });
     }
 
     return (

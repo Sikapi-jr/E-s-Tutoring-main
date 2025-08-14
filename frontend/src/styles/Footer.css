@@ -1,23 +1,36 @@
+/* Footer CSS */
 .footer {
   width: 100%;
   background-color: #292929;
   color: #ffffff;
-  padding: 2rem;
-  display: flex;
-  justify-content: space-between;
+  padding: 1rem 1rem;
   box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  margin-top: auto; /* Push footer to bottom in flex container */
 }
 
-.footer-column {
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.footer-column,
+.report-column {
   flex: 1;
-  padding: 0 1rem;
+  min-width: 150px;
+  margin-left: 3rem;
 }
 
 .footer-column h4 {
   margin-bottom: 1rem;
   font-size: 1.1rem;
-  color: #FFB31B;
+  color: #E8E496;
 }
 
 .footer-column ul {
@@ -38,5 +51,109 @@
 }
 
 .footer-column ul li a:hover {
-  color: #FFB31B;
+  color: #E8E496;
+}
+
+.report-warning {
+  cursor: pointer;
+  color: #ff4d4f;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+}
+
+.screenshot-tip {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.error-button-container {
+  margin-left: auto;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Error button styling */
+.error-button {
+  background-color: #aaa;
+  color: #ff4d4f;
+  border: 1px solid #ff4d4f;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.error-button:hover {
+  background: #ff4d4f;
+  color: #ffffff;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+}
+
+.modal textarea {
+  width: 100%;
+  margin: 1rem 0;
+  resize: vertical;
+}
+
+.modal input[type="file"] {
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-actions .cancel {
+  background: #ccc;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal-actions .save {
+  background: #292929;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .footer-column,
+  .report-column,
+  .error-button-container {
+    margin-left: 0;
+    text-align: center;
+  }
 }

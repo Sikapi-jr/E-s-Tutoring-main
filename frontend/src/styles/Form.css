@@ -1,13 +1,18 @@
+html, body {
+  background: #F8FAFB !important;
+  min-height: 100vh;
+}
 .form-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 50px auto;
+    margin: 0 auto;
+    margin-top: 4rem;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 400px; /* Limit the maximum width */
+    max-width: 400px; /* Match the JSX width for full coverage */
     width: 100%; /* Ensure it's responsive but doesn't exceed max-width */
     background: #fff; /* Assuming a white background */
 }
@@ -35,5 +40,10 @@
 
 .form-button:hover {
     background-color: #0056b3; /* Darker shade on hover */
+}
+
+body,
+h1, h2, h3 {
+  font-family: "Google Sans Text", "Product Sans", sans-serif;
 }
 

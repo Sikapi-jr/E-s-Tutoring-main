@@ -1,135 +1,242 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useUser } from '../components/UserProvider';
+// src/pages/ParentDashboard.jsx
+import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import api from "../api";
+import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
+import "../styles/TutorDashboard.css";
 
 const ParentDashboard = () => {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const { user } = useUser();
   const tutor = user.username;
   const navigate = useNavigate();
+
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [selectedRequestID, setSelectedRequestID] = useState(null);
 
+  // Filters
+  const [filterSubject, setFilterSubject] = useState("");
+  const [filterGrade, setFilterGrade] = useState("");
+  const [filterService, setFilterService] = useState("");
+  const [search, setSearch] = useState("");
 
-
-  if (user.roles !== "tutor" && user.is_superuser===0){
-        navigate("/login");
-    }
-    
+  if (user.roles !== "tutor" && user.is_superuser === 0) {
+    navigate("/login");
+  }
 
   const handleMessageClick = (request) => {
-    setSelectedRequestID(request.id)
-    setMessage(null)
-    setShowReplyBox(!showReplyBox) //Will toggle the reply box on and off
-    console.log(request.id)
-    console.log(tutor)
+    setSelectedRequestID(request.id);
+    setMessage("");
+    setShowReplyBox((prev) => !prev);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Handle submit:" + message)
-    
-
     try {
-
-        const payload = { 
-            request: selectedRequestID,  
-            tutor: user.account_id,
-            message,
-            
-        };  //Payload to be sent to backend as a POST request
-        const response = await axios.post('http://127.0.0.1:8000/api/requests/reply/', payload)
-        console.log("BACKEND RECEIVED");
-        navigate(0) //Refresh page
- 
-      }        
-         
-        catch (error) {
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            setError(`Server responded with: ${error.response.status} - ${error.response.data.message}`);
-        } else if (error.request) {
-            // The request was made but no response was received
-            setError("No response from server. Please check your network.");
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            setError("Error setting up registration request: " + error.message);
-        }
+      const payload = {
+        request: selectedRequestID,
+        tutor: user.account_id,
+        tutor_email: user.email,
+        message,
+      };
+      await api.post("/api/requests/reply/", payload);
+      navigate(0); // refresh
+    } catch (error) {
+      if (error.response) {
+        setError(t('errors.serverError'));
+      } else if (error.request) {
+        setError(t('errors.networkError'));
+      } else {
+        setError(t('errors.somethingWentWrong'));
+      }
     }
   };
-  
-  
 
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/requests/list/');
-        console.log("Response data:", response.data);
-        setRequests(response.data); 
+        const response = await api.get("/api/requests/list/");
+        setRequests(response.data || []);
       } catch (error) {
         console.error("Error fetching requests:", error);
       }
     };
-
     fetchRequests();
   }, []);
 
+  const subjects = useMemo(
+    () =>
+      Array.from(
+        new Set((requests || []).map((r) => r.subject).filter(Boolean))
+      ).sort(),
+    [requests]
+  );
+
+  const grades = useMemo(
+    () =>
+      Array.from(
+        new Set((requests || []).map((r) => String(r.grade)).filter(Boolean))
+      ).sort((a, b) => {
+        const na = Number(a),
+          nb = Number(b);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+        return a.localeCompare(b);
+      }),
+    [requests]
+  );
+
+  const services = useMemo(
+    () =>
+      Array.from(
+        new Set((requests || []).map((r) => r.service).filter(Boolean))
+      ).sort(),
+    [requests]
+  );
+
+  const filteredRequests = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    return (requests || []).filter((r) => {
+      const bySubject = filterSubject ? r.subject === filterSubject : true;
+      const byGrade = filterGrade
+        ? String(r.grade) === String(filterGrade)
+        : true;
+      const byService = filterService ? r.service === filterService : true;
+      const bySearch = s
+        ? (r.subject || "").toLowerCase().includes(s) ||
+          (r.description || "").toLowerCase().includes(s)
+        : true;
+      return bySubject && byGrade && byService && bySearch;
+    });
+  }, [requests, filterSubject, filterGrade, filterService, search]);
+
+  const clearFilters = () => {
+    setFilterSubject("");
+    setFilterGrade("");
+    setFilterService("");
+    setSearch("");
+  };
+
   return (
-    <div>
-        <h1>Parent Dashboard</h1>
-        {requests.length === 0 ? (
-            <p>No requests available.</p>
+    <div className="dash-wrapper">
+      <div className="dash-card">
+        <h1>{t('dashboard.parentDashboard')}</h1>
+
+        {/* Filter Bar */}
+        <div className="filter-bar">
+          <div className="filter-row">
+            <select
+              className="filter-input"
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              aria-label="Filter by subject"
+            >
+              <option value="">{t('dashboard.allSubjects')}</option>
+              {subjects.map((subj) => (
+                <option key={subj} value={subj}>
+                  {subj}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="filter-input"
+              value={filterGrade}
+              onChange={(e) => setFilterGrade(e.target.value)}
+              aria-label="Filter by grade"
+            >
+              <option value="">{t('dashboard.allGrades')}</option>
+              {grades.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="filter-input"
+              value={filterService}
+              onChange={(e) => setFilterService(e.target.value)}
+              aria-label="Filter by service"
+            >
+              <option value="">{t('dashboard.allServices')}</option>
+              {services.map((srv) => (
+                <option key={srv} value={srv}>
+                  {srv}
+                </option>
+              ))}
+            </select>
+
+            <input
+              className="filter-search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('dashboard.searchPlaceholder')}
+              aria-label="Search"
+            />
+
+            <button className="filter-clear" onClick={clearFilters}>
+              {t('dashboard.clearFilters')}
+            </button>
+          </div>
+
+          <div
+            className="filter-meta"
+            style={{ marginTop: "0.25rem", fontSize: "0.9rem", opacity: 0.8 }}
+          >
+            {t('dashboard.showingResults', { filtered: filteredRequests.length, total: requests.length })}
+          </div>
+        </div>
+
+        {filteredRequests.length === 0 ? (
+          <p>{t('dashboard.noRequestsAvailable')}</p>
         ) : (
-            <ul>
-                {requests.map((request, index) => (
-                    <li key={index}>
-                        <strong>ID:</strong> {request.id} <br />
-                        <strong>Parent:</strong> {request.parent} <br />
-                        <strong>Student:</strong> {request.student} <br />
-                        <strong>Subject:</strong> {request.subject} <br />
-                        <strong>Grade:</strong> {request.grade} <br />
-                        <strong>Service:</strong> {request.service} <br />
-                        <strong>Description:</strong> {request.description} <br />
-                        <strong>Created At:</strong> {new Date(request.created_at).toLocaleString()}
-                        <div>
-                            <button onClick={() => handleMessageClick(request)}>
-                                {selectedRequestID === request.id && showReplyBox ? 'Cancel' : 'Reply'}  
-                            </button>
-                        </div>
-                        <br></br>
-                        <br></br>
-                        <br></br>
-                        
-                        {selectedRequestID === request.id && showReplyBox && (
-            <form onSubmit={handleSubmit}>
-                <input
-                    className="form-input"
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Write your message! Introduce yourself, your best subjects, and years of experience."
-                    required
-                />
-                
-                <button type="submit">Send Message</button>
-                <br></br>
-                <br></br>
-                <br></br>
-                <br></br>
-            </form>
-        )}
-                    </li>
-                ))}
-            </ul>
+          <ul className="req-list">
+            {filteredRequests.map((request) => (
+              <li key={request.id} className="req-box">
+                <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
+                <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
+                <strong>{t('common.service')}:</strong> {request.service} <br />
+                <strong>{t('common.description')}:</strong> {request.description} <br />
+                <strong>{t('dashboard.createdAt')}:</strong>{" "}
+                {new Date(request.created_at).toLocaleString()} <br />
+                <button
+                  className="reply-btn"
+                  onClick={() => handleMessageClick(request)}
+                >
+                  {selectedRequestID === request.id && showReplyBox
+                    ? t('dashboard.cancel')
+                    : t('dashboard.reply')}
+                </button>
+
+                {selectedRequestID === request.id && showReplyBox && (
+                  <form onSubmit={handleSubmit}>
+                    <input
+                      className="reply-input"
+                      type="text"
+                      value={message || ""}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder={t('dashboard.writeMessage')}
+                      required
+                    />
+                    <button className="send-btn" type="submit">
+                      {t('dashboard.sendMessage')}
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
 
-        <p>{error}</p>
+        {error && <p className="error-message">{error}</p>}
+      </div>
     </div>
-);
+  );
 };
 
 export default ParentDashboard;
