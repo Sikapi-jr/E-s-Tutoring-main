@@ -9,7 +9,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-# Collect static files and run migrations
+# Collect static files
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
