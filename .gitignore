@@ -4,12 +4,20 @@ venv/
 # Ignore sensitive configuration files
 .env
 env
-egstutorting/settings.py
 
 # Ignore compiled files
 *.pyc
 __pycache__/
 node_modules/
 
+# Ignore CSV test data
+csv_test_data/
+
+# Ignore SQLite database
+db.sqlite3
+
 # Ignore Claude Code configuration
 .claude/
+
+# Ignore media files (profile pictures, documents)
+media/
