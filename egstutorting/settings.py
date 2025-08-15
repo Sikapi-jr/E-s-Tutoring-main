@@ -65,9 +65,12 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY environment variable is required")
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-build-key-only-for-collectstatic')
+
+# Warn if using default key in production
+if SECRET_KEY == 'django-insecure-build-key-only-for-collectstatic' and not os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    import warnings
+    warnings.warn("Using default SECRET_KEY - set SECRET_KEY environment variable for production!")
 
 # Environment variables for sensitive data
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')

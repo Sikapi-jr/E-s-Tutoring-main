@@ -9,8 +9,10 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-# Collect static files
+# Collect static files (with temporary SECRET_KEY for build)
+ENV SECRET_KEY=django-insecure-build-key-only-for-collectstatic
 RUN python manage.py collectstatic --noinput
+ENV SECRET_KEY=
 
 EXPOSE 8000
 
