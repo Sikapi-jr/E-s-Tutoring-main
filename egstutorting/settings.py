@@ -199,18 +199,25 @@ WSGI_APPLICATION = 'egstutorting.wsgi.application'
 import dj_database_url
 
 # If DATABASE_URL is provided, use it (preferred method for Supabase)
-if os.getenv('DATABASE_URL'):
+database_url = os.getenv('DATABASE_URL', '').strip()
+if database_url and database_url.startswith(('postgresql://', 'postgres://')):
+    # Add SSL if not already present
+    if '?sslmode=' not in database_url:
+        database_url += '?sslmode=require'
+    
     DATABASES = {
         'default': dj_database_url.parse(
-            os.getenv('DATABASE_URL'),
+            database_url,
             conn_max_age=600,
             conn_health_checks=True,
         )
     }
-    # Ensure SSL is required for Supabase
-    DATABASES['default']['OPTIONS'] = {
+    # Ensure SSL options are set
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    DATABASES['default']['OPTIONS'].update({
         'sslmode': 'require',
-    }
+    })
 # Otherwise use individual parameters
 elif all([os.getenv('DB_NAME'), os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), os.getenv('DB_HOST')]):
     DATABASES = {
