@@ -80,7 +80,18 @@ FERNET_SECRET = os.getenv('FERNET_SECRET')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Auto-detect Railway domain or use environment variable
+if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    # Running on Railway - allow Railway domains
+    ALLOWED_HOSTS = [
+        os.getenv('RAILWAY_PUBLIC_DOMAIN', ''),
+        '*.railway.app',
+        'localhost',
+        '127.0.0.1'
+    ]
+else:
+    # Local development or custom deployment
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
