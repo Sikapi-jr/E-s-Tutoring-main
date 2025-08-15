@@ -2,12 +2,12 @@ import os
 import django
 from celery import Celery, shared_task
 
+# Set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'egstutorting.settings')
+
 django.setup() #Forces django to be fully setup before any commands are ran
 
 from playground import models
-
-# Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'egstutorting.settings')
 
 app = Celery('egstutorting')
 
