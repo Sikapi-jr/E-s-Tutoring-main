@@ -65,11 +65,13 @@ LOGGING = {
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure--&_n9r^5kl-n17=3er!6+&0y4dm0jnh=#33krvg03ay#^=jvyd')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required")
 
 # Environment variables for sensitive data
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'amqp://mquser:aaasss12@mq:5672//')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "http://localhost:8000/api/google/oauth2callback")
@@ -295,6 +297,3 @@ STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') 
 STRIPE_WEBHOOK_KEY = os.getenv('STRIPE_WEBHOOK_KEY', '')
 
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
-
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
