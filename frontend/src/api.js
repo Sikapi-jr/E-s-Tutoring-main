@@ -5,6 +5,12 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const REFRESH_ENDPOINT = import.meta.env.VITE_REFRESH_URL || "/api/token/refresh/";
 
+console.log('API Configuration:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  BASE_URL: BASE_URL,
+  REFRESH_ENDPOINT: REFRESH_ENDPOINT
+});
+
 // Paths that should NOT send a bearer token
 const PUBLIC_PATHS = [/\/login\/?$/i, /\/register\/?$/i];
 
