@@ -1,11 +1,11 @@
 FROM node:18-alpine AS frontend-builder
 
-# Build React frontend
+# Build React frontend with memory optimization
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm ci --only=production --no-audit
 COPY frontend/ ./
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=1024" npm run build
 
 FROM python:3.11-slim
 
@@ -13,8 +13,10 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install Python deps with smaller memory footprint
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
