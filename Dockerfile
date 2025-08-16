@@ -3,7 +3,7 @@ FROM node:18-alpine AS frontend-builder
 # Build React frontend with memory optimization
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci --only=production --no-audit
+RUN npm ci --no-audit
 COPY frontend/ ./
 RUN NODE_OPTIONS="--max-old-space-size=1024" npm run build
 
