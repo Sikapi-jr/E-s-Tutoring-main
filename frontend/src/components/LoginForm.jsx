@@ -44,7 +44,7 @@ function LoginForm() {
       }
 
       setUser(userRes.data);
-      navigate("/");
+      navigate("/home");
     } catch (err) {
       if (err.response) {
         setError(t('errors.serverError'));

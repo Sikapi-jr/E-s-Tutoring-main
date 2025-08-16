@@ -11,6 +11,7 @@ import {
 // Eagerly load critical components for auth flow
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import LandingPage from "./pages/LandingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import UnauthNavbar from "./components/UnauthNavBar";
@@ -77,6 +78,7 @@ function AppRoutes() {
   const location = useLocation();
 
   const unauthenticatedPaths = [
+    "/",
     "/login",
     "/register",
     "/logout",
@@ -105,7 +107,11 @@ function AppRoutes() {
       <main className="main-content">
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            {/* Public landing page */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Protected home page (moved from /) */}
+            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/parent-dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
             <Route path="/request" element={<ProtectedRoute><Request /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

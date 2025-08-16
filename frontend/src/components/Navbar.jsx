@@ -11,7 +11,7 @@ import LanguageSwitcher from "./LanguageSwitcher.jsx";
 /* ---------- ROUTE DEFINITIONS ---------- */
 // Define routes with translation keys instead of hardcoded labels
 const getRoutes = (t) => ({
-  Home:    { to: "/",                  label: t('navigation.home') },
+  Home:    { to: "/home",              label: t('navigation.home') },
   Request: { to: "/request",           label: t('navigation.request') },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
   Log:     { to: "/log",               label: t('navigation.logHours') },
@@ -244,7 +244,7 @@ export default function Navbar() {
 
   return (
     <header className="nav">
-      <NavLink to="/" className="nav__brand">
+      <NavLink to="/home" className="nav__brand">
         <EGSLogo className="nav__logo" />
       </NavLink>
 

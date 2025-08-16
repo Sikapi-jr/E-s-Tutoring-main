@@ -89,6 +89,8 @@ if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
     ALLOWED_HOSTS = [
         os.getenv('RAILWAY_PUBLIC_DOMAIN', ''),
         '*.railway.app',
+        'egstutoring-portal.ca',
+        'www.egstutoring-portal.ca',
         'localhost',
         '127.0.0.1'
     ]
