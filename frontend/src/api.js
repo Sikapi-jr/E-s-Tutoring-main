@@ -148,8 +148,8 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const resp = await axios.post(
-        `${BASE_URL}${REFRESH_ENDPOINT}`,
+      const resp = await api.post(
+        REFRESH_ENDPOINT,
         { refresh },
         { timeout: 10000 }
       );
