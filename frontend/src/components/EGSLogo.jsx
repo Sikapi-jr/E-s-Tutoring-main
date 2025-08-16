@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "../../../media/EGS_LOGO.png";
+const logo = "/EGS_LOGO.png";
 
 export default function EGSLogo({ style, ...props }) {
   return (
