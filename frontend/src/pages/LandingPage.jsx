@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleGoToPortal = () => {
     // Check if user is already authenticated
@@ -23,41 +25,50 @@ const LandingPage = () => {
     <div className="landing-page">
       <div className="landing-container">
         <header className="landing-header">
-          <h1>EGS Tutoring Portal</h1>
-          <p className="landing-subtitle">Professional tutoring management made simple</p>
+          <h1>{t('landing.title')}</h1>
+          <p className="landing-subtitle">{t('landing.subtitle')}</p>
         </header>
 
         <main className="landing-main">
           <section className="features-section">
-            <h2>Streamline Your Tutoring Business</h2>
+            <h2>{t('landing.allInOnePlace')}</h2>
             <div className="features-grid">
               <div className="feature-card">
-                <h3>📅 Schedule Management</h3>
-                <p>Efficiently manage tutoring sessions and appointments with our integrated calendar system.</p>
+                <h3>📅 {t('landing.features.scheduling.title')}</h3>
+                <p>{t('landing.features.scheduling.description')}</p>
               </div>
               <div className="feature-card">
-                <h3>💰 Invoice Tracking</h3>
-                <p>Generate professional invoices and track payments seamlessly.</p>
+                <h3>📋 {t('landing.features.requests.title')}</h3>
+                <p>{t('landing.features.requests.description')}</p>
               </div>
               <div className="feature-card">
-                <h3>📊 Progress Reports</h3>
-                <p>Monitor student progress with detailed reports and analytics.</p>
+                <h3>📊 {t('landing.features.reports.title')}</h3>
+                <p>{t('landing.features.reports.description')}</p>
               </div>
               <div className="feature-card">
-                <h3>👨‍👩‍👧‍👦 Parent Portal</h3>
-                <p>Keep parents informed with real-time updates and communication tools.</p>
+                <h3>💬 {t('landing.features.communication.title')}</h3>
+                <p>{t('landing.features.communication.description')}</p>
+              </div>
+              <div className="feature-card">
+                <h3>💰 {t('landing.features.invoicing.title')}</h3>
+                <p>{t('landing.features.invoicing.description')}</p>
+              </div>
+              <div className="feature-card">
+                <h3>🤖 {t('landing.features.aiSupport.title')}</h3>
+                <p>{t('landing.features.aiSupport.description')}</p>
               </div>
             </div>
           </section>
 
           <section className="benefits-section">
-            <h2>Why Choose EGS Tutoring Portal?</h2>
+            <h2>{t('landing.whyPortal')}</h2>
             <ul className="benefits-list">
-              <li>✅ Easy-to-use interface for tutors and parents</li>
-              <li>✅ Secure payment processing and invoice management</li>
-              <li>✅ Real-time communication and updates</li>
-              <li>✅ Comprehensive reporting and analytics</li>
-              <li>✅ Mobile-friendly design for on-the-go access</li>
+              <li>✅ {t('landing.benefits.unified')}</li>
+              <li>✅ {t('landing.benefits.support')}</li>
+              <li>✅ {t('landing.benefits.realTime')}</li>
+              <li>✅ {t('landing.benefits.secure')}</li>
+              <li>✅ {t('landing.benefits.mobile')}</li>
+              <li>✅ {t('landing.benefits.efficient')}</li>
             </ul>
           </section>
         </main>
@@ -67,10 +78,10 @@ const LandingPage = () => {
             className="portal-button"
             onClick={handleGoToPortal}
           >
-            Go to Portal
+            {t('landing.goToPortal')}
           </button>
           <p className="landing-footer-text">
-            Ready to streamline your tutoring business? Access your portal now.
+            {t('landing.footerText')}
           </p>
         </footer>
       </div>

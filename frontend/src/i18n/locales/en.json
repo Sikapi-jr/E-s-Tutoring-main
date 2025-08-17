@@ -1,4 +1,46 @@
 {
+  "landing": {
+    "title": "EGS Tutoring Portal",
+    "subtitle": "Your comprehensive tutoring management platform",
+    "allInOnePlace": "Everything You Need in One Place",
+    "whyPortal": "Why Use the EGS Portal?",
+    "goToPortal": "Go to Portal",
+    "footerText": "Access your tutoring dashboard and manage everything in one centralized location.",
+    "features": {
+      "scheduling": {
+        "title": "Session Scheduling",
+        "description": "View and manage all your tutoring sessions with an integrated calendar system that syncs across all devices."
+      },
+      "requests": {
+        "title": "Tutoring Requests",
+        "description": "Receive and respond to new tutoring requests from parents, all organized in one convenient location."
+      },
+      "reports": {
+        "title": "Progress Tracking",
+        "description": "Generate detailed monthly reports and track student progress with comprehensive analytics and insights."
+      },
+      "communication": {
+        "title": "Parent Communication",
+        "description": "Stay connected with parents through announcements, updates, and direct messaging features."
+      },
+      "invoicing": {
+        "title": "Invoice Management",
+        "description": "Track hours worked, generate professional invoices, and manage payments seamlessly through Stripe integration."
+      },
+      "aiSupport": {
+        "title": "AI Assistant",
+        "description": "Get instant help with tutoring questions and lesson planning through our integrated ChatGPT assistant."
+      }
+    },
+    "benefits": {
+      "unified": "All tutoring tools unified in one comprehensive dashboard",
+      "support": "24/7 active support and regular platform updates",
+      "realTime": "Real-time notifications and updates for parents and tutors",
+      "secure": "Secure data handling with encrypted communications",
+      "mobile": "Mobile-responsive design for access anywhere, anytime",
+      "efficient": "Streamlined workflows that save time and reduce administrative burden"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

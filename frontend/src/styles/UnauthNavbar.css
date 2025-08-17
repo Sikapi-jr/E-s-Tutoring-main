@@ -27,6 +27,13 @@ html, body {
   font-size: 1.5rem;
   font-weight: bold;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.unauth-nav .nav-logo {
+  height: 40px;
+  width: auto;
 }
 
 /* nav-links container */
@@ -66,6 +73,29 @@ html, body {
 
 .btn-register.active-link {
   color: #FFB31B;
+}
+
+/* language switcher */
+.nav-language-switcher {
+  display: flex;
+  align-items: center;
+}
+
+.nav-language-switcher button {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-language-switcher button:hover {
+  background-color: #FFB31B;
+  border-color: #FFB31B;
+  color: #292929;
 }
 
 /* responsive */

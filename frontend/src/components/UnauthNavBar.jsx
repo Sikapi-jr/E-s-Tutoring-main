@@ -1,24 +1,24 @@
 // src/components/UnauthNavbar.jsx
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher.jsx";
+import EGSLogo from "./EGSLogo.jsx";
 import "../styles/UnauthNavbar.css";
 
 export default function UnauthNavbar() {
+  const { t } = useTranslation();
+
   return (
     <nav className="unauth-nav">
       <div className="brand">
-        <NavLink to="/" className="nav-link">
-          Home
+        <NavLink to="/" className="nav-link brand-link">
+          <EGSLogo className="nav-logo" />
         </NavLink>
       </div>
       <ul className="nav-links">
         <li>
-          <NavLink to="/faq" className="nav-link">
-            FAQ
-          </NavLink>
-        </li>
-        <li>
           <NavLink to="/login" className="nav-link">
-            Login
+            {t('navigation.login')}
           </NavLink>
         </li>
         <li>
@@ -28,8 +28,11 @@ export default function UnauthNavbar() {
               `btn-register${isActive ? " active-link" : ""}`
             }
           >
-            Register
+            {t('navigation.register')}
           </NavLink>
+        </li>
+        <li>
+          <LanguageSwitcher className="nav-language-switcher" />
         </li>
       </ul>
     </nav>

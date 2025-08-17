@@ -1,4 +1,46 @@
 {
+  "landing": {
+    "title": "Portail de Tutorat EGS",
+    "subtitle": "Votre plateforme complète de gestion de tutorat",
+    "allInOnePlace": "Tout ce dont vous avez besoin en un seul endroit",
+    "whyPortal": "Pourquoi utiliser le portail EGS?",
+    "goToPortal": "Accéder au portail",
+    "footerText": "Accédez à votre tableau de bord de tutorat et gérez tout depuis un emplacement centralisé.",
+    "features": {
+      "scheduling": {
+        "title": "Planification des séances",
+        "description": "Visualisez et gérez toutes vos séances de tutorat avec un système de calendrier intégré qui se synchronise sur tous vos appareils."
+      },
+      "requests": {
+        "title": "Demandes de tutorat",
+        "description": "Recevez et répondez aux nouvelles demandes de tutorat des parents, toutes organisées dans un endroit pratique."
+      },
+      "reports": {
+        "title": "Suivi des progrès",
+        "description": "Générez des rapports mensuels détaillés et suivez les progrès des étudiants avec des analyses et insights complets."
+      },
+      "communication": {
+        "title": "Communication avec les parents",
+        "description": "Restez connecté avec les parents grâce aux annonces, mises à jour et fonctionnalités de messagerie directe."
+      },
+      "invoicing": {
+        "title": "Gestion des factures",
+        "description": "Suivez les heures travaillées, générez des factures professionnelles et gérez les paiements en toute transparence via l'intégration Stripe."
+      },
+      "aiSupport": {
+        "title": "Assistant IA",
+        "description": "Obtenez une aide instantanée pour les questions de tutorat et la planification de cours grâce à notre assistant ChatGPT intégré."
+      }
+    },
+    "benefits": {
+      "unified": "Tous les outils de tutorat unifiés dans un tableau de bord complet",
+      "support": "Support actif 24/7 et mises à jour régulières de la plateforme",
+      "realTime": "Notifications et mises à jour en temps réel pour les parents et tuteurs",
+      "secure": "Gestion sécurisée des données avec communications chiffrées",
+      "mobile": "Design adaptatif mobile pour un accès partout, à tout moment",
+      "efficient": "Flux de travail rationalisés qui économisent du temps et réduisent la charge administrative"
+    }
+  },
   "common": {
     "loading": "Chargement...",
     "error": "Erreur",
