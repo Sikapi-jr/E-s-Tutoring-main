@@ -222,6 +222,7 @@ if database_url and database_url.startswith(('postgresql://', 'postgres://')):
     DATABASES['default']['OPTIONS'].update({
         'sslmode': 'require',
     })
+    print(f"DATABASE: Using PostgreSQL - {DATABASES['default']['HOST']}", file=sys.stderr)
 # Otherwise use individual parameters
 elif all([os.getenv('DB_NAME'), os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), os.getenv('DB_HOST')]):
     DATABASES = {
@@ -237,6 +238,7 @@ elif all([os.getenv('DB_NAME'), os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), 
             },
         }
     }
+    print(f"DATABASE: Using PostgreSQL - {os.getenv('DB_HOST')}", file=sys.stderr)
 # Fallback to SQLite for development if PostgreSQL not configured
 else:
     DATABASES = {
@@ -245,6 +247,7 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+    print(f"DATABASE: Using SQLite - {BASE_DIR / 'db.sqlite3'}", file=sys.stderr)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
