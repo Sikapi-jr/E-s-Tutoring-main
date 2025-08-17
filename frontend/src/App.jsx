@@ -58,7 +58,7 @@ const LoadingSpinner = () => {
   );
 };
 
-import { UserProvider } from "./components/UserProvider";
+import { UserProvider, useUser } from "./components/UserProvider";
 
 // Initialize i18n
 import "./i18n";
@@ -76,10 +76,11 @@ function Logout() {
 
 function AppRoutes() {
   const location = useLocation();
+  const { user } = useUser();
 
-  const unauthenticatedPaths = [
+  const publicPaths = [
     "/",
-    "/login",
+    "/login", 
     "/register",
     "/logout",
     "/password-reset",
@@ -88,21 +89,24 @@ function AppRoutes() {
     "/stripe-reauth",
   ];
 
-  const isUnauthenticatedRoute = unauthenticatedPaths.some((path) =>
+  const isPublicPath = publicPaths.some((path) =>
     location.pathname.startsWith(path)
   );
 
+  // Show UnauthNavbar if: on public path OR user not logged in
+  const showUnauthNavbar = isPublicPath || !user;
+
   useEffect(() => {
-    if (!isUnauthenticatedRoute) {
+    if (!showUnauthNavbar) {
       document.body.classList.add("has-fixed-footer");
     } else {
       document.body.classList.remove("has-fixed-footer");
     }
-  }, [isUnauthenticatedRoute]);
+  }, [showUnauthNavbar]);
 
   return (
     <div className="page-wrapper">
-      {isUnauthenticatedRoute ? <UnauthNavbar /> : <Navbar />}
+      {showUnauthNavbar ? <UnauthNavbar /> : <Navbar />}
 
       <main className="main-content">
         <Suspense fallback={<LoadingSpinner />}>
@@ -142,7 +146,7 @@ function AppRoutes() {
         </Suspense>
       </main>
 
-      {!isUnauthenticatedRoute && (
+      {!showUnauthNavbar && (
         <Footer />
       )}
     </div>
