@@ -5,6 +5,7 @@ import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from "./UserProvider";
+import { getErrorMessage } from "../utils/errorHandler";
 import "../styles/RegistrationForm.css";
 
 function LoginForm() {
@@ -12,7 +13,7 @@ function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
   const [clicked, setClicked] = useState(false);
   const [clickedReset, setClickedReset] = useState(false);
   const { setUser } = useUser();
@@ -27,6 +28,7 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setClicked(true);
+    setError(""); // Clear any previous errors
 
     try {
       const payload = { username, password };
@@ -39,28 +41,21 @@ function LoginForm() {
       });
 
       if (!userRes.data.is_active) {
-        setError(t('errors.accountNotVerified'));
-        return;
-      }
-
-      setUser(userRes.data);
-      navigate("/home");
-    } catch (err) {
-      if (err.response) {
-        setError(t('errors.serverError'));
-      } else if (err.request) {
-        setError(t('errors.networkError'));
+        setError(t("errors.accountNotVerified"));
       } else {
-        setError(t('errors.somethingWentWrong'));
+        setUser(userRes.data);
+        navigate("/home");
       }
+    } catch (err) {
+      setError(getErrorMessage(err, t));
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ ensures button resets even if error
     }
   };
 
   return (
     <div className="form-container">
-      <h1>{t('auth.loginTitle')}</h1>
+      <h1>{t("auth.loginTitle")}</h1>
 
       <div className="form-section">
         <form onSubmit={handleSubmit}>
@@ -69,7 +64,7 @@ function LoginForm() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder={t('auth.username')}
+            placeholder={t("auth.username")}
             required
           />
           <input
@@ -77,7 +72,7 @@ function LoginForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('common.password')}
+            placeholder={t("common.password")}
             required
           />
           <button
@@ -85,22 +80,22 @@ function LoginForm() {
             type="submit"
             disabled={loading}
           >
-            {loading ? t('common.loading') : t('auth.loginButton')}
+            {loading ? t("common.loading") : t("auth.loginButton")}
           </button>
         </form>
       </div>
 
-        <button
-          className={`form-button${clickedReset ? " clicked" : ""}`}
-          onClick={handleReset}
-        >
-          {t('auth.forgotPassword')}
-        </button>
+      <button
+        className={`form-button${clickedReset ? " clicked" : ""}`}
+        onClick={handleReset}
+      >
+        {t("auth.forgotPassword")}
+      </button>
 
       <p className="login-prompt">
-        {t('auth.dontHaveAccount')}{" "}
+        {t("auth.dontHaveAccount")}{" "}
         <span className="login-link" onClick={() => navigate("/register")}>
-          {t('auth.signUpHere')}
+          {t("auth.signUpHere")}
         </span>
       </p>
 

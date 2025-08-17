@@ -10,10 +10,11 @@ export default function UnauthNavbar() {
 
   return (
     <nav className="unauth-nav">
-      <div className="brand">
+      <div className="nav-left">
         <NavLink to="/" className="nav-link brand-link">
           <EGSLogo className="nav-logo" />
         </NavLink>
+        <LanguageSwitcher className="nav-language-switcher" />
       </div>
       <ul className="nav-links">
         <li>
@@ -30,9 +31,6 @@ export default function UnauthNavbar() {
           >
             {t('navigation.register')}
           </NavLink>
-        </li>
-        <li>
-          <LanguageSwitcher className="nav-language-switcher" />
         </li>
       </ul>
     </nav>

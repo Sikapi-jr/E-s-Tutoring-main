@@ -21,8 +21,14 @@ html, body {
   z-index: 1000;
 }
 
-/* brand link */
-.unauth-nav .brand a {
+/* left side with brand and language */
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-left a {
   color: #ffffff;
   font-size: 1.5rem;
   font-weight: bold;
@@ -103,11 +109,23 @@ html, body {
   .unauth-nav {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1rem;
   }
+  
+  .nav-left {
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  
   .nav-links {
     flex-direction: column;
     width: 100%;
     gap: 0.75rem;
-    margin-top: 0.5rem;
+  }
+  
+  .nav-language-switcher button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
   }
 }

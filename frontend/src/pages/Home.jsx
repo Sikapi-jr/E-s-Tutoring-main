@@ -30,6 +30,9 @@ export default function Home() {
   const [tutorDocuments, setTutorDocuments] = useState([]);
   const [googleConnected, setGoogleConnected] = useState(false);
   
+  // Admin state
+  const [showTutorForm, setShowTutorForm] = useState(false);
+  
 
 
   /* ───────── data fetch ───────── */

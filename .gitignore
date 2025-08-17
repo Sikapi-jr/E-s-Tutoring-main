@@ -16,6 +16,9 @@ csv_test_data/
 # Ignore SQLite database
 db.sqlite3
 
+# Ignore Django static files
+staticfiles/
+
 # Ignore Claude Code configuration
 .claude/
 

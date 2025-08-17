@@ -11,8 +11,14 @@ console.log('API Configuration:', {
   REFRESH_ENDPOINT: REFRESH_ENDPOINT
 });
 
-// Paths that should NOT send a bearer token
-const PUBLIC_PATHS = [/\/login\/?$/i, /\/register\/?$/i];
+// Paths that should NOT send a bearer token or trigger token refresh
+const PUBLIC_PATHS = [
+  /\/login\/?$/i, 
+  /\/register\/?$/i,
+  /\/api\/token\/?$/i,
+  /\/api\/token\/refresh\/?$/i,
+  /\/api\/user\/register\/?$/i
+];
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -127,11 +133,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If not a 401, or already retried, just fail
+    // If not a 401, or already retried, or is a public path, just fail
     if (
       !error.response ||
       error.response.status !== 401 ||
-      originalRequest.__isRetry
+      originalRequest.__isRetry ||
+      isPublic(originalRequest)
     ) {
       return Promise.reject(error);
     }

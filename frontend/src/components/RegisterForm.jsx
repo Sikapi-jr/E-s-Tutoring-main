@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
+import { getErrorMessage } from "../utils/errorHandler";
 import "../styles/RegistrationForm.css";
 
 function RegisterForm() {
@@ -58,13 +59,7 @@ function RegisterForm() {
       alert(t('auth.verificationEmailSent', { email }));
       navigate("/login");
     } catch (err) {
-      if (err.response) {
-        setError(t('errors.serverError'));
-      } else if (err.request) {
-        setError(t('errors.networkError'));
-      } else {
-        setError(t('errors.somethingWentWrong'));
-      }
+      setError(getErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -81,10 +76,9 @@ function RegisterForm() {
       <div className="role-buttons">
         <button onClick={() => handleRoleSelection("student")}>{t('auth.student')}</button>
         <button onClick={() => handleRoleSelection("parent")}>{t('auth.parent')}</button>
-        <button onClick={() => handleRoleSelection("tutor")}>{t('auth.tutor')}</button>
       </div>
 
-      {(roles === "parent" || roles === "tutor") && (
+      {roles === "parent" && (
         <div className="form-section">
           <form onSubmit={handleSubmit}>
             <input

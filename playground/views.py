@@ -94,37 +94,91 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
+        from django.db import transaction
+        from django.core.exceptions import ValidationError
+        
         role = serializer.validated_data.get('roles')
         email = serializer.validated_data.get('email')
         parent = serializer.validated_data.get('parent')
         ref_code = self.request.query_params.get("ref")
-        ref = Referral.objects.filter(code=ref_code, referred__isnull=True).first()
-
-        print("validated data", serializer.validated_data)
-        if role == 'student':
-            parentUser = User.objects.get(email=email, username=parent)
-            serializer.validated_data['parent'] = parentUser
-
-        user = serializer.save(is_active=False)
-
-        # Send verification email asynchronously
-        from playground.tasks import send_verification_email_async, create_stripe_account_async
         
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
-        send_verification_email_async.delay(user.id, verify_url)
-
-        if role == 'tutor':
-            if ref:
+        print("validated data", serializer.validated_data)
+        
+        # Pre-validate all data before creating anything
+        parentUser = None
+        ref = None
+        
+        if role == 'student':
+            try:
+                parentUser = User.objects.get(email=email, username=parent)
+            except User.DoesNotExist:
+                raise ValidationError(f"Parent user with email {email} and username {parent} not found")
+        
+        if ref_code:
+            ref = Referral.objects.filter(code=ref_code, referred__isnull=True).first()
+        
+        # Use atomic transaction to ensure all database operations succeed or none do
+        with transaction.atomic():
+            if parentUser:
+                serializer.validated_data['parent'] = parentUser
+                
+            user = serializer.save(is_active=False)
+            
+            # Handle referral logic within transaction
+            if role == 'tutor' and ref:
                 ref.referred = user
                 ref.save(update_fields=["referred"])
                 _apply_receiver_discount(user)    
                 ref.referrer.pending_rewards = F("pending_rewards") + 1
                 ref.referrer.save(update_fields=["pending_rewards"])
 
-            # Create Stripe account asynchronously
-            create_stripe_account_async.delay(user.id)
+        # Post-creation actions (outside transaction to avoid rollback on email failures)
+        from playground.tasks import send_verification_email_async, create_stripe_account_async
+        from kombu.exceptions import OperationalError
+        from django.core.mail import send_mail
+        
+        # Generate verification email data
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+        
+        # Send verification email (don't fail if this fails)
+        try:
+            try:
+                send_verification_email_async.delay(user.id, verify_url)
+            except OperationalError:
+                # Fallback to synchronous email sending if Celery broker is unavailable
+                subject = 'Verify Your EGS Tutoring Account'
+                message = f"""
+        Hello {user.firstName},
+        
+        Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+        
+        {verify_url}
+        
+        If you didn't create this account, please ignore this email.
+        
+        Best regards,
+        EGS Tutoring Team
+        """
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=True,  # Don't fail registration if email fails
+                )
+        except Exception as e:
+            # Log error but don't fail registration
+            print(f"Email sending failed: {e}")
+
+        # Handle Stripe account creation for tutors (don't fail if this fails)
+        if role == 'tutor':
+            try:
+                create_stripe_account_async.delay(user.id)
+            except (OperationalError, Exception) as e:
+                # Log error but don't fail registration
+                print(f"Stripe account creation failed: {e}")
 
     
 

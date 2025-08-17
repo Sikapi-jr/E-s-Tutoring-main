@@ -93,7 +93,8 @@
   },
   "navbar": {
     "tutoring": "Tutorat",
-    "adminTools": "Outils d'administration"
+    "adminTools": "Outils d'administration",
+    "addTutor": "Ajouter un tuteur"
   },
   "auth": {
     "loginTitle": "Connexion à EGS Tutoring",
@@ -129,6 +130,8 @@
     "verifyingEmail": "Vérification de votre courriel..."
   },
   "home": {
+    "adminTools": "Outils d'administration",
+    "addTutor": "Ajouter un tuteur",
     "greeting": "Bonjour, {{name}} !",
     "greetingDefault": "Bonjour !",
     "loggedHours": "Heures enregistrées",
