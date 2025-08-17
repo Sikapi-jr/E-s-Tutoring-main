@@ -205,6 +205,7 @@ import dj_database_url
 # If DATABASE_URL is provided, use it (preferred method for Supabase)
 database_url = os.getenv('DATABASE_URL', '').strip()
 print(f"DEBUG: DATABASE_URL exists: {bool(database_url)}", file=sys.stderr)
+print(f"DEBUG: DATABASE_URL first 30 chars: '{database_url[:30]}'", file=sys.stderr)
 print(f"DEBUG: DATABASE_URL starts with postgres: {database_url.startswith(('postgresql://', 'postgres://')) if database_url else False}", file=sys.stderr)
 if database_url and database_url.startswith(('postgresql://', 'postgres://')):
     # Add SSL if not already present
