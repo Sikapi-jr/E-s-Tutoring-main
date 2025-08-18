@@ -262,60 +262,71 @@ def send_referral_email_async(self, sender_name, sender_email, receiver_email):
 def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=None):
     """
     Generate and send invoices for multiple customers asynchronously
+    Process in chunks to reduce memory usage
     """
+    import gc
+    
     results = []
     errors = []
+    chunk_size = 10  # Process 10 invoices at a time to reduce memory
     
     try:
-        for customer_data in customer_data_list:
-            try:
-                customer_id = customer_data['customer_id']
-                amount = customer_data['amount']  # in cents
-                description = customer_data.get('description', 'Tutoring Services')
-                
-                # Create invoice item
-                invoice_item = stripe.InvoiceItem.create(
-                    customer=customer_id,
-                    amount=amount,
-                    currency='usd',
-                    description=description,
-                )
-                
-                # Create invoice
-                invoice = stripe.Invoice.create(
-                    customer=customer_id,
-                    metadata=invoice_metadata or {},
-                    auto_advance=True,  # Automatically finalize and attempt payment
-                )
-                
-                # Finalize and send invoice
-                invoice.finalize_invoice()
-                invoice.send_invoice()
-                
-                results.append({
-                    'customer_id': customer_id,
-                    'invoice_id': invoice.id,
-                    'amount': amount,
-                    'status': 'sent'
-                })
-                
-                logger.info(f"Invoice {invoice.id} created and sent for customer {customer_id}")
-                
-            except stripe.error.StripeError as e:
-                error_msg = f"Stripe error for customer {customer_data.get('customer_id', 'unknown')}: {str(e)}"
-                logger.error(error_msg)
-                errors.append({
-                    'customer_id': customer_data.get('customer_id'),
-                    'error': str(e)
-                })
-                
-            except Exception as e:
-                error_msg = f"Unexpected error for customer {customer_data.get('customer_id', 'unknown')}: {str(e)}"
-                logger.error(error_msg)
-                errors.append({
-                    'customer_id': customer_data.get('customer_id'),
-                    'error': str(e)
-                })
+        # Process in chunks to reduce memory usage
+        for i in range(0, len(customer_data_list), chunk_size):
+            chunk = customer_data_list[i:i + chunk_size]
+            
+            for customer_data in chunk:
+                try:
+                    customer_id = customer_data['customer_id']
+                    amount = customer_data['amount']  # in cents
+                    description = customer_data.get('description', 'Tutoring Services')
+                    
+                    # Create invoice item
+                    invoice_item = stripe.InvoiceItem.create(
+                        customer=customer_id,
+                        amount=amount,
+                        currency='usd',
+                        description=description,
+                    )
+                    
+                    # Create invoice
+                    invoice = stripe.Invoice.create(
+                        customer=customer_id,
+                        metadata=invoice_metadata or {},
+                        auto_advance=True,  # Automatically finalize and attempt payment
+                    )
+                    
+                    # Finalize and send invoice
+                    invoice.finalize_invoice()
+                    invoice.send_invoice()
+                    
+                    results.append({
+                        'customer_id': customer_id,
+                        'invoice_id': invoice.id,
+                        'amount': amount,
+                        'status': 'sent'
+                    })
+                    
+                    logger.info(f"Invoice {invoice.id} created and sent for customer {customer_id}")
+                    
+                except stripe.error.StripeError as e:
+                    error_msg = f"Stripe error for customer {customer_data.get('customer_id', 'unknown')}: {str(e)}"
+                    logger.error(error_msg)
+                    errors.append({
+                        'customer_id': customer_data.get('customer_id'),
+                        'error': str(e)
+                    })
+                    
+                except Exception as e:
+                    error_msg = f"Unexpected error for customer {customer_data.get('customer_id', 'unknown')}: {str(e)}"
+                    logger.error(error_msg)
+                    errors.append({
+                        'customer_id': customer_data.get('customer_id'),
+                        'error': str(e)
+                    })
+            
+            # Force garbage collection after each chunk to free memory
+            gc.collect()
         
         logger.info(f"Bulk invoice generation completed. Success: {len(results)}, Errors: {len(errors)}")
         

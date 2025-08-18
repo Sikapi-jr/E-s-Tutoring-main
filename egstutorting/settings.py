@@ -83,6 +83,13 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+# Memory management for Celery workers
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 50  # Restart worker after 50 tasks to prevent memory leaks
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 100000  # Restart worker at 100MB memory usage
+CELERY_TASK_ACKS_LATE = True  # Don't ack tasks until they complete successfully
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Only prefetch 1 task at a time to reduce memory
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Reject tasks if worker dies
+
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "http://localhost:8000/api/google/oauth2callback")
