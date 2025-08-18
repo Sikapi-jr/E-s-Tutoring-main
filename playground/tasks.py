@@ -466,7 +466,6 @@ def create_google_calendar_event_async(self, user_id, event_data):
     Create Google Calendar event asynchronously
     """
     try:
-        from playground.views import refresh_google_access_token
         from datetime import datetime, timezone
         import requests
         
@@ -476,6 +475,8 @@ def create_google_calendar_event_async(self, user_id, event_data):
         access_token = None
         if getattr(user, "google_token_expiry", None):
             if user.google_token_expiry < datetime.now(timezone.utc):
+                # Import at runtime to avoid circular imports
+                from playground.views import refresh_google_access_token
                 refresh_result = refresh_google_access_token(user)
                 if refresh_result == "RECONNECT_GOOGLE":
                     return {'success': False, 'error': 'Google account needs to be reconnected'}
@@ -529,10 +530,11 @@ def refresh_google_token_async(self, user_id):
     Refresh Google OAuth token asynchronously
     """
     try:
-        from playground.views import refresh_google_access_token
         
         user = User.objects.get(id=user_id)
         
+        # Import at runtime to avoid circular imports
+        from playground.views import refresh_google_access_token
         refresh_result = refresh_google_access_token(user)
         
         if refresh_result == "RECONNECT_GOOGLE":
@@ -559,7 +561,6 @@ def fetch_google_calendar_events_async(self, user_id, params=None):
     Fetch Google Calendar events asynchronously
     """
     try:
-        from playground.views import refresh_google_access_token
         from datetime import datetime, timezone
         import requests
         
@@ -569,6 +570,8 @@ def fetch_google_calendar_events_async(self, user_id, params=None):
         access_token = None
         if getattr(user, "google_token_expiry", None):
             if user.google_token_expiry < datetime.now(timezone.utc):
+                # Import at runtime to avoid circular imports
+                from playground.views import refresh_google_access_token
                 refresh_result = refresh_google_access_token(user)
                 if refresh_result == "RECONNECT_GOOGLE":
                     return {'success': False, 'error': 'Google account needs to be reconnected'}
@@ -631,7 +634,6 @@ def update_google_calendar_rsvp_async(self, user_id, event_id, status):
     Update Google Calendar event RSVP status asynchronously
     """
     try:
-        from playground.views import refresh_google_access_token
         from datetime import datetime, timezone
         import requests
         
@@ -641,6 +643,8 @@ def update_google_calendar_rsvp_async(self, user_id, event_id, status):
         access_token = None
         if getattr(user, "google_token_expiry", None):
             if user.google_token_expiry < datetime.now(timezone.utc):
+                # Import at runtime to avoid circular imports
+                from playground.views import refresh_google_access_token
                 refresh_result = refresh_google_access_token(user)
                 if refresh_result == "RECONNECT_GOOGLE":
                     return {'success': False, 'error': 'Google account needs to be reconnected'}
