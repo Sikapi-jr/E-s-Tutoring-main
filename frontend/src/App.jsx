@@ -78,23 +78,8 @@ function AppRoutes() {
   const location = useLocation();
   const { user } = useUser();
 
-  const publicPaths = [
-    "/",
-    "/login", 
-    "/register",
-    "/logout",
-    "/password-reset",
-    "/password-reset-confirm",
-    "/verify-email",
-    "/stripe-reauth",
-  ];
-
-  const isPublicPath = publicPaths.some((path) =>
-    location.pathname.startsWith(path)
-  );
-
-  // Show UnauthNavbar if: on public path OR user not logged in
-  const showUnauthNavbar = isPublicPath || !user;
+  // Show UnauthNavbar only when user is not logged in
+  const showUnauthNavbar = !user;
 
   useEffect(() => {
     if (!showUnauthNavbar) {

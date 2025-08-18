@@ -199,6 +199,8 @@ function ProfileMenu({ user, BASE }) {
 export default function Navbar() {
   const { user } = useUser();
   const { t } = useTranslation();
+
+  // If no user, don't render the authenticated navbar
   if (!user) return null;
 
   // Get routes with current translations
