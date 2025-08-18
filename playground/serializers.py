@@ -15,6 +15,75 @@ from playground.models import AiChatSession
 
 User = get_user_model()  # Move this outside the class definition for better performance
 
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    """Secure serializer for user registration - only exposes safe fields"""
+    parent = serializers.CharField(
+        write_only=True, required=False, allow_blank=True
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "username", "password",
+            "firstName", "lastName", "address", "city",
+            "roles", "email", "parent"
+        ]
+        extra_kwargs = {
+            "password": {"write_only": True, "min_length": 8},
+            "email": {"required": True},
+            "username": {"required": True},
+            "roles": {"required": False},
+        }
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("This username is already in use.")
+        return value
+
+    def validate_parent(self, value):
+        """Make sure the supplied username belongs to a *parent* account."""
+        if value in ("", None):
+            return ""
+        qs = User.objects.filter(username=value, roles="parent")
+        if not qs.exists():
+            raise serializers.ValidationError("Parent user not found or not a parent.")
+        return value
+
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters.")
+        return value
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        roles = attrs.get("roles", "parent")
+
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            raise serializers.ValidationError({"email": "Invalid e-mail format."})
+
+        if roles in ("parent", "tutor") and User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "E-mail already in use."})
+
+        # For student: cross-check that the parent username's e-mail matches
+        if roles == "student" and attrs.get("parent"):
+            parent = User.objects.get(username=attrs["parent"])
+            if parent.email != email:
+                raise serializers.ValidationError(
+                    {"parent": "Parent username and e-mail do not match."}
+                )
+        return attrs
+
+    def create(self, validated):
+        parent_username = validated.pop("parent", "")
+        if parent_username:
+            parent_instance = User.objects.get(username=parent_username)
+            validated["parent"] = parent_instance
+        else:
+            validated["parent"] = None
+        return User.objects.create_user(**validated)
+
 class UserDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserDocument

@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.decorators import api_view
 from django.contrib.auth import get_user_model  # Correct way to import the user model
 from rest_framework import generics, status
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
@@ -90,7 +90,7 @@ def current_user_view(request):
 
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
