@@ -58,5 +58,11 @@ urlpatterns = [
 
 ]
 
+# Add media serving for production
+if not settings.DEBUG:
+    urlpatterns += [
+        path('media/<path:path>', views.serve_media, name='serve_media'),
+    ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
