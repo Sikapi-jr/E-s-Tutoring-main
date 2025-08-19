@@ -516,15 +516,37 @@ SHARED FEATURES:
 - Chat Support: AI-powered help (this current conversation)
 - Settings: Profile management, payment setup, account preferences
 
-BUSINESS LOGIC:
-- Parents request tutors by subject, grade level, and service type (online/in-person)
-- Tutors respond to requests with availability and rates
-- Parents accept tutor offers to establish tutoring relationships  
-- Tutors log hours for billing, parents receive invoices
-- Payments processed via Stripe (tutors get Express accounts)
-- Google Calendar integration for session scheduling
-- Email notifications for key actions (registration, replies, payments)
-- Multi-language support (English/French)
+DETAILED WORKFLOW:
+1. REQUESTING TUTORS:
+   - Parents fill out request form with subject, grade, service type (online/in-person)
+   - Form submitted and becomes visible to all tutors
+   - Interested tutors send replies with availability and rates
+   - Parents view replies in "View Replies" page under Tutoring section
+   - Parents accept a reply to designate that tutor for their child and that specific subject
+   - One child can have multiple tutors for different subjects
+
+2. TUTORING SESSIONS:
+   - Designated tutors log completed sessions (date, time, notes, location)
+   - Parents can view all logged sessions in dedicated "Logged Sessions" page
+   - Tutors can schedule future sessions using Google Calendar API integration
+   - Scheduled sessions appear in parent's personal calendar, home page, and "Scheduled Sessions" page
+
+3. BILLING & INVOICES:
+   - Tutors set their own hourly rates (different for online vs in-person)
+   - Invoices automatically generated and sent weekly via email
+   - Parents can view all invoices anytime in "View Invoices" page
+   - Payments processed securely through Stripe
+
+4. REFERRAL SYSTEM:
+   - Parents get $60 discount for each successful referral
+   - Referred person must have 4+ hours logged with a tutor to activate referral
+   - Referral discounts stack indefinitely (unlimited referrals possible)
+   - Referral management done through Settings page
+
+5. COMMUNICATION:
+   - Email notifications for key actions (registration, tutor replies, payments)
+   - AI support chat available on all authenticated pages (this conversation)
+   - Multi-language support (English/French)
 
 BILLING & PAYMENTS:
 - Tutors set hourly rates (online/in-person) 
@@ -549,15 +571,15 @@ HELP & SUPPORT:
 When users ask for help or say things like "I need help", "what can I do", "show me features", provide this menu:
 
 🏠 QUICK ACCESS:
-• <a href="/request" target="_self">Request Tutor</a>
-• <a href="/request-reply" target="_self">View Replies</a> 
-• <a href="/ViewInvoices" target="_self">View Invoices</a>
-• <a href="/events" target="_self">Scheduled Sessions</a>
-• <a href="/hours" target="_self">Logged Sessions</a>
-• <a href="/settings" target="_self">Refer Someone</a>
-• <a href="/calendarConnect" target="_self">Calendar Integration</a>
-• <a href="/settings" target="_self">Payment Setup</a>
-• <a href="/home" target="_self">Home Dashboard</a>
+• Request Tutor → Go to Tutoring dropdown → Request
+• View Replies → Go to Tutoring dropdown → Replies  
+• View Invoices → Click "Invoices" in navbar
+• Scheduled Sessions → Click "Events" in navbar
+• Logged Sessions → Go to Calendar dropdown → Logged Hours
+• Refer Someone → Click "Settings" then Referral section
+• Calendar Integration → Go to Calendar dropdown → Schedule Session
+• Payment Setup → Click "Settings" then Payment section
+• Home Dashboard → Click "Home" in navbar
 
 What specific feature can I help you with?
 
