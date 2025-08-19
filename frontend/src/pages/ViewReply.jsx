@@ -167,7 +167,14 @@ const ViewReply = () => {
 
                 {selectedRequestID === request.id && showReplies && (
                   <ul className="replies-list">
-                    {replies.map(reply => (
+                    {replies.length === 0 ? (
+                      <li className="no-replies-message">
+                        <p style={{ fontStyle: 'italic', color: '#666', textAlign: 'center', padding: '1rem' }}>
+                          No replies yet. Tutors will respond to your request soon.
+                        </p>
+                      </li>
+                    ) : (
+                      replies.map(reply => (
                       <li key={reply.id} className="reply-item">
                         <strong>{t('replies.message')}:</strong> {reply.message} <br />
                         <strong>{t('replies.sentAt')}:</strong>{" "}
@@ -224,7 +231,8 @@ const ViewReply = () => {
                           </button>
                         </div>
                       </li>
-                    ))}
+                      ))
+                    )}
                   </ul>
                 )}
               </li>

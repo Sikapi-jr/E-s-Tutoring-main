@@ -30,6 +30,9 @@ export default function Home() {
   const [tutorDocuments, setTutorDocuments] = useState([]);
   const [googleConnected, setGoogleConnected] = useState(false);
   
+  // Parent Google Calendar state
+  const [parentGoogleConnected, setParentGoogleConnected] = useState(false);
+  
   // Admin state
   const [showTutorForm, setShowTutorForm] = useState(false);
   
@@ -52,6 +55,11 @@ export default function Home() {
           try {
             const parentRes = await api.get('/api/homeParent/', { params: { id: user.account_id } });
             parentData = parentRes.data;
+            
+            // Check Google connection status for parent
+            const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
+            setParentGoogleConnected(googleStatusRes.data?.connected || false);
+            
           } catch (parentError) {
             console.error("Parent data fetch failed:", parentError);
           }
@@ -172,6 +180,11 @@ export default function Home() {
       console.error("Google connect failed:", error);
       alert('Failed to connect to Google Calendar');
     }
+  }, []);
+
+  /* handle parent Google Calendar connection redirect */
+  const handleParentGoogleConnect = useCallback(() => {
+    window.location.href = '/events';
   }, []);
 
   /* handle document deletion */
@@ -327,9 +340,33 @@ export default function Home() {
                 </tbody>
               </table>
             ) : (
-              <p style={{ textAlign: "center", color: "#888" }}>
-                {t('home.noScheduledEvents')}
-              </p>
+              <div style={{ textAlign: "center", padding: "2rem" }}>
+                {user?.roles === 'parent' && !parentGoogleConnected ? (
+                  <div>
+                    <p style={{ color: "#666", marginBottom: "1rem" }}>
+                      Connect your Google Calendar to view scheduled sessions
+                    </p>
+                    <button
+                      onClick={handleParentGoogleConnect}
+                      style={{
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        border: "none",
+                        padding: "0.75rem 1.5rem",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      Go to Scheduled Sessions
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{ color: "#888" }}>
+                    {t('home.noScheduledEvents')}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -506,9 +543,12 @@ export default function Home() {
                 </div>
                 {students.length > 0 ? (
                   students.map((s, index) => {
+                    const tutorName = s.has_tutor 
+                      ? `${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
+                      : 'No Tutor';
                     return (
-                    <div key={s.id || index} style={{ margin: "0.5rem 0" }}>
-                      <strong>{s.student_firstName || s.firstName || s.name || 'No'} {s.student_lastName || 'name'}</strong> - {s.tutor_firstName || s.tutorName || s.tutor || 'No tutor'}
+                    <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "left" }}>
+                      <strong>{s.student_firstName || 'Unknown'} {s.student_lastName || ''}</strong> - {tutorName}
                     </div>
                     );
                   })

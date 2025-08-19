@@ -415,3 +415,43 @@
   border: 2px solid #ccc;
 }
 
+/* ================================================================= */
+/*  Google Status Box                                               */
+/* ================================================================= */
+.google-status-box {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 2px solid #e1e4e8;
+  border-radius: 8px;
+  background: #fafbfc;
+  text-align: center;
+}
+
+.google-status-box h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #24292e;
+}
+
+.google-status-box p {
+  margin-bottom: 1rem;
+  color: #586069;
+}
+
+.google-status-box .form-button {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.google-status-box .form-button:hover {
+  background: #218838;
+}
+

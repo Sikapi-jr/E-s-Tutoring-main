@@ -47,7 +47,7 @@ export default function LoggedHoursPage() {
   /* ─────────────── main table ─────────────── */
   return (
     <div className="hours-page">
-      <h2 className="hrs-title">{t('loggedHours.myLoggedTutoringHours')}</h2>
+      <h2 className="hrs-title">{t('loggedHours.title')}</h2>
 
       {hours.length ? (
         <table className="hours-table">
@@ -83,7 +83,7 @@ export default function LoggedHoursPage() {
         </table>
       ) : (
         <p style={{ textAlign: "center", color: "#888" }}>
-          {t('loggedHours.noHoursLoggedYet')}
+          {t('loggedHours.noHours')}
         </p>
       )}
     </div>

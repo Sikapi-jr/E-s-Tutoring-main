@@ -821,10 +821,37 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
             return Response({"error": "Missing 'email' query parameter"}, status=400)
 
         if user_role == 'parent':
-            # Always get students and hours regardless of Stripe customer status
-            students = AcceptedTutor.objects.filter(parent=user_id)
+            # Get ALL students that belong to this parent
+            all_students = User.objects.filter(parent=user_id, roles='student')
+            
+            # Get accepted tutors for students
+            accepted_tutors = AcceptedTutor.objects.filter(parent=user_id)
+            
+            # Create a combined dataset with student info and tutor status
+            students_with_tutors = []
+            for student in all_students:
+                # Find if this student has an accepted tutor
+                tutor_relation = accepted_tutors.filter(student=student.id).first()
+                if tutor_relation:
+                    students_with_tutors.append({
+                        'id': student.id,
+                        'student_firstName': student.firstName,
+                        'student_lastName': student.lastName,
+                        'tutor_firstName': tutor_relation.tutor.firstName,
+                        'tutor_lastName': tutor_relation.tutor.lastName,
+                        'has_tutor': True
+                    })
+                else:
+                    students_with_tutors.append({
+                        'id': student.id,
+                        'student_firstName': student.firstName,
+                        'student_lastName': student.lastName,
+                        'tutor_firstName': None,
+                        'tutor_lastName': None,
+                        'has_tutor': False
+                    })
+            
             hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
-            responseStudents = AcceptedTutorSerializer(students, many=True).data
             responseHours = HoursSerializer(hours, many=True).data
             
             # Get invoices from Stripe if customer exists
@@ -833,7 +860,7 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
                 # If no Stripe customer, return empty invoices but include students and hours
                 return Response({
                     "invoices": [],
-                    "students": responseStudents,
+                    "students": students_with_tutors,
                     "hours": responseHours
                 })
 
@@ -842,7 +869,7 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
 
             return Response({
                 "invoices": invoices.data,
-                "students": responseStudents,
+                "students": students_with_tutors,
                 "hours": responseHours
             })
         else:
