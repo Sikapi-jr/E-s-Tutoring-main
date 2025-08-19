@@ -67,8 +67,7 @@ import "./styles/App.css";
 import "./styles/UnauthNavbar.css";
 import "./styles/Navbar.css";
 import "./components/CalendarApp.css";
-import "./styles/Footer.css";
-import "./styles/Mobile.css"; 
+import "./styles/Footer.css"; 
 
 function Logout() {
   localStorage.clear();
@@ -78,31 +77,6 @@ function Logout() {
 function AppRoutes() {
   const location = useLocation();
   const { user } = useUser();
-  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-
-  // Handle initial load state
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoad(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading during initial authentication check
-  if (isInitialLoad) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '1.2rem',
-        color: '#666'
-      }}>
-        Loading...
-      </div>
-    );
-  }
 
   // Define paths that should show UnauthNavbar (public/unauth pages)
   const unauthPaths = [
