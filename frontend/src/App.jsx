@@ -78,8 +78,25 @@ function AppRoutes() {
   const location = useLocation();
   const { user } = useUser();
 
-  // Show UnauthNavbar only when user is not logged in
-  const showUnauthNavbar = !user;
+  // Define paths that should show UnauthNavbar (public/unauth pages)
+  const unauthPaths = [
+    "/",
+    "/login", 
+    "/register",
+    "/password-reset",
+    "/password-reset-confirm",
+    "/verify-email",
+    "/stripe-reauth"
+  ];
+
+  // Check if current path should show UnauthNavbar
+  const isUnauthPage = unauthPaths.some(path => 
+    location.pathname === path || 
+    location.pathname.startsWith(path + "/")
+  );
+
+  // Show UnauthNavbar for unauth pages (regardless of user login status)
+  const showUnauthNavbar = isUnauthPage;
 
   useEffect(() => {
     if (!showUnauthNavbar) {
