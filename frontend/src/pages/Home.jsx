@@ -253,6 +253,7 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
+            marginTop: "2rem",
           }}
         >
           <div

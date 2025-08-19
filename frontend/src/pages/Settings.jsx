@@ -101,18 +101,23 @@ export default function Settings() {
       formData.append("address", editForm.address.trim());
       formData.append("city", editForm.city.trim());
       if (profilePicture) {
-        formData.append("profile_picture", API_BASE_URL + profilePicture);
+        formData.append("profile_picture", profilePicture);
       }
 
-      await api.patch(`/api/profile/${user.account_id}/`, formData, {
+      const response = await api.patch(`/api/profile/${user.account_id}/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
       const updatedUser = { ...user, ...editForm };
+      // Update profile picture if response contains it
+      if (response.data?.profile_picture) {
+        updatedUser.profile_picture = response.data.profile_picture;
+      }
       setUser?.(updatedUser);
       setShowEdit(false);
+      setProfilePicture(null); // Reset file input
     } catch (err) {
       console.error("Profile update failed", err);
     }

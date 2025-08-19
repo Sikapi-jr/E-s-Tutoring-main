@@ -229,14 +229,17 @@ def change_settings_parent(request, pk):
             profile.profile_picture = new_picture
             update_fields.append("profile_picture")
 
-    if update_fields:
-        profile.save(update_fields=update_fields)
-
     if not update_fields:
         return Response({"message": "Nothing to update."}, status=200)
 
     profile.save(update_fields=update_fields)
-    return Response({"message": "Settings updated successfully."}, status=200)
+    
+    # Return updated user data including profile picture URL
+    response_data = {"message": "Settings updated successfully."}
+    if "profile_picture" in update_fields:
+        response_data["profile_picture"] = profile.profile_picture.url if profile.profile_picture else None
+    
+    return Response(response_data, status=200)
 
 
 @api_view(['POST'])
