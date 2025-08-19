@@ -25,7 +25,6 @@ const getRoutes = (t) => ({
   CalCon:  { to: "/calendarConnect",   label: t('navigation.scheduleSession') },
   Inv:     { to: "/ViewInvoices",      label: t('navigation.invoices') },
   Dash:    { to: "/parent-dashboard",  label: t('navigation.dashboard') },
-  Chat:    { to: "/chatgpt",           label: t('navigation.chat') },
   Set:     { to: "/settings",          label: t('navigation.settings') },
   Login:   { to: "/login",             label: t('navigation.login') },
   Register:{ to: "/register",          label: t('navigation.register') },
@@ -38,25 +37,25 @@ const getRoleConfig = (BASE) => ({
     main:   [BASE.Home],
     tutor:  [BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
     cal:    [BASE.Events, BASE.CalCon, BASE.Hours],
-    single: [BASE.Inv, BASE.Chat, BASE.Reports],
+    single: [BASE.Inv, BASE.Reports],
   },
   parent: {
     main:   [BASE.Home],
     tutor:  [BASE.Request, BASE.Replies],
     cal:    [BASE.Events, BASE.Hours],
-    single: [BASE.Inv, BASE.Chat, BASE.Reports],
+    single: [BASE.Inv, BASE.Reports],
   },
   tutor: {
     main:   [BASE.Home, BASE.Dash],
     tutor:  [BASE.Log, BASE.CalCon],
     cal:    [BASE.Events, BASE.Hours],
-    single: [BASE.Chat, BASE.Reports],
+    single: [BASE.Reports],
   },
   student: {
     main:   [BASE.Home],
     tutor:  [],
     cal:    [BASE.Events, BASE.Hours],
-    single: [BASE.Chat],
+    single: [],
   },
 });
 

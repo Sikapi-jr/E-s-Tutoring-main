@@ -16,6 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import UnauthNavbar from "./components/UnauthNavBar";
 import Footer from "./components/Footer.jsx";
+import FloatingChat from "./components/FloatingChat.jsx";
 
 // Lazy load all other components
 const Home = lazy(() => import("./pages/Home"));
@@ -25,7 +26,6 @@ const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const ViewReply = lazy(() => import("./pages/ViewReply"));
 const Profile = lazy(() => import("./components/Profile"));
 const Announcement = lazy(() => import("./pages/CreateAnnouncement"));
-const Chatgpt = lazy(() => import("./components/Chatgpt"));
 const LogHours = lazy(() => import("./pages/LogHours"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SendWeekly = lazy(() => import("./pages/SendWeekly"));
@@ -129,7 +129,6 @@ function AppRoutes() {
             <Route path="/monthlyhours" element={<ProtectedRoute><SendMonthly /></ProtectedRoute>} />
             <Route path="/viewinvoices" element={<ProtectedRoute><ViewInvoices /></ProtectedRoute>} />
             <Route path="/calendarConnect" element={<ProtectedRoute><CalendarConnect /></ProtectedRoute>} />
-            <Route path="/chatgpt" element={<ProtectedRoute><Chatgpt /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/hours" element={<ProtectedRoute><LoggedHoursPage /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
@@ -151,6 +150,9 @@ function AppRoutes() {
       {!showUnauthNavbar && (
         <Footer />
       )}
+
+      {/* Floating Chat - Available on all authenticated pages */}
+      {!showUnauthNavbar && <FloatingChat />}
     </div>
   );
 }
