@@ -237,7 +237,10 @@ def change_settings_parent(request, pk):
     # Return updated user data including profile picture URL
     response_data = {"message": "Settings updated successfully."}
     if "profile_picture" in update_fields:
-        response_data["profile_picture"] = profile.profile_picture.url if profile.profile_picture else None
+        if profile.profile_picture:
+            response_data["profile_picture"] = request.build_absolute_uri(profile.profile_picture.url)
+        else:
+            response_data["profile_picture"] = None
     
     return Response(response_data, status=200)
 

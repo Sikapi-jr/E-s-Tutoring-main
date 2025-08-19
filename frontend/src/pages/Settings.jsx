@@ -10,6 +10,20 @@ import "../styles/Settings.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// Helper function to construct proper media URL
+const getMediaUrl = (filePath) => {
+  if (!filePath) return null;
+  
+  // If it's already a full URL, return as is
+  if (filePath.startsWith('http')) return filePath;
+  
+  // If it starts with /, it's an absolute path from the server root
+  if (filePath.startsWith('/')) return `${API_BASE_URL}${filePath}`;
+  
+  // Otherwise, it's a relative path that needs /media/ prefix
+  return `${API_BASE_URL}/media/${filePath}`;
+};
+
 export default function Settings() {
   const { t } = useTranslation();
   const { user, setUser } = useUser();
@@ -186,7 +200,7 @@ export default function Settings() {
         >
           {user.profile_picture ? (
             <img
-              src={`${API_BASE_URL}${user.profile_picture}`}
+              src={getMediaUrl(user.profile_picture)}
               alt="Profile"
               style={{
                 width: "80px",
