@@ -1,0 +1,98 @@
+/* Home Page Mobile Responsive Styles */
+
+/* Override inline styles with CSS for mobile responsiveness */
+@media (max-width: 768px) {
+  /* Target the Home page container */
+  .home-container {
+    padding: 0 !important;
+  }
+  
+  /* Override the greeting styles */
+  .home-container h1 {
+    position: static !important;
+    font-size: 2.5rem !important;
+    margin: 1rem 0 !important;
+    padding: 0 1rem !important;
+  }
+  
+  /* Override the three-column layout - target the flex container */
+  .home-container > div[style*="display: flex"] {
+    flex-direction: column !important;
+    padding: 1rem !important;
+    gap: 1.5rem !important;
+  }
+  
+  /* Override column widths - target the child divs with width styles */
+  .home-container div[style*="width: 20%"],
+  .home-container div[style*="width: 55%"] {
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Override card styles - target divs with background */
+  .home-container div[style*="background: #fff"] {
+    margin: 0.5rem 0 !important;
+    padding: 1rem !important;
+    min-height: auto !important;
+  }
+  
+  /* Override table wrapper styles */
+  .home-container .table-wrapper {
+    max-height: 300px !important;
+    overflow-x: auto !important;
+  }
+  
+  /* Override progress bar and other margin containers */
+  .home-container div[style*="marginTop"] {
+    margin-top: 1rem !important;
+  }
+  
+  /* Events table mobile improvements */
+  .home-container .events-table {
+    font-size: 0.8rem !important;
+    min-width: 600px;
+  }
+  
+  .home-container .events-table th,
+  .home-container .events-table td {
+    padding: 0.5rem 0.25rem !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container h1 {
+    font-size: 2rem !important;
+  }
+  
+  .home-container > div[style*="display: flex"] {
+    padding: 0.5rem !important;
+  }
+  
+  .home-container div[style*="background: #fff"] {
+    padding: 0.75rem !important;
+  }
+  
+  .home-container .table-wrapper {
+    max-height: 250px !important;
+  }
+  
+  .home-container .events-table {
+    font-size: 0.7rem !important;
+    min-width: 500px;
+  }
+  
+  .home-container .events-table th,
+  .home-container .events-table td {
+    padding: 0.25rem !important;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .home-container h1 {
+    font-size: 2rem !important;
+    margin: 0.5rem 0 !important;
+  }
+}

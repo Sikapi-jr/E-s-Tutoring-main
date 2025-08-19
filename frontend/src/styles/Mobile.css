@@ -1,0 +1,386 @@
+/* Global Mobile Responsive Styles */
+
+/* Mobile-first approach for critical components */
+
+/* Base mobile styles */
+@media (max-width: 768px) {
+  
+  /* Global container adjustments */
+  .container, .wrapper {
+    padding: 0.5rem 1rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Tables - make them horizontally scrollable */
+  .table-wrapper, .events-table, .hours-table {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .events-table, .hours-table {
+    min-width: 600px;
+    font-size: 0.8rem !important;
+  }
+  
+  .events-table th,
+  .events-table td,
+  .hours-table th, 
+  .hours-table td {
+    padding: 0.25rem !important;
+    white-space: nowrap;
+  }
+  
+  /* Form elements */
+  .form-container, .modal {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 0.5rem auto !important;
+    padding: 1rem !important;
+  }
+  
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-radius: 6px !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  button {
+    font-size: 16px !important;
+    padding: 0.75rem 1rem !important;
+    min-height: 44px !important; /* Touch target size */
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    width: auto !important;
+  }
+  
+  /* Specific button styles */
+  .form-button, .btn, .button {
+    width: 100% !important;
+    margin: 0.5rem 0 !important;
+  }
+  
+  /* Request form and other specific forms */
+  .request-form, .settings-form, .login-form {
+    padding: 1rem !important;
+    max-width: none !important;
+  }
+  
+  .request-form input,
+  .request-form select,
+  .request-form textarea,
+  .settings-form input,
+  .settings-form select,
+  .login-form input {
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Enhanced Navigation for Mobile */
+  .nav {
+    position: relative !important;
+  }
+  
+  .nav__burger {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 0.5rem !important;
+    z-index: 1001 !important;
+  }
+  
+  .nav__burger span {
+    width: 25px !important;
+    height: 3px !important;
+    background: #fff !important;
+    transition: all 0.3s ease !important;
+    border-radius: 2px !important;
+  }
+  
+  .nav__burger.is-open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg) !important;
+  }
+  
+  .nav__burger.is-open span:nth-child(2) {
+    opacity: 0 !important;
+  }
+  
+  .nav__burger.is-open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg) !important;
+  }
+  
+  .nav__links {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: #292929 !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    transition: max-height 0.3s ease !important;
+    z-index: 1000 !important;
+    border-top: 1px solid #444 !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+  }
+  
+  .nav__links.is-open {
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    padding: 1rem 0 !important;
+  }
+  
+  .nav__link {
+    padding: 1rem 1.5rem !important;
+    border-bottom: 1px solid #444 !important;
+    display: block !important;
+    width: 100% !important;
+    color: #fff !important;
+    text-decoration: none !important;
+    transition: background-color 0.2s ease !important;
+  }
+  
+  .nav__link:hover,
+  .nav__link.active {
+    background-color: #444 !important;
+    color: #ffb31b !important;
+  }
+  
+  .nav__right {
+    margin-left: auto !important;
+  }
+  
+  /* Dropdown menus in mobile nav */
+  .nav__links .dd-wrapper {
+    width: 100% !important;
+  }
+  
+  .nav__links .dd-wrapper button {
+    width: 100% !important;
+    text-align: left !important;
+    padding: 1rem 1.5rem !important;
+    background: none !important;
+    border: none !important;
+    color: #fff !important;
+    border-bottom: 1px solid #444 !important;
+    font-size: inherit !important;
+  }
+  
+  .nav__links .dd-menu {
+    position: static !important;
+    background: #1a1a1a !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  
+  .nav__links .dd-item {
+    padding: 0.75rem 2rem !important;
+    border-bottom: 1px solid #333 !important;
+    color: #ccc !important;
+  }
+  
+  .nav__links .dd-item:hover {
+    background-color: #333 !important;
+    color: #ffb31b !important;
+  }
+  
+  /* Profile menu in mobile nav */
+  .nav__right .profile__menu {
+    position: static !important;
+    background: #1a1a1a !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  .nav__right .profile__item {
+    padding: 0.75rem 1.5rem !important;
+    border-bottom: 1px solid #333 !important;
+    color: #ccc !important;
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+  
+  /* Settings page */
+  .settings-wrapper {
+    padding: 1rem !important;
+    max-width: none !important;
+  }
+  
+  .profile-card {
+    padding: 1rem !important;
+    flex-direction: column !important;
+  }
+  
+  .profile-head {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center !important;
+  }
+  
+  .edit-btn {
+    position: static !important;
+    margin-top: 1rem !important;
+    width: 100% !important;
+  }
+  
+  .add-child-btn,
+  .add-referral-btn {
+    width: 100% !important;
+    margin: 1rem 0 !important;
+  }
+  
+  .children-list {
+    gap: 0.5rem !important;
+  }
+  
+  .child-card {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 0.5rem !important;
+    padding: 1rem !important;
+  }
+  
+  .referral-card {
+    padding: 1rem !important;
+  }
+  
+  .referral-item {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+  
+  .documents-section {
+    padding: 1rem !important;
+  }
+  
+  .document-item {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+  
+  .tutor-upload-section form {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .tutor-upload-section input[type="file"] {
+    flex: none !important;
+  }
+  
+  /* Cards and panels */
+  .card, .panel, .announcement-card {
+    margin: 0.5rem 0 !important;
+    padding: 1rem !important;
+    border-radius: 8px !important;
+  }
+  
+  /* Text sizing */
+  h1 {
+    font-size: 1.8rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Spacing adjustments */
+  .gap-1 { gap: 0.5rem !important; }
+  .gap-2 { gap: 1rem !important; }
+  .gap-3 { gap: 1.5rem !important; }
+  
+  .p-1 { padding: 0.5rem !important; }
+  .p-2 { padding: 1rem !important; }
+  .p-3 { padding: 1.5rem !important; }
+  
+  .m-1 { margin: 0.5rem !important; }
+  .m-2 { margin: 1rem !important; }
+  .m-3 { margin: 1.5rem !important; }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  
+  /* Even more compact */
+  .container, .wrapper {
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  /* Smaller text on very small screens */
+  .events-table, .hours-table {
+    font-size: 0.7rem !important;
+    min-width: 500px;
+  }
+  
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.3rem !important;
+  }
+  
+  h3 {
+    font-size: 1.1rem !important;
+  }
+  
+  /* Touch targets */
+  button, .nav__link, a {
+    min-height: 44px !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Modal adjustments */
+  .modal {
+    width: 98% !important;
+    margin: 0.25rem !important;
+    padding: 0.75rem !important;
+  }
+}
+
+/* Landscape orientation on small devices */
+@media (max-width: 768px) and (orientation: landscape) {
+  .home-greeting {
+    font-size: 2rem !important;
+    margin-top: 0.5rem !important;
+  }
+  
+  .home-layout {
+    padding-top: 1rem !important;
+  }
+}
+
+/* Hide elements that are not mobile-friendly */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+/* Show mobile-specific elements */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block !important;
+  }
+}

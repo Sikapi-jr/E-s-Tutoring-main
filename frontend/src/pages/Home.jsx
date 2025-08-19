@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import "../styles/EventsTable.css";
+import "../styles/Home.css";
 import { useUser } from "../components/UserProvider";
 import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
@@ -214,58 +215,16 @@ export default function Home() {
 
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh" }}>
-      {/* greeting overlays; no push‑down */}
-      <h1
-        style={{
-          position: "absolute",
-          top: "0.75rem",
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          margin: 0,
-          marginTop: "1.5rem",
-          fontSize: "4rem",
-          fontWeight: "bold",
-          color: "#272727ff",
-          textShadow: "2px 2px 8px #00000022",
-          pointerEvents: "none",
-        }}
-      >
+    <div className="home-container">
+      <h1 className="home-greeting">
         {user?.firstName ? t('home.greeting', { name: user.firstName }) : t('home.greetingDefault')}
       </h1>
 
-      {/* three‑column layout */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          padding: "2rem 2% 0",
-          boxSizing: "border-box",
-        }}
-      >
+      <div className="home-layout">
         {/* LEFT COL */}
-        <div
-          style={{
-            width: "20%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.5rem",
-            marginTop: "2rem",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              border: "3px solid #E1E1E1",
-              borderRadius: 12,
-              padding: "1rem",
-              minHeight: 122,
-            }}
-          >
-            <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.loggedHours')}</h3>
+        <div className="home-left-col">
+          <div className="home-card">
+            <h3>{t('home.loggedHours')}</h3>
             {hours.length ? (
               hours.map((h, index) => {
                 return (
@@ -288,21 +247,12 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "4.8rem" }}>
+        <div className="home-middle-col">
           <h3 style={{ textAlign: "center", margin: 0 }}>
             {t('home.scheduledEvents')}
           </h3>
 
-          <div
-            className="table-wrapper"
-            style={{
-              background: "#fff",
-              border: "3px solid #E1E1E1",
-              borderRadius: 12,
-              overflow: "auto",
-              maxHeight: "400px",
-            }}
-          >
+          <div className="home-events-table table-wrapper">
             {events.length ? (
               <table className="events-table">
                 <thead>
@@ -373,15 +323,7 @@ export default function Home() {
         </div>
 
         {/* RIGHT COL */}
-        <div
-          style={{
-            width: "20%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.5rem",
-            textAlign: "center",
-          }}
-        >
+        <div className="home-right-col">
           {user?.roles === 'tutor' ? (
             // TUTOR VIEW
             <>
