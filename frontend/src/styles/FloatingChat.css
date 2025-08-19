@@ -147,12 +147,15 @@
 
 .chat-modal-content .chat-wrapper {
   height: 100%;
+  width: 100%;
   max-width: none;
   margin: 0;
   border-radius: 0;
   border: none;
   display: flex;
   flex-direction: column;
+  padding: 0;
+  box-shadow: none;
 }
 
 .chat-modal-content .chat-history {
