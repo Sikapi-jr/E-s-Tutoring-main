@@ -58,6 +58,9 @@
                     description,
                 };
                 const res = await api.post("/api/requests/create/", payload);
+                
+                // Redirect to view reply page after successful request
+                navigate("/request-reply");
             } catch (error) {
                 if (error.response) {
                     setError(t('errors.serverError'));

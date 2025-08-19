@@ -149,7 +149,7 @@ const ViewReply = () => {
           <ul className="requests-list">
             {requests.map(request => (
               <li key={request.id} className="request-box">
-                <strong>{t('dashboard.student')}:</strong> {request.student.username} <br />
+                <strong>{t('dashboard.student')}:</strong> {request.student.firstName} {request.student.lastName} <br />
                 <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
                 <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
                 <strong>{t('common.service')}:</strong> {request.service} <br />

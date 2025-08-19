@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "./UserProvider";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
@@ -64,6 +64,10 @@ const getRoleConfig = (BASE) => ({
 function Dropdown({ label, items }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const location = useLocation();
+
+  // Check if any dropdown item is currently active
+  const isActive = items.some(item => location.pathname === item.to);
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +86,7 @@ function Dropdown({ label, items }) {
     <div className="dd-wrapper" ref={ref}>
       <button
         type="button"
-        className="nav__link"
+        className={`nav__link ${isActive ? 'active' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
