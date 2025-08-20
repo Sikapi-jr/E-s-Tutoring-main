@@ -2,7 +2,7 @@ import React, { useEffect, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useUser } from "./UserProvider";
-// Note: No longer using mediaUtils since files are now served directly from frontend
+// Using standard media URLs served by Django
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -83,7 +83,7 @@ const AnnouncementCarousel = memo(() => {
       <div style={{ position: "relative", flexGrow: 1 }}>
         <img
           key={currentIndex} // fade re‑render
-          src={`/uploads/announcements/${current.image ? current.image.split('/').pop() : ''}`}
+          src={`${API_BASE_URL}${current.image}`}
           alt="Announcement"
           style={{
             position: "absolute",

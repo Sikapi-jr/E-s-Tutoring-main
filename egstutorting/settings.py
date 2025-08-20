@@ -346,8 +346,16 @@ EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", 'django.core.mail.backends.console.Em
 
 CORS_ALLOWS_CREDENTIALS = True
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Railway Persistent Storage Configuration
+# Railway provides persistent storage mounted at /data
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    # Use Railway's persistent storage
+    MEDIA_ROOT = '/data/media'
+    MEDIA_URL = '/media/'
+else:
+    # Local development
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Stripe configuration - use environment variables
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')

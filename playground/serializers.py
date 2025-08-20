@@ -127,10 +127,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_profile_picture(self, obj):
         if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
-            import os
-            # Return frontend public URL
-            filename = os.path.basename(obj.profile_picture.name)
-            return f"/uploads/profile_picture/{filename}"
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            # Fallback for when request context is not available
+            from django.conf import settings
+            base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+            return base_url + obj.profile_picture.url
         return None
     
     def validate_username(self, value):

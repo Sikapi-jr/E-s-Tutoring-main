@@ -6,7 +6,7 @@ import { useUser } from "../components/UserProvider";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
-// Note: No longer using mediaUtils since files are now served directly from frontend
+// Using standard media URLs served by Django
 import "../styles/Settings.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
