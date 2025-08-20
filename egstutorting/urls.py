@@ -24,7 +24,7 @@ urlpatterns = [
     path("api/", include("playground.urls")), 
 ]
 
-# Serve media files - WhiteNoise handles this in production
+# Serve media files in all environments (including production)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

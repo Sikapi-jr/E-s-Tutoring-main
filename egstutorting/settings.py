@@ -182,6 +182,7 @@ CSRF_TRUSTED_ORIGINS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -310,10 +311,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Add media files to static files for production serving
-STATICFILES_DIRS = [
-    BASE_DIR / "media",  # Include media directory in static files
-]
+# Configure static files directories for development
+if not os.getenv('RAILWAY_ENVIRONMENT'):
+    STATICFILES_DIRS = [
+        BASE_DIR / "media",  # Include media directory in static files for dev
+    ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -356,6 +358,13 @@ else:
     # Local development
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+
+# WhiteNoise configuration for serving media files
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
+# Tell WhiteNoise to serve media files
+WHITENOISE_ROOT_SQUASH = 3600  # Cache media files for 1 hour
 
 # Stripe configuration - use environment variables
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
