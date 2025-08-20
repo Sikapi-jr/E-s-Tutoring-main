@@ -96,7 +96,7 @@ def current_user_view(request):
             "is_active": request.user.is_active,
             "is_superuser": request.user.is_superuser,
             "profile_picture": (
-                request.user.profile_picture.url
+                request.build_absolute_uri(request.user.profile_picture.url)
                 if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
                 else None
             )
