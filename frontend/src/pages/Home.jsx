@@ -288,7 +288,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "4.8rem" }}>
+        <div style={{ width: "55%", padding: "1rem 0", marginTop: "6rem" }}>
           <h3 style={{ textAlign: "center", margin: 0 }}>
             {t('home.scheduledEvents')}
           </h3>

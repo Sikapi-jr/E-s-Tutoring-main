@@ -42,7 +42,7 @@ const AnnouncementCarousel = memo(() => {
     <div
       style={{
         width: "100%",
-        height: 400,
+        height: 320,
         background: "#ffffff",
         border: "3px solid #E1E1E1",
         borderRadius: 8,
