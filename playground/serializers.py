@@ -129,11 +129,23 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.profile_picture.url)
+                from django.conf import settings
+                # In production, serve through static files
+                if not settings.DEBUG:
+                    # Convert media URL to static URL for production
+                    static_path = obj.profile_picture.url.replace('/media/', '/static/')
+                    return request.build_absolute_uri(static_path)
+                else:
+                    return request.build_absolute_uri(obj.profile_picture.url)
             # Fallback for when request context is not available
             from django.conf import settings
             base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-            return base_url + obj.profile_picture.url
+            if not settings.DEBUG:
+                # Convert media URL to static URL for production
+                static_url = obj.profile_picture.url.replace('/media/', '/static/')
+                return base_url + static_url
+            else:
+                return base_url + obj.profile_picture.url
         return None
     
     def validate_username(self, value):

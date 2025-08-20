@@ -54,15 +54,10 @@ urlpatterns = [
     path('tutor/upload-document/', upload_tutor_document, name='tutor-upload-document'),
     path('tutor/documents/', get_tutor_documents, name='get-tutor-documents'),
     path('tutor/documents/<int:document_id>/', delete_tutor_document, name='delete-tutor-document'),
+    path('api/media/<path:path>', views.get_media_file, name='get-media-file'),
 
 
 ]
-
-# Add media serving for production
-if not settings.DEBUG:
-    urlpatterns += [
-        path('media/<path:path>', views.serve_media, name='serve_media'),
-    ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -6,23 +6,10 @@ import { useUser } from "../components/UserProvider";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
+import { getMediaUrl } from "../utils/mediaUtils";
 import "../styles/Settings.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-// Helper function to construct proper media URL
-const getMediaUrl = (filePath) => {
-  if (!filePath) return null;
-  
-  // If it's already a full URL, return as is
-  if (filePath.startsWith('http')) return filePath;
-  
-  // If it starts with /, it's an absolute path from the server root
-  if (filePath.startsWith('/')) return `${API_BASE_URL}${filePath}`;
-  
-  // Otherwise, it's a relative path that needs /media/ prefix
-  return `${API_BASE_URL}/media/${filePath}`;
-};
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -33,6 +20,7 @@ export default function Settings() {
   const [isConnected, setIsConnected] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [profileImageSrc, setProfileImageSrc] = useState(null);
 
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -92,6 +80,21 @@ export default function Settings() {
     }
   };
   useEffect(loadReferrals, [user.account_id, user.roles]);
+
+  // Load profile image
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      if (user.profile_picture) {
+        try {
+          const imageUrl = await getMediaUrl(user.profile_picture);
+          setProfileImageSrc(imageUrl);
+        } catch (error) {
+          console.error('Failed to load profile image:', error);
+        }
+      }
+    };
+    loadProfileImage();
+  }, [user.profile_picture]);
 
   // Load documents for tutors
   const loadDocuments = () => {
@@ -198,9 +201,9 @@ export default function Settings() {
             gap: "1rem",
           }}
         >
-          {user.profile_picture ? (
+          {profileImageSrc ? (
             <img
-              src={getMediaUrl(user.profile_picture)}
+              src={profileImageSrc}
               alt="Profile"
               style={{
                 width: "80px",

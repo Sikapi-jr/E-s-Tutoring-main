@@ -1775,14 +1775,14 @@ def chat_session(request, session_id):
     return Response(serializer.data)
 
 
-# Media file serving view for production
+# API endpoint to serve media files as base64 or redirect
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def serve_media(request, path):
-    """Serve media files in production when DEBUG=False"""
+def get_media_file(request, path):
+    """Return media file info or base64 content"""
     import os
+    import base64
     import mimetypes
-    from django.http import HttpResponse, Http404
     from django.conf import settings
     
     # Construct the full file path
@@ -1790,17 +1790,23 @@ def serve_media(request, path):
     
     # Check if file exists
     if not os.path.exists(file_path):
-        raise Http404("Media file not found")
+        return Response({'error': 'File not found'}, status=404)
     
-    # Determine content type
-    content_type, _ = mimetypes.guess_type(file_path)
-    if not content_type:
-        content_type = 'application/octet-stream'
-    
-    # Read and return the file
     try:
+        # Determine content type
+        content_type, _ = mimetypes.guess_type(file_path)
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        # Read file and encode as base64
         with open(file_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type=content_type)
-            return response
-    except Exception:
-        raise Http404("Error serving media file")
+            file_content = f.read()
+            base64_content = base64.b64encode(file_content).decode('utf-8')
+        
+        return Response({
+            'content': base64_content,
+            'content_type': content_type,
+            'filename': os.path.basename(file_path)
+        })
+    except Exception as e:
+        return Response({'error': 'Error reading file'}, status=500)
