@@ -6,7 +6,7 @@ import { useUser } from "../components/UserProvider";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
-import { getMediaUrl } from "../utils/mediaUtils";
+// Note: No longer using mediaUtils since files are now served directly from frontend
 import "../styles/Settings.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -20,7 +20,7 @@ export default function Settings() {
   const [isConnected, setIsConnected] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [documents, setDocuments] = useState([]);
-  const [profileImageSrc, setProfileImageSrc] = useState(null);
+  // No longer need separate state for image src since it's served directly
 
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -81,20 +81,7 @@ export default function Settings() {
   };
   useEffect(loadReferrals, [user.account_id, user.roles]);
 
-  // Load profile image
-  useEffect(() => {
-    const loadProfileImage = async () => {
-      if (user.profile_picture) {
-        try {
-          const imageUrl = await getMediaUrl(user.profile_picture);
-          setProfileImageSrc(imageUrl);
-        } catch (error) {
-          console.error('Failed to load profile image:', error);
-        }
-      }
-    };
-    loadProfileImage();
-  }, [user.profile_picture]);
+  // Profile images are now served directly from frontend public directory
 
   // Load documents for tutors
   const loadDocuments = () => {
@@ -201,9 +188,9 @@ export default function Settings() {
             gap: "1rem",
           }}
         >
-          {profileImageSrc ? (
+          {user.profile_picture ? (
             <img
-              src={profileImageSrc}
+              src={user.profile_picture}
               alt="Profile"
               style={{
                 width: "80px",

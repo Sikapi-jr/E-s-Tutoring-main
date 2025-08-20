@@ -6,7 +6,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models.signals import post_save
 from django.shortcuts import render
 from django.db.models import Exists, OuterRef, Q
-import requests, os
+import requests, os, shutil
+from pathlib import Path
 from django.db import transaction
 from django.shortcuts import redirect
 from rest_framework_simplejwt.tokens import AccessToken
@@ -56,6 +57,29 @@ import stripe
 User = get_user_model()
 current_time = now()
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+def copy_to_frontend_public(file_path, relative_path):
+    """Copy uploaded file to frontend public directory for direct serving"""
+    try:
+        from django.conf import settings
+        
+        # Get the base directory (where manage.py is)
+        base_dir = Path(settings.BASE_DIR)
+        
+        # Construct frontend public uploads path
+        frontend_public = base_dir / "frontend" / "public" / "uploads" / relative_path
+        
+        # Create directory if it doesn't exist
+        frontend_public.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Copy the file
+        if os.path.exists(file_path):
+            shutil.copy2(file_path, frontend_public)
+            print(f"Copied {file_path} to {frontend_public}")
+            return True
+    except Exception as e:
+        print(f"Failed to copy file to frontend: {e}")
+    return False
 
 
 @api_view(['GET'])
@@ -234,11 +258,25 @@ def change_settings_parent(request, pk):
 
     profile.save(update_fields=update_fields)
     
+    # Copy profile picture to frontend public directory
+    if "profile_picture" in update_fields and profile.profile_picture:
+        try:
+            # Get the full file path
+            file_path = profile.profile_picture.path
+            # Extract filename
+            filename = os.path.basename(file_path)
+            # Copy to frontend public directory
+            copy_to_frontend_public(file_path, f"profile_picture/{filename}")
+        except Exception as e:
+            print(f"Failed to copy profile picture to frontend: {e}")
+    
     # Return updated user data including profile picture URL
     response_data = {"message": "Settings updated successfully."}
     if "profile_picture" in update_fields:
         if profile.profile_picture:
-            response_data["profile_picture"] = request.build_absolute_uri(profile.profile_picture.url)
+            # Return frontend public URL instead of media URL
+            filename = os.path.basename(profile.profile_picture.name)
+            response_data["profile_picture"] = f"/uploads/profile_picture/{filename}"
         else:
             response_data["profile_picture"] = None
     
@@ -900,7 +938,20 @@ class AnnouncementCreateView(APIView):
     def post(self, request, format=None):
         serializer = AnnouncementSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            announcement = serializer.save()
+            
+            # Copy announcement image to frontend public directory
+            if announcement.image:
+                try:
+                    # Get the full file path
+                    file_path = announcement.image.path
+                    # Extract filename
+                    filename = os.path.basename(file_path)
+                    # Copy to frontend public directory
+                    copy_to_frontend_public(file_path, f"announcements/{filename}")
+                except Exception as e:
+                    print(f"Failed to copy announcement image to frontend: {e}")
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

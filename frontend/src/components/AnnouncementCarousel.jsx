@@ -2,7 +2,7 @@ import React, { useEffect, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useUser } from "./UserProvider";
-import { getMediaUrl } from "../utils/mediaUtils";
+// Note: No longer using mediaUtils since files are now served directly from frontend
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -10,7 +10,7 @@ const AnnouncementCarousel = memo(() => {
   const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentImageSrc, setCurrentImageSrc] = useState(null);
+  // No longer need separate state for image src since it's served directly
   const { user } = useUser();
 
   /* ── fetch list ── */
@@ -22,20 +22,7 @@ const AnnouncementCarousel = memo(() => {
       .catch((err) => console.error("Failed to load announcements", err));
   }, [user?.account_id]);
 
-  /* ── load current image ── */
-  useEffect(() => {
-    const loadCurrentImage = async () => {
-      if (announcements.length > 0 && announcements[currentIndex]?.image) {
-        try {
-          const imageUrl = await getMediaUrl(announcements[currentIndex].image);
-          setCurrentImageSrc(imageUrl);
-        } catch (error) {
-          console.error('Failed to load announcement image:', error);
-        }
-      }
-    };
-    loadCurrentImage();
-  }, [announcements, currentIndex]);
+  // Images are now served directly from frontend public directory
 
   /* ── autoplay ── */
   useEffect(() => {
@@ -94,37 +81,19 @@ const AnnouncementCarousel = memo(() => {
 
       {/* image + arrows */}
       <div style={{ position: "relative", flexGrow: 1 }}>
-        {currentImageSrc ? (
-          <img
-            key={currentIndex} // fade re‑render
-            src={currentImageSrc}
-            alt="Announcement"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              transition: "opacity 0.4s ease-in-out",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#f5f5f5",
-              color: "#666",
-            }}
-          >
-            Loading image...
-          </div>
-        )}
+        <img
+          key={currentIndex} // fade re‑render
+          src={`/uploads/announcements/${current.image ? current.image.split('/').pop() : ''}`}
+          alt="Announcement"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transition: "opacity 0.4s ease-in-out",
+          }}
+        />
 
         {/* left arrow */}
         <div
