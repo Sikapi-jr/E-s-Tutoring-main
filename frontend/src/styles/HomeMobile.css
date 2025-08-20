@@ -2,22 +2,70 @@
 
 /* Mobile devices (768px and below) */
 @media (max-width: 768px) {
-  /* Stack columns vertically on mobile */
+  /* Fix horizontal overflow */
+  body, html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Main container */
   .home-three-column-layout {
     flex-direction: column !important;
     padding: 1rem !important;
-  }
-
-  .home-left-column,
-  .home-middle-column,
-  .home-right-column {
-    width: 100% !important;
-    margin-top: 1rem !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
   }
 
   /* Reduce greeting font size on mobile */
   .home-greeting {
     font-size: 2.5rem !important;
+    padding: 0 1rem !important;
+    word-break: break-word !important;
+  }
+
+  /* Mobile layout order: greeting, students, scheduled events, logged hours, invoices, announcements */
+  .home-left-column,
+  .home-middle-column, 
+  .home-right-column {
+    width: 100% !important;
+    margin-top: 1rem !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Reorder sections for mobile: students, scheduled events, logged hours, invoices, announcements */
+  .home-right-column {
+    order: 1; /* Students first after greeting */
+  }
+
+  .home-middle-column {
+    order: 2; /* Scheduled events second */
+  }
+
+  .home-left-column {
+    order: 3; /* Logged hours and announcements last */
+  }
+
+  /* Center table rows */
+  .events-table,
+  .events-table th,
+  .events-table td {
+    text-align: center !important;
+  }
+
+  /* Make tables responsive */
+  .table-wrapper {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+  }
+
+  /* Fix navbar width */
+  .nav, .unauth-nav {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
   }
 }
 
