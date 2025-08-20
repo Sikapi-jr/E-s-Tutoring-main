@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import "../styles/EventsTable.css";
+import "../styles/HomeMobile.css";
 import { useUser } from "../components/UserProvider";
 import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
@@ -231,6 +232,7 @@ export default function Home() {
           textShadow: "2px 2px 8px #00000022",
           pointerEvents: "none",
         }}
+        className="home-greeting"
       >
         {user?.firstName ? t('home.greeting', { name: user.firstName }) : t('home.greetingDefault')}
       </h1>
@@ -245,6 +247,7 @@ export default function Home() {
           padding: "2rem 2% 0",
           boxSizing: "border-box",
         }}
+        className="home-three-column-layout"
       >
         {/* LEFT COL */}
         <div
@@ -255,6 +258,7 @@ export default function Home() {
             gap: "1.5rem",
             marginTop: "2rem",
           }}
+          className="home-left-column"
         >
           <div
             style={{
@@ -288,7 +292,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "6rem" }}>
+        <div style={{ width: "55%", padding: "1rem 0", marginTop: "6rem" }} className="home-middle-column">
           <h3 style={{ textAlign: "center", margin: 0 }}>
             {t('home.scheduledEvents')}
           </h3>
@@ -381,6 +385,7 @@ export default function Home() {
             gap: "1.5rem",
             textAlign: "center",
           }}
+          className="home-right-column"
         >
           {user?.roles === 'tutor' ? (
             // TUTOR VIEW

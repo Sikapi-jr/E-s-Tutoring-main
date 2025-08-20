@@ -1,0 +1,34 @@
+/* Conservative Mobile Responsiveness for Home Page Only */
+
+/* Mobile devices (768px and below) */
+@media (max-width: 768px) {
+  /* Stack columns vertically on mobile */
+  .home-three-column-layout {
+    flex-direction: column !important;
+    padding: 1rem !important;
+  }
+
+  .home-left-column,
+  .home-middle-column,
+  .home-right-column {
+    width: 100% !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Reduce greeting font size on mobile */
+  .home-greeting {
+    font-size: 2.5rem !important;
+  }
+}
+
+/* Tablet devices (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .home-left-column,
+  .home-right-column {
+    width: 25% !important;
+  }
+
+  .home-middle-column {
+    width: 45% !important;
+  }
+}
