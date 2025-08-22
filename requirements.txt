@@ -26,3 +26,4 @@ google-auth-oauthlib
 gunicorn
 dj-database-url
 whitenoise
+django-anymail

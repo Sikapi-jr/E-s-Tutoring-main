@@ -147,6 +147,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_cryptography',
+    'anymail',
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -333,17 +334,17 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "egstutor@gmail.com")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "egstutor@gmail.com")
 
-# Email verification
-# Use console backend for development to avoid network issues
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", 'django.core.mail.backends.console.EmailBackend')
+# Mailgun Configuration
+if os.getenv("MAILGUN_API_KEY"):
+    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+    ANYMAIL = {
+        "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
+        "MAILGUN_SENDER_DOMAIN": os.getenv("MAILGUN_DOMAIN"),
+    }
+else:
+    # Fallback to console backend for development
+    EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", 'django.core.mail.backends.console.EmailBackend')
 
-# Production email settings (commented out for development)
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'egstutor@gmail.com'
-# EMAIL_HOST_PASSWORD = 'nzmf dchb xmld dsxt' 
 #--------------------------------------------
 
 CORS_ALLOWS_CREDENTIALS = True
