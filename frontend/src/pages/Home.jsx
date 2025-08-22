@@ -419,7 +419,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "17rem" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "14.05rem" }} className="home-middle-column">
           <div
             className="table-wrapper"
             style={{
@@ -735,7 +735,7 @@ export default function Home() {
                   padding: "1rem",
                   maxHeight: 125,
                   overflowY: "auto",
-                  marginTop: "-1.5rem",
+                  marginTop: "-1.15rem",
                 }}
               >
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.paidInvoices')}</h4>
