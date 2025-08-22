@@ -419,7 +419,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "13rem" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0", marginTop: "15.5rem" }} className="home-middle-column">
           <div
             className="table-wrapper"
             style={{
@@ -732,7 +732,7 @@ export default function Home() {
                   background: "#fff",
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
-                  padding: "0.5rem",
+                  padding: "1rem",
                   maxHeight: 125,
                   overflowY: "auto",
                   marginTop: "-1.5rem",
