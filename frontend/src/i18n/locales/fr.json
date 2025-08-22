@@ -62,6 +62,7 @@
     "hours": "Heures",
     "status": "Statut",
     "description": "Description",
+    "actions": "Actions",
     "title": "Titre",
     "search": "Rechercher",
     "filter": "Filtrer",
@@ -163,7 +164,12 @@
     "connected": "Connecté",
     "notConnected": "Non Connecté",
     "calendarConnectedMessage": "Vous pouvez planifier des événements et gérer votre calendrier",
-    "connectGoogleCalendar": "Connecter Google Calendar"
+    "connectGoogleCalendar": "Connecter Google Calendar",
+    "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heures cette semaine !",
+    "connectCalendarMessage": "Connectez votre Google Calendar pour voir les sessions planifiées",
+    "goToScheduledSessions": "Aller aux Sessions Planifiées",
+    "hoursThisWeek": "heures cette semaine !",
+    "invoicesSummary": "{{total}} au total, {{paid}} payées"
   },
   "dashboard": {
     "parentDashboard": "Tableau de bord parent",
@@ -217,9 +223,29 @@
     "logHoursButton": "ENREGISTRER LES HEURES"
   },
   "loggedHours": {
+    "title": "Mes Heures Enregistrées",
     "myLoggedTutoringHours": "Mes heures de tutorat enregistrées",
     "totalHours": "Total (h)",
-    "noHoursLoggedYet": "Aucune heure enregistrée pour le moment."
+    "noHoursLoggedYet": "Aucune heure enregistrée pour le moment.",
+    "noHours": "Aucune heure enregistrée pour le moment",
+    "disputedTitle": "Heures Contestées",
+    "disputedCount": "{{count}} total par session",
+    "noDisputes": "Aucune heure contestée",
+    "summaryTitle": "Total des Heures",
+    "timePeriod": "Période",
+    "allTime": "Tout le temps",
+    "thisWeek": "Cette semaine",
+    "thisMonth": "Ce mois-ci",
+    "thisYear": "Cette année",
+    "totalSessions": "Total cette semaine",
+    "avgPerSession": "Moyenne par session",
+    "allEligible": "Tous éligibles",
+    "allLocations": "Tous les lieux",
+    "statusAccepted": "Accepté",
+    "statusDisputed": "Contesté",
+    "statusResolved": "Résolu", 
+    "statusVoid": "Annulé",
+    "allStatuses": "Tous les statuts"
   },
   "calendar": {
     "title": "Calendrier",
@@ -520,14 +546,6 @@
     "totalMonthlyHours": "Heures mensuelles totales",
     "monthlyEarnings": "Revenus mensuels",
     "noHoursThisMonth": "Aucune heure enregistrée ce mois"
-  },
-  "loggedHours": {
-    "title": "Mes heures enregistrées",
-    "studentName": "Étudiant",
-    "startTime": "Début",
-    "endTime": "Fin",
-    "totalHours": "Total (h)",
-    "noHours": "Aucune heure enregistrée pour le moment"
   },
   "verification": {
     "verifying": "Vérification de votre courriel...",

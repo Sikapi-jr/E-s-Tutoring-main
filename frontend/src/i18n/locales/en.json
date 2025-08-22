@@ -62,13 +62,17 @@
     "hours": "Hours",
     "status": "Status",
     "description": "Description",
+    "actions": "Actions",
     "title": "Title",
     "search": "Search",
     "filter": "Filter",
     "all": "All",
     "none": "None",
     "service": "Service",
-    "id": "ID"
+    "id": "ID",
+    "unknownStudent": "Unknown Student",
+    "noTutor": "No Tutor",
+    "unknown": "Unknown"
   },
   "navigation": {
     "home": "Home",
@@ -163,7 +167,12 @@
     "connected": "Connected",
     "notConnected": "Not Connected",
     "calendarConnectedMessage": "You can schedule events and manage your calendar",
-    "connectGoogleCalendar": "Connect Google Calendar"
+    "connectGoogleCalendar": "Connect Google Calendar",
+    "childrenWorkedHours": "Your children have worked {{hours}} hours this week!",
+    "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
+    "goToScheduledSessions": "Go to Scheduled Sessions",
+    "hoursThisWeek": "hours this week!",
+    "invoicesSummary": "{{total}} total, {{paid}} paid"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",
@@ -217,9 +226,29 @@
     "logHoursButton": "LOG HOURS"
   },
   "loggedHours": {
+    "title": "My Logged Hours",
     "myLoggedTutoringHours": "My Logged Tutoring Hours",
     "totalHours": "Total (h)",
-    "noHoursLoggedYet": "No hours logged yet."
+    "noHoursLoggedYet": "No hours logged yet.",
+    "noHours": "No hours logged yet",
+    "disputedTitle": "Disputed Hours",
+    "disputedCount": "{{count}} total per session",
+    "noDisputes": "No disputed hours",
+    "summaryTitle": "Total Hours",
+    "timePeriod": "Time Period",
+    "allTime": "All Time",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month", 
+    "thisYear": "This Year",
+    "totalSessions": "Total per Session",
+    "avgPerSession": "Avg per Session",
+    "allEligible": "All Eligible",
+    "allLocations": "All Locations",
+    "statusAccepted": "Accepted",
+    "statusDisputed": "Disputed", 
+    "statusResolved": "Resolved",
+    "statusVoid": "Void",
+    "allStatuses": "All Statuses"
   },
   "calendar": {
     "title": "Calendar",
@@ -250,7 +279,8 @@
     "every2Weeks": "Every 2 Weeks",
     "scheduleTutoringSession": "📅 Schedule Tutoring Session",
     "eventCreatedSuccessfully": "✅ Event created successfully!",
-    "failedToCreateEvent": "❌ Failed to create event."
+    "failedToCreateEvent": "❌ Failed to create event.",
+    "connectFailed": "Failed to connect to Google Calendar"
   },
   "requests": {
     "requestTutor": "Request a Tutor",
@@ -437,6 +467,10 @@
     "paymentFailed": "Payment failed. Please try again.",
     "setupRequired": "Payment setup required to receive payments."
   },
+  "documents": {
+    "deleteSuccess": "Document deleted successfully",
+    "deleteFailed": "Failed to delete document"
+  },
   "disputes": {
     "title": "Dispute Hours",
     "disputeReason": "Dispute Reason",
@@ -445,7 +479,10 @@
     "disputeError": "Error submitting dispute. Please try again.",
     "disputeUnderReview": "Your dispute is under review.",
     "disputeResolved": "Dispute resolved.",
-    "disputeRejected": "Dispute rejected."
+    "disputeRejected": "Dispute rejected.",
+    "cancelDispute": "Cancel dispute",
+    "disputeSession": "Dispute this session",
+    "cancelFailed": "Failed to cancel dispute. Please try again."
   },
   "replies": {
     "message": "Message",
@@ -520,14 +557,6 @@
     "totalMonthlyHours": "Total Monthly Hours",
     "monthlyEarnings": "Monthly Earnings",
     "noHoursThisMonth": "No hours logged this month"
-  },
-  "loggedHours": {
-    "title": "My Logged Hours",
-    "studentName": "Student",
-    "startTime": "Start",
-    "endTime": "End",
-    "totalHours": "Total (h)",
-    "noHours": "No hours logged yet"
   },
   "verification": {
     "verifying": "Verifying your email...",

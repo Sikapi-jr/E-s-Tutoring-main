@@ -292,11 +292,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "6rem" }} className="home-middle-column">
-          <h3 style={{ textAlign: "center", margin: 0 }}>
-            {t('home.scheduledEvents')}
-          </h3>
-
+        <div style={{ width: "55%", padding: "1rem 0", marginTop: "2rem" }} className="home-middle-column">
           <div
             className="table-wrapper"
             style={{
@@ -307,6 +303,9 @@ export default function Home() {
               maxHeight: "400px",
             }}
           >
+            <h3 style={{ textAlign: "center", margin: "1rem 0", padding: "0 1rem" }}>
+              {t('home.scheduledEvents')}
+            </h3>
             {events.length ? (
               <table className="events-table">
                 <thead>

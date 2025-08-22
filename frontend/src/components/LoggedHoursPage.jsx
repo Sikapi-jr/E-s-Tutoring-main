@@ -1,90 +1,357 @@
-import React, { useEffect, useState } from "react";
+// src/pages/LoggedHoursPage.jsx
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../api";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
+import DisputeModal from "../components/DisputeModal";
 import "../styles/HoursPage.css";
 
 export default function LoggedHoursPage() {
-  /* ─────────────── local state ─────────────── */
   const { t } = useTranslation();
   const { user } = useUser();
-  const [hours,   setHours]   = useState([]);
+  const [hours, setHours] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err,     setErr]     = useState(null);
+  const [err, setErr] = useState(null);
 
-  /* ─────────────── fetch once ─────────────── */
+  const [filters, setFilters] = useState({
+    status: "",
+    location: "",
+    period: "all",
+  });
+
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [selectedHourForDispute, setSelectedHourForDispute] = useState(null);
+
+  const handleDisputeClick = useCallback((hour) => {
+    setSelectedHourForDispute(hour);
+    setDisputeModalOpen(true);
+  }, []);
+
+  const handleCancelDispute = useCallback(async (disputeId) => {
+    if (!disputeId) {
+      console.error('No dispute ID provided');
+      return;
+    }
+    
+    try {
+      console.log('Canceling dispute with ID:', disputeId);
+      const response = await api.delete(`/api/disputes/${disputeId}/cancel/`);
+      console.log('Cancel response:', response);
+      
+      // Refresh hours data
+      const res = await api.get(`/api/parentHours/?id=${user.account_id}`);
+      console.log('Refreshed hours after cancel:', res.data);
+      setHours(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Failed to cancel dispute:", error);
+      console.error("Error details:", error.response?.data);
+    }
+  }, [user]);
+
+  const handleDisputeModalClose = useCallback(() => {
+    setDisputeModalOpen(false);
+    setSelectedHourForDispute(null);
+  }, []);
+
+  const handleDisputeSuccess = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/parentHours/?id=${user.account_id}`);
+      console.log('Updated hours data after dispute:', res.data); // Debug log
+      setHours(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Failed to refresh hours data:", error);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-
     (async () => {
       setLoading(true);
       setErr(null);
       try {
-        /* Adjust the endpoint / query params to match your backend */
-        const res = await api.get(
-          `/api/parentHours/?id=${user.account_id}`
-        );
+        const res = await api.get(`/api/parentHours/?id=${user.account_id}`);
         setHours(Array.isArray(res.data) ? res.data : []);
       } catch {
-        setErr(t('errors.failedToLoadLoggedHours'));
+        setErr(t("errors.failedToLoadLoggedHours"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, t]);
 
-  /* ─────────────── render paths ─────────────── */
   if (!user || loading) {
     return (
       <div className="hrs-spinner-wrap">
         <div className="hrs-spinner" />
-        <p>{t('common.loading')}</p>
+        <p>{t("common.loading")}</p>
       </div>
     );
   }
   if (err) return <p style={{ padding: "2rem" }}>{err}</p>;
 
-  /* ─────────────── main table ─────────────── */
+  const isWithinPeriod = (dateStr, period) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    switch (period) {
+      case "week":
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        return date >= weekStart && date <= weekEnd;
+      case "month":
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        return date >= monthStart && date <= monthEnd;
+      case "year":
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        return date >= yearStart && date <= yearEnd;
+      default:
+        return true;
+    }
+  };
+
+  const filteredHours = hours.filter((h) => {
+    return (
+      (filters.status ? h.status === filters.status : true) &&
+      (filters.location ? h.location === filters.location : true) &&
+      isWithinPeriod(h.date, filters.period)
+    );
+  });
+
+  const disputedHours = filteredHours.filter(h => {
+    console.log('Hour data:', h); // Debug log
+    return h.status === "Disputed" || h.dispute_id;
+  });
+  const totalHours = filteredHours.reduce((sum, h) => sum + parseFloat(h.totalTime || h.total_hours || 0), 0);
+
+  const getPeriodLabel = () => {
+    switch (filters.period) {
+      case "week": return t("loggedHours.thisWeek");
+      case "month": return t("loggedHours.thisMonth");
+      case "year": return t("loggedHours.thisYear");
+      default: return t("loggedHours.allTime");
+    }
+  };
+
   return (
     <div className="hours-page">
-      <h2 className="hrs-title">{t('loggedHours.title')}</h2>
+      {/* Filters */}
+      <div className="filters-bar">
+        <div className="period-filter">
+          <label>{t("loggedHours.timePeriod")}:</label>
+          <button
+            className={filters.period === "all" ? "active" : ""}
+            onClick={() => setFilters({ ...filters, period: "all" })}
+          >
+            {t("loggedHours.allTime")}
+          </button>
+          <button
+            className={filters.period === "week" ? "active" : ""}
+            onClick={() => setFilters({ ...filters, period: "week" })}
+          >
+            {t("loggedHours.thisWeek")}
+          </button>
+          <button
+            className={filters.period === "month" ? "active" : ""}
+            onClick={() => setFilters({ ...filters, period: "month" })}
+          >
+            {t("loggedHours.thisMonth")}
+          </button>
+          <button
+            className={filters.period === "year" ? "active" : ""}
+            onClick={() => setFilters({ ...filters, period: "year" })}
+          >
+            {t("loggedHours.thisYear")}
+          </button>
+        </div>
 
-      {hours.length ? (
-        <table className="hours-table">
-          <thead>
-            <tr>
-              <th>{t('common.date')}</th>
-              <th>{t('dashboard.student')}</th>
-              <th>{t('events.start')}</th>
-              <th>{t('events.end')}</th>
-              <th>{t('loggedHours.totalHours')}</th>
-              <th>{t('common.status')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hours.map((h) => (
-              <tr key={h.id}>
-                <td data-label="Date">
-                  {new Date(h.date).toLocaleDateString()}
-                </td>
-                <td data-label="Student">{h.student_username}</td>
-                <td data-label="Start">{h.start_time}</td>
-                <td data-label="End">{h.end_time}</td>
-                <td data-label="Total (h)">{h.total_hours}</td>
-                <td
-                  data-label="Status"
-                  data-status={h.status?.toLowerCase() || "pending"}
-                >
-                  {h.status}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p style={{ textAlign: "center", color: "#888" }}>
-          {t('loggedHours.noHours')}
-        </p>
+        <select
+          value={filters.status}
+          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+        >
+          <option value="">{t("loggedHours.allStatuses")}</option>
+          <option value="Accepted">{t("loggedHours.statusAccepted")}</option>
+          <option value="Disputed">{t("loggedHours.statusDisputed")}</option>
+          <option value="Resolved">{t("loggedHours.statusResolved")}</option>
+          <option value="Void">{t("loggedHours.statusVoid")}</option>
+        </select>
+
+        <select
+          value={filters.location}
+          onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+        >
+          <option value="">{t("loggedHours.allLocations")}</option>
+          <option value="Online">{t("logHours.online")}</option>
+          <option value="In-Person">{t("logHours.inPerson")}</option>
+        </select>
+      </div>
+
+      {/* Main Grid */}
+      <div className="hours-grid">
+        {/* Left column: logged hours */}
+        <div className="logged-hours">
+          <h2 className="hrs-title">{t("loggedHours.title")}</h2>
+          
+          {/* Mobile filters - above table */}
+          <div className="mobile-filters">
+            <div className="mobile-filter-item">
+              <label>{t("loggedHours.timePeriod")}:</label>
+              <select
+                value={filters.period}
+                onChange={(e) => setFilters({ ...filters, period: e.target.value })}
+              >
+                <option value="all">{t("loggedHours.allTime")}</option>
+                <option value="week">{t("loggedHours.thisWeek")}</option>
+                <option value="month">{t("loggedHours.thisMonth")}</option>
+                <option value="year">{t("loggedHours.thisYear")}</option>
+              </select>
+            </div>
+
+            <div className="mobile-filter-item">
+              <label>{t("common.status")}:</label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">{t("loggedHours.allStatuses")}</option>
+                <option value="Accepted">{t("loggedHours.statusAccepted")}</option>
+                <option value="Disputed">{t("loggedHours.statusDisputed")}</option>
+                <option value="Resolved">{t("loggedHours.statusResolved")}</option>
+                <option value="Void">{t("loggedHours.statusVoid")}</option>
+              </select>
+            </div>
+
+            <div className="mobile-filter-item">
+              <label>{t("requests.location")}:</label>
+              <select
+                value={filters.location}
+                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+              >
+                <option value="">{t("loggedHours.allLocations")}</option>
+                <option value="Online">{t("logHours.online")}</option>
+                <option value="In-Person">{t("logHours.inPerson")}</option>
+              </select>
+            </div>
+          </div>
+          
+          {filteredHours.length ? (
+            <table className="hours-table">
+              <thead>
+                <tr>
+                  <th>{t("common.date")}</th>
+                  <th>{t("dashboard.student")}</th>
+                  <th>{t("dashboard.tutor")}</th>
+                  <th>{t("logHours.subject")}</th>
+                  <th>{t("events.startTime")}</th>
+                  <th>{t("events.endTime")}</th>
+                  <th>{t("loggedHours.totalHours")}</th>
+                  <th>{t("requests.location")}</th>
+                  <th>{t("common.status")}</th>
+                  <th>{t("common.actions")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHours.map((h) => (
+                  <tr key={h.id}>
+                    <td data-label="Date">{new Date(h.date).toLocaleDateString()}</td>
+                    <td data-label="Student">
+                      {h.student_firstName && h.student_lastName
+                        ? `${h.student_firstName} ${h.student_lastName}`
+                        : h.studentName || h.student_name || h.student || h.student_username || t("common.unknownStudent")}
+                    </td>
+                    <td data-label="Tutor">{h.tutor || h.tutor_name || "-"}</td>
+                    <td data-label="Subject">{h.subject || "-"}</td>
+                    <td data-label="Start">{h.startTime || h.start_time || "-"}</td>
+                    <td data-label="End">{h.endTime || h.end_time || "-"}</td>
+                    <td data-label="Total (h)">{h.totalTime || h.total_hours || "-"}</td>
+                    <td data-label="Location">{h.location || "-"}</td>
+                    <td data-label="Status" data-status={h.status?.toLowerCase() || "pending"}>
+                      {h.status === "Accepted" && t("loggedHours.statusAccepted")}
+                      {h.status === "Disputed" && t("loggedHours.statusDisputed")}
+                      {h.status === "Resolved" && t("loggedHours.statusResolved")}
+                      {h.status === "Void" && t("loggedHours.statusVoid")}
+                      {!["Accepted", "Disputed", "Resolved", "Void"].includes(h.status) && (h.status || t("common.unknown"))}
+                    </td>
+                    <td data-label="">
+                      {h.dispute_id ? (
+                        <button
+                          className="cancel-dispute-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log('Cancel button clicked for dispute:', h.dispute_id);
+                            handleCancelDispute(h.dispute_id);
+                          }}
+                          title="Cancel dispute"
+                        >
+                          ❌ Cancel
+                        </button>
+                      ) : (
+                        <button
+                          className="dispute-btn"
+                          onClick={() => handleDisputeClick(h)}
+                        >
+                          ⚠️ Dispute
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-hours">{t("loggedHours.noHours")}</p>
+          )}
+        </div>
+
+        {/* Right column */}
+        <div className="right-col">
+          <div className="disputed-hours">
+            <h3>{t("loggedHours.disputedTitle")}</h3>
+            {disputedHours.length > 0 ? (
+              <div className="disputed-list">
+                <p className="disputed-count">
+                  {t("loggedHours.disputedCount", { count: disputedHours.length })}
+                </p>
+                {disputedHours.map((h) => (
+                  <div key={h.id} className="disputed-item">
+                    <div>{new Date(h.date).toLocaleDateString()}</div>
+                    <div>
+                      {h.student_firstName && h.student_lastName
+                        ? `${h.student_firstName} ${h.student_lastName}`
+                        : h.studentName || h.student_name || h.student || h.student_username || t("common.unknownStudent")}
+                    </div>
+                    <div>{h.totalTime || h.total_hours}h</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="no-disputes">{t("loggedHours.noDisputes")}</p>
+            )}
+          </div>
+
+          <div className="summary-box">
+            <h3>{t("loggedHours.summaryTitle")} ({getPeriodLabel()})</h3>
+            <p className="summary-value">{totalHours.toFixed(1)}h</p>
+            <div className="summary-details">
+              <p>{t("loggedHours.totalSessions")}: {filteredHours.length}</p>
+              <p>{t("loggedHours.avgPerSession")}: {filteredHours.length > 0 ? (totalHours / filteredHours.length).toFixed(1) : 0}h</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dispute Modal */}
+      {disputeModalOpen && selectedHourForDispute && (
+        <DisputeModal
+          isOpen={disputeModalOpen}
+          onClose={handleDisputeModalClose}
+          hourData={selectedHourForDispute}
+          onSubmitSuccess={handleDisputeSuccess}
+        />
       )}
     </div>
   );

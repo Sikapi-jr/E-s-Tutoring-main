@@ -1,5 +1,28 @@
 /* Conservative Mobile Responsiveness for Home Page Only */
 
+/* Desktop alignment fixes */
+@media (min-width: 769px) {
+  /* Align left and right columns to start at same height */
+  .home-left-column,
+  .home-right-column {
+    align-self: flex-start !important;
+  }
+
+  /* Make sure logged hours and students boxes align at top */
+  .home-left-column {
+    margin-top: 2rem !important;
+  }
+
+  .home-right-column {
+    margin-top: 2rem !important;
+  }
+
+  /* Reset middle column margin on desktop to match others */
+  .home-middle-column {
+    margin-top: 2rem !important;
+  }
+}
+
 /* Mobile devices (768px and below) */
 @media (max-width: 768px) {
   /* Fix horizontal overflow */
