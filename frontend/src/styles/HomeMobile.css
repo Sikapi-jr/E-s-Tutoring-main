@@ -17,10 +17,7 @@
     margin-top: 2rem !important;
   }
 
-  /* Reset middle column margin on desktop to align with announcements */
-  .home-middle-column {
-    margin-top: 25rem !important;
-  }
+  /* Mobile adjustments only - desktop uses inline styles */
 }
 
 /* Mobile devices (768px and below) */
