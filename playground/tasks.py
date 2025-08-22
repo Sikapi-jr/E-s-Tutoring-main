@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from playground import models
 from playground.models import User
+from playground.email_utils import send_mailgun_email
 from celery.exceptions import Retry
 
 logger = logging.getLogger(__name__)
@@ -94,12 +95,11 @@ def send_verification_email_async(self, user_id, verification_link):
         EGS Tutoring Team
         """
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=[user.email],
+            subject=subject,
+            text_content=message
         )
         
         logger.info(f"Verification email sent to user {user_id} ({user.email})")
@@ -135,12 +135,11 @@ def send_stripe_onboarding_email_async(self, user_id, onboarding_link):
         EGS Tutoring Team
         """
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=[user.email],
+            subject=subject,
+            text_content=message
         )
         
         logger.info(f"Stripe onboarding email sent to user {user_id} ({user.email})")
@@ -175,12 +174,11 @@ def send_reply_notification_email_async(self, parent_email, tutor_name, subject_
         EGS Tutoring Team
         """
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [parent_email],
-            fail_silently=False,
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=[parent_email],
+            subject=subject,
+            text_content=message
         )
         
         logger.info(f"Reply notification email sent to {parent_email}")
@@ -208,12 +206,11 @@ def send_dispute_email_async(self, admin_emails, disputer_name, disputed_hours):
         EGS Tutoring System
         """
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            admin_emails,
-            fail_silently=False,
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=admin_emails,
+            subject=subject,
+            text_content=message
         )
         
         logger.info(f"Dispute email sent to administrators: {admin_emails}")
@@ -243,12 +240,11 @@ def send_referral_email_async(self, sender_name, sender_email, receiver_email):
         EGS Tutoring Team
         """
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [receiver_email],
-            fail_silently=False,
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=[receiver_email],
+            subject=subject,
+            text_content=message
         )
         
         logger.info(f"Referral email sent from {sender_email} to {receiver_email}")
