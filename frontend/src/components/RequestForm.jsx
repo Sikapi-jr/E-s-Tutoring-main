@@ -75,7 +75,7 @@
         };
 
         return (
-            <div className="form-container" style={{ maxWidth: 900, width: "150%", margin: "2rem auto" }}>
+            <div className="form-container">
                 <h1>{t('requests.requestTutor')}</h1>
                 <form onSubmit={handleSubmit}>
                     <select
@@ -114,7 +114,7 @@
                     />
 
                     {/* Grade Selection */}
-                    <select id="form-input" name="selectedGrade" onChange={(e) => setGrade(e.target.value)}>
+                    <select className="form-input" name="selectedGrade" onChange={(e) => setGrade(e.target.value)}>
                         <option value="">{t('requests.selectGrade')}</option>
                         <option value="Kindergarten">{t('requests.kindergarten')}</option>
                         <option value="1">{t('requests.grade1')}</option>
@@ -134,7 +134,7 @@
                     </select>
 
                     {/* Service Selection */}
-                    <select id="form-input" name="selectedService" onChange={(e) => setService(e.target.value)}>
+                    <select className="form-input" name="selectedService" onChange={(e) => setService(e.target.value)}>
                         <option value="">{t('requests.selectService')}</option>
                         <option value="Online">{t('logHours.online')}</option>
                         <option value="In-Person">{t('logHours.inPerson')}</option>

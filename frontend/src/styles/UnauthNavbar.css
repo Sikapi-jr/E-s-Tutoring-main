@@ -112,7 +112,7 @@ html, body {
   border: none;
   cursor: pointer;
   padding: 0.5rem;
-  z-index: 1001;
+  z-index: 10000;              /* ensure burger button stays on top */
 }
 
 .nav-burger span {
@@ -168,10 +168,12 @@ html, body {
     padding: 1rem 2rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     gap: 1rem;
+    z-index: 9999;               /* ensure dropdown appears in front */
   }
   
   .nav-links.is-open {
     display: flex;
+    z-index: 9999;               /* ensure open dropdown stays on top */
   }
   
   .nav-language-switcher button {

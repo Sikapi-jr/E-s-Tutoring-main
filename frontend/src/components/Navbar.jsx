@@ -60,7 +60,7 @@ const getRoleConfig = (BASE) => ({
 });
 
 /* ---------- GENERIC DROPDOWN ---------- */
-function Dropdown({ label, items }) {
+function Dropdown({ label, items, onItemClick }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const location = useLocation();
@@ -101,7 +101,10 @@ function Dropdown({ label, items }) {
                 to={to}
                 className="dd-item"
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  onItemClick && onItemClick();
+                }}
               >
                 {label}
               </NavLink>
@@ -265,32 +268,32 @@ export default function Navbar() {
 
       <nav className={`nav__links ${mob ? "is-open" : ""}`}>
         {mainLinks.map(({ to, label }) => (
-          <NavLink key={to} to={to} className="nav__link">
+          <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>
             {label}
           </NavLink>
         ))}
 
-        {tutorLinks.length > 0 && <Dropdown label={t('navbar.tutoring')} items={tutorLinks} />}
+        {tutorLinks.length > 0 && <Dropdown label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
 
         {calLinks.length > 1 ? (
-          <Dropdown label={t('navigation.calendar')} items={calLinks} />
+          <Dropdown label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />
         ) : (
           calLinks.map(({ to, label }) => (
-            <NavLink key={to} to={to} className="nav__link">
+            <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>
               {label}
             </NavLink>
           ))
         )}
 
         {singleLinks.map(({ to, label }) => (
-          <NavLink key={to} to={to} className="nav__link">
+          <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>
             {label}
           </NavLink>
         ))}
 
         {/* ADMIN TOOLS: only shows for superuser */}
         {adminTools.length > 0 && (
-          <Dropdown label={t('navbar.adminTools')} items={adminTools} />
+          <Dropdown label={t('navbar.adminTools')} items={adminTools} onItemClick={() => setMob(false)} />
         )}
       </nav>
 

@@ -30,7 +30,7 @@ html, body {
 }
 
 .form-button {
-    background-color: #007bff; /* Change color according to your design */
+    background-color: #192A88; /* Change color according to your design */
     color: white;
     border: none;
     border-radius: 4px;
@@ -39,11 +39,50 @@ html, body {
 }
 
 .form-button:hover {
-    background-color: #0056b3; /* Darker shade on hover */
+    background-color: #0f1c5e; /* Darker shade on hover */
 }
 
 body,
 h1, h2, h3 {
   font-family: "Google Sans Text", "Product Sans", sans-serif;
+}
+
+/* Mobile responsiveness for form */
+@media (max-width: 768px) {
+  .form-container {
+    max-width: 100% !important;
+    width: 95% !important;
+    margin: 1rem auto !important;
+    margin-top: 2rem !important;
+    padding: 15px !important;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  
+  .form-input, .form-button {
+    width: 100% !important;
+    padding: 12px !important;
+    margin: 8px 0 !important;
+    box-sizing: border-box;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .form-container h1 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  /* Ensure select dropdowns are mobile-friendly */
+  .form-input select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 30px;
+  }
 }
 

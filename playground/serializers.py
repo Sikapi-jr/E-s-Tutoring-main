@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -286,9 +286,19 @@ class MonthlyReportSerializer(serializers.ModelSerializer):
         return attrs
     
 class RequestSerializer(serializers.ModelSerializer):
+    accepted_tutor_name = serializers.SerializerMethodField()
+    
+    def get_accepted_tutor_name(self, obj):
+        """Get the name of the accepted tutor for this request"""
+        try:
+            accepted_tutor = AcceptedTutor.objects.get(request=obj)
+            return f"{accepted_tutor.tutor.firstName} {accepted_tutor.tutor.lastName}"
+        except AcceptedTutor.DoesNotExist:
+            return None
+    
     class Meta:
         model = TutoringRequest
-        fields = ['id', 'parent', 'student', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at']
+        fields = ['id', 'parent', 'student', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_name']
         extra_kwargs = {
             "parent": {"required": True},
             "subject": {"required": True},
@@ -348,9 +358,17 @@ class AcceptedTutorSerializer(serializers.ModelSerializer):
             return AcceptedTutor.objects.create(**validated_data)
         
 class HoursSerializer(serializers.ModelSerializer):
+    student_firstName = serializers.CharField(source='student.firstName', read_only=True)
+    student_lastName = serializers.CharField(source='student.lastName', read_only=True)
+    student_username = serializers.CharField(source='student.username', read_only=True)
+    tutor_firstName = serializers.CharField(source='tutor.firstName', read_only=True)
+    tutor_lastName = serializers.CharField(source='tutor.lastName', read_only=True)
+    has_disputes = serializers.SerializerMethodField()
+    dispute_id = serializers.SerializerMethodField()
+    
     class Meta:
         model = Hours
-        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'created_at']
+        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'created_at', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'has_disputes', 'dispute_id']
         extra_kwargs = {
             "student": {"required": True},
             "parent": {"required": False},
@@ -363,6 +381,17 @@ class HoursSerializer(serializers.ModelSerializer):
             "subject": {"required": True},
             "notes": {"required": True},
         }
+    
+    def get_has_disputes(self, obj):
+        return obj.disputes.filter(status='pending').exists()
+    
+    def get_dispute_id(self, obj):
+        # Get the current user's pending dispute ID for this hour (if any)
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            pending_dispute = obj.disputes.filter(complainer=request.user, status='pending').first()
+            return pending_dispute.id if pending_dispute else None
+        return None
 
         def validate_totalTime(self, value):
             if value < timedelta(0):
@@ -412,3 +441,36 @@ class AiChatSessionSerializer(serializers.ModelSerializer): #Model Serializer, a
         model = AiChatSession
         fields = ['id', 'messages']
         read_only_fields=['messages'] #Dont want users to be able to write data from serializer
+
+class HourDisputeSerializer(serializers.ModelSerializer):
+    complainer_name = serializers.CharField(source='complainer.firstName', read_only=True)
+    complainer_username = serializers.CharField(source='complainer.username', read_only=True)
+    resolved_by_name = serializers.CharField(source='resolved_by.firstName', read_only=True)
+    hour_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = HourDispute
+        fields = [
+            'id', 'hour', 'complainer', 'complainer_name', 'complainer_username',
+            'message', 'status', 'admin_reply', 'resolved_by', 'resolved_by_name',
+            'created_at', 'resolved_at', 'hour_details'
+        ]
+        extra_kwargs = {
+            'complainer': {'read_only': True},
+            'resolved_by': {'read_only': True},
+            'resolved_at': {'read_only': True},
+        }
+    
+    def get_hour_details(self, obj):
+        hour = obj.hour
+        return {
+            'id': hour.id,
+            'date': hour.date,
+            'startTime': hour.startTime,
+            'endTime': hour.endTime,
+            'totalTime': hour.totalTime,
+            'location': hour.location,
+            'subject': hour.subject,
+            'student_name': f"{hour.student.firstName} {hour.student.lastName}",
+            'tutor_name': f"{hour.tutor.firstName} {hour.tutor.lastName}",
+        }

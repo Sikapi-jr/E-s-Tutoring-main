@@ -68,11 +68,11 @@ const LogHours = memo(() => {
 
         try {
             const payload = {
-                student,
+                student_id: student,
                 tutor: tutor_id,
                 date,
-                startTime : startTime,
-                endTime : endTime,
+                start_time: startTime,
+                end_time: endTime,
                 totalTime : decimalHours,
                 location,
                 subject,
@@ -103,8 +103,8 @@ const LogHours = memo(() => {
                 >
                     <option value="">{t('logHours.selectStudent')}</option>
                         {students.map((stud) => (
-                            <option key={stud.id} value={stud.username}>
-                                {stud.student}
+                            <option key={stud.id} value={stud.student}>
+                                {stud.student_firstName} {stud.student_lastName}
                             </option>
                 ))}
                 </select>

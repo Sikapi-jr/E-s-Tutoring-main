@@ -35,7 +35,7 @@ body { background: #f8fafb; }   /* super‑light grey */
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 6px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #192A88;
 }
 
 .tutor-documents .documents-list {
@@ -52,7 +52,7 @@ body { background: #f8fafb; }   /* super‑light grey */
 }
 
 .tutor-documents .document-link {
-  color: #007bff;
+  color: #192A88;
   text-decoration: none;
   font-weight: 500;
 }
@@ -86,10 +86,24 @@ body { background: #f8fafb; }   /* super‑light grey */
 
 /* each request box */
 .request-box {
-  border: 2px solid #0d6efd;   /* blue outline */
+  border: 2px solid #192A88;   /* blue outline */
   border-radius: 6px;
   padding: 1rem 1.25rem;
   background: transparent;     /* see‑through */
+}
+
+/* accepted request styling */
+.request-box.accepted-request {
+  border: 2px solid #28a745;   /* green outline */
+  background: rgba(40, 167, 69, 0.05);  /* light green background */
+}
+
+.accepted-message {
+  padding: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 4px;
+  border-left: 4px solid #28a745;
+  margin-top: 0.5rem;
 }
 
 /* key/val layout */
@@ -110,7 +124,7 @@ body { background: #f8fafb; }   /* super‑light grey */
 }
 .request-box button:hover { opacity: .85; }
 
-.toggle-btn  { background: #0d6efd; color: #fff; }
+.toggle-btn  { background: #192A88; color: #fff; }
 .accept-btn  { background: #198754; color: #fff; }
 .decline-btn { background: #dc3545; color: #fff; }
 

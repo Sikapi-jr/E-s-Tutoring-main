@@ -335,7 +335,7 @@ const MonthlyReports = () => {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: '#007bff' }}>{reports.length}</h3>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#192A88' }}>{reports.length}</h3>
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Total Reports</p>
           </div>
           
@@ -466,7 +466,7 @@ const MonthlyReports = () => {
                   fontSize: '1.5rem', 
                   marginBottom: '1.5rem', 
                   color: '#333',
-                  borderBottom: '2px solid #007bff',
+                  borderBottom: '2px solid #192A88',
                   paddingBottom: '0.5rem'
                 }}>
                   📅 {year}
@@ -574,7 +574,7 @@ const MonthlyReports = () => {
                                 Report #{report.id}
                               </div>
                               <button style={{
-                                backgroundColor: '#007bff',
+                                backgroundColor: '#192A88',
                                 color: 'white',
                                 border: 'none',
                                 padding: '0.5rem 1rem',
@@ -584,7 +584,7 @@ const MonthlyReports = () => {
                                 transition: 'background-color 0.2s'
                               }}
                               onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
-                              onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
+                              onMouseLeave={(e) => e.target.style.backgroundColor = '#192A88'}
                               >
                                 📖 View Full Report
                               </button>

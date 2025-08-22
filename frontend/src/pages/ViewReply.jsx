@@ -147,8 +147,10 @@ const ViewReply = () => {
           <p>{t('requests.noRequestsMade')}</p>
         ) : (
           <ul className="requests-list">
-            {requests.map(request => (
-              <li key={request.id} className="request-box">
+            {requests.map(request => {
+              const isAccepted = request.is_accepted === "Accepted";
+              return (
+              <li key={request.id} className={`request-box ${isAccepted ? 'accepted-request' : ''}`}>
                 <strong>{t('dashboard.student')}:</strong> {request.student.firstName} {request.student.lastName} <br />
                 <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
                 <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
@@ -156,16 +158,24 @@ const ViewReply = () => {
                 <strong>{t('requests.city')}:</strong> {request.city} <br />
                 <strong>{t('common.description')}:</strong> {request.description} <br />
                 <br />
-                <button
-                  className="toggle-btn"
-                  onClick={() => handleRequestSelection(request)}
-                >
-                  {selectedRequestID === request.id && showReplies
-                    ? t('common.cancel')
-                    : t('dashboard.viewReplies')}
-                </button>
+                {isAccepted ? (
+                  <div className="accepted-message">
+                    <strong style={{ color: '#28a745' }}>
+                      {request.accepted_tutor_name} has accepted!
+                    </strong>
+                  </div>
+                ) : (
+                  <button
+                    className="toggle-btn"
+                    onClick={() => handleRequestSelection(request)}
+                  >
+                    {selectedRequestID === request.id && showReplies
+                      ? t('common.cancel')
+                      : t('dashboard.viewReplies')}
+                  </button>
+                )}
 
-                {selectedRequestID === request.id && showReplies && (
+                {selectedRequestID === request.id && showReplies && !isAccepted && (
                   <ul className="replies-list">
                     {replies.length === 0 ? (
                       <li className="no-replies-message">
@@ -236,7 +246,8 @@ const ViewReply = () => {
                   </ul>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
 

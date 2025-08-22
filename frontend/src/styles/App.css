@@ -2,6 +2,46 @@
   box-sizing: border-box;
 }
 
+/* ═══════════ REMOVE ALL LIGHT BLUE COLORS - ONLY USE DARK BLUE #192A88 ═══════════ */
+*:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #192A88 !important;
+}
+
+*:focus-visible {
+  outline: 2px solid #192A88 !important;
+  outline-offset: 2px !important;
+}
+
+button:focus,
+button:active,
+select:focus,
+select:active,
+input:focus,
+input:active,
+textarea:focus,
+textarea:active {
+  border-color: #192A88 !important;
+  box-shadow: 0 0 0 2px #192A88 !important;
+  outline: none !important;
+}
+
+/* Override any blue colors with our dark blue */
+*[style*="blue"]:not([style*="#192A88"]) {
+  color: #192A88 !important;
+}
+
+*[style*="lightblue"],
+*[style*="skyblue"],
+*[style*="cornflowerblue"],
+*[style*="dodgerblue"],
+*[style*="deepskyblue"],
+*[style*="cyan"],
+*[style*="aqua"] {
+  background-color: #192A88 !important;
+  color: white !important;
+}
+
 .wrapper {
   height: 100%;
   width: 100%;
@@ -41,7 +81,8 @@
 }
 
 .chat-history .message.user {
-  background-color: #b4d8ff;
+  background-color: #192A88;
+  color: white;
 }
 
 .chat-wrapper input {
@@ -55,8 +96,8 @@
 }
 
 .chat-wrapper input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #192A88;
+  box-shadow: 0 0 0 3px rgba(25, 42, 136, 0.1);
 }
 
 /* Loading animation */
@@ -84,7 +125,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #667eea;
+  background-color: #192A88;
   animation: bounce 1.4s ease-in-out infinite both;
 }
 

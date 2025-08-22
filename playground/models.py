@@ -8,6 +8,9 @@ from cryptography.fernet import Fernet
 
 
 class User(AbstractUser):
+    # Remove Django's built-in first_name and last_name fields
+    first_name = None
+    last_name = None
 
     CITY_CHOICES = [
         ('Ajax', 'Ajax'),
@@ -148,7 +151,7 @@ class Referral(models.Model):
     referred     = models.ForeignKey(User, null=True, blank=True,
                                      related_name="referral_used",
                                      on_delete=models.SET_NULL)
-    reward_applied = models.BooleanField(default=False)   # sender’s reward
+    reward_applied = models.BooleanField(default=False)   # sender's reward
     created_at   = models.DateTimeField(auto_now_add=True)
 
     def generate_code(self):
@@ -399,6 +402,7 @@ class Hours(models.Model):
     ELIGIBLE_CHOICES = [
         ('Submitted', 'SUBMITTED'),
         ('Late', 'LATE'),
+        ('Eligible', 'ELIGIBLE'),
     ]
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -712,59 +716,39 @@ class AiRequest(models.Model):
 
         self.save(update_fields=["response", "status"])
 
-class AiRequest(models.Model):
-
-    PENDING = 'pending'
-    RUNNING = 'running'
-    COMPLETE = 'complete'
-    FAILED = 'failed'
-    STATUS_OPTIONS = (
-        (PENDING, 'Pending'),
-        (RUNNING, 'Running'),
-        (COMPLETE, 'Complete'),
-        (FAILED, 'Failed'),
-    )
-
-    status = models.CharField(max_length=50, choices=STATUS_OPTIONS, default=PENDING)
-    session = models.ForeignKey(
-        'AiChatSession',
+class HourDispute(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('resolved', 'Resolved'),
+        ('dismissed', 'Dismissed'),
+    ]
+    
+    hour = models.ForeignKey(
+        'Hours',
         on_delete=models.CASCADE,
+        related_name='disputes'
+    )
+    complainer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='hour_disputes_filed'
+    )
+    message = models.TextField(help_text="Description of the dispute")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_reply = models.TextField(blank=True, null=True, help_text="Admin response to dispute")
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name='hour_disputes_resolved'
     )
-    messages = models.JSONField()
-    response = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def _queue_job(self):
-        from playground.tasks import handle_ai_request_job
-        print("Queueing Job Sikapi...")
-        handle_ai_request_job.delay(self.id)
-
-    def handle(self):
-        from openai import OpenAI
-        print("Starting handle...")
-
-        if self.status in [self.RUNNING, self.COMPLETE, self.FAILED]:
-            print("Already handled or in progress.")
-            return
-        
-        self.status = self.RUNNING
-        self.save(update_fields=["status"])
-
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # Create instance of OpenAI client
-
-        try:
-            completion = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=self.messages
-            )
-            self.response = completion.model_dump()  # Store response dict
-            self.status = self.COMPLETE
-            print("HANDLE DONE")
-        except Exception as e:
-            print(f"HANDLE FAILED: {e}")
-            self.status = self.FAILED
-
-        self.save(update_fields=["response", "status"])
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('hour', 'complainer')  # Prevent duplicate disputes from same user for same hour
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Dispute for Hour #{self.hour.id} by {self.complainer.username}"

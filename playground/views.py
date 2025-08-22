@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -32,9 +32,10 @@ from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
 from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer
-from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer
+from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer, HourDisputeSerializer
 from rest_framework.decorators import api_view, permission_classes
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.db.models import Sum, Q
 from decimal import Decimal, InvalidOperation
 #Email verification
@@ -53,10 +54,11 @@ from django.db.models import F
 
 
 import stripe
+import os
 
 User = get_user_model()
 current_time = now()
-stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 def copy_to_frontend_public(file_path, relative_path):
     """Copy uploaded file to frontend public directory for direct serving"""
@@ -882,7 +884,7 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
                     })
             
             hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
-            responseHours = HoursSerializer(hours, many=True).data
+            responseHours = HoursSerializer(hours, many=True, context={'request': request}).data
             
             # Get invoices from Stripe if customer exists
             resultStripe = stripe.Customer.list(email=user_email)
@@ -1215,8 +1217,7 @@ class PersonalRequestListView(APIView):
             return Response({"error": "Missing 'parent_id' query parameter."}, status=400)
 
         request_qs = TutoringRequest.objects.filter(
-            parent=parent_id,
-            is_accepted="Not Accepted"
+            parent=parent_id
         ).order_by('-created_at')
         serializer = RequestSerializer(request_qs, many=True)
         return Response(serializer.data)
@@ -1350,7 +1351,7 @@ class LogHoursCreateView(APIView):
     serializer_class = HoursSerializer
 
     @transaction.atomic
-    def create(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         data = request.data.copy()  # QueryDict is immutable
         student_id = data.get("student_id")
         if not student_id:
@@ -1359,33 +1360,68 @@ class LogHoursCreateView(APIView):
         student = User.objects.get(pk=student_id)
         parent = student.parent_id
 
-        # Expecting 'start' or 'date' in payload. Adjust name accordingly.
-        raw_dt = data.get("start_time") or data.get("date")
-        if not raw_dt:
-            raise ValidationError("Missing 'start' (or 'date') field")
+        # Handle date and time fields
+        date_str = data.get("date")
+        start_time_str = data.get("start_time")
+        end_time_str = data.get("end_time")
+        
+        if not date_str:
+            raise ValidationError("Missing 'date' field")
+        if not start_time_str:
+            raise ValidationError("Missing 'start_time' field")
+        if not end_time_str:
+            raise ValidationError("Missing 'end_time' field")
+            
+        # Parse date and time for validation
+        try:
+            from datetime import datetime
+            session_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            start_time = datetime.strptime(start_time_str, "%H:%M").time()
+            end_time = datetime.strptime(end_time_str, "%H:%M").time()
+            
+            # Create full datetime for future time validation
+            session_start_datetime = datetime.combine(session_date, start_time)
+            session_end_datetime = datetime.combine(session_date, end_time)
+            
+        except ValueError as e:
+            raise ValidationError(f"Invalid date/time format: {e}")
 
-        # Let DRF parse it the same way serializer would:
-        session_dt = HoursSerializer().fields["start_time"].to_internal_value(raw_dt)
-        session_date = session_dt.astimezone(TZ).date()
-
-        now_local = timezone.now().astimezone(TZ).date()
-        cur_ws = week_start(now_local)
+        # Get current time in local timezone
+        now_local = now().astimezone(TZ)
+        current_date = now_local.date()
+        current_datetime = now_local.replace(tzinfo=None)
+        
+        # Validation 1: Cannot log hours in the future
+        if session_start_datetime > current_datetime:
+            raise ValidationError("Cannot log hours for future dates/times")
+        
+        if session_end_datetime > current_datetime:
+            raise ValidationError("Cannot log hours that end in the future")
+        
+        # Validation 2: Can only log hours within current week
+        cur_ws = week_start(current_date)
         cur_we = cur_ws + timedelta(days=6)
+        
+        if not (cur_ws <= session_date <= cur_we):
+            raise ValidationError("Can only log hours for the current week")
 
-        eligible = cur_ws <= session_date <= cur_we
-        status = "submitted" if eligible else "late"
-
+        # Set eligibility status based on current week
+        is_eligible = cur_ws <= session_date <= cur_we
+        eligible_status = "Submitted" if is_eligible else "Late"
+            
         data.update({
             "parent": parent,
-            "eligible": eligible,
-            "submitted_at": timezone.now().astimezone(TZ)
+            "student": student_id,
+            "eligible": eligible_status,
+            "date": date_str,
+            "startTime": start_time_str,
+            "endTime": end_time_str
         })
 
-        serializer = self.get_serializer(data=data)
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=201, headers=headers)
+        serializer.save()
+        return Response(serializer.data, status=201)
     
 @receiver(post_save, sender=Hours)
 def maybe_issue_referral_credit(sender, instance, created, **kwargs):
@@ -1395,7 +1431,7 @@ def maybe_issue_referral_credit(sender, instance, created, **kwargs):
         ref = (Referral.objects
                .select_for_update()         # lock row, prevent races
                .get(referred=instance.student.parent,
-                    reward_given=False))
+                    reward_applied=False))
     except Referral.DoesNotExist:
         return
     total = (Hours.objects
@@ -1416,19 +1452,32 @@ def maybe_issue_referral_credit(sender, instance, created, **kwargs):
         idempotency_key=f"referral-{ref.id}"
     )
 
-    ref.reward_given = True
-    ref.reward_date  = timezone.now()
-    ref.save(update_fields=["reward_given", "reward_date"])
+    ref.reward_applied = True
+    ref.reward_date  = now()
+    ref.save(update_fields=["reward_applied", "reward_date"])
 
     
 class ParentHoursListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        parent_id= request.query_params.get("id")
-        parent = User.objects.get(id=parent_id)
-        records = Hours.objects.filter(parent=parent).order_by('-created_at')
-        serializer = HoursSerializer(records, many=True)
+        user_id = request.query_params.get("id")
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+        
+        # Filter hours based on user role
+        if user.roles == 'parent':
+            records = Hours.objects.filter(parent=user).order_by('-created_at')
+        elif user.roles == 'student':
+            records = Hours.objects.filter(student=user).order_by('-created_at')
+        elif user.roles == 'tutor':
+            records = Hours.objects.filter(tutor=user).order_by('-created_at')
+        else:
+            records = Hours.objects.none()  # Return empty queryset for unknown roles
+            
+        serializer = HoursSerializer(records, many=True, context={'request': request})
         return Response(serializer.data)
 
 class DisputeHours(APIView):
@@ -1467,7 +1516,7 @@ class WeeklyHoursListView(APIView):
         end_date = (end_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
-        serializer = HoursSerializer(weekly_hours, many=True)
+        serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
@@ -1631,7 +1680,7 @@ class MonthlyHoursListView(APIView):
         end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
-        serializer = HoursSerializer(monthly_hours, many=True)
+        serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
@@ -1847,3 +1896,86 @@ def get_media_file(request, path):
         })
     except Exception as e:
         return Response({'error': 'Error reading file'}, status=500)
+
+# Hour Dispute Views
+class HourDisputeCreateView(generics.CreateAPIView):
+    serializer_class = HourDisputeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        serializer.save(complainer=self.request.user)
+
+class HourDisputeListView(generics.ListAPIView):
+    serializer_class = HourDisputeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            # Admin can see all disputes
+            return HourDispute.objects.all()
+        else:
+            # Regular users can only see their own disputes
+            return HourDispute.objects.filter(complainer=user)
+
+class AdminDisputeManagementView(generics.RetrieveUpdateAPIView):
+    serializer_class = HourDisputeSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = HourDispute.objects.all()
+    
+    def get_permissions(self):
+        # Only superusers can manage disputes
+        if not self.request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().get_permissions()
+    
+    def patch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        
+        dispute = self.get_object()
+        action = request.data.get('action')
+        admin_reply = request.data.get('admin_reply', '')
+        
+        if action == 'resolve':
+            dispute.status = 'resolved'
+            dispute.admin_reply = admin_reply
+            dispute.resolved_by = request.user
+            dispute.resolved_at = timezone.now()
+            dispute.save()
+            
+        elif action == 'dismiss':
+            dispute.status = 'dismissed'
+            dispute.admin_reply = admin_reply
+            dispute.resolved_by = request.user
+            dispute.resolved_at = timezone.now()
+            dispute.save()
+            
+        serializer = self.get_serializer(dispute)
+        return Response(serializer.data)
+
+class CancelDisputeView(generics.DestroyAPIView):
+    serializer_class = HourDisputeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return HourDispute.objects.all()
+        else:
+            # Users can only cancel their own pending disputes
+            return HourDispute.objects.filter(complainer=user, status='pending')
+    
+    def delete(self, request, *args, **kwargs):
+        dispute = self.get_object()
+        
+        # Only allow canceling pending disputes
+        if dispute.status != 'pending':
+            return Response({'error': 'Can only cancel pending disputes'}, status=400)
+        
+        # Regular users can only cancel their own disputes
+        if not request.user.is_superuser and dispute.complainer != request.user:
+            return Response({'error': 'Can only cancel your own disputes'}, status=403)
+        
+        dispute.delete()
+        return Response({'message': 'Dispute cancelled successfully'}, status=200)

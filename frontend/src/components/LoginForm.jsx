@@ -49,7 +49,7 @@ function LoginForm() {
     } catch (err) {
       setError(getErrorMessage(err, t));
     } finally {
-      setLoading(false); // ✅ ensures button resets even if error
+      setLoading(false); 
     }
   };
 

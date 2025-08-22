@@ -376,7 +376,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 padding: '0.75rem 1.5rem',
                 border: 'none',
                 borderRadius: '4px',
-                backgroundColor: loading || !hours?.eligible_for_report ? '#6c757d' : '#007bff',
+                backgroundColor: loading || !hours?.eligible_for_report ? '#6c757d' : '#192A88',
                 color: 'white',
                 cursor: loading || !hours?.eligible_for_report ? 'not-allowed' : 'pointer'
               }}

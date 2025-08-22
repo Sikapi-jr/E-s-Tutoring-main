@@ -55,6 +55,12 @@ urlpatterns = [
     path('tutor/documents/', get_tutor_documents, name='get-tutor-documents'),
     path('tutor/documents/<int:document_id>/', delete_tutor_document, name='delete-tutor-document'),
     path('api/media/<path:path>', views.get_media_file, name='get-media-file'),
+    
+    # Hour Dispute URLs
+    path('disputes/create/', views.HourDisputeCreateView.as_view(), name='dispute-create'),
+    path('disputes/', views.HourDisputeListView.as_view(), name='dispute-list'),
+    path('disputes/<int:pk>/manage/', views.AdminDisputeManagementView.as_view(), name='admin-dispute-manage'),
+    path('disputes/<int:pk>/cancel/', views.CancelDisputeView.as_view(), name='dispute-cancel'),
 
 
 ]
