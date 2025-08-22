@@ -17,9 +17,9 @@
     margin-top: 2rem !important;
   }
 
-  /* Reset middle column margin on desktop to match others */
+  /* Reset middle column margin on desktop to align with announcements */
   .home-middle-column {
-    margin-top: 2rem !important;
+    margin-top: 25rem !important;
   }
 }
 
@@ -47,10 +47,22 @@
     padding: 0 1rem !important;
     word-break: break-word !important;
     position: relative !important;
-    top: auto !important;
-    margin-top: 0 !important;
+    top: 1rem !important;
+    margin-top: 1rem !important;     /* Add more space at top */
     margin-bottom: 2rem !important;
     text-align: center !important;
+    padding-top: 1rem !important;  /* Additional padding for better spacing */
+  }
+
+  /* Fix weekly hours message positioning on mobile */
+  .home-weekly-hours {
+    position: relative !important;
+    top: auto !important;
+    margin-top: 1rem !important;
+    margin-bottom: 2rem !important;
+    font-size: 1.2rem !important;
+    padding: 0 1rem !important;
+    word-break: break-word !important;
   }
 
   /* Mobile layout order: greeting, students, scheduled events, logged hours, invoices, announcements */

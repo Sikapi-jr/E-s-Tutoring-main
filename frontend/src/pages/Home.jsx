@@ -419,7 +419,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "400px" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0" }} className="home-middle-column">
           <div
             className="table-wrapper"
             style={{
