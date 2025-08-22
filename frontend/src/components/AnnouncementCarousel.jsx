@@ -42,19 +42,21 @@ const AnnouncementCarousel = memo(() => {
     <div
       style={{
         width: "100%",
-        height: 320,
+        height: 355,
         background: "#ffffff",
         border: "3px solid #E1E1E1",
         borderRadius: 8,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        outline: "none",
+        boxShadow: "none",
       }}
     >
       {/* top heading */}
       <div
         style={{
-          background: "#1A74E8 ",
+          background: "#192A88",
           color: "#ffffff",
           fontWeight: 700,
           fontSize: "1.4rem",
@@ -102,7 +104,7 @@ const AnnouncementCarousel = memo(() => {
               (currentIndex - 1 + announcements.length) % announcements.length
             )
           }
-          style={arrowStyle("left")}
+          style={{...arrowStyle("left"), outline: "none", boxShadow: "none"}}
         >
           &#9664;
         </div>
@@ -112,7 +114,7 @@ const AnnouncementCarousel = memo(() => {
           onClick={() =>
             setCurrentIndex((currentIndex + 1) % announcements.length)
           }
-          style={arrowStyle("right")}
+          style={{...arrowStyle("right"), outline: "none", boxShadow: "none"}}
         >
           &#9654;
         </div>
