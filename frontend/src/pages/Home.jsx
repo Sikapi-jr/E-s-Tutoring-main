@@ -7,6 +7,7 @@ import "../styles/HomeMobile.css";
 import { useUser } from "../components/UserProvider";
 import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
+import DisputeModal from "../components/DisputeModal";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -37,6 +38,9 @@ export default function Home() {
   // Admin state
   const [showTutorForm, setShowTutorForm] = useState(false);
   
+  // Dispute modal state
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [selectedHourForDispute, setSelectedHourForDispute] = useState(null);
 
 
   /* ───────── data fetch ───────── */
@@ -75,12 +79,30 @@ export default function Home() {
             const documentsRes = await api.get('/api/tutor/documents/', { params: { id: user.account_id } });
             setTutorDocuments(documentsRes.data || []);
             
+            // Get tutor's hours
+            const hoursRes = await api.get('/api/parentHours/', { params: { id: user.account_id } });
+            setHours(hoursRes.data || []);
+            
             // Check Google connection status
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
             setGoogleConnected(googleStatusRes.data?.connected || false);
             
           } catch (tutorError) {
             console.error("Tutor data fetch failed:", tutorError);
+          }
+        } else if (user.roles === 'student') {
+          // Fetch student data
+          try {
+            // Get student's hours
+            const hoursRes = await api.get('/api/parentHours/', { params: { id: user.account_id } });
+            setHours(hoursRes.data || []);
+            
+            // Check Google connection status
+            const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
+            setGoogleConnected(googleStatusRes.data?.connected || false);
+            
+          } catch (studentError) {
+            console.error("Student data fetch failed:", studentError);
           }
         }
 
@@ -93,8 +115,8 @@ export default function Home() {
           setEvents([]); // Only reset events on events error
         }
 
-        // Process parent data if available
-        if (parentData) {
+        // Process parent data if available (only for parents)
+        if (parentData && user.roles === 'parent') {
           const hoursData = Array.isArray(parentData.hours) ? parentData.hours : [];
           const studentsData = Array.isArray(parentData.students) ? parentData.students : [];
           const invoicesData = Array.isArray(parentData.invoices) ? parentData.invoices : [];
@@ -112,8 +134,6 @@ export default function Home() {
           );
           setPaidTotal(paid);
           setUnpaidTotal(unpaid);
-          
-        } else {
         }
 
         // Process events data if available
@@ -179,7 +199,7 @@ export default function Home() {
       window.location.href = `${API_BASE_URL}/api/google/oauth/init?token=${token}`;
     } catch (error) {
       console.error("Google connect failed:", error);
-      alert('Failed to connect to Google Calendar');
+      alert(t('calendar.connectFailed'));
     }
   }, []);
 
@@ -201,31 +221,57 @@ export default function Home() {
       // Update local state to remove the deleted document
       setTutorDocuments(prevDocs => prevDocs.filter(doc => doc.id !== documentId));
       
-      alert('Document deleted successfully');
+      alert(t('documents.deleteSuccess'));
     } catch (error) {
       console.error("Document deletion failed:", error);
       
       const errorMessage = error.response?.data?.error || 
                           error.response?.data?.message || 
-                          'Failed to delete document';
+                          t('documents.deleteFailed');
       
       alert(errorMessage);
+    }
+  }, []);
+
+  /* handle dispute modal */
+  const handleDisputeClick = useCallback((hour) => {
+    setSelectedHourForDispute(hour);
+    setDisputeModalOpen(true);
+  }, []);
+
+  const handleDisputeModalClose = useCallback(() => {
+    setDisputeModalOpen(false);
+    setSelectedHourForDispute(null);
+  }, []);
+
+  const handleDisputeSubmitSuccess = useCallback(() => {
+    // Refresh data to show updated dispute status
+    window.location.reload();
+  }, []);
+
+  const handleCancelDispute = useCallback(async (disputeId) => {
+    try {
+      await api.delete(`/api/disputes/${disputeId}/cancel/`);
+      // Refresh data to show updated dispute status
+      window.location.reload();
+    } catch (error) {
+      alert(t('disputes.cancelFailed'));
     }
   }, []);
 
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
-      {/* greeting overlays; no push‑down */}
+      {/* greeting overlays; positioned lower */}
       <h1
         style={{
           position: "absolute",
-          top: "0.75rem",
+          top: "3.5rem",
           left: 0,
           right: 0,
           textAlign: "center",
           margin: 0,
-          marginTop: "1.5rem",
+          marginTop: "0.5rem",
           fontSize: "4rem",
           fontWeight: "bold",
           color: "#272727ff",
@@ -236,6 +282,49 @@ export default function Home() {
       >
         {user?.firstName ? t('home.greeting', { name: user.firstName }) : t('home.greetingDefault')}
       </h1>
+      
+      {/* weekly hours message */}
+      <div
+        style={{
+          position: "absolute",
+          top: "10rem",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          margin: 0,
+          fontSize: "1.5rem",
+          fontWeight: "normal",
+          color: "#666666",
+          pointerEvents: "none",
+        }}
+        className="home-weekly-hours"
+      >
+        {(() => {
+          const weeklyHours = hours.reduce((total, hour) => {
+            const hourDate = new Date(hour.date);
+            const now = new Date();
+            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            if (hourDate >= weekStart && hourDate <= weekEnd) {
+              return total + parseFloat(hour.totalTime || 0);
+            }
+            return total;
+          }, 0);
+          
+          const translatedText = t('home.childrenWorkedHours', { hours: weeklyHours });
+          const parts = translatedText.split(weeklyHours.toString());
+          
+          return (
+            <>
+              {parts[0]}
+              <span style={{ color: "#192A88", fontWeight: "bold" }}>{weeklyHours}</span>
+              {parts[1]}
+            </>
+          );
+        })()}
+      </div>
 
       {/* three‑column layout */}
       <div
@@ -244,7 +333,7 @@ export default function Home() {
           flexWrap: "wrap",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          padding: "2rem 2% 0",
+          padding: "1rem 2% 0",
           boxSizing: "border-box",
         }}
         className="home-three-column-layout"
@@ -256,7 +345,7 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
-            marginTop: "2rem",
+            marginTop: "0.5rem",
           }}
           className="home-left-column"
         >
@@ -266,24 +355,62 @@ export default function Home() {
               border: "3px solid #E1E1E1",
               borderRadius: 12,
               padding: "1rem",
-              minHeight: 122,
+              height: 200,
+              minHeight: 200,
+              maxHeight: 200,
+              overflow: "auto",
             }}
           >
             <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.loggedHours')}</h3>
             {hours.length ? (
               hours.map((h, index) => {
                 return (
-                <div key={h.id} style={{ fontSize: "0.9rem", margin: "0.8rem 0" }}>
-                  <strong>{h.student || h.studentName || h.student_name || 'Unknown Student'}</strong>
+                <div 
+                  key={h.id} 
+                  style={{ 
+                    fontSize: "0.9rem", 
+                    margin: "0.8rem 0",
+                    padding: "0.5rem",
+                    borderRadius: "4px",
+                    backgroundColor: h.has_disputes ? "#f8d7da" : "transparent",
+                    border: h.has_disputes ? "1px solid #f5c6cb" : "none"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ flex: 1 }}>
+                      <strong>{h.student_firstName && h.student_lastName ? `${h.student_firstName} ${h.student_lastName}` : h.studentName || h.student_name || h.student || t('common.unknownStudent')}</strong>
                   <br />
                   {h.totalTime} hrs — {h.subject}
                   <br />
-                  {h.date}
+                      {h.date}
+                      {h.has_disputes && (
+                        <div style={{ color: "#721c24", fontSize: "0.8rem", fontStyle: "italic", marginTop: "0.25rem" }}>
+                          ⚠️ Disputed
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => h.dispute_id ? handleCancelDispute(h.dispute_id) : handleDisputeClick(h)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#dc3545",
+                        padding: "0.25rem",
+                        fontSize: "0.9rem",
+                        cursor: "pointer",
+                        marginLeft: "0.5rem",
+                        height: "fit-content"
+                      }}
+                      title={h.dispute_id ? t('disputes.cancelDispute') : t('disputes.disputeSession')}
+                    >
+                      {h.dispute_id ? "✕" : "⚠️"}
+                    </button>
+                  </div>
                 </div>
                 );
               })
             ) : (
-              <Link to="/request" style={{ color: "#192A88" }}>
+              <Link to="/request" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
                 {t('home.noHoursYet')} {t('home.requestTutorText')}
               </Link>
             )}
@@ -292,7 +419,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", marginTop: "2rem" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0", marginTop: "6.5rem" }} className="home-middle-column">
           <div
             className="table-wrapper"
             style={{
@@ -300,7 +427,9 @@ export default function Home() {
               border: "3px solid #E1E1E1",
               borderRadius: 12,
               overflow: "auto",
-              maxHeight: "400px",
+              height: 355,
+              minHeight: 355,
+              maxHeight: 355,
             }}
           >
             <h3 style={{ textAlign: "center", margin: "1rem 0", padding: "0 1rem" }}>
@@ -348,12 +477,12 @@ export default function Home() {
                 {user?.roles === 'parent' && !parentGoogleConnected ? (
                   <div>
                     <p style={{ color: "#666", marginBottom: "1rem" }}>
-                      Connect your Google Calendar to view scheduled sessions
+                      {t('home.connectCalendarMessage')}
                     </p>
                     <button
                       onClick={handleParentGoogleConnect}
                       style={{
-                        backgroundColor: "#007bff",
+                        backgroundColor: "#192A88",
                         color: "white",
                         border: "none",
                         padding: "0.75rem 1.5rem",
@@ -362,7 +491,7 @@ export default function Home() {
                         fontSize: "0.9rem"
                       }}
                     >
-                      Go to Scheduled Sessions
+{t('home.goToScheduledSessions')}
                     </button>
                   </div>
                 ) : (
@@ -381,7 +510,7 @@ export default function Home() {
             width: "20%",
             display: "flex",
             flexDirection: "column",
-            gap: "1.5rem",
+            gap: "1rem",
             textAlign: "center",
           }}
           className="home-right-column"
@@ -475,7 +604,7 @@ export default function Home() {
                     <button
                       onClick={handleDocumentUpload}
                       style={{
-                        backgroundColor: "#007bff",
+                        backgroundColor: "#192A88",
                         color: "white",
                         border: "none",
                         padding: "0.5rem 1rem",
@@ -540,25 +669,26 @@ export default function Home() {
                   borderRadius: 12,
                   padding: "1rem",
                   minHeight: 122,
+                  height: 200,
                 }}
               >
                 <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.students')}</h3>
                 <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-                  Rendering {students.length} students
+                  {t('home.activeStudentsCount', { count: students.length })}
                 </div>
                 {students.length > 0 ? (
                   students.map((s, index) => {
                     const tutorName = s.has_tutor 
                       ? `${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
-                      : 'No Tutor';
+                      : t('common.noTutor');
                     return (
-                    <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "left" }}>
-                      <strong>{s.student_firstName || 'Unknown'} {s.student_lastName || ''}</strong> - {tutorName}
+                    <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "center" }}>
+                      <strong>{s.student_firstName || t('common.unknown')} {s.student_lastName || ''}</strong> - {tutorName}
                     </div>
                     );
                   })
                 ) : (
-                  <Link to="/register" style={{ color: "#192A88" }}>
+                  <Link to="/register" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
                     {t('home.noStudentsYet')} {t('home.registerStudentText')}
                   </Link>
                 )}
@@ -569,7 +699,7 @@ export default function Home() {
                   style={{
                     textAlign: "center",
                     marginTop: "0.5rem",
-                    marginBottom: "2rem",
+                    marginBottom: "1rem",
                   }}
                 >
                   {t('home.paymentProgress')}
@@ -605,12 +735,12 @@ export default function Home() {
                   padding: "0.5rem",
                   maxHeight: 125,
                   overflowY: "auto",
-                  marginTop: "-1rem",
+                  marginTop: "-1.5rem",
                 }}
               >
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.paidInvoices')}</h4>
                 <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-                  {invoices.length} total, {invoices.filter((i) => i.paid).length} paid
+                  {t('home.invoicesSummary', { total: invoices.length, paid: invoices.filter((i) => i.paid).length })}
                 </div>
                 {invoices.filter((i) => i.paid).length > 0 ? (
                   invoices
@@ -650,6 +780,7 @@ export default function Home() {
                   padding: "0.5rem",
                   maxHeight: 125,
                   overflowY: "auto",
+                  marginTop: "-0.5rem",
                 }}
               >
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>
@@ -690,6 +821,14 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Dispute Modal */}
+      <DisputeModal
+        isOpen={disputeModalOpen}
+        onClose={handleDisputeModalClose}
+        hourData={selectedHourForDispute}
+        onSubmitSuccess={handleDisputeSubmitSuccess}
+      />
 
     </div>
   );
