@@ -163,14 +163,17 @@ html, body {
     display: none;
     position: absolute;
     top: 100%;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;                /* centered with fixed width */
     background-color: #292929;
-    flex-direction: column;
-    padding: 1rem 2rem;
+    flex-direction: row;         /* side by side layout */
+    justify-content: center;     /* center the buttons */
+    padding: 1rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    gap: 1rem;
+    gap: 0.5rem;                 /* smaller gap between buttons */
     z-index: 9999;               /* ensure dropdown appears in front */
+    border-radius: 8px;          /* rounded corners */
   }
   
   .nav-links.is-open {
@@ -181,5 +184,21 @@ html, body {
   .nav-language-switcher button {
     padding: 0.3rem 0.6rem;
     font-size: 0.8rem;
+  }
+
+  /* Mobile login/register buttons in dropdown */
+  .nav-links .nav-link {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 60px;
+    border-radius: 4px;
+  }
+
+  .nav-links .btn-register {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 60px;
   }
 }

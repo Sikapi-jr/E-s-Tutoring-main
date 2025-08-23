@@ -204,7 +204,10 @@
   .nav__links {
     margin-left: 0;
     position: absolute;
-    top: 64px; left: 0; right: 0;
+    top: 64px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;                /* reduced width for smaller menu */
     flex-direction: column;
     gap: 0;
     background: #292929;
@@ -214,6 +217,8 @@
     overflow-y: auto;            /* fixes cut-off on small screens */
     white-space: normal;
     z-index: 9999;               /* ensure dropdown appears in front */
+    border-radius: 8px;          /* rounded corners */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* shadow for better visibility */
   }
   .nav__links.is-open { display: flex; z-index: 9999; }
 
