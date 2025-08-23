@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useUser } from "./UserProvider";
@@ -8,6 +8,24 @@ import "../styles/Navbar.css";
 import EGSLogo from "./EGSLogo.jsx";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
 import MyTutorsDropdown from "./MyTutorsDropdown.jsx";
+
+/* ---------- DROPDOWN CONTEXT ---------- */
+const DropdownContext = createContext();
+
+function DropdownProvider({ children }) {
+  const [openDropdown, setOpenDropdown] = useState(null);
+  
+  const closeAllDropdowns = () => setOpenDropdown(null);
+  const toggleDropdown = (id) => setOpenDropdown(openDropdown === id ? null : id);
+  
+  return (
+    <DropdownContext.Provider value={{ openDropdown, closeAllDropdowns, toggleDropdown }}>
+      {children}
+    </DropdownContext.Provider>
+  );
+}
+
+const useDropdown = () => useContext(DropdownContext);
 
 /* ---------- ROUTE DEFINITIONS ---------- */
 // Define routes with translation keys instead of hardcoded labels
@@ -62,10 +80,12 @@ const getRoleConfig = (BASE) => ({
 });
 
 /* ---------- GENERIC DROPDOWN ---------- */
-function Dropdown({ label, items, onItemClick }) {
-  const [open, setOpen] = useState(false);
+function Dropdown({ label, items, onItemClick, dropdownId }) {
+  const { openDropdown, toggleDropdown } = useDropdown();
   const ref = useRef(null);
   const location = useLocation();
+  
+  const open = openDropdown === dropdownId;
 
   // Check if any dropdown item is currently active
   const isActive = items.some(item => location.pathname === item.to);
@@ -73,22 +93,22 @@ function Dropdown({ label, items, onItemClick }) {
   useEffect(() => {
     if (!open) return;
     const click = (e) =>
-      ref.current && !ref.current.contains(e.target) && setOpen(false);
-    const esc = (e) => e.key === "Escape" && setOpen(false);
+      ref.current && !ref.current.contains(e.target) && toggleDropdown(null);
+    const esc = (e) => e.key === "Escape" && toggleDropdown(null);
     document.addEventListener("mousedown", click);
     document.addEventListener("keydown", esc);
     return () => {
       document.removeEventListener("mousedown", click);
       document.removeEventListener("keydown", esc);
     };
-  }, [open]);
+  }, [open, toggleDropdown, ref]);
 
   return (
     <div className="dd-wrapper" ref={ref}>
       <button
         type="button"
         className={`nav__link ${isActive ? 'active' : ''}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => toggleDropdown(dropdownId)}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -104,7 +124,7 @@ function Dropdown({ label, items, onItemClick }) {
                 className="dd-item"
                 role="menuitem"
                 onClick={() => {
-                  setOpen(false);
+                  toggleDropdown(null);
                   onItemClick && onItemClick();
                 }}
               >
@@ -121,9 +141,11 @@ function Dropdown({ label, items, onItemClick }) {
 /* ---------- PROFILE MENU ---------- */
 function ProfileMenu({ user, BASE }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const { openDropdown, toggleDropdown } = useDropdown();
   const ref = useRef(null);
   const navigate = useNavigate();
+  
+  const open = openDropdown === 'profile';
 
   const loggedIn = !!user;
   const items = loggedIn
@@ -145,15 +167,15 @@ function ProfileMenu({ user, BASE }) {
   useEffect(() => {
     if (!open) return;
     const click = (e) =>
-      ref.current && !ref.current.contains(e.target) && setOpen(false);
-    const esc = (e) => e.key === "Escape" && setOpen(false);
+      ref.current && !ref.current.contains(e.target) && toggleDropdown(null);
+    const esc = (e) => e.key === "Escape" && toggleDropdown(null);
     document.addEventListener("mousedown", click);
     document.addEventListener("keydown", esc);
     return () => {
       document.removeEventListener("mousedown", click);
       document.removeEventListener("keydown", esc);
     };
-  }, [open]);
+  }, [open, toggleDropdown, ref]);
 
   return (
     <div className="profile" ref={ref}>
@@ -161,7 +183,7 @@ function ProfileMenu({ user, BASE }) {
         className="profile__btn"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => toggleDropdown('profile')}
       >
         <svg className="profile__avatar" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="8" r="4" />
@@ -178,7 +200,7 @@ function ProfileMenu({ user, BASE }) {
                   className="profile__item"
                   onClick={() => {
                     handleLogout();
-                    setOpen(false);
+                    toggleDropdown(null);
                   }}
                 >
                   {it.label}
@@ -190,7 +212,7 @@ function ProfileMenu({ user, BASE }) {
                   to={it.to}
                   className="profile__item"
                   role="menuitem"
-                  onClick={() => setOpen(false)}
+                  onClick={() => toggleDropdown(null)}
                 >
                   {it.label}
                 </NavLink>
@@ -204,7 +226,7 @@ function ProfileMenu({ user, BASE }) {
 }
 
 /* ---------- MAIN NAVBAR ---------- */
-export default function Navbar() {
+function NavbarContent() {
   const { user } = useUser();
   const { t } = useTranslation();
 
@@ -275,10 +297,10 @@ export default function Navbar() {
           </NavLink>
         ))}
 
-        {tutorLinks.length > 0 && <Dropdown label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
+        {tutorLinks.length > 0 && <Dropdown dropdownId="tutoring" label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
 
         {calLinks.length > 1 ? (
-          <Dropdown label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />
+          <Dropdown dropdownId="calendar" label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />
         ) : (
           calLinks.map(({ to, label }) => (
             <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>
@@ -295,7 +317,7 @@ export default function Navbar() {
 
         {/* ADMIN TOOLS: only shows for superuser */}
         {adminTools.length > 0 && (
-          <Dropdown label={t('navbar.adminTools')} items={adminTools} onItemClick={() => setMob(false)} />
+          <Dropdown dropdownId="admin" label={t('navbar.adminTools')} items={adminTools} onItemClick={() => setMob(false)} />
         )}
       </nav>
 
@@ -305,5 +327,13 @@ export default function Navbar() {
         <ProfileMenu user={user} BASE={BASE} />
       </div>
     </header>
+  );
+}
+
+export default function Navbar() {
+  return (
+    <DropdownProvider>
+      <NavbarContent />
+    </DropdownProvider>
   );
 }

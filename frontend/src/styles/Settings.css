@@ -455,3 +455,19 @@
   background: #218838;
 }
 
+/* ================================================================= */
+/*  MOBILE RESPONSIVENESS                                           */
+/* ================================================================= */
+@media (max-width: 768px) {
+  .profile-card {
+    flex-direction: column;
+  }
+  
+  .edit-btn {
+    position: static;
+    order: -1;                    /* Move to top */
+    align-self: flex-start;       /* Align to left */
+    margin-bottom: 1rem;          /* Add space below button */
+  }
+}
+
