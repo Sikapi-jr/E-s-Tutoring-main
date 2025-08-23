@@ -14,15 +14,16 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.decorators import api_view
 from django.contrib.auth import get_user_model  # Correct way to import the user model
 from rest_framework import generics, status
-from .serializers import UserSerializer, UserRegistrationSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, TutorComplaintSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from django.utils.timezone import make_aware, now
 from rest_framework.parsers import MultiPartParser, FormParser
 import json
@@ -2017,3 +2018,82 @@ class CancelDisputeView(generics.DestroyAPIView):
         
         dispute.delete()
         return Response({'message': 'Dispute cancelled successfully'}, status=200)
+
+class TutorComplaintListCreateView(generics.ListCreateAPIView):
+    serializer_class = TutorComplaintSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Admins see all complaints, students see only their own
+        if self.request.user.is_superuser:
+            return TutorComplaint.objects.all()
+        elif self.request.user.roles == 'student':
+            return TutorComplaint.objects.filter(student=self.request.user)
+        else:
+            return TutorComplaint.objects.none()
+
+    def perform_create(self, serializer):
+        # Only students can create complaints
+        if self.request.user.roles != 'student':
+            raise ValidationError("Only students can create complaints")
+        
+        serializer.save(student=self.request.user)
+
+class TutorComplaintManageView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def patch(self, request, complaint_id):
+        # Only admins can manage complaints
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        
+        try:
+            complaint = TutorComplaint.objects.get(id=complaint_id)
+        except TutorComplaint.DoesNotExist:
+            return Response({'error': 'Complaint not found'}, status=404)
+        
+        action = request.data.get('action')
+        admin_reply = request.data.get('admin_reply', '')
+        
+        if action == 'review':
+            complaint.status = 'reviewed'
+        elif action == 'resolve':
+            complaint.status = 'resolved'
+        else:
+            return Response({'error': 'Invalid action'}, status=400)
+        
+        complaint.admin_reply = admin_reply
+        complaint.reviewed_by = request.user
+        complaint.reviewed_at = timezone.now()
+        complaint.save()
+        
+        return Response({'message': 'Complaint updated successfully'}, status=200)
+
+class StudentTutorsView(APIView):
+    """API endpoint to get a student's assigned tutors"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        if request.user.roles != 'student':
+            return Response({'error': 'Student access required'}, status=403)
+        
+        # Get all accepted tutors for this student
+        accepted_tutors = AcceptedTutor.objects.filter(
+            student=request.user,
+            status='Accepted'
+        ).select_related('tutor', 'request')
+        
+        tutors = []
+        for accepted_tutor in accepted_tutors:
+            tutor = accepted_tutor.tutor
+            tutors.append({
+                'id': tutor.id,
+                'firstName': tutor.firstName,
+                'lastName': tutor.lastName,
+                'email': tutor.email,
+                'phone_number': tutor.phone_number,
+                'subject': accepted_tutor.request.subject,
+                'accepted_at': accepted_tutor.accepted_at
+            })
+        
+        return Response({'tutors': tutors}, status=200)

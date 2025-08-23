@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
 import DisputeModal from "../components/DisputeModal";
 import NotificationSettings from "../components/NotificationSettings";
+import TutorComplaintModal from "../components/TutorComplaintModal";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -42,6 +43,13 @@ export default function Home() {
   // Dispute modal state
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedHourForDispute, setSelectedHourForDispute] = useState(null);
+
+  // Tutor complaint modal state
+  const [complaintModalOpen, setComplaintModalOpen] = useState(false);
+  const [selectedTutorForComplaint, setSelectedTutorForComplaint] = useState(null);
+
+  // Student's tutors state
+  const [studentTutors, setStudentTutors] = useState([]);
 
 
   /* ───────── data fetch ───────── */
@@ -97,6 +105,49 @@ export default function Home() {
             // Get student's hours
             const hoursRes = await api.get('/api/parentHours/', { params: { id: user.account_id } });
             setHours(hoursRes.data || []);
+            
+            // Get student's tutors (from hours data)
+            const uniqueTutors = [];
+            const seenTutorIds = new Set();
+            
+            if (hoursRes.data && Array.isArray(hoursRes.data)) {
+              hoursRes.data.forEach(hour => {
+                if (hour.tutor && !seenTutorIds.has(hour.tutor)) {
+                  seenTutorIds.add(hour.tutor);
+                  uniqueTutors.push({
+                    id: hour.tutor,
+                    firstName: hour.tutor_firstName || 'Unknown',
+                    lastName: hour.tutor_lastName || '',
+                    // We'll need to fetch additional details like email and phone
+                  });
+                }
+              });
+            }
+            
+            // Fetch additional tutor details
+            if (uniqueTutors.length > 0) {
+              try {
+                const tutorDetailsPromises = uniqueTutors.map(async (tutor) => {
+                  try {
+                    const response = await api.get(`/api/users/${tutor.id}/`);
+                    return {
+                      ...tutor,
+                      email: response.data.email,
+                      phone_number: response.data.phone_number
+                    };
+                  } catch (error) {
+                    console.error(`Failed to fetch details for tutor ${tutor.id}:`, error);
+                    return tutor; // Return basic info if detailed fetch fails
+                  }
+                });
+                
+                const detailedTutors = await Promise.all(tutorDetailsPromises);
+                setStudentTutors(detailedTutors);
+              } catch (error) {
+                console.error("Failed to fetch tutor details:", error);
+                setStudentTutors(uniqueTutors); // Use basic info
+              }
+            }
             
             // Check Google connection status
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
@@ -258,6 +309,23 @@ export default function Home() {
     } catch (error) {
       alert(t('disputes.cancelFailed'));
     }
+  }, []);
+
+  /* handle tutor complaint modal */
+  const handleComplaintClick = useCallback((tutor) => {
+    setSelectedTutorForComplaint(tutor);
+    setComplaintModalOpen(true);
+  }, []);
+
+  const handleComplaintModalClose = useCallback(() => {
+    setComplaintModalOpen(false);
+    setSelectedTutorForComplaint(null);
+  }, []);
+
+  const handleComplaintSubmitSuccess = useCallback(() => {
+    // Just close modal, no need to refresh
+    setComplaintModalOpen(false);
+    setSelectedTutorForComplaint(null);
   }, []);
 
 
@@ -517,7 +585,65 @@ export default function Home() {
           }}
           className="home-right-column"
         >
-          {user?.roles === 'tutor' ? (
+          {user?.roles === 'student' ? (
+            // STUDENT VIEW
+            <>
+              {/* My Tutor(s) Section */}
+              <div
+                style={{
+                  background: "#fff",
+                  border: "3px solid #E1E1E1",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  minHeight: 200,
+                }}
+              >
+                <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.myTutors')}</h3>
+                <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
+                  {studentTutors.length > 0 ? `${studentTutors.length} tutor${studentTutors.length > 1 ? 's' : ''}` : 'No tutors yet'}
+                </div>
+                {studentTutors.length > 0 ? (
+                  studentTutors.map((tutor, index) => (
+                    <div key={tutor.id || index} style={{ margin: "1rem 0", textAlign: "left", border: "1px solid #eee", borderRadius: "8px", padding: "0.75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                        <strong style={{ fontSize: "1rem", color: "#192A88" }}>{tutor.firstName} {tutor.lastName}</strong>
+                        <button
+                          onClick={() => handleComplaintClick(tutor)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#ff8c00",
+                            padding: "0.25rem",
+                            fontSize: "0.9rem",
+                            cursor: "pointer",
+                            marginLeft: "0.5rem",
+                            height: "fit-content"
+                          }}
+                          title="Report a concern about this tutor"
+                        >
+                          📝
+                        </button>
+                      </div>
+                      {tutor.email && (
+                        <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.25rem" }}>
+                          📧 {tutor.email}
+                        </div>
+                      )}
+                      {tutor.phone_number && (
+                        <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                          📞 {tutor.phone_number}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ fontSize: "0.9rem", color: "#666", marginTop: "1rem" }}>
+                    No tutoring sessions recorded yet.
+                  </p>
+                )}
+              </div>
+            </>
+          ) : user?.roles === 'tutor' ? (
             // TUTOR VIEW
             <>
               {/* Tutor's Current Students */}
@@ -830,6 +956,14 @@ export default function Home() {
         onClose={handleDisputeModalClose}
         hourData={selectedHourForDispute}
         onSubmitSuccess={handleDisputeSubmitSuccess}
+      />
+
+      {/* Tutor Complaint Modal */}
+      <TutorComplaintModal
+        isOpen={complaintModalOpen}
+        onClose={handleComplaintModalClose}
+        tutorData={selectedTutorForComplaint}
+        onSubmitSuccess={handleComplaintSubmitSuccess}
       />
 
     </div>

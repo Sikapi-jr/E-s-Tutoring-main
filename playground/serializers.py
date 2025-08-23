@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -473,4 +473,24 @@ class HourDisputeSerializer(serializers.ModelSerializer):
             'subject': hour.subject,
             'student_name': f"{hour.student.firstName} {hour.student.lastName}",
             'tutor_name': f"{hour.tutor.firstName} {hour.tutor.lastName}",
+        }
+
+class TutorComplaintSerializer(serializers.ModelSerializer):
+    student_name = serializers.CharField(source='student.firstName', read_only=True)
+    student_lastname = serializers.CharField(source='student.lastName', read_only=True)
+    tutor_name = serializers.CharField(source='tutor.firstName', read_only=True)
+    tutor_lastname = serializers.CharField(source='tutor.lastName', read_only=True)
+    reviewed_by_name = serializers.CharField(source='reviewed_by.firstName', read_only=True)
+    
+    class Meta:
+        model = TutorComplaint
+        fields = [
+            'id', 'student', 'tutor', 'student_name', 'student_lastname', 
+            'tutor_name', 'tutor_lastname', 'message', 'status', 'admin_reply', 
+            'reviewed_by', 'reviewed_by_name', 'created_at', 'reviewed_at'
+        ]
+        extra_kwargs = {
+            'student': {'read_only': True},
+            'reviewed_by': {'read_only': True},
+            'reviewed_at': {'read_only': True},
         }

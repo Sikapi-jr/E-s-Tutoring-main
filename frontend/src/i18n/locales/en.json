@@ -154,6 +154,7 @@
     "cantAttend": "Can't attend",
     "paidPercentage": "{{percent}}% Paid",
     "myStudents": "My Students",
+    "myTutors": "My Tutors",
     "activeStudentsCount": "{{count}} active students",
     "student": "Student",
     "parent": "Parent",

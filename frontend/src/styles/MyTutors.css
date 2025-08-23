@@ -1,0 +1,106 @@
+/* src/styles/MyTutors.css */
+.my-tutors {
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+}
+
+.my-tutors h3 {
+  color: #192A88;
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 0.5rem;
+}
+
+.my-tutors-loading,
+.my-tutors-error,
+.my-tutors-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.my-tutors-error {
+  color: #d32f2f;
+  background-color: #ffebee;
+  border-radius: 4px;
+}
+
+.tutors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tutor-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: box-shadow 0.2s ease;
+}
+
+.tutor-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tutor-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.tutor-info p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.tutor-email {
+  color: #192A88 !important;
+}
+
+.tutor-subject {
+  color: #4a4a4a !important;
+  font-weight: 500;
+}
+
+.complaint-btn {
+  background: #ff8c00;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.complaint-btn:hover {
+  background: #e07600;
+}
+
+.complaint-btn:active {
+  background: #cc6a00;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .tutor-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .complaint-btn {
+    align-self: flex-end;
+  }
+}

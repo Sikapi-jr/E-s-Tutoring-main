@@ -7,6 +7,7 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import "../styles/Navbar.css";
 import EGSLogo from "./EGSLogo.jsx";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
+import MyTutorsDropdown from "./MyTutorsDropdown.jsx";
 
 /* ---------- ROUTE DEFINITIONS ---------- */
 // Define routes with translation keys instead of hardcoded labels
@@ -20,6 +21,7 @@ const getRoutes = (t) => ({
   Monthly: { to: "/MonthlyHours",      label: t('navigation.monthlyHours') },
   Reports: { to: "/monthly-reports",   label: t('monthlyReports.title') },
   Ann:     { to: "/create-announcement", label: t('navigation.announcements') },
+  Complaints: { to: "/admin-complaints", label: "Student Complaints" },
   Cal:     { to: "/calendar",          label: t('navigation.calendar') },
   Events:  { to: "/events",            label: t('navigation.events') },
   CalCon:  { to: "/calendarConnect",   label: t('navigation.scheduleSession') },
@@ -37,7 +39,7 @@ const getRoleConfig = (BASE) => ({
     main:   [BASE.Home],
     tutor:  [BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
     cal:    [BASE.Events, BASE.CalCon, BASE.Hours],
-    single: [BASE.Inv, BASE.Reports],
+    single: [BASE.Inv, BASE.Reports, BASE.Complaints],
   },
   parent: {
     main:   [BASE.Home],
@@ -298,6 +300,7 @@ export default function Navbar() {
       </nav>
 
       <div className="nav__right">
+        {user.roles === 'student' && <MyTutorsDropdown />}
         <LanguageSwitcher className="nav__language" />
         <ProfileMenu user={user} BASE={BASE} />
       </div>

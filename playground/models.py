@@ -80,6 +80,7 @@ class User(AbstractUser):
     city = models.CharField(max_length=20, choices=CITY_CHOICES, default="None", blank=True)
     roles = models.CharField(max_length=20, default='parent', blank=True)
     email = models.EmailField(unique=False, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True, help_text="Contact phone number")
     parent = models.ForeignKey(
         'self',
         null=True,
@@ -759,3 +760,42 @@ class HourDispute(models.Model):
     
     def __str__(self):
         return f"Dispute for Hour #{self.hour.id} by {self.complainer.username}"
+
+class TutorComplaint(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('reviewed', 'Reviewed'),
+        ('resolved', 'Resolved'),
+    ]
+    
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='complaints_filed',
+        limit_choices_to={'roles': 'student'}
+    )
+    tutor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='complaints_received',
+        limit_choices_to={'roles': 'tutor'}
+    )
+    message = models.TextField(help_text="Student's complaint message")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_reply = models.TextField(blank=True, null=True, help_text="Admin response to complaint")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='complaints_reviewed',
+        limit_choices_to={'is_superuser': True}
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Complaint about {self.tutor.firstName} {self.tutor.lastName} by {self.student.firstName} {self.student.lastName}"

@@ -61,7 +61,13 @@ urlpatterns = [
     path('disputes/', views.HourDisputeListView.as_view(), name='dispute-list'),
     path('disputes/<int:pk>/manage/', views.AdminDisputeManagementView.as_view(), name='admin-dispute-manage'),
     path('disputes/<int:pk>/cancel/', views.CancelDisputeView.as_view(), name='dispute-cancel'),
-
+    
+    # Tutor complaint endpoints
+    path('tutor-complaints/', views.TutorComplaintListCreateView.as_view(), name='tutor-complaints'),
+    path('tutor-complaints/<int:complaint_id>/manage/', views.TutorComplaintManageView.as_view(), name='manage-complaint'),
+    
+    # Student tutors endpoint
+    path('student/tutors/', views.StudentTutorsView.as_view(), name='student-tutors'),
 
 ]
 
