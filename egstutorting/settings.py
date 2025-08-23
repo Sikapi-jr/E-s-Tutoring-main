@@ -331,7 +331,7 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # Email Configuration
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@mail.egstutoring-portal.ca")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@egstutoring-portal.ca")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "info@egstutoring.ca")
 
 # Mailgun API Configuration
