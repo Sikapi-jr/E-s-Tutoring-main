@@ -62,64 +62,77 @@
     word-break: break-word !important;
   }
 
-  /* CORRECT MOBILE HOME ORDER: Hello → Students → Scheduled → Logged → Payments → Announcements */
+  /* FINAL SOLUTION: CSS Grid Mobile Layout with Individual Section Control */
   
-  /* Main layout becomes single column */
+  /* Transform container into CSS Grid for complete control */
   .home-three-column-layout {
-    display: flex !important;
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    grid-auto-flow: dense !important;
   }
 
-  /* All columns take full width */
+  /* All columns take full width and lose their original structure */
   .home-left-column,
   .home-middle-column, 
   .home-right-column {
     width: 100% !important;
-    margin-top: 1rem !important;
+    margin-top: 0 !important;
     box-sizing: border-box !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
+    display: contents !important; /* This makes the children act as direct grid items */
   }
 
-  /* CORRECT ORDER IMPLEMENTATION */
-  /* Hello message stays at top (already positioned correctly) */
+  /* PERFECT ORDER: Hello → Students → Scheduled → Logged → Payments → Announcements */
   
-  /* 1st: Students (right column - first) */
-  .home-right-column {
+  /* 1. Students section */
+  .students-section {
     order: 1 !important;
+    grid-row: 1 !important;
   }
 
-  /* 2nd: Scheduled events (middle column) */
-  .home-middle-column {
+  /* 2. Scheduled events section */  
+  .scheduled-events-section {
     order: 2 !important;
+    grid-row: 2 !important;
   }
 
-  /* 3rd: Logged hours and 4th: Announcements (left column) */
-  .home-left-column {
+  /* 3. Logged hours section */
+  .logged-hours-section {
     order: 3 !important;
+    grid-row: 3 !important;
   }
 
-  /* Within right column: Students first, then payments */
-  .home-right-column {
-    display: flex !important;
-    flex-direction: column !important;
+  /* 4. Payment progress section */
+  .payment-progress-section {
+    order: 4 !important;
+    grid-row: 4 !important;
   }
 
-  /* Within left column: Logged hours first, then announcements */
-  .home-left-column {
-    display: flex !important;
-    flex-direction: column !important;
+  /* 5. Paid invoices section */
+  .paid-invoices-section {
+    order: 5 !important;
+    grid-row: 5 !important;
   }
 
-  /* Logged hours comes first in left column */
-  .home-left-column > :first-child {
-    order: 1 !important;
+  /* 6. Unpaid invoices section */
+  .unpaid-invoices-section {
+    order: 6 !important;
+    grid-row: 6 !important;
   }
 
-  /* Announcements come last in left column */
-  .home-left-column > :last-child {
-    order: 2 !important;
+  /* 7. Announcements section (last) */
+  .announcements-section {
+    order: 7 !important;
+    grid-row: 7 !important;
     margin-top: 2rem !important;
+  }
+
+  /* All mobile sections get proper spacing */
+  .mobile-section {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
   }
 
   /* Remove middle column padding for mobile */

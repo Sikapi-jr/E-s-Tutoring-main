@@ -418,6 +418,7 @@ export default function Home() {
           className="home-left-column"
         >
           <div
+            className="mobile-section logged-hours-section"
             style={{
               background: "#fff",
               border: "3px solid #E1E1E1",
@@ -483,13 +484,15 @@ export default function Home() {
               </Link>
             )}
           </div>
-          <AnnouncementCarousel />
+          <div className="mobile-section announcements-section">
+            <AnnouncementCarousel />
+          </div>
         </div>
 
         {/* MIDDLE COL */}
         <div style={{ width: "55%", padding: "1rem 0", paddingTop: "14.05rem" }} className="home-middle-column">
           <div
-            className="table-wrapper"
+            className="table-wrapper mobile-section scheduled-events-section"
             style={{
               background: "#fff",
               border: "3px solid #E1E1E1",
@@ -588,6 +591,7 @@ export default function Home() {
             <>
               {/* My Tutor(s) Section */}
               <div
+                className="mobile-section students-section"
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
@@ -646,6 +650,7 @@ export default function Home() {
             <>
               {/* Tutor's Current Students */}
               <div
+                className="mobile-section students-section"
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
@@ -789,6 +794,7 @@ export default function Home() {
             // PARENT VIEW (original content)
             <>
               <div
+                className="mobile-section students-section"
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
@@ -820,7 +826,7 @@ export default function Home() {
                 )}
               </div>
 
-              <div>
+              <div className="mobile-section payment-progress-section">
                 <h4
                   style={{
                     textAlign: "center",
@@ -854,6 +860,7 @@ export default function Home() {
               </div>
 
               <div
+                className="mobile-section paid-invoices-section"
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
@@ -899,6 +906,7 @@ export default function Home() {
               </div>
 
               <div
+                className="mobile-section unpaid-invoices-section"
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
