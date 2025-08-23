@@ -106,51 +106,67 @@
     order: 2;
   }
 
-  /* Role-specific mobile layouts */
+  /* Role-specific mobile layouts with !important to override inline styles */
   
   /* Parent Layout: Students -> Scheduled Events -> Logged Hours -> Payment -> Announcements */
   [data-role="parent"] .home-right-column {
-    order: 1; /* Students table first */
+    order: 1 !important; /* Students table first */
   }
   [data-role="parent"] .home-middle-column {
-    order: 2; /* Scheduled events second */
+    order: 2 !important; /* Scheduled events second */
   }
   [data-role="parent"] .home-left-column {
-    order: 3; /* Logged hours third */
+    order: 3 !important; /* Logged hours third */
   }
   
   /* Tutor Layout: Students -> Scheduled Events -> Documents -> Google Calendar -> Logged Hours -> Announcements */  
   [data-role="tutor"] .home-right-column {
-    order: 1; /* My Students first */
+    order: 1 !important; /* My Students first */
   }
   [data-role="tutor"] .home-middle-column {
-    order: 2; /* Scheduled events second */
+    order: 2 !important; /* Scheduled events second */
   }
   [data-role="tutor"] .home-left-column {
-    order: 3; /* Logged hours and announcements last */
+    order: 3 !important; /* Logged hours and announcements last */
   }
   
   /* Student Layout: My Tutors -> Scheduled Events -> Logged Hours -> Announcements */
   [data-role="student"] .home-right-column {
-    order: 1; /* My Tutors first */
+    order: 1 !important; /* My Tutors first */
   }
   [data-role="student"] .home-middle-column {
-    order: 2; /* Scheduled events second */
+    order: 2 !important; /* Scheduled events second */
   }
   [data-role="student"] .home-left-column {
-    order: 3; /* Logged hours and announcements last */
+    order: 3 !important; /* Logged hours and announcements last */
+  }
+
+  /* General mobile ordering (fallback) */
+  .home-right-column {
+    order: 1 !important;
+  }
+  .home-middle-column {
+    order: 2 !important;
+  }
+  .home-left-column {
+    order: 3 !important;
   }
 
   /* Specific ordering within left column for announcements */
   .home-left-column {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
   }
   
   /* Announcements should always be last */
   .home-left-column > :last-child {
-    order: 10;
-    margin-top: 2rem;
+    order: 10 !important;
+    margin-top: 2rem !important;
+  }
+
+  /* Logged hours should be first in left column */
+  .home-left-column > :first-child {
+    order: 1 !important;
   }
 
   /* Remove middle column padding for mobile */

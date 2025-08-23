@@ -3,6 +3,9 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .landing-container {
@@ -12,6 +15,9 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .landing-header {
@@ -147,6 +153,11 @@
 @media (max-width: 768px) {
   .landing-container {
     padding: 1rem;
+    overflow-x: hidden;
+  }
+  
+  .landing-page {
+    overflow-x: hidden !important;
   }
   
   .landing-header h1 {
