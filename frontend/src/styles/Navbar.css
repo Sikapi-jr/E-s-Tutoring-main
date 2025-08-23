@@ -193,10 +193,10 @@
 @media (max-width: 820px) {
   .nav { justify-content: space-between; }
 
-  /* Smaller logo on mobile */
+  /* Push logo to the far left on mobile */
   .nav__brand img {
     height: 35px !important;
-    margin-left: 10px !important;
+    margin-left: -5px !important;
   }
 
   .nav__burger { display: flex; }

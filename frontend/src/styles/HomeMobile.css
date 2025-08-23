@@ -62,7 +62,15 @@
     word-break: break-word !important;
   }
 
-  /* Mobile layout order: greeting, students, scheduled events, logged hours, invoices, announcements */
+  /* MOBILE HOME ORDER: Student table → Scheduled hours → Logged hours → Payments → Announcements */
+  
+  /* Transform the three-column layout into a single column with specific ordering */
+  .home-three-column-layout {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* All columns take full width */
   .home-left-column,
   .home-middle-column, 
   .home-right-column {
@@ -73,93 +81,54 @@
     overflow-x: hidden !important;
   }
 
-  /* Mobile layout structure for better organization */
+  /* Create a custom order that breaks up the columns to achieve the exact sequence */
+  /* This approach uses CSS Grid to completely restructure the layout */
+  
   .home-three-column-layout {
-    display: flex !important;
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
   }
 
-  /* Reorder sections for mobile based on role-specific requirements */
+  /* Individual section targeting for precise ordering */
   
-  /* For Parents: Students (right) -> Scheduled Events (middle) -> Logged Hours + Announcements (left) */
-  .home-right-column {
-    order: 1; /* Students and payment info first */
-  }
-
-  .home-middle-column {
-    order: 2; /* Scheduled events second */  
-  }
-
-  .home-left-column {
-    order: 3; /* Logged hours third, announcements last */
-  }
-
-  /* Individual section ordering within columns */
-  .home-right-column > * {
-    margin-bottom: 1rem;
-  }
-  
-  /* Payment sections should come after students */
-  .home-right-column > div:nth-of-type(2),
-  .home-right-column > div:nth-of-type(3),
-  .home-right-column > div:nth-of-type(4) {
-    order: 2;
-  }
-
-  /* CORRECT Mobile Order: Student Table → Scheduled Hours → Logged Hours → Payments → Announcements */
-  
-  /* We need to reorganize the entire home layout structure for mobile */
-  /* Each major section gets its own order number */
-
-  /* Order 1: Student Table (first div in right column) */
-  .home-right-column > div:first-child {
+  /* 1st: Student table/info (first child of right column) */
+  .home-right-column > :first-child {
     order: 1 !important;
   }
 
-  /* Order 2: Scheduled Hours (middle column content) */
+  /* 2nd: Scheduled events (entire middle column) */
   .home-middle-column {
     order: 2 !important;
   }
 
-  /* Order 3: Logged Hours (first div in left column) */
-  .home-left-column > div:first-child {
+  /* 3rd: Logged hours (first child of left column) */
+  .home-left-column > :first-child {
     order: 3 !important;
   }
 
-  /* Order 4: Payment Progress (second div in right column for parents) */
-  .home-right-column > div:nth-child(2) {
+  /* 4th-6th: Payment sections (remaining children of right column) */
+  .home-right-column > :nth-child(2) {
     order: 4 !important;
   }
-
-  /* Order 5: Paid Invoices (third div in right column for parents) */
-  .home-right-column > div:nth-child(3) {
+  
+  .home-right-column > :nth-child(3) {
     order: 5 !important;
   }
-
-  /* Order 6: Unpaid Invoices (fourth div in right column for parents) */
-  .home-right-column > div:nth-child(4) {
+  
+  .home-right-column > :nth-child(4) {
     order: 6 !important;
   }
 
-  /* Order 7: Announcements (last div in left column) */
-  .home-left-column > div:last-child {
+  /* 7th: Announcements (last child of left column) */
+  .home-left-column > :last-child {
     order: 7 !important;
     margin-top: 2rem !important;
   }
 
-  /* Column restructuring for mobile */
+  /* Make columns behave as flex containers for their children */
+  .home-left-column,
   .home-right-column {
-    order: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  
-  .home-middle-column {
-    order: 2 !important;
-  }
-  
-  .home-left-column {
-    order: 3 !important;
     display: flex !important;
     flex-direction: column !important;
   }

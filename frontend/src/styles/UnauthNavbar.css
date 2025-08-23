@@ -140,23 +140,19 @@ html, body {
 @media (max-width: 768px) {
   .unauth-nav {
     width: 100%;
-    padding: 1rem 1rem;
+    padding: 1rem 0.5rem;
     position: relative;
   }
 
-  /* Smaller logo on mobile and position it more to the left */
+  /* Push logo to the far left on mobile */
   .unauth-nav .nav-logo {
-    height: 28px;
-    margin-right: 0.5rem;
+    height: 30px;
+    margin-left: -0.5rem;
   }
   
   .nav-left {
-    flex: 0 0 auto; /* Don't let it grow, only take what it needs */
-    gap: 0.5rem; /* Reduce gap between logo and language */
-  }
-  
-  .nav-left a {
-    font-size: 1.2rem; /* Slightly smaller text */
+    flex: 1;
+    gap: 1.5rem;
   }
 
   .nav-burger {
@@ -183,11 +179,7 @@ html, body {
   }
   
   .nav-language-switcher button {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
-  
-  .nav-language-switcher {
-    margin-right: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
   }
 }

@@ -151,6 +151,10 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  body, html {
+    overflow-x: hidden !important;
+  }
+
   .landing-container {
     padding: 1rem;
     overflow-x: hidden;
