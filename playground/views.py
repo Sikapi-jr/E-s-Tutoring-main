@@ -1133,7 +1133,37 @@ class RequestListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        serializer.save()
+        request_obj = serializer.save()
+        
+        # Send email notifications to tutors about new requests
+        try:
+            from playground.tasks import send_new_request_notification_async
+            
+            # Get all tutors who have email notifications enabled
+            tutors_with_notifications = User.objects.filter(
+                roles='tutor',
+                email_notifications_enabled=True,
+                email_new_requests=True,
+                email__isnull=False
+            ).exclude(email='')
+            
+            if tutors_with_notifications.exists():
+                tutor_emails = list(tutors_with_notifications.values_list('email', flat=True))
+                parent_name = f"{request_obj.parent.firstName} {request_obj.parent.lastName}"
+                student_name = f"{request_obj.student.firstName} {request_obj.student.lastName}"
+                
+                send_new_request_notification_async.delay(
+                    tutor_emails,
+                    parent_name,
+                    student_name,
+                    request_obj.subject,
+                    request_obj.grade,
+                    request_obj.service,
+                    request_obj.city
+                )
+        except Exception as e:
+            print(f"Failed to send new request notifications: {e}")
+            pass
 
        
 class RequestResponseCreateView(generics.ListCreateAPIView):
@@ -1154,15 +1184,23 @@ class RequestResponseCreateView(generics.ListCreateAPIView):
         parent_email = getattr(parent, "email", None)
         student_first = getattr(student, "firstName", "")
 
-        if parent_email:
-            # Send reply notification email asynchronously (temporarily disabled to avoid getaddrinfo error)
+        if parent_email and parent.email_notifications_enabled and parent.email_replies:
+            # Send enhanced reply notification email asynchronously
             try:
-                from playground.tasks import send_reply_notification_email_async
+                from playground.tasks import send_tutor_reply_notification_async
                 tutor_name = f"{reply.tutor.firstName} {reply.tutor.lastName}"
-                send_reply_notification_email_async.delay(
+                
+                # Get document URLs if any
+                document_urls = []
+                for doc in reply.tutor.documents.all():
+                    document_urls.append(f"{settings.BACKEND_URL}{doc.file.url}")
+                
+                send_tutor_reply_notification_async.delay(
                     parent_email, 
                     tutor_name, 
-                    reply.request.subject
+                    reply.request.subject,
+                    reply.message,
+                    document_urls if document_urls else None
                 )
             except Exception as e:
                 # Log the error but don't fail the request

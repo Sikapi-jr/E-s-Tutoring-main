@@ -102,6 +102,13 @@ class User(AbstractUser):
     )
     profile_picture = models.FileField(upload_to='profile_picture/', default='profile_picture/default-profile-picture.jpeg')
 
+    # Email notification preferences
+    email_notifications_enabled = models.BooleanField(default=True, help_text="Enable all email notifications")
+    email_new_requests = models.BooleanField(default=True, help_text="Email when new requests are created (tutors only)")
+    email_replies = models.BooleanField(default=True, help_text="Email when tutors reply to requests (parents only)")
+    email_disputes = models.BooleanField(default=True, help_text="Email when disputes are created")
+    email_monthly_hours = models.BooleanField(default=True, help_text="Email when monthly hours are available")
+    email_monthly_reports = models.BooleanField(default=True, help_text="Email when monthly reports are submitted")
 
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)

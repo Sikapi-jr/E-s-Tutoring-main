@@ -712,3 +712,183 @@ def update_google_calendar_rsvp_async(self, user_id, event_id, status):
     except Exception as e:
         logger.error(f"Error updating Google Calendar RSVP for user {user_id}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+# New Email Notification Tasks
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_tutor_reply_notification_async(self, parent_email, tutor_name, request_subject, reply_message, document_urls=None):
+    """
+    Send email notification when tutor replies to parent request
+    """
+    try:
+        subject = f'New Reply from Your Tutor - {request_subject}'
+        
+        # Build document attachments text
+        documents_text = ""
+        if document_urls:
+            documents_text = "\n\nDocument attachments:\n"
+            for url in document_urls:
+                documents_text += f"- {url}\n"
+        
+        message = f"""
+Hello,
+
+You have received a new reply from {tutor_name} regarding your tutoring request for {request_subject}.
+
+Reply:
+{reply_message}
+{documents_text}
+
+Please visit your dashboard to view the full conversation and take action if needed.
+
+Best regards,
+EGS Tutoring Team
+        """
+        
+        send_mailgun_email(
+            to_emails=[parent_email],
+            subject=subject,
+            text_content=message
+        )
+        
+        logger.info(f"Tutor reply notification sent to {parent_email}")
+        return {'success': True, 'email': parent_email}
+        
+    except Exception as e:
+        logger.error(f"Error sending tutor reply notification to {parent_email}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_new_request_notification_async(self, tutor_emails, parent_name, student_name, subject, grade, service, city):
+    """
+    Send email notification to tutors when new requests are created
+    """
+    try:
+        email_subject = f'New Tutoring Request Available - {subject} for {student_name}'
+        message = f"""
+Hello,
+
+A new tutoring request has been posted that may interest you:
+
+Student: {student_name}
+Subject: {subject}
+Grade: {grade}
+Service Type: {service}
+Location: {city}
+Parent: {parent_name}
+
+Please visit your dashboard to view the full request details and submit your reply if interested.
+
+Best regards,
+EGS Tutoring Team
+        """
+        
+        send_mailgun_email(
+            to_emails=tutor_emails,
+            subject=email_subject,
+            text_content=message
+        )
+        
+        logger.info(f"New request notification sent to tutors: {tutor_emails}")
+        return {'success': True, 'recipients': tutor_emails}
+        
+    except Exception as e:
+        logger.error(f"Error sending new request notification: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_monthly_hours_notification_async(self, recipient_email, recipient_name, month, year, total_hours, is_tutor=False):
+    """
+    Send email notification when monthly hours are available
+    """
+    try:
+        if is_tutor:
+            subject = f'Monthly Hours Summary Available - {month}/{year}'
+            message = f"""
+Hello {recipient_name},
+
+Your monthly hours summary for {month}/{year} is now available.
+
+Total Hours: {total_hours}
+
+This is also a reminder to complete your monthly reports for your students if you haven't done so already. Monthly reports help parents track their child's progress and are an important part of our tutoring service.
+
+Please visit your dashboard to:
+- Review your monthly hours
+- Complete any pending monthly reports
+
+Best regards,
+EGS Tutoring Team
+            """
+        else:
+            subject = f'Monthly Hours Summary - {month}/{year}'
+            message = f"""
+Hello {recipient_name},
+
+Your child's monthly tutoring hours summary for {month}/{year} is now available.
+
+Total Hours: {total_hours}
+
+Please visit your dashboard to review the detailed breakdown of all tutoring sessions.
+
+Best regards,
+EGS Tutoring Team
+            """
+        
+        send_mailgun_email(
+            to_emails=[recipient_email],
+            subject=subject,
+            text_content=message
+        )
+        
+        logger.info(f"Monthly hours notification sent to {recipient_email}")
+        return {'success': True, 'email': recipient_email}
+        
+    except Exception as e:
+        logger.error(f"Error sending monthly hours notification to {recipient_email}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_monthly_report_notification_async(self, parent_email, parent_name, tutor_name, student_name, month, year, report_pdf_url=None):
+    """
+    Send email notification when tutor submits monthly report
+    """
+    try:
+        subject = f'Monthly Report Available - {student_name} ({month}/{year})'
+        
+        pdf_text = ""
+        if report_pdf_url:
+            pdf_text = f"\n\nReport PDF: {report_pdf_url}\n"
+        
+        message = f"""
+Hello {parent_name},
+
+{tutor_name} has completed the monthly report for {student_name} for {month}/{year}.
+
+This report includes:
+- Progress summary
+- Strengths and areas for improvement  
+- Homework completion assessment
+- Participation level
+- Goals for next month
+- Additional comments
+{pdf_text}
+
+Please visit your dashboard to view the complete report.
+
+Best regards,
+EGS Tutoring Team
+        """
+        
+        send_mailgun_email(
+            to_emails=[parent_email],
+            subject=subject,
+            text_content=message
+        )
+        
+        logger.info(f"Monthly report notification sent to {parent_email}")
+        return {'success': True, 'email': parent_email}
+        
+    except Exception as e:
+        logger.error(f"Error sending monthly report notification to {parent_email}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
