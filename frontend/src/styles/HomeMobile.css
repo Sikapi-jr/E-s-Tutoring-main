@@ -73,17 +73,89 @@
     overflow-x: hidden !important;
   }
 
-  /* Reorder sections for mobile: students, scheduled events, logged hours, invoices, announcements */
+  /* Mobile layout structure for better organization */
+  .home-three-column-layout {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Reorder sections for mobile based on role-specific requirements */
+  
+  /* For Parents: Students (right) -> Scheduled Events (middle) -> Logged Hours + Announcements (left) */
   .home-right-column {
-    order: 1; /* Students first after greeting */
+    order: 1; /* Students and payment info first */
   }
 
   .home-middle-column {
-    order: 2; /* Scheduled events second */
+    order: 2; /* Scheduled events second */  
   }
 
   .home-left-column {
+    order: 3; /* Logged hours third, announcements last */
+  }
+
+  /* Individual section ordering within columns */
+  .home-right-column > * {
+    margin-bottom: 1rem;
+  }
+  
+  /* Payment sections should come after students */
+  .home-right-column > div:nth-of-type(2),
+  .home-right-column > div:nth-of-type(3),
+  .home-right-column > div:nth-of-type(4) {
+    order: 2;
+  }
+
+  /* Role-specific mobile layouts */
+  
+  /* Parent Layout: Students -> Scheduled Events -> Logged Hours -> Payment -> Announcements */
+  [data-role="parent"] .home-right-column {
+    order: 1; /* Students table first */
+  }
+  [data-role="parent"] .home-middle-column {
+    order: 2; /* Scheduled events second */
+  }
+  [data-role="parent"] .home-left-column {
+    order: 3; /* Logged hours third */
+  }
+  
+  /* Tutor Layout: Students -> Scheduled Events -> Documents -> Google Calendar -> Logged Hours -> Announcements */  
+  [data-role="tutor"] .home-right-column {
+    order: 1; /* My Students first */
+  }
+  [data-role="tutor"] .home-middle-column {
+    order: 2; /* Scheduled events second */
+  }
+  [data-role="tutor"] .home-left-column {
     order: 3; /* Logged hours and announcements last */
+  }
+  
+  /* Student Layout: My Tutors -> Scheduled Events -> Logged Hours -> Announcements */
+  [data-role="student"] .home-right-column {
+    order: 1; /* My Tutors first */
+  }
+  [data-role="student"] .home-middle-column {
+    order: 2; /* Scheduled events second */
+  }
+  [data-role="student"] .home-left-column {
+    order: 3; /* Logged hours and announcements last */
+  }
+
+  /* Specific ordering within left column for announcements */
+  .home-left-column {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Announcements should always be last */
+  .home-left-column > :last-child {
+    order: 10;
+    margin-top: 2rem;
+  }
+
+  /* Remove middle column padding for mobile */
+  .home-middle-column {
+    padding-top: 1rem !important;
   }
 
   /* Center table rows */

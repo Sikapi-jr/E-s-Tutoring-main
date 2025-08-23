@@ -329,7 +329,7 @@ export default function Home() {
 
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh" }}>
+    <div style={{ position: "relative", minHeight: "100vh" }} data-role={user?.roles}>
       {/* greeting overlays; positioned lower */}
       <h1
         style={{
