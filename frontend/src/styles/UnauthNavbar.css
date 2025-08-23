@@ -144,10 +144,10 @@ html, body {
     position: relative;
   }
 
-  /* Push logo to the far left on mobile */
+  /* Make logo smaller and push further to the left on mobile */
   .unauth-nav .nav-logo {
-    height: 30px;
-    margin-left: -0.5rem;
+    height: 25px;
+    margin-left: -1rem;
   }
   
   .nav-left {

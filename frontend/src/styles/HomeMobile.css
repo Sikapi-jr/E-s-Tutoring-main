@@ -62,9 +62,9 @@
     word-break: break-word !important;
   }
 
-  /* MOBILE HOME ORDER: Student table → Scheduled hours → Logged hours → Payments → Announcements */
+  /* CORRECT MOBILE HOME ORDER: Hello → Students → Scheduled → Logged → Payments → Announcements */
   
-  /* Transform the three-column layout into a single column with specific ordering */
+  /* Main layout becomes single column */
   .home-three-column-layout {
     display: flex !important;
     flex-direction: column !important;
@@ -81,56 +81,45 @@
     overflow-x: hidden !important;
   }
 
-  /* Create a custom order that breaks up the columns to achieve the exact sequence */
-  /* This approach uses CSS Grid to completely restructure the layout */
+  /* CORRECT ORDER IMPLEMENTATION */
+  /* Hello message stays at top (already positioned correctly) */
   
-  .home-three-column-layout {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 1rem !important;
-  }
-
-  /* Individual section targeting for precise ordering */
-  
-  /* 1st: Student table/info (first child of right column) */
-  .home-right-column > :first-child {
+  /* 1st: Students (right column - first) */
+  .home-right-column {
     order: 1 !important;
   }
 
-  /* 2nd: Scheduled events (entire middle column) */
+  /* 2nd: Scheduled events (middle column) */
   .home-middle-column {
     order: 2 !important;
   }
 
-  /* 3rd: Logged hours (first child of left column) */
-  .home-left-column > :first-child {
+  /* 3rd: Logged hours and 4th: Announcements (left column) */
+  .home-left-column {
     order: 3 !important;
   }
 
-  /* 4th-6th: Payment sections (remaining children of right column) */
-  .home-right-column > :nth-child(2) {
-    order: 4 !important;
-  }
-  
-  .home-right-column > :nth-child(3) {
-    order: 5 !important;
-  }
-  
-  .home-right-column > :nth-child(4) {
-    order: 6 !important;
-  }
-
-  /* 7th: Announcements (last child of left column) */
-  .home-left-column > :last-child {
-    order: 7 !important;
-    margin-top: 2rem !important;
-  }
-
-  /* Make columns behave as flex containers for their children */
-  .home-left-column,
+  /* Within right column: Students first, then payments */
   .home-right-column {
     display: flex !important;
     flex-direction: column !important;
+  }
+
+  /* Within left column: Logged hours first, then announcements */
+  .home-left-column {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Logged hours comes first in left column */
+  .home-left-column > :first-child {
+    order: 1 !important;
+  }
+
+  /* Announcements come last in left column */
+  .home-left-column > :last-child {
+    order: 2 !important;
+    margin-top: 2rem !important;
   }
 
   /* Remove middle column padding for mobile */
