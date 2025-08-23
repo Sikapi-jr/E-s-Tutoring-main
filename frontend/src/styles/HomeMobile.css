@@ -106,67 +106,62 @@
     order: 2;
   }
 
-  /* Role-specific mobile layouts with !important to override inline styles */
+  /* CORRECT Mobile Order: Student Table → Scheduled Hours → Logged Hours → Payments → Announcements */
   
-  /* Parent Layout: Students -> Scheduled Events -> Logged Hours -> Payment -> Announcements */
-  [data-role="parent"] .home-right-column {
-    order: 1 !important; /* Students table first */
-  }
-  [data-role="parent"] .home-middle-column {
-    order: 2 !important; /* Scheduled events second */
-  }
-  [data-role="parent"] .home-left-column {
-    order: 3 !important; /* Logged hours third */
-  }
-  
-  /* Tutor Layout: Students -> Scheduled Events -> Documents -> Google Calendar -> Logged Hours -> Announcements */  
-  [data-role="tutor"] .home-right-column {
-    order: 1 !important; /* My Students first */
-  }
-  [data-role="tutor"] .home-middle-column {
-    order: 2 !important; /* Scheduled events second */
-  }
-  [data-role="tutor"] .home-left-column {
-    order: 3 !important; /* Logged hours and announcements last */
-  }
-  
-  /* Student Layout: My Tutors -> Scheduled Events -> Logged Hours -> Announcements */
-  [data-role="student"] .home-right-column {
-    order: 1 !important; /* My Tutors first */
-  }
-  [data-role="student"] .home-middle-column {
-    order: 2 !important; /* Scheduled events second */
-  }
-  [data-role="student"] .home-left-column {
-    order: 3 !important; /* Logged hours and announcements last */
-  }
+  /* We need to reorganize the entire home layout structure for mobile */
+  /* Each major section gets its own order number */
 
-  /* General mobile ordering (fallback) */
-  .home-right-column {
+  /* Order 1: Student Table (first div in right column) */
+  .home-right-column > div:first-child {
     order: 1 !important;
   }
+
+  /* Order 2: Scheduled Hours (middle column content) */
   .home-middle-column {
     order: 2 !important;
   }
-  .home-left-column {
+
+  /* Order 3: Logged Hours (first div in left column) */
+  .home-left-column > div:first-child {
     order: 3 !important;
   }
 
-  /* Specific ordering within left column for announcements */
-  .home-left-column {
+  /* Order 4: Payment Progress (second div in right column for parents) */
+  .home-right-column > div:nth-child(2) {
+    order: 4 !important;
+  }
+
+  /* Order 5: Paid Invoices (third div in right column for parents) */
+  .home-right-column > div:nth-child(3) {
+    order: 5 !important;
+  }
+
+  /* Order 6: Unpaid Invoices (fourth div in right column for parents) */
+  .home-right-column > div:nth-child(4) {
+    order: 6 !important;
+  }
+
+  /* Order 7: Announcements (last div in left column) */
+  .home-left-column > div:last-child {
+    order: 7 !important;
+    margin-top: 2rem !important;
+  }
+
+  /* Column restructuring for mobile */
+  .home-right-column {
+    order: 1 !important;
     display: flex !important;
     flex-direction: column !important;
   }
   
-  /* Announcements should always be last */
-  .home-left-column > :last-child {
-    order: 10 !important;
-    margin-top: 2rem !important;
+  .home-middle-column {
+    order: 2 !important;
   }
-
-  /* Logged hours should be first in left column */
-  .home-left-column > :first-child {
-    order: 1 !important;
+  
+  .home-left-column {
+    order: 3 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   /* Remove middle column padding for mobile */
