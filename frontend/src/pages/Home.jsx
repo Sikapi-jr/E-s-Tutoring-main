@@ -8,7 +8,6 @@ import { useUser } from "../components/UserProvider";
 import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
 import DisputeModal from "../components/DisputeModal";
-import NotificationSettings from "../components/NotificationSettings";
 import TutorComplaintModal from "../components/TutorComplaintModal";
 
 /* helper for invoice colours */
@@ -485,7 +484,6 @@ export default function Home() {
             )}
           </div>
           <AnnouncementCarousel />
-          <NotificationSettings />
         </div>
 
         {/* MIDDLE COL */}

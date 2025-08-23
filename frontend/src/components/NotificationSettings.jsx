@@ -53,7 +53,90 @@ const NotificationSettings = () => {
     }
   };
 
-  if (!user) return null;
+  if (!user || user.roles === 'student') return null; // Students don't need email notifications
+
+  // Define role-specific notification options
+  const getNotificationOptions = () => {
+    switch (user.roles) {
+      case 'tutor':
+        return [
+          {
+            key: 'email_new_requests',
+            label: 'New Tutoring Requests',
+            description: 'Get notified when new requests are posted'
+          },
+          {
+            key: 'email_disputes',
+            label: 'Dispute Notifications',
+            description: 'Get notified about session disputes'
+          },
+          {
+            key: 'email_monthly_hours',
+            label: 'Monthly Hours Summary',
+            description: 'Get monthly tutoring hours summaries'
+          },
+          {
+            key: 'email_monthly_reports',
+            label: 'Monthly Report Reminders',
+            description: 'Get reminders to complete monthly reports'
+          }
+        ];
+      case 'parent':
+        return [
+          {
+            key: 'email_replies',
+            label: 'Tutor Replies',
+            description: 'Get notified when tutors reply to your requests'
+          },
+          {
+            key: 'email_disputes',
+            label: 'Dispute Notifications', 
+            description: 'Get notified about session disputes'
+          },
+          {
+            key: 'email_monthly_hours',
+            label: 'Monthly Hours Summary',
+            description: 'Get monthly tutoring hours summaries'
+          },
+          {
+            key: 'email_monthly_reports',
+            label: 'Monthly Reports Available',
+            description: 'Get notified when monthly reports are available'
+          }
+        ];
+      case 'superuser':
+      default:
+        return [
+          {
+            key: 'email_new_requests',
+            label: 'New Tutoring Requests',
+            description: 'Get notified when new requests are posted'
+          },
+          {
+            key: 'email_replies',
+            label: 'Tutor Replies',
+            description: 'Get notified when tutors reply to requests'
+          },
+          {
+            key: 'email_disputes',
+            label: 'Dispute Notifications',
+            description: 'Get notified about session disputes'
+          },
+          {
+            key: 'email_monthly_hours',
+            label: 'Monthly Hours Summary',
+            description: 'Get monthly tutoring hours summaries'
+          },
+          {
+            key: 'email_monthly_reports',
+            label: 'Monthly Reports',
+            description: 'Get notified about monthly report activities'
+          }
+        ];
+    }
+  };
+
+  const notificationOptions = getNotificationOptions();
 
   return (
     <div style={{
@@ -85,92 +168,22 @@ const NotificationSettings = () => {
 
       {settings.email_notifications_enabled && (
         <div style={{ paddingLeft: '1rem', borderLeft: '3px solid #192A88' }}>
-          
-          {/* New Requests (Tutors only) */}
-          {user.roles === 'tutor' && (
-            <div style={{ marginBottom: '1rem' }}>
+          {notificationOptions.map((option) => (
+            <div key={option.key} style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
-                  checked={settings.email_new_requests}
-                  onChange={() => handleToggle('email_new_requests')}
+                  checked={settings[option.key]}
+                  onChange={() => handleToggle(option.key)}
                   style={{ marginRight: '0.5rem' }}
                 />
-                New Tutoring Requests
+                {option.label}
               </label>
               <p style={{ margin: '0.25rem 0 0 1.5rem', fontSize: '0.8rem', color: '#666' }}>
-                Get notified when new requests are posted
+                {option.description}
               </p>
             </div>
-          )}
-
-          {/* Replies (Parents only) */}
-          {user.roles === 'parent' && (
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={settings.email_replies}
-                  onChange={() => handleToggle('email_replies')}
-                  style={{ marginRight: '0.5rem' }}
-                />
-                Tutor Replies
-              </label>
-              <p style={{ margin: '0.25rem 0 0 1.5rem', fontSize: '0.8rem', color: '#666' }}>
-                Get notified when tutors reply to your requests
-              </p>
-            </div>
-          )}
-
-          {/* Disputes */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.email_disputes}
-                onChange={() => handleToggle('email_disputes')}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Dispute Notifications
-            </label>
-            <p style={{ margin: '0.25rem 0 0 1.5rem', fontSize: '0.8rem', color: '#666' }}>
-              Get notified about session disputes
-            </p>
-          </div>
-
-          {/* Monthly Hours */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.email_monthly_hours}
-                onChange={() => handleToggle('email_monthly_hours')}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Monthly Hours Summary
-            </label>
-            <p style={{ margin: '0.25rem 0 0 1.5rem', fontSize: '0.8rem', color: '#666' }}>
-              Get monthly tutoring hours summaries
-            </p>
-          </div>
-
-          {/* Monthly Reports */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={settings.email_monthly_reports}
-                onChange={() => handleToggle('email_monthly_reports')}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Monthly Reports
-            </label>
-            <p style={{ margin: '0.25rem 0 0 1.5rem', fontSize: '0.8rem', color: '#666' }}>
-              {user.roles === 'parent' 
-                ? 'Get notified when monthly reports are available' 
-                : 'Get reminders to complete monthly reports'}
-            </p>
-          </div>
+          ))}
         </div>
       )}
 

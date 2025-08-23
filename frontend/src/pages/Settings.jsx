@@ -6,6 +6,7 @@ import { useUser } from "../components/UserProvider";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
+import NotificationSettings from "../components/NotificationSettings";
 // Using standard media URLs served by Django
 import "../styles/Settings.css";
 
@@ -257,6 +258,9 @@ export default function Settings() {
           )}
         </section>
       )}
+
+      {/* ===== Email Notification Settings ===== */}
+      <NotificationSettings />
 
       {/* ===== Document Upload (only for tutors) ===== */}
       {user.roles === "tutor" && (
