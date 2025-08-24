@@ -41,6 +41,7 @@ const LoggedHoursPage = lazy(() => import("./components/LoggedHoursPage"));
 const EventsPage = lazy(() => import("./components/EventsPage"));
 const MonthlyReports = lazy(() => import("./pages/MonthlyReports"));
 const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 // Loading component
 const LoadingSpinner = () => {
@@ -140,6 +141,7 @@ function AppRoutes() {
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="/password-reset-confirm/:uid/:token" element={<PasswordResetConfirm />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />

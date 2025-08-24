@@ -250,9 +250,9 @@
   
   /* Profile dropdown positioned below navbar on mobile */
   .profile__menu {
-    position: fixed;
-    top: 64px; /* Position directly below navbar */
-    right: 0.5rem;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
     min-width: 140px;
     background: #2f2f2f;
     border: 1px solid #444;
@@ -260,7 +260,6 @@
     padding: .12rem 0;
     z-index: 10001; /* Higher than mobile menu */
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    margin-top: 4px; /* Small gap below navbar */
   }
   
   .profile__item:hover {
