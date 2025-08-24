@@ -54,6 +54,22 @@
   color: #E8E496;
 }
 
+.footer-link-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+
+.footer-link-button:hover {
+  color: #E8E496;
+}
+
 .report-warning {
   cursor: pointer;
   color: #ff4d4f;

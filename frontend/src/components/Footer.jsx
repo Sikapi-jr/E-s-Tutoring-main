@@ -15,6 +15,15 @@ export default function Footer() {
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const handleDownload = (filename) => {
+    const link = document.createElement('a');
+    link.href = `/${filename}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSubmit = async () => {
     if (submitting) return;
     setSubmitting(true);
@@ -54,7 +63,7 @@ export default function Footer() {
           <div className="footer-column">
             <h4>{t('footer.help')}</h4>
             <ul>
-              <li><a href="/faq">{t('footer.faq')}</a></li>
+              <li><a href="https://egstutoring.ca/home" target="_blank" rel="noopener noreferrer">{t('footer.faq')}</a></li>
               <li><a href="/contact">{t('footer.contact')}</a></li>
             </ul>
           </div>
@@ -62,8 +71,8 @@ export default function Footer() {
           <div className="footer-column">
             <h4>{t('footer.legal')}</h4>
             <ul>
-              <li><a href="/terms">{t('footer.terms')}</a></li>
-              <li><a href="/privacy">{t('footer.privacy')}</a></li>
+              <li><button onClick={() => handleDownload('terms-of-use.pdf')} className="footer-link-button">{t('footer.terms')}</button></li>
+              <li><button onClick={() => handleDownload('privacy-policy.pdf')} className="footer-link-button">{t('footer.privacy')}</button></li>
             </ul>
           </div>
 
