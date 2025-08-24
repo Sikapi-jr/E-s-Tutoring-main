@@ -31,15 +31,51 @@ function RegisterForm() {
   const [lastName, setLname] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [clicked, setClicked] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
+
+  const validatePassword = (password) => {
+    // Only allow keyboard characters: ASCII printable characters (32-126)
+    const keyboardCharsRegex = /^[ -~]*$/;
+    
+    if (!keyboardCharsRegex.test(password)) {
+      setPasswordError("Password can only contain keyboard characters");
+      return false;
+    }
+    
+    if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters long");
+      return false;
+    }
+    
+    setPasswordError("");
+    return true;
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (newPassword) {
+      validatePassword(newPassword);
+    } else {
+      setPasswordError("");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setClicked(true);
+
+    // Validate password before submitting
+    if (!validatePassword(password)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -52,6 +88,7 @@ function RegisterForm() {
         lastName,
         address,
         city,
+        phoneNumber,
       };
       const res = await api.post("/api/user/register/", payload);
       localStorage.setItem(ACCESS_TOKEN, res.data.access);
@@ -93,16 +130,25 @@ function RegisterForm() {
               className="form-input"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder={t('common.password')}
               required
             />
+            {passwordError && <p className="password-error">{passwordError}</p>}
             <input
               className="form-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('common.email')}
+              required
+            />
+            <input
+              className="form-input"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder={t('auth.phoneNumber', 'Phone Number')}
               required
             />
 
@@ -170,10 +216,11 @@ function RegisterForm() {
               className="form-input"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder={t('common.password')}
               required
             />
+            {passwordError && <p className="password-error">{passwordError}</p>}
             <input
               className="form-input"
               type="email"

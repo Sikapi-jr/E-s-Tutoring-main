@@ -26,7 +26,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = [
             "username", "password",
             "firstName", "lastName", "address", "city",
-            "roles", "email", "parent"
+            "roles", "email", "parent", "phoneNumber"
         ]
         extra_kwargs = {
             "password": {"write_only": True, "min_length": 8},

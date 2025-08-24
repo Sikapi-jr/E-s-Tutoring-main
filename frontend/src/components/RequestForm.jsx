@@ -77,6 +77,21 @@
         return (
             <div className="form-container">
                 <h1>{t('requests.requestTutor')}</h1>
+                
+                {/* No Students Message */}
+                {students.length === 0 && (
+                    <div className="no-students-message">
+                        <p>{t('requests.noStudentsMessage', 'You dont have any students registered, Register a student now?')}</p>
+                        <button 
+                            type="button" 
+                            className="register-student-button"
+                            onClick={() => navigate('/settings')}
+                        >
+                            {t('requests.registerStudent', 'Register Student')}
+                        </button>
+                    </div>
+                )}
+                
                 <form onSubmit={handleSubmit}>
                     <select
                         className="form-input"

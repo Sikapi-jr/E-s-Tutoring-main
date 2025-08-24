@@ -148,3 +148,10 @@ body,
 h1, h2, h3 {
   font-family: "Google Sans Text", "Product Sans", sans-serif;
 }
+
+.password-error {
+  color: #d33;
+  font-size: 0.85rem;
+  margin: -0.5rem 0 0.5rem 0;
+  padding-left: 0.5rem;
+}
