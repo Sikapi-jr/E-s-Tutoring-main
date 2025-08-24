@@ -92,7 +92,7 @@ CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Reject tasks if worker dies
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "http://localhost:8000/api/google/oauth2callback")
+GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "https://egstutoring-portal.ca/api/google/oauth2callback")
 FERNET_SECRET = os.getenv('FERNET_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -327,8 +327,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 
 # URL Configuration
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://egstutoring-portal.ca")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egstutoring-portal.ca")
 
 # Email Configuration
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@egstutoring-portal.ca")

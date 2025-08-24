@@ -137,6 +137,14 @@
   stroke-width: 1.5;
 }
 
+.profile__avatar--image {
+  object-fit: cover;
+  fill: none;
+  stroke: none;
+  stroke-width: 0;
+  border: 2px solid #fff;
+}
+
 .profile__menu {
   position: absolute;
   top: calc(100% + 8px);         /* more space from button */

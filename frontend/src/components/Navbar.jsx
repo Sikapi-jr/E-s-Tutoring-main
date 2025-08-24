@@ -185,10 +185,18 @@ function ProfileMenu({ user, BASE }) {
         aria-expanded={open}
         onClick={() => toggleDropdown('profile')}
       >
-        <svg className="profile__avatar" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-        </svg>
+        {user.profile_picture ? (
+          <img
+            src={user.profile_picture}
+            alt="Profile"
+            className="profile__avatar profile__avatar--image"
+          />
+        ) : (
+          <svg className="profile__avatar" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+          </svg>
+        )}
       </button>
 
       {open && (
@@ -229,6 +237,7 @@ function ProfileMenu({ user, BASE }) {
 function NavbarContent() {
   const { user } = useUser();
   const { t } = useTranslation();
+  const { closeAllDropdowns } = useDropdown();
 
   // If no user, don't render the authenticated navbar
   if (!user) return null;
@@ -240,6 +249,11 @@ function NavbarContent() {
   const roleKey = user.is_superuser ? "superuser" : user.roles || "student";
   const cfg = ROLE[roleKey];
   const [mob, setMob] = useState(false);
+
+  const handleMobToggle = () => {
+    closeAllDropdowns(); // Close any open dropdowns when hamburger is toggled
+    setMob(!mob);
+  };
 
   // Build "Admin Tools" for superuser = links not present in any other role
   const adminTools = useMemo(() => {
@@ -282,7 +296,7 @@ function NavbarContent() {
 
       <button
         className={`nav__burger ${mob ? "is-open" : ""}`}
-        onClick={() => setMob(!mob)}
+        onClick={handleMobToggle}
         aria-label="Toggle navigation"
       >
         <span />
