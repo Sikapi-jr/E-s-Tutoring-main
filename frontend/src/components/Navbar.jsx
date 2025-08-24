@@ -139,13 +139,18 @@ function Dropdown({ label, items, onItemClick, dropdownId }) {
 }
 
 /* ---------- PROFILE MENU ---------- */
-function ProfileMenu({ user, BASE }) {
+function ProfileMenu({ user, BASE, onMobileClose }) {
   const { t } = useTranslation();
   const { openDropdown, toggleDropdown } = useDropdown();
   const ref = useRef(null);
   const navigate = useNavigate();
   
   const open = openDropdown === 'profile';
+
+  const handleToggle = () => {
+    if (onMobileClose) onMobileClose(); // Close mobile menu when profile dropdown opens
+    toggleDropdown('profile');
+  };
 
   const loggedIn = !!user;
   const items = loggedIn
@@ -183,7 +188,7 @@ function ProfileMenu({ user, BASE }) {
         className="profile__btn"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => toggleDropdown('profile')}
+        onClick={handleToggle}
       >
         {user.profile_picture ? (
           <img
@@ -338,7 +343,7 @@ function NavbarContent() {
       <div className="nav__right">
         {user.roles === 'student' && <MyTutorsDropdown />}
         <LanguageSwitcher className="nav__language" />
-        <ProfileMenu user={user} BASE={BASE} />
+        <ProfileMenu user={user} BASE={BASE} onMobileClose={() => setMob(false)} />
       </div>
     </header>
   );
