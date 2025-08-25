@@ -22,7 +22,7 @@ const TutorRegistrationForm = ({ onClose }) => {
     username: '',
     password: '',
     email: '',
-    phoneNumber: '',
+    phone_number: '',
     firstName: '',
     lastName: '',
     address: '',
@@ -141,8 +141,8 @@ const TutorRegistrationForm = ({ onClose }) => {
         <input
           className="form-input"
           type="tel"
-          name="phoneNumber"
-          value={formData.phoneNumber}
+          name="phone_number"
+          value={formData.phone_number}
           onChange={handleChange}
           placeholder={t('auth.phoneNumber', 'Phone Number')}
           required

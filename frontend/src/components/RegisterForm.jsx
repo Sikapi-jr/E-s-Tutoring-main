@@ -31,7 +31,7 @@ function RegisterForm() {
   const [lastName, setLname] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone_number, setPhone_number] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [clicked, setClicked] = useState(false);
@@ -88,7 +88,7 @@ function RegisterForm() {
         lastName,
         address,
         city,
-        phoneNumber,
+        phone_number,
       };
       const res = await api.post("/api/user/register/", payload);
       localStorage.setItem(ACCESS_TOKEN, res.data.access);
@@ -146,8 +146,8 @@ function RegisterForm() {
             <input
               className="form-input"
               type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              value={phone_number}
+              onChange={(e) => setPhone_number(e.target.value)}
               placeholder={t('auth.phoneNumber', 'Phone Number')}
               required
             />
