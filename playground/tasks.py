@@ -37,10 +37,18 @@ def create_stripe_account_async(self, user_id):
             },
         )
         
+        # Generate tokens for refresh URL (same as stripe_reauth_token view)
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        from django.contrib.auth.tokens import default_token_generator
+        
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        
         # Create account link
         account_link = stripe.AccountLink.create(
             account=account.id,
-            refresh_url=f'{settings.FRONTEND_URL}/stripe-reauth',
+            refresh_url=f'{settings.FRONTEND_URL}/stripe-reauth/{uid}/{token}',
             return_url=f'{settings.FRONTEND_URL}/settings',
             type='account_onboarding',
         )
