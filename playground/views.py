@@ -2097,3 +2097,46 @@ class StudentTutorsView(APIView):
             })
         
         return Response({'tutors': tutors}, status=200)
+
+class AdminCreateTutorView(generics.CreateAPIView):
+    """Admin-only endpoint for creating tutor accounts"""
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        from django.db import transaction
+        from django.core.exceptions import ValidationError
+        
+        # Check if user is admin/superuser
+        if not (self.request.user.is_superuser or getattr(self.request.user, 'roles', None) == 'admin'):
+            raise PermissionDenied("Only administrators can create tutor accounts")
+        
+        # Force role to be tutor
+        serializer.validated_data['roles'] = 'tutor'
+        
+        role = 'tutor'  # Always tutor for this endpoint
+        email = serializer.validated_data.get('email')
+        
+        # Use atomic transaction to ensure all database operations succeed or none do
+        with transaction.atomic():
+            # Create the user with encrypted password
+            user = serializer.save()
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            
+            # Send verification email
+            try:
+                from playground.tasks import send_verification_email_async
+                verify_url = f"{settings.FRONTEND_URL}/verify-email/{user.id}/{user.username}"
+                
+                send_verification_email_async.delay(
+                    user.email,
+                    user.firstName,
+                    verify_url
+                )
+            except Exception as email_error:
+                print(f"Email sending failed: {email_error}")
+                # Don't fail the registration if email fails
+                pass

@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import AnnouncementCarousel from "../components/AnnouncementCarousel";
 import DisputeModal from "../components/DisputeModal";
 import TutorComplaintModal from "../components/TutorComplaintModal";
+import TutorRegistrationForm from "../components/TutorRegistrationForm";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -790,6 +791,71 @@ export default function Home() {
                 )}
               </div>
             </>
+          ) : user?.is_superuser ? (
+            // ADMIN VIEW
+            <>
+              <div
+                className="mobile-section admin-tools-section"
+                style={{
+                  background: "#fff",
+                  border: "3px solid #E1E1E1",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  minHeight: 200,
+                }}
+              >
+                <h3 style={{ textAlign: "center", margin: 0, color: "#dc3545" }}>{t('admin.adminTools', 'Admin Tools')}</h3>
+                <div style={{ marginTop: "1rem" }}>
+                  <button
+                    onClick={() => setShowTutorForm(true)}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#28a745",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.createTutor', 'Create New Tutor')}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/admin/disputes'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#ffc107",
+                      color: "#212529",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.manageDisputes', 'Manage Disputes')}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/admin/complaints'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#17a2b8",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    {t('admin.manageComplaints', 'Manage Complaints')}
+                  </button>
+                </div>
+              </div>
+            </>
           ) : (
             // PARENT VIEW (original content)
             <>
@@ -971,6 +1037,16 @@ export default function Home() {
         tutorData={selectedTutorForComplaint}
         onSubmitSuccess={handleComplaintSubmitSuccess}
       />
+
+      {/* Admin Tutor Registration Modal */}
+      {showTutorForm && (
+        <div className="modal-backdrop" onClick={() => setShowTutorForm(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px", width: "90%" }}>
+            <h2 style={{ marginTop: 0, textAlign: "center" }}>{t('admin.createNewTutor', 'Create New Tutor')}</h2>
+            <TutorRegistrationForm onClose={() => setShowTutorForm(false)} />
+          </div>
+        </div>
+      )}
 
     </div>
   );
