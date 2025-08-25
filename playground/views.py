@@ -2126,13 +2126,23 @@ class AdminCreateTutorView(generics.CreateAPIView):
             user.set_password(serializer.validated_data['password'])
             user.save()
             
-            # Send verification email
-            try:
-                from playground.tasks import send_verification_email_async
-                verify_url = f"{settings.FRONTEND_URL}/verify-email/{user.id}/{user.username}"
-                
-                send_verification_email_async.delay(user.id, verify_url)
-            except Exception as email_error:
-                print(f"Email sending failed: {email_error}")
-                # Don't fail the registration if email fails
-                pass
+        # Post-creation actions (outside transaction to avoid rollback on email failures)
+        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_tutor_welcome_email_async
+        from kombu.exceptions import OperationalError
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        from django.contrib.auth.tokens import default_token_generator
+        
+        # Generate verification email data (same format as regular registration)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+        
+        # Create Stripe account and send tutor welcome email with both verification and Stripe links
+        try:
+            create_stripe_account_async.delay(user.id)
+            send_tutor_welcome_email_async.delay(user.id, verify_url)
+        except (OperationalError, Exception) as email_error:
+            print(f"Email or Stripe setup failed: {email_error}")
+            # Don't fail the registration if email/stripe fails
+            pass

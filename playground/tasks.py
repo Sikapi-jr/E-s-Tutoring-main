@@ -154,6 +154,78 @@ def send_stripe_onboarding_email_async(self, user_id, onboarding_link):
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_tutor_welcome_email_async(self, user_id, verification_link):
+    """
+    Send welcome email to admin-created tutors with verification and Stripe onboarding info
+    """
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # Wait a moment for Stripe account to be created
+        import time
+        time.sleep(2)
+        
+        # Get the Stripe onboarding link if available
+        stripe_link = ""
+        if user.stripe_onboarding_link:
+            stripe_link = f"""
+        
+PAYMENT SETUP:
+To receive payments from tutoring sessions, you'll also need to complete your payment setup:
+{user.stripe_onboarding_link}
+
+This secure link will guide you through setting up your payment information.
+        """
+        else:
+            stripe_link = """
+        
+PAYMENT SETUP:
+You'll receive a separate email shortly with instructions to set up your payment information for receiving tutoring payments.
+        """
+        
+        subject = 'Welcome to EGS Tutoring - Verify Your Account'
+        message = f"""
+        Hello {user.firstName},
+        
+        Welcome to EGS Tutoring! Your tutor account has been created by an administrator.
+        
+        FIRST STEP - VERIFY YOUR EMAIL:
+        Please click the link below to verify your email address and activate your account:
+        
+        {verification_link}
+        {stripe_link}
+        
+        Once verified, you'll be able to:
+        - Access your tutor dashboard
+        - View tutoring requests
+        - Log your tutoring hours
+        - Connect your Google Calendar
+        
+        If you have any questions, please contact our support team.
+        
+        Best regards,
+        EGS Tutoring Team
+        """
+        
+        # Use Mailgun API instead of Django's send_mail
+        send_mailgun_email(
+            to_emails=[user.email],
+            subject=subject,
+            text_content=message
+        )
+        
+        logger.info(f"Tutor welcome email sent to user {user_id} ({user.email})")
+        return {'success': True, 'user_id': user_id}
+        
+    except User.DoesNotExist:
+        logger.error(f"User {user_id} not found for tutor welcome email")
+        return {'success': False, 'error': 'User not found'}
+        
+    except Exception as e:
+        logger.error(f"Error sending tutor welcome email to user {user_id}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def send_reply_notification_email_async(self, parent_email, tutor_name, subject_matter):
     """
     Send reply notification email to parents asynchronously
