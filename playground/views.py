@@ -2131,11 +2131,7 @@ class AdminCreateTutorView(generics.CreateAPIView):
                 from playground.tasks import send_verification_email_async
                 verify_url = f"{settings.FRONTEND_URL}/verify-email/{user.id}/{user.username}"
                 
-                send_verification_email_async.delay(
-                    user.email,
-                    user.firstName,
-                    verify_url
-                )
+                send_verification_email_async.delay(user.id, verify_url)
             except Exception as email_error:
                 print(f"Email sending failed: {email_error}")
                 # Don't fail the registration if email fails
