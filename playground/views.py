@@ -341,7 +341,7 @@ def delete_tutor_document(request, document_id):
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URL") or f"{settings.BACKEND_URL}/api/google/oauth2callback"
-GOOGLE_AUTH_SCOPE = "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.readonly"
+GOOGLE_AUTH_SCOPE = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.readonly"
 
 class GoogleOAuthInitView(APIView):
     permission_classes=[AllowAny]
