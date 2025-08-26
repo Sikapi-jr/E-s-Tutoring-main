@@ -37,6 +37,8 @@ urlpatterns = [
     path("checkout/", views.CreateInvoiceView.as_view(), name="checkout"),
     path("invoiceList/", views.InvoiceListView.as_view(), name="invoiceList"),
     path("dispute/", views.DisputeHours.as_view(), name="dispute"),
+    path("hours/<int:hour_id>/edit/", views.EditHoursView.as_view(), name="edit-hours"),
+    path("hours/<int:hour_id>/tutor-reply/", views.TutorReplyView.as_view(), name="tutor-reply"),
     path("chat/sessions/", create_chat_session),
     path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),

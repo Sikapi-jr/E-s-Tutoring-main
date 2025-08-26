@@ -734,3 +734,55 @@ textarea:active {
   background: #ccc;
   border-radius: 4px;
 }
+
+/* Highlighting for edited hours */
+.edited-row {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+}
+
+.edited-row:hover {
+  background-color: #ffeaa7 !important;
+}
+
+/* Button styles for new functionality */
+.edit-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #218838;
+}
+
+.reply-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+  margin-bottom: 5px;
+}
+
+.reply-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Underlined date for edited records */
+.edited-row td[data-label="Date"] span {
+  color: #007bff;
+  font-weight: 500;
+}
+
+.edited-row td[data-label="Date"] span:hover {
+  text-decoration: underline;
+}

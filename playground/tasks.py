@@ -961,3 +961,92 @@ EGS Tutoring Team
     except Exception as e:
         logger.error(f"Error sending monthly report notification to {parent_email}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_tutor_dispute_notification_async(self, tutor_email, tutor_name, session_info, frontend_url):
+    """
+    Send email notification to tutor when their hours are disputed
+    """
+    try:
+        subject = "Hour Record Disputed - Action Required"
+        
+        logged_hours_url = f"{frontend_url}/logged-hours"
+        
+        html_message = f"""
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+            <h2 style="color: #333;">Hour Record Disputed</h2>
+            <p>Dear {tutor_name},</p>
+            
+            <p>A parent has disputed one of your logged tutoring sessions. Here are the details:</p>
+            
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3>Session Details:</h3>
+                <p><strong>Student:</strong> {session_info['student_name']}</p>
+                <p><strong>Date:</strong> {session_info['date']}</p>
+                <p><strong>Time:</strong> {session_info['start_time']} - {session_info['end_time']}</p>
+                <p><strong>Duration:</strong> {session_info['total_hours']} hours</p>
+            </div>
+            
+            <p>Please review this session and provide your response by visiting your logged hours page:</p>
+            
+            <p style="text-align: center; margin: 30px 0;">
+                <a href="{logged_hours_url}" 
+                   style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                   View Logged Hours
+                </a>
+            </p>
+            
+            <p>You can add a reply to explain the details of this session, which will be reviewed by our admin team.</p>
+            
+            <p>Thank you,<br>EGS Tutoring Team</p>
+        </div>
+        """
+        
+        plain_message = f"""
+        Hour Record Disputed
+
+        Dear {tutor_name},
+
+        A parent has disputed one of your logged tutoring sessions. Here are the details:
+
+        Student: {session_info['student_name']}
+        Date: {session_info['date']}
+        Time: {session_info['start_time']} - {session_info['end_time']}
+        Duration: {session_info['total_hours']} hours
+
+        Please review this session and provide your response by visiting: {logged_hours_url}
+
+        You can add a reply to explain the details of this session, which will be reviewed by our admin team.
+
+        Thank you,
+        EGS Tutoring Team
+        """
+        
+        logger.info(f"Sending tutor dispute notification to {tutor_email}")
+        
+        if settings.MAILGUN_API_KEY:
+            send_mailgun_email(
+                subject=subject,
+                html_content=html_message,
+                text_content=plain_message,
+                to_emails=[tutor_email],
+                from_email=settings.DEFAULT_FROM_EMAIL
+            )
+        else:
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[tutor_email],
+                html_message=html_message
+            )
+            
+        logger.info(f"Successfully sent tutor dispute notification to {tutor_email}")
+        
+    except Exception as exc:
+        logger.error(f"Failed to send tutor dispute notification to {tutor_email}: {str(exc)}")
+        if self.request.retries < self.max_retries:
+            logger.info(f"Retrying tutor dispute notification... (attempt {self.request.retries + 1})")
+            raise self.retry(countdown=60 * (self.request.retries + 1), exc=exc)
+        else:
+            logger.error(f"Max retries reached for tutor dispute notification to {tutor_email}")

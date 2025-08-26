@@ -4,6 +4,9 @@ import api from "../api";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
 import DisputeModal from "../components/DisputeModal";
+import EditHoursModal from "../components/EditHoursModal";
+import EditHistoryModal from "../components/EditHistoryModal";
+import TutorReplyModal from "../components/TutorReplyModal";
 import "../styles/HoursPage.css";
 
 export default function LoggedHoursPage() {
@@ -21,11 +24,57 @@ export default function LoggedHoursPage() {
 
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedHourForDispute, setSelectedHourForDispute] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedHourForEdit, setSelectedHourForEdit] = useState(null);
+  const [editHistoryModalOpen, setEditHistoryModalOpen] = useState(false);
+  const [selectedHourForHistory, setSelectedHourForHistory] = useState(null);
 
   const handleDisputeClick = useCallback((hour) => {
     setSelectedHourForDispute(hour);
     setDisputeModalOpen(true);
   }, []);
+
+  const handleEditClick = useCallback((hour) => {
+    setSelectedHourForEdit(hour);
+    setEditModalOpen(true);
+  }, []);
+
+  const handleEditHistoryClick = useCallback((hour) => {
+    setSelectedHourForHistory(hour);
+    setEditHistoryModalOpen(true);
+  }, []);
+
+  const [tutorReplyModalOpen, setTutorReplyModalOpen] = useState(false);
+  const [selectedHourForReply, setSelectedHourForReply] = useState(null);
+
+  const handleTutorReplyClick = useCallback((hour) => {
+    setSelectedHourForReply(hour);
+    setTutorReplyModalOpen(true);
+  }, []);
+
+  const handleEditModalClose = useCallback(() => {
+    setEditModalOpen(false);
+    setSelectedHourForEdit(null);
+  }, []);
+
+  const handleEditHistoryModalClose = useCallback(() => {
+    setEditHistoryModalOpen(false);
+    setSelectedHourForHistory(null);
+  }, []);
+
+  const handleTutorReplyModalClose = useCallback(() => {
+    setTutorReplyModalOpen(false);
+    setSelectedHourForReply(null);
+  }, []);
+
+  const handleEditSuccess = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/parentHours/?id=${user.account_id}`);
+      setHours(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Failed to refresh hours data:", error);
+    }
+  }, [user]);
 
   const handleCancelDispute = useCallback(async (disputeId) => {
     if (!disputeId) {
@@ -244,7 +293,7 @@ export default function LoggedHoursPage() {
                 <tr>
                   <th>{t("common.date")}</th>
                   <th>{t("dashboard.student")}</th>
-                  <th>{t("dashboard.tutor")}</th>
+                  {user.roles !== "tutor" && <th>{t("dashboard.tutor")}</th>}
                   <th>{t("logHours.subject")}</th>
                   <th>{t("events.startTime")}</th>
                   <th>{t("events.endTime")}</th>
@@ -256,14 +305,28 @@ export default function LoggedHoursPage() {
               </thead>
               <tbody>
                 {filteredHours.map((h) => (
-                  <tr key={h.id}>
-                    <td data-label="Date">{new Date(h.date).toLocaleDateString()}</td>
+                  <tr key={h.id} className={h.edited_at ? 'edited-row' : ''}>
+                    <td data-label="Date">
+                      {h.edited_at && user.roles === "parent" ? (
+                        <span onClick={() => handleEditHistoryClick(h)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                          {new Date(h.date).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        new Date(h.date).toLocaleDateString()
+                      )}
+                    </td>
                     <td data-label="Student">
                       {h.student_firstName && h.student_lastName
                         ? `${h.student_firstName} ${h.student_lastName}`
                         : h.studentName || h.student_name || h.student || h.student_username || t("common.unknownStudent")}
                     </td>
-                    <td data-label="Tutor">{h.tutor || h.tutor_name || "-"}</td>
+                    {user.roles !== "tutor" && (
+                      <td data-label="Tutor">
+                        {h.tutor_firstName && h.tutor_lastName
+                          ? `${h.tutor_firstName} ${h.tutor_lastName}`
+                          : h.tutor || h.tutor_name || "-"}
+                      </td>
+                    )}
                     <td data-label="Subject">{h.subject || "-"}</td>
                     <td data-label="Start">{h.startTime || h.start_time || "-"}</td>
                     <td data-label="End">{h.endTime || h.end_time || "-"}</td>
@@ -277,25 +340,49 @@ export default function LoggedHoursPage() {
                       {!["Accepted", "Disputed", "Resolved", "Void"].includes(h.status) && (h.status || t("common.unknown"))}
                     </td>
                     <td data-label="">
-                      {h.dispute_id ? (
-                        <button
-                          className="cancel-dispute-btn"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            console.log('Cancel button clicked for dispute:', h.dispute_id);
-                            handleCancelDispute(h.dispute_id);
-                          }}
-                          title="Cancel dispute"
-                        >
-                          ❌ Cancel
-                        </button>
+                      {user.roles === "tutor" ? (
+                        // Tutor view: Edit button for non-disputed hours, reply option for disputed
+                        h.status === "Disputed" ? (
+                          <div>
+                            <button
+                              className="reply-btn"
+                              onClick={() => handleTutorReplyClick(h)}
+                              title="Add tutor reply"
+                            >
+                              💬 Reply
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleEditClick(h)}
+                            title="Edit hours"
+                          >
+                            ✏️ Edit
+                          </button>
+                        )
                       ) : (
-                        <button
-                          className="dispute-btn"
-                          onClick={() => handleDisputeClick(h)}
-                        >
-                          ⚠️ Dispute
-                        </button>
+                        // Parent view: Dispute/Cancel buttons
+                        h.dispute_id ? (
+                          <button
+                            className="cancel-dispute-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              console.log('Cancel button clicked for dispute:', h.dispute_id);
+                              handleCancelDispute(h.dispute_id);
+                            }}
+                            title="Cancel dispute"
+                          >
+                            ❌ Cancel
+                          </button>
+                        ) : (
+                          <button
+                            className="dispute-btn"
+                            onClick={() => handleDisputeClick(h)}
+                          >
+                            ⚠️ Dispute
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
@@ -351,6 +438,35 @@ export default function LoggedHoursPage() {
           onClose={handleDisputeModalClose}
           hourData={selectedHourForDispute}
           onSubmitSuccess={handleDisputeSuccess}
+        />
+      )}
+
+      {/* Edit Hours Modal */}
+      {editModalOpen && selectedHourForEdit && (
+        <EditHoursModal
+          isOpen={editModalOpen}
+          onClose={handleEditModalClose}
+          hourData={selectedHourForEdit}
+          onSubmitSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Edit History Modal */}
+      {editHistoryModalOpen && selectedHourForHistory && (
+        <EditHistoryModal
+          isOpen={editHistoryModalOpen}
+          onClose={handleEditHistoryModalClose}
+          hourData={selectedHourForHistory}
+        />
+      )}
+
+      {/* Tutor Reply Modal */}
+      {tutorReplyModalOpen && selectedHourForReply && (
+        <TutorReplyModal
+          isOpen={tutorReplyModalOpen}
+          onClose={handleTutorReplyModalClose}
+          hourData={selectedHourForReply}
+          onSubmitSuccess={handleEditSuccess}
         />
       )}
     </div>

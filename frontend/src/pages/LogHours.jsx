@@ -25,6 +25,7 @@ const LogHours = memo(() => {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [users, setUsers] = useState([]); // Store user list
 
     if (user.roles !== "tutor" && user.is_superuser===0){
@@ -64,7 +65,9 @@ const LogHours = memo(() => {
     const handleSubmit = async (e) => {
         const decimalHours = getTotalTime(startTime, endTime)
         e.preventDefault();
-
+        setError(""); // Clear error message on button press
+        setSuccessMessage(""); // Clear success message
+        setLoading(true);
 
         try {
             const payload = {
@@ -79,8 +82,25 @@ const LogHours = memo(() => {
                 notes,
             };
             const res = await api.post("/api/log/", payload);
+            
+            // Show success message with student name
+            const selectedStudent = students.find(stud => stud.student == student);
+            const studentName = selectedStudent ? `${selectedStudent.student_firstName} ${selectedStudent.student_lastName}` : "student";
+            setSuccessMessage(`${decimalHours} hours added with ${studentName}`);
+            
+            // Clear form fields
+            setStudent("");
+            setSubject("");
+            setDate(new Date());
+            setStartTime(new Date());
+            setEndTime(new Date());
+            setLocation("");
+            setNotes("");
+            
         } catch (error) {
-            if (error.response) {
+            if (error.response && error.response.data && error.response.data.detail) {
+                setError(error.response.data.detail);
+            } else if (error.response) {
                 setError(t('errors.serverError'));
             } else if (error.request) {
                 setError(t('errors.networkError'));
@@ -164,6 +184,9 @@ const LogHours = memo(() => {
                 </button>
             </form>
 
+            {/* Success Message */}
+            {successMessage && <p className="success-message" style={{ color: 'green' }}>{successMessage}</p>}
+            
             {/* Error Message */}
             {error && <p className="error-message">{error}</p>}
         </div>

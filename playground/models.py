@@ -437,6 +437,9 @@ class Hours(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Accepted')
     eligible = models.CharField(max_length=15, choices=ELIGIBLE_CHOICES, default='Eligible')
     created_at = models.DateTimeField(auto_now_add=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    edit_history = models.JSONField(default=dict, blank=True)
+    tutor_reply = models.TextField(blank=True, null=True)
 
 
 class WeeklyHours(models.Model):

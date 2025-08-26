@@ -186,7 +186,7 @@ const ViewReply = () => {
                     ) : (
                       replies.map(reply => (
                       <li key={reply.id} className="reply-item">
-                        <strong>{t('replies.message')}:</strong> {reply.message} <br />
+                        <strong>{t('replies.message')}:</strong> {reply.message.startsWith('replies.') || reply.message.startsWith('reply.') ? t(reply.message, reply.message) : reply.message} <br />
                         <strong>{t('replies.sentAt')}:</strong>{" "}
                         {new Date(reply.created_at).toLocaleString()} <br />
                         <strong>{t('replies.emailQuestions')}:</strong>{" "}

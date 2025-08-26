@@ -1461,6 +1461,19 @@ class LogHoursCreateView(APIView):
         
         if not (cur_ws <= session_date <= cur_we):
             raise ValidationError("Can only log hours for the current week")
+        
+        # Validation 3: Check for duplicate hours
+        tutor_id = data.get("tutor")
+        existing_hours = Hours.objects.filter(
+            tutor=tutor_id,
+            student=student_id,
+            date=date_str,
+            startTime=start_time_str,
+            endTime=end_time_str
+        )
+        
+        if existing_hours.exists():
+            raise ValidationError("Hours already logged for this tutor, student, date, and time slot")
 
         # Set eligibility status based on current week
         is_eligible = cur_ws <= session_date <= cur_we
@@ -1537,6 +1550,85 @@ class ParentHoursListView(APIView):
         serializer = HoursSerializer(records, many=True, context={'request': request})
         return Response(serializer.data)
 
+class EditHoursView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def patch(self, request, hour_id):
+        try:
+            hour = Hours.objects.get(id=hour_id)
+            
+            # Only tutors can edit their own hours
+            if request.user != hour.tutor:
+                return Response({"detail": "Only the tutor can edit this hour record"}, status=403)
+            
+            # Store original values for edit history
+            original_data = {
+                'date': str(hour.date),
+                'startTime': str(hour.startTime),
+                'endTime': str(hour.endTime),
+                'totalTime': str(hour.totalTime),
+                'location': hour.location,
+                'subject': hour.subject,
+                'notes': hour.notes
+            }
+            
+            # Update the hour record
+            data = request.data.copy()
+            edit_history = hour.edit_history or {}
+            
+            # Track changes
+            for field in ['date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes']:
+                if field in data and str(data[field]) != original_data[field]:
+                    edit_history[field] = {
+                        'old': original_data[field],
+                        'new': str(data[field]),
+                        'timestamp': timezone.now().isoformat()
+                    }
+            
+            # Apply updates
+            for field, value in data.items():
+                if hasattr(hour, field):
+                    setattr(hour, field, value)
+            
+            hour.edit_history = edit_history
+            hour.edited_at = timezone.now()
+            hour.save()
+            
+            return Response({"detail": "Hours updated successfully"}, status=200)
+            
+        except Hours.DoesNotExist:
+            return Response({"detail": "Hour record not found"}, status=404)
+        except Exception as e:
+            return Response({"detail": f"Error updating hours: {str(e)}"}, status=400)
+
+class TutorReplyView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def patch(self, request, hour_id):
+        try:
+            hour = Hours.objects.get(id=hour_id)
+            
+            # Only tutors can add replies to their own disputed hours
+            if request.user != hour.tutor:
+                return Response({"detail": "Only the tutor can reply to this dispute"}, status=403)
+                
+            if hour.status != "Disputed":
+                return Response({"detail": "Can only reply to disputed hours"}, status=400)
+            
+            tutor_reply = request.data.get('tutor_reply', '').strip()
+            if not tutor_reply:
+                return Response({"detail": "Reply message is required"}, status=400)
+            
+            hour.tutor_reply = tutor_reply
+            hour.save()
+            
+            return Response({"detail": "Reply submitted successfully"}, status=200)
+            
+        except Hours.DoesNotExist:
+            return Response({"detail": "Hour record not found"}, status=404)
+        except Exception as e:
+            return Response({"detail": f"Error submitting reply: {str(e)}"}, status=400)
+
 class DisputeHours(APIView):
     permission_classes = [AllowAny]
 
@@ -1545,14 +1637,40 @@ class DisputeHours(APIView):
         email = request.data.get('email')
         dispute_message = request.data.get('message')
 
-        Hours.objects.filter(id=dispute_id).update(status='DISPUTE')
-        
-        # Send dispute email asynchronously
-        from playground.tasks import send_dispute_email_async
-        admin_emails = [settings.ADMIN_EMAIL]  # Configure admin emails
-        send_dispute_email_async.delay(admin_emails, email, f"Hours ID: {dispute_id}")
-        
-        return Response("Status changed to 'DISPUTE'")
+        try:
+            hour_record = Hours.objects.get(id=dispute_id)
+            hour_record.status = 'Disputed'
+            hour_record.save()
+            
+            # Send dispute email to parent asynchronously
+            from playground.tasks import send_dispute_email_async, send_tutor_dispute_notification_async
+            admin_emails = [settings.ADMIN_EMAIL]
+            send_dispute_email_async.delay(admin_emails, email, f"Hours ID: {dispute_id}")
+            
+            # Send notification to tutor
+            tutor_email = hour_record.tutor.email
+            tutor_name = f"{hour_record.tutor.firstName} {hour_record.tutor.lastName}"
+            student_name = f"{hour_record.student.firstName} {hour_record.student.lastName}"
+            session_info = {
+                'date': str(hour_record.date),
+                'start_time': str(hour_record.startTime),
+                'end_time': str(hour_record.endTime),
+                'total_hours': str(hour_record.totalTime),
+                'student_name': student_name
+            }
+            
+            send_tutor_dispute_notification_async.delay(
+                tutor_email, 
+                tutor_name,
+                session_info,
+                settings.FRONTEND_URL
+            )
+            
+            return Response("Status changed to 'Disputed' and notifications sent")
+        except Hours.DoesNotExist:
+            return Response({"error": "Hour record not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
     def send_dispute_email(self, to_email):
         subject = "Dispute Received!"
