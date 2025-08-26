@@ -29,7 +29,7 @@ def create_stripe_account_async(self, user_id):
         # Create Stripe Express account
         account = stripe.Account.create(
             type='express',
-            country='US',
+            country='CA',
             email=user.email,
             capabilities={
                 'card_payments': {'requested': True},
