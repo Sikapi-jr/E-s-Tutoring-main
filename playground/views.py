@@ -793,13 +793,19 @@ class UpdateEventRsvpView(APIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def stripe_reauth_token(request, uidb64, token):
+    from urllib.parse import unquote
+    
     try:
-        uid = urlsafe_base64_decode(uidb64).decode()
+        # URL decode the parameters
+        decoded_uidb64 = unquote(uidb64)
+        decoded_token = unquote(token)
+        
+        uid = urlsafe_base64_decode(decoded_uidb64).decode()
         user = User.objects.get(pk=uid)
     except:
         return Response({"error": "Invalid user ID"}, status=400)
 
-    if not default_token_generator.check_token(user, token):
+    if not default_token_generator.check_token(user, decoded_token):
         return Response({"error": "Invalid or expired token"}, status=400)
 
     if not user.stripe_account_id:
