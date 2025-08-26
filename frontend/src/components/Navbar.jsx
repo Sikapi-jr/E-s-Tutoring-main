@@ -190,7 +190,7 @@ function ProfileMenu({ user, BASE, onMobileClose }) {
         aria-expanded={open}
         onClick={handleToggle}
       >
-        {user.profile_picture ? (
+        {user.profile_picture && !user.profile_picture.includes('default-profile-picture.jpeg') ? (
           <img
             src={user.profile_picture}
             alt="Profile"

@@ -369,29 +369,57 @@ export default function Home() {
         className="home-weekly-hours"
       >
         {(() => {
-          const weeklyHours = hours.reduce((total, hour) => {
-            const hourDate = new Date(hour.date);
-            const now = new Date();
-            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekStart.getDate() + 6);
+          if (user?.roles === 'tutor') {
+            // For tutors: show monthly hours
+            const monthlyHours = hours.reduce((total, hour) => {
+              const hourDate = new Date(hour.date);
+              const now = new Date();
+              const currentMonth = now.getMonth();
+              const currentYear = now.getFullYear();
+              
+              if (hourDate.getMonth() === currentMonth && hourDate.getFullYear() === currentYear) {
+                return total + parseFloat(hour.totalTime || 0);
+              }
+              return total;
+            }, 0);
             
-            if (hourDate >= weekStart && hourDate <= weekEnd) {
-              return total + parseFloat(hour.totalTime || 0);
-            }
-            return total;
-          }, 0);
-          
-          const translatedText = t('home.childrenWorkedHours', { hours: weeklyHours });
-          const parts = translatedText.split(weeklyHours.toString());
-          
-          return (
-            <>
-              {parts[0]}
-              <span style={{ color: "#192A88", fontWeight: "bold" }}>{weeklyHours}</span>
-              {parts[1]}
-            </>
-          );
+            const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
+            const translatedText = t('home.tutorMonthlyHours', `You have worked ${monthlyHours} hours this ${monthName}`);
+            const parts = translatedText.split(monthlyHours.toString());
+            
+            return (
+              <>
+                {parts[0]}
+                <span style={{ color: "#192A88", fontWeight: "bold" }}>{monthlyHours}</span>
+                {parts[1]}
+              </>
+            );
+          } else {
+            // For parents/students: show weekly hours
+            const weeklyHours = hours.reduce((total, hour) => {
+              const hourDate = new Date(hour.date);
+              const now = new Date();
+              const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+              const weekEnd = new Date(weekStart);
+              weekEnd.setDate(weekStart.getDate() + 6);
+              
+              if (hourDate >= weekStart && hourDate <= weekEnd) {
+                return total + parseFloat(hour.totalTime || 0);
+              }
+              return total;
+            }, 0);
+            
+            const translatedText = t('home.childrenWorkedHours', { hours: weeklyHours });
+            const parts = translatedText.split(weeklyHours.toString());
+            
+            return (
+              <>
+                {parts[0]}
+                <span style={{ color: "#192A88", fontWeight: "bold" }}>{weeklyHours}</span>
+                {parts[1]}
+              </>
+            );
+          }
         })()}
       </div>
 
