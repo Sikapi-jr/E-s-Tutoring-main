@@ -793,7 +793,9 @@ class UpdateEventRsvpView(APIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def stripe_reauth_token(request, uidb64, token):
-    from urllib.parse import unquote
+    from urllib.parse import unquote, quote
+    from django.utils.http import urlsafe_base64_decode
+    from django.contrib.auth.tokens import default_token_generator
     
     try:
         # URL decode the parameters
@@ -802,7 +804,8 @@ def stripe_reauth_token(request, uidb64, token):
         
         uid = urlsafe_base64_decode(decoded_uidb64).decode()
         user = User.objects.get(pk=uid)
-    except:
+    except Exception as e:
+        print(f"Error decoding user parameters: {e}")
         return Response({"error": "Invalid user ID"}, status=400)
 
     if not default_token_generator.check_token(user, decoded_token):
@@ -811,15 +814,24 @@ def stripe_reauth_token(request, uidb64, token):
     if not user.stripe_account_id:
         return Response({"error": "No Stripe account"}, status=400)
 
-    account_link = stripe.AccountLink.create(
-        account=user.stripe_account_id,
-        refresh_url=f'{settings.FRONTEND_URL}/stripe-reauth/{{uid}}/{{token}}',
-        return_url=f'{settings.FRONTEND_URL}/login',
-        type='account_onboarding',
-    )
-    print(account_link.url)
-
-    return Response({'url': account_link.url})
+    try:
+        # Use the current encoded parameters for the refresh URL
+        encoded_uid = quote(uidb64, safe='')
+        encoded_token = quote(token, safe='')
+        
+        account_link = stripe.AccountLink.create(
+            account=user.stripe_account_id,
+            refresh_url=f'{settings.FRONTEND_URL}/stripe-reauth/{encoded_uid}/{encoded_token}',
+            return_url=f'{settings.FRONTEND_URL}/settings',
+            type='account_onboarding',
+        )
+        
+        print(f"Stripe account link created: {account_link.url}")
+        return Response({'url': account_link.url})
+        
+    except Exception as e:
+        print(f"Error creating Stripe account link: {e}")
+        return Response({"error": "Failed to create Stripe onboarding link"}, status=500)
     
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
