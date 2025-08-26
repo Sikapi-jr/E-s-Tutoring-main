@@ -60,7 +60,6 @@ def create_stripe_account_async(self, user_id):
         
         # Update user with Stripe account info
         user.stripe_account_id = account.id
-        user.stripe_onboarding_link = account_link.url
         user.save()
         
         logger.info(f"Stripe account created for user {user_id}: {account.id}")
@@ -174,26 +173,11 @@ def send_tutor_welcome_email_async(self, user_id, verification_link):
     try:
         user = User.objects.get(id=user_id)
         
-        # Wait a moment for Stripe account to be created
-        import time
-        time.sleep(2)
-        
-        # Get the Stripe onboarding link if available
-        stripe_link = ""
-        if user.stripe_onboarding_link:
-            stripe_link = f"""
+        # Provide Stripe onboarding instructions
+        stripe_link = """
         
 PAYMENT SETUP:
-To receive payments from tutoring sessions, you'll also need to complete your payment setup:
-{user.stripe_onboarding_link}
-
-This secure link will guide you through setting up your payment information.
-        """
-        else:
-            stripe_link = """
-        
-PAYMENT SETUP:
-You'll receive a separate email shortly with instructions to set up your payment information for receiving tutoring payments.
+You'll receive a separate email shortly with instructions to set up your payment information for receiving tutoring payments. This is required to receive payments from your tutoring sessions.
         """
         
         subject = 'Welcome to EGS Tutoring - Verify Your Account'
