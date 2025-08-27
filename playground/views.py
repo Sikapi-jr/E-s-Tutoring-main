@@ -1682,13 +1682,23 @@ class WeeklyHoursListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        start_date_raw = request.data.get("start_date")
-        end_date_raw = request.data.get("end_date")
-        start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
-        end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
-
-        start_date = (start_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = (end_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date_raw = request.query_params.get("start")
+        end_date_raw = request.query_params.get("end")
+        
+        if not start_date_raw or not end_date_raw:
+            # Fall back to old currentDay parameter for backward compatibility
+            current_day = request.query_params.get("currentDay")
+            if current_day:
+                target_date = make_aware(datetime.strptime(current_day, "%Y-%m-%d"))
+                start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            else:
+                return Response({"error": "Missing date parameters"}, status=400)
+        else:
+            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
@@ -1767,7 +1777,12 @@ class CreateInvoiceView(APIView):
         
         today_str = request.query_params.get('currentDay')
         if not today_str:
-            return Response({"error": "Missing 'currentDay' query parameter"}, status=400)
+            # Debug: Show what parameters were actually sent
+            return Response({
+                "error": "Missing 'currentDay' query parameter", 
+                "received_query_params": dict(request.query_params),
+                "received_data": dict(request.data)
+            }, status=400)
 
         try:
             today = datetime.strptime(today_str, "%Y-%m-%d").date()
@@ -1847,7 +1862,8 @@ class MonthlyHoursListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-
+        print(f"MonthlyHoursListView.get called at {datetime.now()}")
+        
         last_date_raw = request.query_params.get("end")
         start_date_raw = request.query_params.get("start")
         last_date = datetime.strptime(last_date_raw, "%Y-%m-%d")
@@ -1855,7 +1871,9 @@ class MonthlyHoursListView(APIView):
         end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
+        print(f"MonthlyHoursListView found {monthly_hours.count()} hours")
         serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
+        print(f"MonthlyHoursListView serialized {len(serializer.data)} hours")
         return Response(serializer.data)
 
     def post(self, request):
@@ -1897,6 +1915,7 @@ class calculateMonthlyTotal(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        print(f"calculateMonthlyTotal called at {datetime.now()}")
         try:
             last_date_raw = request.query_params.get("end")
             start_date_raw = request.query_params.get("start")
@@ -1904,10 +1923,11 @@ class calculateMonthlyTotal(APIView):
             start_date = datetime.strptime(start_date_raw, "%Y-%m-%d")
             start_date = (start_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        except Exception:
+        except Exception as e:
+            print(f"calculateMonthlyTotal date parsing error: {e}")
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
+        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved']).order_by('date')
         tutors = set(monthly_hours.values_list('tutor', flat=True))
 
         results = []
@@ -1925,13 +1945,14 @@ class calculateMonthlyTotal(APIView):
             total_before_tax = total_online + total_inperson
 
             results.append({
-                "end_date": target_date.date(),
+                "end_date": last_date.date(),
                 "tutor": tutor,
                 "OnlineHours": float(online_hours),
                 "InPersonHours": float(inperson_hours),
                 "TotalBeforeTax": float(total_before_tax)
             })
 
+        print(f"calculateMonthlyTotal returning {len(results)} results")
         return Response(results)
 
 class BatchMonthlyHoursPayoutView(APIView):
@@ -1947,19 +1968,25 @@ class BatchMonthlyHoursPayoutView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        from playground.tasks import batch_payout_processing_async
-        
-        start_date = request.data.get("start_date")
-        end_date   = request.data.get("end_date")
+        try:
+            from playground.tasks import batch_payout_processing_async
+            
+            start_date = request.data.get("start_date")
+            end_date   = request.data.get("end_date")
 
-        if not start_date or not end_date:
-            return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
+            if not start_date or not end_date:
+                return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": f"Error in monthly payout setup: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        rows = (MonthlyHours.objects
-                .filter(end_date=end_date, start_date=start_date))
+        try:
+            rows = (MonthlyHours.objects
+                    .filter(end_date=end_date, start_date=start_date))
 
-        if not rows.exists():
-            return Response({"detail": "No MonthlyHours in that range."}, status=status.HTTP_404_NOT_FOUND)
+            if not rows.exists():
+                return Response({"detail": "No MonthlyHours in that range."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": f"Error querying MonthlyHours: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Prepare payout data for async processing
         payout_data_list = []

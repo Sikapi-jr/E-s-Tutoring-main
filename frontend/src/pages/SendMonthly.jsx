@@ -16,6 +16,7 @@ const SendMonthly = () => {
   const [hours,  setHours]  = useState([]);
   const [total,  setTotal]  = useState([]);
   const [error,  setError]  = useState("");
+  const [loading, setLoading] = useState(false);
 
   // gatekeep
   if (user.is_superuser === 0) {
@@ -24,21 +25,28 @@ const SendMonthly = () => {
 
   const handleFetch = async () => {
     setError("");
+    setLoading(true);
     try {
+      console.log("Fetching hours with params:", { start: startDate, end: endDate });
       const hrsRes = await api.get(
         `/api/monthlyHours/`,
         { params: { start: startDate, end: endDate } }
       );
+      console.log("Hours response:", hrsRes.data);
       setHours(hrsRes.data);
 
+      console.log("Fetching totals...");
       const totRes = await api.get(
         `/api/calculateMonthlyHours/`,
         { params: { start: startDate, end: endDate } }
       );
+      console.log("Totals response:", totRes.data);
       setTotal(totRes.data);
     } catch (e) {
       console.error("Fetch error:", e);
       setError(t('errors.failedToFetchMonthlyData'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,12 +112,18 @@ return (
         onChange={(e) => setEndDate(e.target.value)}
         required
       />
-      <button type="submit">{t('weekly.fetchHours')}</button>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Loading...' : t('weekly.fetchHours')}
+      </button>
     </form>
 
-    {hours.length === 0 ? (
+    {loading ? (
+      <p>Loading monthly hours...</p>
+    ) : hours.length === 0 ? (
       <p>{t('weekly.noHoursToFetch')}</p>
     ) : (
+      <div>
+        <p>Found {hours.length} hours</p>
       <ul className="hours-list">
         {hours.map((hour) => (
           <li key={hour.id}>
@@ -129,6 +143,7 @@ return (
           </li>
         ))}
       </ul>
+      </div>
     )}
 
     <hr className="monthly-divider" />
@@ -136,6 +151,8 @@ return (
     {total.length === 0 ? (
       <p>{t('weekly.noTotalToCalculate')}</p>
     ) : (
+      <div>
+        <p>Found {total.length} totals</p>
       <ul className="total-list">
         {total.map((t) => (
           <li key={t.id ?? `${t.parent}-${t.date}`}>
@@ -149,6 +166,7 @@ return (
           </li>
         ))}
       </ul>
+      </div>
     )}
 
     {error && <p className="monthly-error">{error}</p>}
