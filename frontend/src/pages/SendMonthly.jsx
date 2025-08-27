@@ -154,15 +154,15 @@ return (
       <div>
         <p>Found {total.length} totals</p>
       <ul className="total-list">
-        {total.map((t) => (
-          <li key={t.id ?? `${t.parent}-${t.date}`}>
-            <strong>{t('common.date')}:</strong> {t.date} <br />
-            <strong>{t('auth.parent')}:</strong> {t.parent} <br />
-            <strong>{t('weekly.onlineHours')}:</strong> {t.OnlineHours} <br />
-            <strong>{t('weekly.inPersonHours')}:</strong> {t.InPersonHours} <br />
-            <strong>{t('weekly.totalBeforeTax')}:</strong> {t.TotalBeforeTax} <br />
+        {total.map((totalItem) => (
+          <li key={totalItem.id ?? `${totalItem.parent}-${totalItem.date}`}>
+            <strong>{t('common.date')}:</strong> {totalItem.date} <br />
+            <strong>{t('auth.parent')}:</strong> {totalItem.parent} <br />
+            <strong>{t('weekly.onlineHours')}:</strong> {totalItem.OnlineHours} <br />
+            <strong>{t('weekly.inPersonHours')}:</strong> {totalItem.InPersonHours} <br />
+            <strong>{t('weekly.totalBeforeTax')}:</strong> {totalItem.TotalBeforeTax} <br />
             <strong>{t('dashboard.createdAt')}:</strong>{" "}
-            {new Date(t.created_at).toLocaleString()}
+            {new Date(totalItem.created_at).toLocaleString()}
           </li>
         ))}
       </ul>
