@@ -1777,7 +1777,12 @@ class CreateInvoiceView(APIView):
         
         today_str = request.query_params.get('currentDay')
         if not today_str:
-            return Response({"error": "Missing 'currentDay' query parameter"}, status=400)
+            # Debug: Show what parameters were actually sent
+            return Response({
+                "error": "Missing 'currentDay' query parameter", 
+                "received_query_params": dict(request.query_params),
+                "received_data": dict(request.data)
+            }, status=400)
 
         try:
             today = datetime.strptime(today_str, "%Y-%m-%d").date()
@@ -1957,19 +1962,25 @@ class BatchMonthlyHoursPayoutView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        from playground.tasks import batch_payout_processing_async
-        
-        start_date = request.data.get("start_date")
-        end_date   = request.data.get("end_date")
+        try:
+            from playground.tasks import batch_payout_processing_async
+            
+            start_date = request.data.get("start_date")
+            end_date   = request.data.get("end_date")
 
-        if not start_date or not end_date:
-            return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
+            if not start_date or not end_date:
+                return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": f"Error in monthly payout setup: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        rows = (MonthlyHours.objects
-                .filter(end_date=end_date, start_date=start_date))
+        try:
+            rows = (MonthlyHours.objects
+                    .filter(end_date=end_date, start_date=start_date))
 
-        if not rows.exists():
-            return Response({"detail": "No MonthlyHours in that range."}, status=status.HTTP_404_NOT_FOUND)
+            if not rows.exists():
+                return Response({"detail": "No MonthlyHours in that range."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": f"Error querying MonthlyHours: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Prepare payout data for async processing
         payout_data_list = []
