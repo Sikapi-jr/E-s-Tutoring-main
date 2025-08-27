@@ -1945,6 +1945,7 @@ class calculateMonthlyTotal(APIView):
             total_before_tax = total_online + total_inperson
 
             results.append({
+                "start_date": start_date.date(),
                 "end_date": last_date.date(),
                 "tutor": tutor,
                 "OnlineHours": float(online_hours),
@@ -2022,7 +2023,8 @@ class BatchMonthlyHoursPayoutView(APIView):
                 'metadata': {
                     "monthly_hours_id": mh.id,
                     "tutor_id": tutor.id,
-                    "period_date": str(mh.date),
+                    "period_start": str(mh.start_date),
+                    "period_end": str(mh.end_date),
                 }
             })
 

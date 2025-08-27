@@ -155,14 +155,12 @@ return (
         <p>Found {total.length} totals</p>
       <ul className="total-list">
         {total.map((totalItem) => (
-          <li key={totalItem.id ?? `${totalItem.parent}-${totalItem.date}`}>
-            <strong>{t('common.date')}:</strong> {totalItem.date} <br />
-            <strong>{t('auth.parent')}:</strong> {totalItem.parent} <br />
+          <li key={totalItem.id ?? `${totalItem.tutor}-${totalItem.end_date}`}>
+            <strong>{t('common.date')}:</strong> {totalItem.end_date} <br />
+            <strong>{t('dashboard.tutor')}:</strong> {totalItem.tutor} <br />
             <strong>{t('weekly.onlineHours')}:</strong> {totalItem.OnlineHours} <br />
             <strong>{t('weekly.inPersonHours')}:</strong> {totalItem.InPersonHours} <br />
-            <strong>{t('weekly.totalBeforeTax')}:</strong> {totalItem.TotalBeforeTax} <br />
-            <strong>{t('dashboard.createdAt')}:</strong>{" "}
-            {new Date(totalItem.created_at).toLocaleString()}
+            <strong>{t('weekly.totalBeforeTax')}:</strong> ${totalItem.TotalBeforeTax} <br />
           </li>
         ))}
       </ul>
