@@ -1862,7 +1862,8 @@ class MonthlyHoursListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-
+        print(f"MonthlyHoursListView.get called at {datetime.now()}")
+        
         last_date_raw = request.query_params.get("end")
         start_date_raw = request.query_params.get("start")
         last_date = datetime.strptime(last_date_raw, "%Y-%m-%d")
@@ -1870,7 +1871,9 @@ class MonthlyHoursListView(APIView):
         end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
+        print(f"MonthlyHoursListView found {monthly_hours.count()} hours")
         serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
+        print(f"MonthlyHoursListView serialized {len(serializer.data)} hours")
         return Response(serializer.data)
 
     def post(self, request):
@@ -1912,6 +1915,7 @@ class calculateMonthlyTotal(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        print(f"calculateMonthlyTotal called at {datetime.now()}")
         try:
             last_date_raw = request.query_params.get("end")
             start_date_raw = request.query_params.get("start")
@@ -1919,7 +1923,8 @@ class calculateMonthlyTotal(APIView):
             start_date = datetime.strptime(start_date_raw, "%Y-%m-%d")
             start_date = (start_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        except Exception:
+        except Exception as e:
+            print(f"calculateMonthlyTotal date parsing error: {e}")
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
         monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved']).order_by('date')
@@ -1947,6 +1952,7 @@ class calculateMonthlyTotal(APIView):
                 "TotalBeforeTax": float(total_before_tax)
             })
 
+        print(f"calculateMonthlyTotal returning {len(results)} results")
         return Response(results)
 
 class BatchMonthlyHoursPayoutView(APIView):

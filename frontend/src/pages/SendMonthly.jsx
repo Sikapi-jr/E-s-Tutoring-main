@@ -16,6 +16,7 @@ const SendMonthly = () => {
   const [hours,  setHours]  = useState([]);
   const [total,  setTotal]  = useState([]);
   const [error,  setError]  = useState("");
+  const [loading, setLoading] = useState(false);
 
   // gatekeep
   if (user.is_superuser === 0) {
@@ -24,6 +25,7 @@ const SendMonthly = () => {
 
   const handleFetch = async () => {
     setError("");
+    setLoading(true);
     try {
       const hrsRes = await api.get(
         `/api/monthlyHours/`,
@@ -39,6 +41,8 @@ const SendMonthly = () => {
     } catch (e) {
       console.error("Fetch error:", e);
       setError(t('errors.failedToFetchMonthlyData'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,10 +108,14 @@ return (
         onChange={(e) => setEndDate(e.target.value)}
         required
       />
-      <button type="submit">{t('weekly.fetchHours')}</button>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Loading...' : t('weekly.fetchHours')}
+      </button>
     </form>
 
-    {hours.length === 0 ? (
+    {loading ? (
+      <p>Loading monthly hours...</p>
+    ) : hours.length === 0 ? (
       <p>{t('weekly.noHoursToFetch')}</p>
     ) : (
       <ul className="hours-list">
