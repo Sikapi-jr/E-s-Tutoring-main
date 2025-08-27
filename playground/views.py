@@ -1682,13 +1682,23 @@ class WeeklyHoursListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        start_date_raw = request.data.get("start_date")
-        end_date_raw = request.data.get("end_date")
-        start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
-        end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
-
-        start_date = (start_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = (end_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date_raw = request.query_params.get("start")
+        end_date_raw = request.query_params.get("end")
+        
+        if not start_date_raw or not end_date_raw:
+            # Fall back to old currentDay parameter for backward compatibility
+            current_day = request.query_params.get("currentDay")
+            if current_day:
+                target_date = make_aware(datetime.strptime(current_day, "%Y-%m-%d"))
+                start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            else:
+                return Response({"error": "Missing date parameters"}, status=400)
+        else:
+            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
@@ -1907,7 +1917,7 @@ class calculateMonthlyTotal(APIView):
         except Exception:
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
+        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved']).order_by('date')
         tutors = set(monthly_hours.values_list('tutor', flat=True))
 
         results = []
@@ -1925,7 +1935,7 @@ class calculateMonthlyTotal(APIView):
             total_before_tax = total_online + total_inperson
 
             results.append({
-                "end_date": target_date.date(),
+                "end_date": last_date.date(),
                 "tutor": tutor,
                 "OnlineHours": float(online_hours),
                 "InPersonHours": float(inperson_hours),
