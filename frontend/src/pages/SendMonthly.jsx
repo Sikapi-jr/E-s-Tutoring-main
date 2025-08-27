@@ -154,7 +154,7 @@ return (
     {error && <p className="monthly-error">{error}</p>}
 
     <div className="monthly-actions">
-      <button onClick={() => confirmButtonClick(hours)}>{t('weekly.looksGood')}</button>
+      <button onClick={confirmButtonClick}>{t('weekly.looksGood')}</button>
       <button onClick={handleCheckout}>{t('weekly.checkout')}</button>
     </div>
   </div>
