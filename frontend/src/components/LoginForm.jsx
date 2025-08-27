@@ -16,12 +16,29 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [clicked, setClicked] = useState(false);
   const [clickedReset, setClickedReset] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
   const { setUser } = useUser();
   const navigate = useNavigate();
 
   const handleReset = () => {
     setClickedReset(true);
     navigate("/passwordReset");
+  };
+
+  const handleResendVerification = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post("/api/resendVerification/", { email: resendEmail });
+      alert("Verification email sent! Please check your inbox.");
+      setShowResendVerification(false);
+      setResendEmail("");
+    } catch (err) {
+      alert("Error sending verification email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -42,6 +59,8 @@ function LoginForm() {
 
       if (!userRes.data.is_active) {
         setError(t("errors.accountNotVerified"));
+        setShowResendVerification(true);
+        setResendEmail(userRes.data.email || "");
       } else {
         setUser(userRes.data);
         navigate("/home");
@@ -100,6 +119,35 @@ function LoginForm() {
       </p>
 
       {error && <p className="error-message">{error}</p>}
+      
+      {showResendVerification && (
+        <div className="resend-verification-section">
+          <h3>Resend Verification Email</h3>
+          <form onSubmit={handleResendVerification}>
+            <input
+              className="form-input"
+              type="email"
+              value={resendEmail}
+              onChange={(e) => setResendEmail(e.target.value)}
+              placeholder="Email address"
+              required
+            />
+            <button
+              className="form-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? t("common.loading") : "Resend Verification Email"}
+            </button>
+          </form>
+          <button
+            className="form-button secondary"
+            onClick={() => setShowResendVerification(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

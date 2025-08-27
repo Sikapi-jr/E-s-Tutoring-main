@@ -113,17 +113,17 @@ return (
         required
       />
       <button type="submit" disabled={loading}>
-        {loading ? 'Loading...' : t('weekly.fetchHours')}
+        {loading ? t('common.loading') : t('weekly.fetchHours')}
       </button>
     </form>
 
     {loading ? (
-      <p>Loading monthly hours...</p>
+      <p>{t('common.loading')}...</p>
     ) : hours.length === 0 ? (
       <p>{t('weekly.noHoursToFetch')}</p>
     ) : (
       <div>
-        <p>Found {hours.length} hours</p>
+        <p>{t('loggedHours.totalSessions')}: {hours.length}</p>
       <ul className="hours-list">
         {hours.map((hour) => (
           <li key={hour.id}>
@@ -152,7 +152,7 @@ return (
       <p>{t('weekly.noTotalToCalculate')}</p>
     ) : (
       <div>
-        <p>Found {total.length} totals</p>
+        <p>{t('loggedHours.totalSessions')}: {total.length}</p>
       <ul className="total-list">
         {total.map((totalItem) => (
           <li key={totalItem.id ?? `${totalItem.tutor}-${totalItem.end_date}`}>

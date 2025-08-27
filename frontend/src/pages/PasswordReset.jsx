@@ -5,12 +5,25 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 
 function PasswordReset() {
-
     const [email, setEmail] = useState("");
-    
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
 
     const handleReset = async (e) => {
-        const response = await api.post('/api/password_reset/', { email });
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+        setMessage("");
+        
+        try {
+            await api.post('/api/password_reset/', { email });
+            setMessage("Password reset email sent! Please check your inbox.");
+        } catch (err) {
+            setError("Error sending password reset email. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -24,10 +37,12 @@ function PasswordReset() {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email Address"
                         />
-                        <button className="form-button" type="submit">
-                            Reset
+                        <button className="form-button" type="submit" disabled={loading}>
+                            {loading ? "Sending..." : "Reset"}
                         </button>
                     </form>
+                    {message && <p className="success-message">{message}</p>}
+                    {error && <p className="error-message">{error}</p>}
             </div>
     );
 }

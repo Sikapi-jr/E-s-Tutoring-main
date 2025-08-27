@@ -45,6 +45,15 @@ i18n
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Missing translation key: ${key} for language: ${lng}`);
       }
+      return `MISSING: ${key}`;
+    },
+    
+    // Parse missing key handling
+    parseMissingKeyHandler: (key) => {
+      if (process.env.NODE_ENV === 'development') {
+        return `MISSING: ${key}`;
+      }
+      return key;
     }
   });
 

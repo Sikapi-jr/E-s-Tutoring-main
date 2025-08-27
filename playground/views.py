@@ -851,6 +851,38 @@ class VerifyEmailView(APIView):
             return Response({"message": "Email verified."}, status=200)
         return Response({"error": "Invalid token"}, status=400)
 
+class ResendVerificationView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
+        
+        try:
+            user = User.objects.get(email=email)
+            if user.is_active:
+                return Response({"message": "Account is already verified"}, status=400)
+            
+            # Generate new verification token and send email
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            domain = get_current_site(request).domain
+            verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+            
+            send_mail(
+                "Verify your EGS Tutoring Account",
+                f"Click the link to verify your account: {verify_url}",
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email]
+            )
+            
+            return Response({"message": "Verification email resent successfully"}, status=200)
+            
+        except User.DoesNotExist:
+            # Don't reveal if email exists or not for security
+            return Response({"message": "If the email exists, a verification email has been sent"}, status=200)
+
 class ParentHomeCreateView(generics.ListCreateAPIView):
     permission_classes=[AllowAny]
 
@@ -1705,31 +1737,62 @@ class WeeklyHoursListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        print(f"WeeklyHoursListView.post called with data: {request.data}")
         entries = request.data
         created = False
 
-        for entry in entries:
+        try:
+            for entry in entries:
+                print(f"Processing entry: {entry}")
+                
+                parent_id = entry.get('parent')
+                if not parent_id:
+                    print(f"Skipping entry without parent ID: {entry}")
+                    continue
+                    
+                # Get parent user object
+                try:
+                    parent_user = User.objects.get(id=parent_id)
+                except User.DoesNotExist:
+                    print(f"Parent with ID {parent_id} does not exist")
+                    continue
 
-            exists = WeeklyHours.objects.filter(
-                date=entry['date'],
-                parent=entry['parent'],
-                OnlineHours=entry['OnlineHours'],
-                InPersonHours=entry['InPersonHours']
-            ).exists()
+                # Convert date from string to date object
+                from datetime import datetime
+                try:
+                    date_obj = datetime.strptime(entry.get('date'), '%Y-%m-%d').date()
+                except (ValueError, TypeError) as e:
+                    print(f"Date parsing error for entry {entry}: {e}")
+                    continue
 
-            if not exists:
-                WeeklyHours.objects.create(
-                    date=entry['date'],
-                    parent=entry['parent'],
-                    OnlineHours=entry['OnlineHours'],
-                    InPersonHours=entry['InPersonHours'],
-                    TotalBeforeTax=entry['TotalBeforeTax']
-                )
-                created = True
+                exists = WeeklyHours.objects.filter(
+                    date=date_obj,
+                    parent=parent_user,
+                    OnlineHours=entry.get('OnlineHours'),
+                    InPersonHours=entry.get('InPersonHours')
+                ).exists()
+
+                if not exists:
+                    WeeklyHours.objects.create(
+                        date=date_obj,
+                        parent=parent_user,
+                        OnlineHours=entry.get('OnlineHours'),
+                        InPersonHours=entry.get('InPersonHours'),
+                        TotalBeforeTax=entry.get('TotalBeforeTax')
+                    )
+                    created = True
+                    print(f"Created WeeklyHours for parent {parent_id}")
+                else:
+                    print(f"WeeklyHours already exists for parent {parent_id}")
+
+        except Exception as e:
+            print(f"Error in WeeklyHoursListView.post: {e}")
+            return Response({"error": str(e)}, status=500)
 
         if created:
             return Response({"status": "created"}, status=201)
-        return Response({"status": "Not Created, Duplicate"}, status=200)
+        else:
+            return Response({"status": "Not Created, Duplicate"}, status=301)
 
 class calculateTotal(APIView):
     permission_classes = [AllowAny]
@@ -1772,8 +1835,19 @@ class calculateTotal(APIView):
 class CreateInvoiceView(APIView):
     permission_classes = [AllowAny]
 
+    def get(self, request):
+        """Test endpoint to verify the view is accessible"""
+        return Response({"message": "CreateInvoiceView is accessible", "methods": ["POST"]})
+
     def post(self, request):
-        from playground.tasks import bulk_invoice_generation_async
+        print(f"CreateInvoiceView.post called with params: {request.query_params}")
+        
+        # Import the async task
+        try:
+            from playground.tasks import bulk_invoice_generation_async
+        except ImportError as e:
+            print(f"Error importing bulk_invoice_generation_async: {e}")
+            return Response({"error": f"Task import error: {str(e)}"}, status=500)
         
         today_str = request.query_params.get('currentDay')
         if not today_str:
@@ -1789,18 +1863,21 @@ class CreateInvoiceView(APIView):
         except ValueError:
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        # Get all customer emails for today
-        customers_email_qs = WeeklyHours.objects.filter(date=today).values_list('email', flat=True).distinct()
+        # Get all parent users for today
+        customers_email_qs = WeeklyHours.objects.filter(date=today).values_list('parent__email', flat=True).distinct()
 
         customer_data_list = []
         for email_str in customers_email_qs:
+            if not email_str:  # Skip if no email
+                continue
+                
             # Find stripe customers by email
             result = stripe.Customer.list(email=email_str)
             if result and result.data:
                 customer = result.data[0]
                 
                 # Get the total before tax amount for this customer's email and date
-                amount_dict = WeeklyHours.objects.filter(date=today, email=customer.email).values('TotalBeforeTax').first()
+                amount_dict = WeeklyHours.objects.filter(date=today, parent__email=email_str).values('TotalBeforeTax').first()
                 if amount_dict and 'TotalBeforeTax' in amount_dict:
                     # Convert amount to cents as integer
                     amount_cents = int(Decimal(amount_dict['TotalBeforeTax']) * 100)

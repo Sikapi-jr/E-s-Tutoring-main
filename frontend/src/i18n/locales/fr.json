@@ -528,25 +528,6 @@
     "errorAccepting": "Erreur lors de l'acceptation de la réponse",
     "errorRejecting": "Erreur lors du rejet de la réponse"
   },
-  "weekly": {
-    "title": "Heures hebdomadaires",
-    "totalHours": "Heures totales",
-    "hourlyRate": "Tarif horaire",
-    "totalEarnings": "Revenus totaux",
-    "submitWeekly": "Soumettre les heures hebdomadaires",
-    "weekOf": "Semaine du {{date}}",
-    "generateReport": "Générer le rapport",
-    "noHoursThisWeek": "Aucune heure enregistrée cette semaine"
-  },
-  "monthly": {
-    "title": "Heures mensuelles",
-    "monthOf": "Mois de {{month}}",
-    "submitMonthly": "Soumettre les heures mensuelles",
-    "generateMonthlyReport": "Générer le rapport mensuel",
-    "totalMonthlyHours": "Heures mensuelles totales",
-    "monthlyEarnings": "Revenus mensuels",
-    "noHoursThisMonth": "Aucune heure enregistrée ce mois"
-  },
   "verification": {
     "verifying": "Vérification de votre courriel...",
     "verified": "Courriel vérifié avec succès !",

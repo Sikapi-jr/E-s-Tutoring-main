@@ -15,6 +15,7 @@ const SendWeekly = () => {
   const [hours, setHours] = useState([]);
   const [total, setTotal] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // superuser gate
   if (user.is_superuser === 0) {
@@ -23,21 +24,28 @@ const SendWeekly = () => {
 
   const handleFetch = async () => {
     setError("");
+    setLoading(true);
     try {
+      console.log("Fetching hours with params:", { currentDay });
       const hrsRes = await api.get(
         `/api/weeklyHours/`,
         { params: { currentDay } }
       );
+      console.log("Hours response:", hrsRes.data);
       setHours(hrsRes.data);
 
+      console.log("Fetching totals...");
       const totRes = await api.get(
         `/api/calculateHours/`,
         { params: { currentDay } }
       );
+      console.log("Totals response:", totRes.data);
       setTotal(totRes.data);
     } catch (e) {
-      console.error("Error fetching weekly hours:", e);
+      console.error("Fetch error:", e);
       setError(t('errors.failedToFetchWeeklyData'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,12 +103,18 @@ const SendWeekly = () => {
           placeholder={t('weekly.datePlaceholder')}
           required
         />
-        <button type="submit">{t('weekly.fetchHours')}</button>
+        <button type="submit" disabled={loading}>
+          {loading ? t('common.loading') : t('weekly.fetchHours')}
+        </button>
       </form>
 
-      {hours.length === 0 ? (
+      {loading ? (
+        <p>{t('common.loading')}...</p>
+      ) : hours.length === 0 ? (
         <p>{t('weekly.noHoursToFetch')}</p>
       ) : (
+        <div>
+          <p>{t('loggedHours.totalSessions')}: {hours.length}</p>
         <ul className="hours-list">
           {hours.map((hour) => (
             <li key={hour.id}>
@@ -120,6 +134,7 @@ const SendWeekly = () => {
             </li>
           ))}
         </ul>
+        </div>
       )}
 
       <hr className="monthly-divider" />
@@ -127,19 +142,20 @@ const SendWeekly = () => {
       {total.length === 0 ? (
         <p>{t('weekly.noTotalToCalculate')}</p>
       ) : (
+        <div>
+          <p>{t('loggedHours.totalSessions')}: {total.length}</p>
         <ul className="total-list">
-          {total.map((t) => (
-            <li key={t.id ?? `${t.parent}-${t.date}`}>
-              <strong>{t('common.date')}:</strong> {t.date} <br />
-              <strong>{t('auth.parent')}:</strong> {t.parent} <br />
-              <strong>{t('weekly.onlineHours')}:</strong> {t.OnlineHours} <br />
-              <strong>{t('weekly.inPersonHours')}:</strong> {t.InPersonHours} <br />
-              <strong>{t('weekly.totalBeforeTax')}:</strong> {t.TotalBeforeTax} <br />
-              <strong>{t('dashboard.createdAt')}:</strong>{" "}
-              {new Date(t.created_at).toLocaleString()}
+          {total.map((totalItem) => (
+            <li key={totalItem.id ?? `${totalItem.parent}-${totalItem.date}`}>
+              <strong>{t('common.date')}:</strong> {totalItem.date} <br />
+              <strong>{t('auth.parent')}:</strong> {totalItem.parent} <br />
+              <strong>{t('weekly.onlineHours')}:</strong> {totalItem.OnlineHours} <br />
+              <strong>{t('weekly.inPersonHours')}:</strong> {totalItem.InPersonHours} <br />
+              <strong>{t('weekly.totalBeforeTax')}:</strong> ${totalItem.TotalBeforeTax} <br />
             </li>
           ))}
         </ul>
+        </div>
       )}
 
       {error && <p className="monthly-error">{error}</p>}

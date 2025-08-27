@@ -540,25 +540,6 @@
     "errorAccepting": "Error accepting reply",
     "errorRejecting": "Error rejecting reply"
   },
-  "weekly": {
-    "title": "Weekly Hours",
-    "totalHours": "Total Hours",
-    "hourlyRate": "Hourly Rate",
-    "totalEarnings": "Total Earnings",
-    "submitWeekly": "Submit Weekly Hours",
-    "weekOf": "Week of {{date}}",
-    "generateReport": "Generate Report",
-    "noHoursThisWeek": "No hours logged this week"
-  },
-  "monthly": {
-    "title": "Monthly Hours",
-    "monthOf": "Month of {{month}}",
-    "submitMonthly": "Submit Monthly Hours",
-    "generateMonthlyReport": "Generate Monthly Report",
-    "totalMonthlyHours": "Total Monthly Hours",
-    "monthlyEarnings": "Monthly Earnings",
-    "noHoursThisMonth": "No hours logged this month"
-  },
   "verification": {
     "verifying": "Verifying your email...",
     "verified": "Email verified successfully!",
