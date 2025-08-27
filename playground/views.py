@@ -2000,24 +2000,41 @@ class BatchMonthlyHoursPayoutView(APIView):
     """
     permission_classes = [AllowAny]
 
+    def get(self, request):
+        """Test endpoint to verify the view is accessible"""
+        return Response({"message": "BatchMonthlyHoursPayoutView is accessible", "methods": ["POST"]})
+
     def post(self, request):
+        print(f"BatchMonthlyHoursPayoutView.post called with data: {request.data}")
+        
+        start_date = request.data.get("start_date")
+        end_date   = request.data.get("end_date")
+
+        if not start_date or not end_date:
+            return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Import the async task
         try:
             from playground.tasks import batch_payout_processing_async
-            
-            start_date = request.data.get("start_date")
-            end_date   = request.data.get("end_date")
-
-            if not start_date or not end_date:
-                return Response({"detail": "start_date and end_date required."}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"detail": f"Error in monthly payout setup: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ImportError as e:
+            print(f"Error importing batch_payout_processing_async: {e}")
+            return Response({"detail": f"Task import error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
+            # Convert string dates to date objects
+            from datetime import datetime
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            
             rows = (MonthlyHours.objects
-                    .filter(end_date=end_date, start_date=start_date))
+                    .filter(end_date=end_date_obj, start_date=start_date_obj))
+            
+            print(f"Found {rows.count()} MonthlyHours records for date range {start_date} to {end_date}")
 
             if not rows.exists():
                 return Response({"detail": "No MonthlyHours in that range."}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+            return Response({"detail": f"Invalid date format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": f"Error querying MonthlyHours: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
