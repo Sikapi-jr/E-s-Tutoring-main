@@ -39,7 +39,7 @@ function PasswordResetConfirm() {
         catch(error) {
             setError("Token already used. Request another email");
             alert("Rerouting to request page...");
-            navigate("/passwordReset");
+            navigate("/password-reset");
         }
     };
 

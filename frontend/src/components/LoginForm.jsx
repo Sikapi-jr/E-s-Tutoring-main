@@ -23,7 +23,7 @@ function LoginForm() {
 
   const handleReset = () => {
     setClickedReset(true);
-    navigate("/passwordReset");
+    navigate("/password-reset");
   };
 
   const handleResendVerification = async (e) => {
