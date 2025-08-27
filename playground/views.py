@@ -1877,38 +1877,70 @@ class MonthlyHoursListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        print(f"MonthlyHoursListView.post called with data: {request.data}")
         entries = request.data
         created = False
 
-        for entry in entries:
-            stripeID_qs = User.objects.filter(id=entry.get('tutor')).values('stripe_account_id')
-            stripeID = stripeID_qs.first()['stripe_account_id'] if stripeID_qs.exists() else None
-            if not stripeID:
-                continue
+        try:
+            for entry in entries:
+                print(f"Processing entry: {entry}")
+                
+                tutor_id = entry.get('tutor')
+                if not tutor_id:
+                    print(f"Skipping entry without tutor ID: {entry}")
+                    continue
+                    
+                # Get tutor user object
+                try:
+                    tutor_user = User.objects.get(id=tutor_id)
+                except User.DoesNotExist:
+                    print(f"Tutor with ID {tutor_id} does not exist")
+                    continue
+                
+                stripeID = tutor_user.stripe_account_id if hasattr(tutor_user, 'stripe_account_id') else None
+                if not stripeID:
+                    print(f"Tutor {tutor_id} has no stripe account, skipping")
+                    continue
 
-            exists = MonthlyHours.objects.filter(
-                end_date=entry.get('end_date'),
-                start_date=entry.get('start_date'),
-                tutor=entry.get('tutor'),
-                OnlineHours=entry.get('OnlineHours'),
-                InPersonHours=entry.get('InPersonHours')
-            ).exists()
+                # Convert dates from string to date objects
+                from datetime import datetime
+                try:
+                    end_date = datetime.strptime(entry.get('end_date'), '%Y-%m-%d').date()
+                    start_date = datetime.strptime(entry.get('start_date'), '%Y-%m-%d').date()
+                except (ValueError, TypeError) as e:
+                    print(f"Date parsing error for entry {entry}: {e}")
+                    continue
 
-            if not exists:
-                MonthlyHours.objects.create(
-                    end_date=entry.get('end_date'),
-                    start_date=entry.get('start_date'),
-                    tutor=entry.get('tutor'),
+                exists = MonthlyHours.objects.filter(
+                    end_date=end_date,
+                    start_date=start_date,
+                    tutor=tutor_user,
                     OnlineHours=entry.get('OnlineHours'),
-                    InPersonHours=entry.get('InPersonHours'),
-                    TotalBeforeTax=entry.get('TotalBeforeTax')
-                )
-                created = True
+                    InPersonHours=entry.get('InPersonHours')
+                ).exists()
+
+                if not exists:
+                    MonthlyHours.objects.create(
+                        end_date=end_date,
+                        start_date=start_date,
+                        tutor=tutor_user,
+                        OnlineHours=entry.get('OnlineHours'),
+                        InPersonHours=entry.get('InPersonHours'),
+                        TotalBeforeTax=entry.get('TotalBeforeTax')
+                    )
+                    created = True
+                    print(f"Created MonthlyHours for tutor {tutor_id}")
+                else:
+                    print(f"MonthlyHours already exists for tutor {tutor_id}")
+
+        except Exception as e:
+            print(f"Error in MonthlyHoursListView.post: {e}")
+            return Response({"error": str(e)}, status=500)
 
         if created:
             return Response({"status": "created"}, status=201)
         else:
-            return Response({"status": "Not Created, Duplicate"}, status=200)
+            return Response({"status": "Not Created, Duplicate"}, status=301)
 
 #Ran once hours are calculate and sent
 class calculateMonthlyTotal(APIView):
