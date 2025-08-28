@@ -35,8 +35,8 @@ const Students = () => {
         let studentsData = [];
         
         if (user.is_superuser) {
-          // For admins, fetch all students
-          const res = await api.get('/api/students/all/');
+          // For admins, fetch all students using the students API without parent filter
+          const res = await api.get('/api/students/');
           studentsData = Array.isArray(res.data) ? res.data : [];
         } else {
           // For parents, fetch their students
