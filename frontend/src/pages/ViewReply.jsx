@@ -225,8 +225,6 @@ const ViewReply = () => {
                         <strong>{t('replies.message')}:</strong> {reply.message.startsWith('replies.') || reply.message.startsWith('reply.') ? t(reply.message, reply.message) : reply.message} <br />
                         <strong>{t('replies.sentAt')}:</strong>{" "}
                         {new Date(reply.created_at).toLocaleString()} <br />
-                        <strong>{t('replies.emailQuestions')}:</strong>{" "}
-                        {reply.email || reply.tutor_email || "—"} <br />
                         
                         {/* Display tutor documents */}
                         <div className="tutor-documents-section">
