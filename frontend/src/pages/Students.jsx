@@ -10,12 +10,26 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const Students = () => {
   const { t } = useTranslation();
   const { user } = useUser();
-  const parent = user.account_id;
   const navigate = useNavigate();
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="students-wrapper">
+        <div className="students-card">
+          <h1>{t('students.title')}</h1>
+          <p>{t('common.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const parent = user.account_id;
 
   /* redirect non-parents and non-admins */
   if (user.roles !== "parent" && !user.is_superuser) {
     navigate("/login");
+    return null;
   }
 
   /* state */
@@ -89,6 +103,7 @@ const Students = () => {
       } catch (err) {
         console.error("Error fetching students:", err);
         setError(t('errors.couldNotLoadStudents'));
+        setStudents([]); // Set empty array to prevent undefined issues
       } finally {
         setLoading(false);
       }
