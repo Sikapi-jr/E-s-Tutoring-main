@@ -46,27 +46,27 @@ const Students = () => {
           studentsData = Array.isArray(res.data.students) ? res.data.students : [];
         }
         
-        // Fetch additional student details including profile pictures and addresses
+        // Fetch additional student details (tutors only, since user details API is not available)
         const enhancedStudents = await Promise.all(
           studentsData.map(async (student) => {
             try {
-              const studentDetailsRes = await api.get(`/api/users/${student.id}/`);
               const studentTutorsRes = await api.get(`/api/student-tutors/${student.id}/`);
               
               return {
                 ...student,
-                profile_picture: studentDetailsRes.data.profile_picture || null,
-                address: studentDetailsRes.data.address || t('common.notProvided'),
-                city: studentDetailsRes.data.city || t('common.notProvided'),
+                // Use existing student data or defaults since /api/users/ is not available
+                profile_picture: student.profile_picture || null,
+                address: student.address || t('common.notProvided'),
+                city: student.city || t('common.notProvided'),
                 tutors: studentTutorsRes.data || []
               };
             } catch (error) {
-              console.error(`Error fetching details for student ${student.id}:`, error);
+              console.error(`Error fetching tutors for student ${student.id}:`, error);
               return {
                 ...student,
-                profile_picture: null,
-                address: t('common.notProvided'),
-                city: t('common.notProvided'), 
+                profile_picture: student.profile_picture || null,
+                address: student.address || t('common.notProvided'),
+                city: student.city || t('common.notProvided'), 
                 tutors: []
               };
             }
