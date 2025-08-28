@@ -623,6 +623,8 @@
   "students": {
     "title": "Mes Étudiants",
     "subtitle": "Voir des informations détaillées sur vos étudiants et leurs tuteurs",
+    "adminTitle": "Tous les Étudiants",
+    "adminSubtitle": "Voir des informations détaillées sur tous les étudiants et leurs tuteurs",
     "noStudents": "Vous n'avez pas encore d'étudiants inscrits.",
     "registerStudent": "Inscrire un Étudiant",
     "currentTutors": "Tuteurs Actuels",

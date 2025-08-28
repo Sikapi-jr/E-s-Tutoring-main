@@ -632,6 +632,8 @@
   "students": {
     "title": "My Students",
     "subtitle": "View detailed information about your students and their tutors",
+    "adminTitle": "All Students",
+    "adminSubtitle": "View detailed information about all students and their tutors",
     "noStudents": "You don't have any registered students yet.",
     "registerStudent": "Register a Student",
     "currentTutors": "Current Tutors",

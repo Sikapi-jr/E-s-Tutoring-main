@@ -13,8 +13,8 @@ const Students = () => {
   const parent = user.account_id;
   const navigate = useNavigate();
 
-  /* redirect non-parents */
-  if (user.roles !== "parent" && user.is_superuser === 0) {
+  /* redirect non-parents and non-admins */
+  if (user.roles !== "parent" && !user.is_superuser) {
     navigate("/login");
   }
 
@@ -26,14 +26,23 @@ const Students = () => {
   const [availableTutors, setAvailableTutors] = useState([]);
   const [showChangeTutorModal, setShowChangeTutorModal] = useState(false);
 
-  /* fetch students for parent */
+  /* fetch students for parent or all students for admin */
   useEffect(() => {
-    if (!parent) return;
+    if (!user) return;
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/api/homeParent/?id=${parent}`);
-        const studentsData = Array.isArray(res.data.students) ? res.data.students : [];
+        let studentsData = [];
+        
+        if (user.is_superuser) {
+          // For admins, fetch all students
+          const res = await api.get('/api/students/all/');
+          studentsData = Array.isArray(res.data) ? res.data : [];
+        } else {
+          // For parents, fetch their students
+          const res = await api.get(`/api/homeParent/?id=${parent}`);
+          studentsData = Array.isArray(res.data.students) ? res.data.students : [];
+        }
         
         // Fetch additional student details including profile pictures and addresses
         const enhancedStudents = await Promise.all(
@@ -71,7 +80,7 @@ const Students = () => {
       }
     };
     fetchStudents();
-  }, [parent, t]);
+  }, [user, parent, t]);
 
   /* handle change tutor functionality */
   const handleChangeTutor = async (student) => {
@@ -117,7 +126,7 @@ const Students = () => {
     return (
       <div className="students-wrapper">
         <div className="students-card">
-          <h1>{t('students.title')}</h1>
+          <h1>{user.is_superuser ? t('students.adminTitle') : t('students.title')}</h1>
           <p>{t('common.loading')}</p>
         </div>
       </div>
@@ -127,8 +136,8 @@ const Students = () => {
   return (
     <div className="students-wrapper">
       <div className="students-card">
-        <h1>{t('students.title')}</h1>
-        <p className="students-subtitle">{t('students.subtitle')}</p>
+        <h1>{user.is_superuser ? t('students.adminTitle') : t('students.title')}</h1>
+        <p className="students-subtitle">{user.is_superuser ? t('students.adminSubtitle') : t('students.subtitle')}</p>
 
         {error && <p className="error-message">{error}</p>}
 

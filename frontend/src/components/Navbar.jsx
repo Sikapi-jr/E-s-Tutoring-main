@@ -56,7 +56,7 @@ const getRoutes = (t) => ({
 const getRoleConfig = (BASE) => ({
   superuser: {
     main:   [BASE.Home],
-    tutor:  [BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
     cal:    [BASE.Events, BASE.CalCon, BASE.Hours],
     single: [BASE.Inv, BASE.Reports, BASE.Complaints],
   },
