@@ -166,6 +166,7 @@
     "calendarConnectedMessage": "Vous pouvez planifier des événements et gérer votre calendrier",
     "connectGoogleCalendar": "Connecter Google Calendar",
     "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heures cette semaine !",
+    "studentWorkedHours": "Vous avez travaillé {{hours}} heures cette semaine !",
     "connectCalendarMessage": "Connectez votre Google Calendar pour voir les sessions planifiées",
     "goToScheduledSessions": "Aller aux Sessions Planifiées",
     "hoursThisWeek": "heures cette semaine !",

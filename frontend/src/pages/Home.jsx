@@ -424,7 +424,10 @@ export default function Home() {
               return total;
             }, 0);
             
-            const translatedText = t('home.childrenWorkedHours', { hours: weeklyHours });
+            // Different text for parents vs students
+            const translatedText = user?.roles === 'student' 
+              ? t('home.studentWorkedHours', { hours: weeklyHours })
+              : t('home.childrenWorkedHours', { hours: weeklyHours });
             const parts = translatedText.split(weeklyHours.toString());
             
             return (

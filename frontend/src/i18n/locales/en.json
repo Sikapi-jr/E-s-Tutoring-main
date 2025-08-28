@@ -170,6 +170,7 @@
     "calendarConnectedMessage": "You can schedule events and manage your calendar",
     "connectGoogleCalendar": "Connect Google Calendar",
     "childrenWorkedHours": "Your children have worked {{hours}} hours this week!",
+    "studentWorkedHours": "You have worked {{hours}} hours this week!",
     "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
     "goToScheduledSessions": "Go to Scheduled Sessions",
     "hoursThisWeek": "hours this week!",
