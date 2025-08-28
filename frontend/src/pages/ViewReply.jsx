@@ -25,6 +25,14 @@ const ViewReply = () => {
   const [showReplies, setShowReplies] = useState(false);
   const [error, setError] = useState("");
   const [tutorDocuments, setTutorDocuments] = useState({});
+  
+  /* tutor change request state */
+  const [showChangeForm, setShowChangeForm] = useState({});
+  const [changeFormData, setChangeFormData] = useState({
+    reason: 'other',
+    message: ''
+  });
+  const [changeRequestStatus, setChangeRequestStatus] = useState('');
 
   /* fetch requests for parent */
   useEffect(() => {
@@ -137,6 +145,52 @@ const ViewReply = () => {
     }
   };
 
+  /* tutor change request handlers */
+  const handleTutorChangeClick = (request) => {
+    const requestKey = `${request.id}_${request.accepted_tutor_id}`;
+    setShowChangeForm(prev => ({
+      ...prev,
+      [requestKey]: !prev[requestKey]
+    }));
+    setChangeRequestStatus('');
+    setChangeFormData({
+      reason: 'other',
+      message: ''
+    });
+  };
+
+  const handleChangeFormSubmit = async (request) => {
+    try {
+      setChangeRequestStatus('submitting');
+      
+      const payload = {
+        student_id: request.student.id,
+        current_tutor_id: request.accepted_tutor_id,
+        subject: request.subject,
+        reason: changeFormData.reason,
+        message: changeFormData.message
+      };
+
+      await api.post('/api/tutor-change-requests/create/', payload);
+      
+      setChangeRequestStatus('success');
+      const requestKey = `${request.id}_${request.accepted_tutor_id}`;
+      setShowChangeForm(prev => ({
+        ...prev,
+        [requestKey]: false
+      }));
+      
+      setTimeout(() => {
+        setChangeRequestStatus('');
+      }, 3000);
+      
+    } catch (err) {
+      console.error("Error submitting tutor change request:", err);
+      const errorMsg = err.response?.data?.error || 'Failed to submit tutor change request';
+      setChangeRequestStatus(`error: ${errorMsg}`);
+    }
+  };
+
   /* render */
   return (
     <div className="view-reply-wrapper">
@@ -163,6 +217,102 @@ const ViewReply = () => {
                     <strong style={{ color: '#28a745' }}>
                       {request.accepted_tutor_name} has accepted!
                     </strong>
+                    <br />
+                    <button
+                      className="change-tutor-btn"
+                      onClick={() => handleTutorChangeClick(request)}
+                      style={{ 
+                        marginTop: '10px', 
+                        backgroundColor: '#ffc107', 
+                        color: '#212529',
+                        border: '1px solid #ffc107',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {showChangeForm[`${request.id}_${request.accepted_tutor_id}`] 
+                        ? t('common.cancel')
+                        : 'Request Tutor Change'
+                      }
+                    </button>
+                    
+                    {showChangeForm[`${request.id}_${request.accepted_tutor_id}`] && (
+                      <div className="tutor-change-form" style={{ marginTop: '15px', padding: '15px', border: '1px solid #ddd', borderRadius: '5px', backgroundColor: '#f8f9fa' }}>
+                        <h4 style={{ marginBottom: '10px' }}>Request Tutor Change</h4>
+                        
+                        <div style={{ marginBottom: '10px' }}>
+                          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Reason:</label>
+                          <select
+                            value={changeFormData.reason}
+                            onChange={(e) => setChangeFormData(prev => ({ ...prev, reason: e.target.value }))}
+                            style={{ width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+                          >
+                            <option value="scheduling">Scheduling conflicts</option>
+                            <option value="teaching_style">Teaching style mismatch</option>
+                            <option value="communication">Communication issues</option>
+                            <option value="progress">Lack of progress</option>
+                            <option value="availability">Tutor availability issues</option>
+                            <option value="other">Other reason</option>
+                          </select>
+                        </div>
+                        
+                        <div style={{ marginBottom: '15px' }}>
+                          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                            Please explain your reason for requesting a tutor change:
+                          </label>
+                          <textarea
+                            value={changeFormData.message}
+                            onChange={(e) => setChangeFormData(prev => ({ ...prev, message: e.target.value }))}
+                            placeholder="Please provide details about why you want to change tutors..."
+                            rows="4"
+                            style={{ 
+                              width: '100%', 
+                              padding: '8px', 
+                              borderRadius: '4px', 
+                              border: '1px solid #ccc',
+                              resize: 'vertical'
+                            }}
+                            required
+                          />
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={() => handleChangeFormSubmit(request)}
+                            disabled={!changeFormData.message.trim() || changeRequestStatus === 'submitting'}
+                            style={{ 
+                              backgroundColor: '#dc3545', 
+                              color: 'white',
+                              border: '1px solid #dc3545',
+                              padding: '8px 15px',
+                              borderRadius: '4px',
+                              cursor: changeFormData.message.trim() && changeRequestStatus !== 'submitting' ? 'pointer' : 'not-allowed',
+                              opacity: !changeFormData.message.trim() || changeRequestStatus === 'submitting' ? 0.6 : 1
+                            }}
+                          >
+                            {changeRequestStatus === 'submitting' ? 'Submitting...' : 'Submit Request'}
+                          </button>
+                        </div>
+                        
+                        {changeRequestStatus && changeRequestStatus !== 'submitting' && (
+                          <div style={{ 
+                            marginTop: '10px', 
+                            padding: '8px', 
+                            borderRadius: '4px',
+                            backgroundColor: changeRequestStatus === 'success' ? '#d4edda' : '#f8d7da',
+                            color: changeRequestStatus === 'success' ? '#155724' : '#721c24',
+                            border: `1px solid ${changeRequestStatus === 'success' ? '#c3e6cb' : '#f5c6cb'}`
+                          }}>
+                            {changeRequestStatus === 'success' 
+                              ? 'Tutor change request submitted successfully! Admin will review your request.'
+                              : changeRequestStatus.replace('error: ', '')
+                            }
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button

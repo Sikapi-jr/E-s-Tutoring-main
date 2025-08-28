@@ -806,3 +806,61 @@ class TutorComplaint(models.Model):
     
     def __str__(self):
         return f"Complaint about {self.tutor.firstName} {self.tutor.lastName} by {self.student.firstName} {self.student.lastName}"
+
+
+class TutorChangeRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    REASON_CHOICES = [
+        ('scheduling', 'Scheduling conflicts'),
+        ('teaching_style', 'Teaching style mismatch'),
+        ('communication', 'Communication issues'),
+        ('progress', 'Lack of progress'),
+        ('availability', 'Tutor availability issues'),
+        ('other', 'Other reason'),
+    ]
+    
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tutor_change_requests',
+        limit_choices_to={'roles': 'parent'}
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tutor_changes_requested',
+        limit_choices_to={'roles': 'student'}
+    )
+    current_tutor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='change_requests_from',
+        limit_choices_to={'roles': 'tutor'}
+    )
+    subject = models.CharField(max_length=100, help_text="Subject for which tutor change is requested")
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES, default='other')
+    message = models.TextField(help_text="Detailed reason for requesting tutor change")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_reply = models.TextField(blank=True, null=True, help_text="Admin response to request")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tutor_change_requests_reviewed',
+        limit_choices_to={'is_superuser': True}
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('parent', 'student', 'current_tutor', 'subject', 'status')
+    
+    def __str__(self):
+        return f"Change request for {self.student.firstName} {self.student.lastName} - {self.subject} from {self.current_tutor.firstName} {self.current_tutor.lastName}"

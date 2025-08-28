@@ -2437,3 +2437,117 @@ class AdminCreateTutorView(generics.CreateAPIView):
             print(f"Email or Stripe setup failed: {email_error}")
             # Don't fail the registration if email/stripe fails
             pass
+
+
+class TutorChangeRequestCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from playground.models import TutorChangeRequest, AcceptedTutor, User
+        
+        # Check if user is a parent
+        if request.user.roles != 'parent':
+            return Response({"error": "Only parents can request tutor changes"}, status=403)
+        
+        try:
+            student_id = request.data.get('student_id')
+            current_tutor_id = request.data.get('current_tutor_id')
+            subject = request.data.get('subject')
+            reason = request.data.get('reason')
+            message = request.data.get('message')
+            
+            if not all([student_id, current_tutor_id, subject, reason, message]):
+                return Response({"error": "All fields are required"}, status=400)
+            
+            # Verify student exists and belongs to parent
+            try:
+                student = User.objects.get(id=student_id, roles='student')
+            except User.DoesNotExist:
+                return Response({"error": "Student not found"}, status=404)
+            
+            # Verify current tutor exists
+            try:
+                current_tutor = User.objects.get(id=current_tutor_id, roles='tutor')
+            except User.DoesNotExist:
+                return Response({"error": "Current tutor not found"}, status=404)
+            
+            # Verify parent-student-tutor relationship exists
+            accepted_tutor = AcceptedTutor.objects.filter(
+                parent=request.user,
+                student=student,
+                tutor=current_tutor,
+                status='Accepted'
+            ).first()
+            
+            if not accepted_tutor:
+                return Response({"error": "No active tutoring relationship found"}, status=400)
+            
+            # Check for existing pending request for the same combination
+            existing_request = TutorChangeRequest.objects.filter(
+                parent=request.user,
+                student=student,
+                current_tutor=current_tutor,
+                subject=subject,
+                status='pending'
+            ).first()
+            
+            if existing_request:
+                return Response({"error": "A pending tutor change request already exists for this combination"}, status=400)
+            
+            # Create the tutor change request
+            change_request = TutorChangeRequest.objects.create(
+                parent=request.user,
+                student=student,
+                current_tutor=current_tutor,
+                subject=subject,
+                reason=reason,
+                message=message
+            )
+            
+            return Response({
+                "message": "Tutor change request submitted successfully",
+                "request_id": change_request.id
+            }, status=201)
+            
+        except Exception as e:
+            print(f"Error creating tutor change request: {e}")
+            return Response({"error": "Failed to submit tutor change request"}, status=500)
+
+
+class TutorChangeRequestListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        from playground.models import TutorChangeRequest
+        
+        # Check if user is a parent
+        if request.user.roles != 'parent':
+            return Response({"error": "Only parents can view tutor change requests"}, status=403)
+        
+        try:
+            # Get all tutor change requests for this parent
+            requests = TutorChangeRequest.objects.filter(parent=request.user).select_related(
+                'student', 'current_tutor', 'reviewed_by'
+            )
+            
+            requests_data = []
+            for req in requests:
+                requests_data.append({
+                    'id': req.id,
+                    'student_name': f"{req.student.firstName} {req.student.lastName}",
+                    'current_tutor_name': f"{req.current_tutor.firstName} {req.current_tutor.lastName}",
+                    'subject': req.subject,
+                    'reason': req.get_reason_display(),
+                    'message': req.message,
+                    'status': req.get_status_display(),
+                    'admin_reply': req.admin_reply,
+                    'created_at': req.created_at,
+                    'reviewed_at': req.reviewed_at,
+                    'reviewed_by': f"{req.reviewed_by.firstName} {req.reviewed_by.lastName}" if req.reviewed_by else None
+                })
+            
+            return Response(requests_data, status=200)
+            
+        except Exception as e:
+            print(f"Error fetching tutor change requests: {e}")
+            return Response({"error": "Failed to fetch tutor change requests"}, status=500)
