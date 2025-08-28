@@ -249,7 +249,15 @@
     "statusDisputed": "Disputed", 
     "statusResolved": "Resolved",
     "statusVoid": "Void",
-    "allStatuses": "All Statuses"
+    "allStatuses": "All Statuses",
+    "editHistory": "Edit History",
+    "changesHistory": "Changes History",
+    "originalValue": "Original Value",
+    "changedTo": "Changed To",
+    "changedOn": "Changed On",
+    "noEditsHistory": "No edits have been made to this entry",
+    "originallyCreated": "Originally Created",
+    "lastEdited": "Last Edited"
   },
   "calendar": {
     "title": "Calendar",

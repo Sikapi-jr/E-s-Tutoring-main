@@ -109,6 +109,7 @@ export default function Home() {
             // Get student's tutors (from hours data)
             const uniqueTutors = [];
             const seenTutorIds = new Set();
+            const tutorSubjects = {};
             
             if (hoursRes.data && Array.isArray(hoursRes.data)) {
               hoursRes.data.forEach(hour => {
@@ -121,6 +122,14 @@ export default function Home() {
                     // We'll need to fetch additional details like email and phone
                   });
                 }
+                
+                // Collect subjects for each tutor
+                if (hour.tutor && hour.subject) {
+                  if (!tutorSubjects[hour.tutor]) {
+                    tutorSubjects[hour.tutor] = new Set();
+                  }
+                  tutorSubjects[hour.tutor].add(hour.subject);
+                }
               });
             }
             
@@ -130,14 +139,20 @@ export default function Home() {
                 const tutorDetailsPromises = uniqueTutors.map(async (tutor) => {
                   try {
                     const response = await api.get(`/api/users/${tutor.id}/`);
+                    const subjects = tutorSubjects[tutor.id] ? Array.from(tutorSubjects[tutor.id]) : [];
                     return {
                       ...tutor,
                       email: response.data.email,
-                      phone_number: response.data.phone_number
+                      phone_number: response.data.phone_number,
+                      subjects: subjects
                     };
                   } catch (error) {
                     console.error(`Failed to fetch details for tutor ${tutor.id}:`, error);
-                    return tutor; // Return basic info if detailed fetch fails
+                    const subjects = tutorSubjects[tutor.id] ? Array.from(tutorSubjects[tutor.id]) : [];
+                    return {
+                      ...tutor,
+                      subjects: subjects
+                    }; // Return basic info with subjects if detailed fetch fails
                   }
                 });
                 
@@ -637,7 +652,14 @@ export default function Home() {
                   studentTutors.map((tutor, index) => (
                     <div key={tutor.id || index} style={{ margin: "1rem 0", textAlign: "left", border: "1px solid #eee", borderRadius: "8px", padding: "0.75rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-                        <strong style={{ fontSize: "1rem", color: "#192A88" }}>{tutor.firstName} {tutor.lastName}</strong>
+                        <strong style={{ fontSize: "1rem", color: "#192A88" }}>
+                          {tutor.firstName} {tutor.lastName}
+                          {tutor.subjects && tutor.subjects.length > 0 && (
+                            <span style={{ fontSize: "0.8rem", color: "#666", fontWeight: "normal" }}>
+                              {" - "}{tutor.subjects.join(", ")}
+                            </span>
+                          )}
+                        </strong>
                         <button
                           onClick={() => handleComplaintClick(tutor)}
                           style={{

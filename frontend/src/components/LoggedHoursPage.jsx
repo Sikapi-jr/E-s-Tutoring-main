@@ -305,14 +305,18 @@ export default function LoggedHoursPage() {
               </thead>
               <tbody>
                 {filteredHours.map((h) => (
-                  <tr key={h.id} className={h.edited_at ? 'edited-row' : ''}>
+                  <tr 
+                    key={h.id} 
+                    className={h.edited_at ? 'edited-row clickable-row' : ''} 
+                    onClick={h.edited_at ? () => handleEditHistoryClick(h) : null}
+                    style={h.edited_at ? { cursor: 'pointer' } : {}}
+                  >
                     <td data-label="Date">
-                      {h.edited_at && user.roles === "parent" ? (
-                        <span onClick={() => handleEditHistoryClick(h)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                          {new Date(h.date).toLocaleDateString()}
+                      {new Date(h.date).toLocaleDateString()}
+                      {h.edited_at && (
+                        <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#ff8c00' }}>
+                          ✏️ Edited
                         </span>
-                      ) : (
-                        new Date(h.date).toLocaleDateString()
                       )}
                     </td>
                     <td data-label="Student">
@@ -346,7 +350,10 @@ export default function LoggedHoursPage() {
                           <div>
                             <button
                               className="reply-btn"
-                              onClick={() => handleTutorReplyClick(h)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTutorReplyClick(h);
+                              }}
                               title="Add tutor reply"
                             >
                               💬 Reply
@@ -355,7 +362,10 @@ export default function LoggedHoursPage() {
                         ) : (
                           <button
                             className="edit-btn"
-                            onClick={() => handleEditClick(h)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClick(h);
+                            }}
                             title="Edit hours"
                           >
                             ✏️ Edit
@@ -368,6 +378,7 @@ export default function LoggedHoursPage() {
                             className="cancel-dispute-btn"
                             onClick={(e) => {
                               e.preventDefault();
+                              e.stopPropagation();
                               console.log('Cancel button clicked for dispute:', h.dispute_id);
                               handleCancelDispute(h.dispute_id);
                             }}
@@ -378,7 +389,10 @@ export default function LoggedHoursPage() {
                         ) : (
                           <button
                             className="dispute-btn"
-                            onClick={() => handleDisputeClick(h)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDisputeClick(h);
+                            }}
                           >
                             ⚠️ Dispute
                           </button>

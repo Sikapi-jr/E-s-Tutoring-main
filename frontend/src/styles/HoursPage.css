@@ -745,6 +745,49 @@ textarea:active {
   background-color: #ffeaa7 !important;
 }
 
+/* Clickable row styles */
+.clickable-row {
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: #ffeaa7 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.clickable-row:hover td {
+  font-weight: 500;
+}
+
+/* Tooltip for edited rows */
+.clickable-row {
+  position: relative;
+}
+
+.clickable-row::after {
+  content: "Click to view edit history";
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.clickable-row:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Button styles for new functionality */
 .edit-btn {
   background-color: #28a745;

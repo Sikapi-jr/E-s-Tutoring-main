@@ -245,7 +245,15 @@
     "statusDisputed": "Contesté",
     "statusResolved": "Résolu", 
     "statusVoid": "Annulé",
-    "allStatuses": "Tous les statuts"
+    "allStatuses": "Tous les statuts",
+    "editHistory": "Historique des modifications",
+    "changesHistory": "Historique des changements",
+    "originalValue": "Valeur originale",
+    "changedTo": "Changé en",
+    "changedOn": "Changé le",
+    "noEditsHistory": "Aucune modification n'a été apportée à cette entrée",
+    "originallyCreated": "Créé à l'origine",
+    "lastEdited": "Dernière modification"
   },
   "calendar": {
     "title": "Calendrier",
