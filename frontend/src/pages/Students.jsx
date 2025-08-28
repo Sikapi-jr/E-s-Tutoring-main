@@ -35,9 +35,11 @@ const Students = () => {
         let studentsData = [];
         
         if (user.is_superuser) {
-          // For admins, fetch all students using the students API without parent filter
-          const res = await api.get('/api/students/');
-          studentsData = Array.isArray(res.data) ? res.data : [];
+          // For admins, we need to get all students across all parents
+          // Since the API is parent-specific, we'll use the admin user's ID to try to get some data
+          // This is a temporary solution - ideally there should be an admin-specific endpoint
+          const res = await api.get(`/api/homeParent/?id=${user.account_id}`);
+          studentsData = Array.isArray(res.data.students) ? res.data.students : [];
         } else {
           // For parents, fetch their students
           const res = await api.get(`/api/homeParent/?id=${parent}`);
