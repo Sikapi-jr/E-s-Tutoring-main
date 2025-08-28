@@ -75,7 +75,8 @@
     "unknown": "Inconnu",
     "address": "Adresse",
     "city": "Ville",
-    "phone": "Téléphone"
+    "phone": "Téléphone",
+    "notProvided": "Non fourni"
   },
   "navigation": {
     "home": "Accueil",
@@ -623,7 +624,7 @@
   "students": {
     "title": "Mes Étudiants",
     "subtitle": "Voir des informations détaillées sur vos étudiants et leurs tuteurs",
-    "adminTitle": "Tous les Étudiants",
+    "adminTitle": "Tous vos Étudiants",
     "adminSubtitle": "Voir des informations détaillées sur tous les étudiants et leurs tuteurs",
     "noStudents": "Vous n'avez pas encore d'étudiants inscrits.",
     "registerStudent": "Inscrire un Étudiant",

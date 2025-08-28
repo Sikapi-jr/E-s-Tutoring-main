@@ -75,7 +75,8 @@
     "unknown": "Unknown",
     "address": "Address",
     "city": "City",
-    "phone": "Phone"
+    "phone": "Phone",
+    "notProvided": "Not provided"
   },
   "navigation": {
     "home": "Home",

@@ -56,8 +56,8 @@ const Students = () => {
               return {
                 ...student,
                 profile_picture: studentDetailsRes.data.profile_picture || null,
-                address: studentDetailsRes.data.address || "Not provided",
-                city: studentDetailsRes.data.city || "Not provided",
+                address: studentDetailsRes.data.address || t('common.notProvided'),
+                city: studentDetailsRes.data.city || t('common.notProvided'),
                 tutors: studentTutorsRes.data || []
               };
             } catch (error) {
@@ -65,8 +65,8 @@ const Students = () => {
               return {
                 ...student,
                 profile_picture: null,
-                address: "Not provided",
-                city: "Not provided", 
+                address: t('common.notProvided'),
+                city: t('common.notProvided'), 
                 tutors: []
               };
             }
