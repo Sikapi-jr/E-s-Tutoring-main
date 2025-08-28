@@ -1050,3 +1050,108 @@ def send_tutor_dispute_notification_async(self, tutor_email, tutor_name, session
             raise self.retry(countdown=60 * (self.request.retries + 1), exc=exc)
         else:
             logger.error(f"Max retries reached for tutor dispute notification to {tutor_email}")
+
+
+# Mapulus Integration Tasks
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def create_mapulus_pin_async(self, user_data):
+    """
+    Create a pin on Mapulus map when a new user signs up
+    """
+    try:
+        from playground.mapulus_service import mapulus_service
+        
+        user_id = user_data.get('id')
+        full_name = f"{user_data.get('firstName', '')} {user_data.get('lastName', '')}"
+        
+        logger.info(f"Creating Mapulus pin for user {user_id} - {full_name}")
+        
+        success = mapulus_service.create_pin(user_data)
+        
+        if success:
+            logger.info(f"Successfully created Mapulus pin for user {user_id} - {full_name}")
+            return {
+                'success': True,
+                'user_id': user_id,
+                'message': f'Pin created for {full_name}'
+            }
+        else:
+            logger.error(f"Failed to create Mapulus pin for user {user_id}")
+            return {
+                'success': False,
+                'user_id': user_id,
+                'error': 'Pin creation failed'
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in create_mapulus_pin_async for user {user_data.get('id')}: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def update_mapulus_pin_async(self, user_data):
+    """
+    Update an existing pin on Mapulus map when user profile is updated
+    """
+    try:
+        from playground.mapulus_service import mapulus_service
+        
+        user_id = user_data.get('id')
+        full_name = f"{user_data.get('firstName', '')} {user_data.get('lastName', '')}"
+        
+        logger.info(f"Updating Mapulus pin for user {user_id} - {full_name}")
+        
+        success = mapulus_service.update_pin(user_data)
+        
+        if success:
+            logger.info(f"Successfully updated Mapulus pin for user {user_id} - {full_name}")
+            return {
+                'success': True,
+                'user_id': user_id,
+                'message': f'Pin updated for {full_name}'
+            }
+        else:
+            logger.warning(f"Could not update Mapulus pin for user {user_id} (may not exist)")
+            return {
+                'success': False,
+                'user_id': user_id,
+                'error': 'Pin update failed or pin does not exist'
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in update_mapulus_pin_async for user {user_data.get('id')}: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+
+@shared_task(bind=True, max_retries=2, default_retry_delay=30)
+def delete_mapulus_pin_async(self, pin_id, user_info=None):
+    """
+    Delete a pin from Mapulus map (e.g., when user is deactivated)
+    """
+    try:
+        from playground.mapulus_service import mapulus_service
+        
+        user_name = user_info.get('name', 'Unknown') if user_info else 'Unknown'
+        logger.info(f"Deleting Mapulus pin {pin_id} for user {user_name}")
+        
+        success = mapulus_service.delete_pin(pin_id)
+        
+        if success:
+            logger.info(f"Successfully deleted Mapulus pin {pin_id}")
+            return {
+                'success': True,
+                'pin_id': pin_id,
+                'message': f'Pin deleted for {user_name}'
+            }
+        else:
+            logger.warning(f"Could not delete Mapulus pin {pin_id}")
+            return {
+                'success': False,
+                'pin_id': pin_id,
+                'error': 'Pin deletion failed or pin does not exist'
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in delete_mapulus_pin_async for pin {pin_id}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
