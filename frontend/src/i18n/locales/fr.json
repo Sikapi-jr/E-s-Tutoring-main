@@ -500,6 +500,8 @@
   },
   "weekly": {
     "datePlaceholder": "Date d'aujourd'hui (lundi)",
+    "startDatePlaceholder": "Date de début",
+    "endDatePlaceholder": "Date de fin",
     "fetchHours": "Récupérer les heures",
     "noHoursToFetch": "Aucune heure à récupérer.",
     "totalTime": "Total",

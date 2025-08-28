@@ -12,6 +12,7 @@ const SendWeekly = () => {
   const navigate = useNavigate();
 
   const [currentDay, setCurrentDay] = useState("");
+  const [endDay, setEndDay] = useState("");
   const [hours, setHours] = useState([]);
   const [total, setTotal] = useState([]);
   const [error, setError] = useState("");
@@ -26,10 +27,10 @@ const SendWeekly = () => {
     setError("");
     setLoading(true);
     try {
-      console.log("Fetching hours with params:", { currentDay });
+      console.log("Fetching hours with params:", { currentDay, endDay });
       const hrsRes = await api.get(
         `/api/weeklyHours/`,
-        { params: { currentDay } }
+        { params: { currentDay, endDay } }
       );
       console.log("Hours response:", hrsRes.data);
       setHours(hrsRes.data);
@@ -37,7 +38,7 @@ const SendWeekly = () => {
       console.log("Fetching totals...");
       const totRes = await api.get(
         `/api/calculateHours/`,
-        { params: { currentDay } }
+        { params: { currentDay, endDay } }
       );
       console.log("Totals response:", totRes.data);
       setTotal(totRes.data);
@@ -75,7 +76,7 @@ const SendWeekly = () => {
       await api.post(
         `/api/checkout/`,
         {},
-        { params: { currentDay } }
+        { params: { currentDay, endDay } }
       );
       alert(t('weekly.checkoutTriggered'));
     } catch (e) {
@@ -100,7 +101,15 @@ const SendWeekly = () => {
           type="date"
           value={currentDay}
           onChange={(e) => setCurrentDay(e.target.value)}
-          placeholder={t('weekly.datePlaceholder')}
+          placeholder={t('weekly.startDatePlaceholder')}
+          required
+        />
+        <input
+          className="form-input"
+          type="date"
+          value={endDay}
+          onChange={(e) => setEndDay(e.target.value)}
+          placeholder={t('weekly.endDatePlaceholder')}
           required
         />
         <button type="submit" disabled={loading}>

@@ -175,6 +175,7 @@
     "notConnected": "Not Connected",
     "calendarConnectedMessage": "You can schedule events and manage your calendar",
     "connectGoogleCalendar": "Connect Google Calendar",
+    "reportConcern": "Report a concern about this tutor",
     "childrenWorkedHours": "Your children have worked {{hours}} hours this week!",
     "studentWorkedHours": "You have worked {{hours}} hours this week!",
     "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
@@ -509,6 +510,8 @@
   },
   "weekly": {
     "datePlaceholder": "Date today (Monday)",
+    "startDatePlaceholder": "Start Date",
+    "endDatePlaceholder": "End Date",
     "fetchHours": "Fetch Hours",
     "noHoursToFetch": "No hours to fetch.",
     "totalTime": "Total",

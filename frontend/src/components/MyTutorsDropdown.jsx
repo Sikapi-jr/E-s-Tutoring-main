@@ -102,7 +102,7 @@ const MyTutorsDropdown = () => {
                     <button
                       className="complaint-btn-small"
                       onClick={(e) => handleComplaintClick(tutor, e)}
-                      title="Report a concern"
+                      title={t('home.reportConcern')}
                     >
                       📝
                     </button>

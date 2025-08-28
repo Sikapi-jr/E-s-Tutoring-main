@@ -675,7 +675,7 @@ export default function Home() {
                             marginLeft: "0.5rem",
                             height: "fit-content"
                           }}
-                          title="Report a concern about this tutor"
+                          title={t('home.reportConcern')}
                         >
                           📝
                         </button>
