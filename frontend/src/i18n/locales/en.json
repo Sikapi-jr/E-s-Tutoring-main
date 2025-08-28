@@ -652,11 +652,16 @@
     "selectTutor": "Select This Tutor",
     "noAvailableTutors": "No available tutors at the moment",
     "tutorChangeRequestSent": "Tutor change request sent successfully!",
-    "subjects": "Subjects"
+    "subjects": "Subjects",
+    "editStudent": "Edit Student",
+    "editStudentInfo": "Edit Student Information for",
+    "profilePicture": "Profile Picture",
+    "studentUpdatedSuccessfully": "Student updated successfully!"
   },
   "errors": {
     "couldNotLoadStudents": "Could not load students. Please try again.",
     "couldNotLoadTutors": "Could not load available tutors. Please try again.",
-    "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again."
+    "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
+    "studentUpdateFailed": "Failed to update student. Please try again."
   }
 }

@@ -25,6 +25,18 @@ const Students = () => {
   const [selectedStudentForChange, setSelectedStudentForChange] = useState(null);
   const [availableTutors, setAvailableTutors] = useState([]);
   const [showChangeTutorModal, setShowChangeTutorModal] = useState(false);
+  
+  /* edit student state */
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState(null);
+  const [showEditStudentModal, setShowEditStudentModal] = useState(false);
+  const [editStudentForm, setEditStudentForm] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    email: ""
+  });
+  const [profilePicture, setProfilePicture] = useState(null);
 
   /* fetch students for parent or all students for admin */
   useEffect(() => {
@@ -124,6 +136,67 @@ const Students = () => {
     }
   };
 
+  /* handle edit student functionality */
+  const handleEditStudent = (student) => {
+    setSelectedStudentForEdit(student);
+    setEditStudentForm({
+      firstName: student.student_firstName || "",
+      lastName: student.student_lastName || "",
+      address: student.address || "",
+      city: student.city || "",
+      email: student.email || ""
+    });
+    setProfilePicture(null);
+    setShowEditStudentModal(true);
+  };
+
+  const handleSaveStudentEdit = async () => {
+    if (!selectedStudentForEdit) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("firstName", editStudentForm.firstName.trim());
+      formData.append("lastName", editStudentForm.lastName.trim());
+      formData.append("address", editStudentForm.address.trim());
+      formData.append("city", editStudentForm.city.trim());
+      formData.append("email", editStudentForm.email.trim());
+      
+      if (profilePicture) {
+        formData.append("profile_picture", profilePicture);
+      }
+
+      await api.patch(`/api/profile/${selectedStudentForEdit.id}/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Update local state
+      setStudents(prevStudents =>
+        prevStudents.map(student =>
+          student.id === selectedStudentForEdit.id
+            ? {
+                ...student,
+                student_firstName: editStudentForm.firstName,
+                student_lastName: editStudentForm.lastName,
+                address: editStudentForm.address,
+                city: editStudentForm.city,
+                email: editStudentForm.email
+              }
+            : student
+        )
+      );
+
+      setShowEditStudentModal(false);
+      setSelectedStudentForEdit(null);
+      alert(t('students.studentUpdatedSuccessfully') || 'Student updated successfully!');
+
+    } catch (error) {
+      console.error("Error updating student:", error);
+      alert(t('errors.studentUpdateFailed') || 'Failed to update student. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="students-wrapper">
@@ -177,6 +250,15 @@ const Students = () => {
                       <p><strong>{t('common.city')}:</strong> {student.city}</p>
                     </div>
                   </div>
+                  {user.roles === "parent" && (
+                    <button
+                      className="edit-student-btn"
+                      onClick={() => handleEditStudent(student)}
+                      title={t('students.editStudent')}
+                    >
+                      ✏️
+                    </button>
+                  )}
                 </div>
 
                 <div className="student-tutors">
@@ -251,6 +333,86 @@ const Students = () => {
               >
                 {t('common.cancel')}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Student Modal */}
+        {showEditStudentModal && (
+          <div className="modal-backdrop" onClick={() => setShowEditStudentModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>{t('students.editStudentInfo')} {selectedStudentForEdit?.student_firstName}</h2>
+              
+              <div className="edit-form">
+                <div className="form-group">
+                  <label>{t('common.firstName')}</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.firstName}
+                    onChange={(e) => setEditStudentForm({...editStudentForm, firstName: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>{t('common.lastName')}</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.lastName}
+                    onChange={(e) => setEditStudentForm({...editStudentForm, lastName: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>{t('common.email')}</label>
+                  <input
+                    type="email"
+                    value={editStudentForm.email}
+                    onChange={(e) => setEditStudentForm({...editStudentForm, email: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>{t('common.address')}</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.address}
+                    onChange={(e) => setEditStudentForm({...editStudentForm, address: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>{t('common.city')}</label>
+                  <input
+                    type="text"
+                    value={editStudentForm.city}
+                    onChange={(e) => setEditStudentForm({...editStudentForm, city: e.target.value})}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>{t('students.profilePicture')}</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfilePicture(e.target.files[0])}
+                  />
+                </div>
+              </div>
+              
+              <div className="modal-actions">
+                <button
+                  className="close-modal-btn"
+                  onClick={() => setShowEditStudentModal(false)}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  className="save-student-btn"
+                  onClick={handleSaveStudentEdit}
+                >
+                  {t('common.save')}
+                </button>
+              </div>
             </div>
           </div>
         )}

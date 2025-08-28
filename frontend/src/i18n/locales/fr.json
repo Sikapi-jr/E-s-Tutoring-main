@@ -643,11 +643,16 @@
     "selectTutor": "Sélectionner ce Tuteur",
     "noAvailableTutors": "Aucun tuteur disponible pour le moment",
     "tutorChangeRequestSent": "Demande de changement de tuteur envoyée avec succès !",
-    "subjects": "Matières"
+    "subjects": "Matières",
+    "editStudent": "Modifier l'Étudiant",
+    "editStudentInfo": "Modifier les Informations de l'Étudiant pour",
+    "profilePicture": "Photo de Profil",
+    "studentUpdatedSuccessfully": "Étudiant mis à jour avec succès !"
   },
   "errors": {
     "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
     "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
-    "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer."
+    "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
+    "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer."
   }
 }
