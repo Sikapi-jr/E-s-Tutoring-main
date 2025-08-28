@@ -943,6 +943,21 @@ export default function Home() {
                     {t('home.noStudentsYet')} {t('home.registerStudentText')}
                   </Link>
                 )}
+                {students.length > 0 && (
+                  <div style={{ textAlign: "center", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e1e1e1" }}>
+                    <Link 
+                      to="/students" 
+                      style={{ 
+                        color: "#192A88", 
+                        textDecoration: "none", 
+                        fontSize: "0.9rem",
+                        fontWeight: "500"
+                      }}
+                    >
+                      {t('home.viewMore')}
+                    </Link>
+                  </div>
+                )}
               </div>
 
               <div className="mobile-section payment-progress-section">

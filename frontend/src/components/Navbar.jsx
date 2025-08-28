@@ -31,6 +31,7 @@ const useDropdown = () => useContext(DropdownContext);
 // Define routes with translation keys instead of hardcoded labels
 const getRoutes = (t) => ({
   Home:    { to: "/home",              label: t('navigation.home') },
+  Students:{ to: "/students",          label: t('navigation.students') },
   Request: { to: "/request",           label: t('navigation.request') },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
   Log:     { to: "/log",               label: t('navigation.logHours') },
@@ -61,7 +62,7 @@ const getRoleConfig = (BASE) => ({
   },
   parent: {
     main:   [BASE.Home],
-    tutor:  [BASE.Request, BASE.Replies],
+    tutor:  [BASE.Students, BASE.Request, BASE.Replies],
     cal:    [BASE.Events, BASE.Hours],
     single: [BASE.Inv, BASE.Reports],
   },

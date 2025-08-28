@@ -72,7 +72,10 @@
     "id": "ID",
     "unknownStudent": "Unknown Student",
     "noTutor": "No Tutor",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "address": "Address",
+    "city": "City",
+    "phone": "Phone"
   },
   "navigation": {
     "home": "Home",
@@ -93,7 +96,8 @@
     "profile": "Profile",
     "login": "Login",
     "register": "Register",
-    "logout": "Logout"
+    "logout": "Logout",
+    "students": "Students"
   },
   "navbar": {
     "tutoring": "Tutoring",
@@ -148,6 +152,7 @@
     "requestTutorText": "Request a tutor for your child.",
     "noStudentsYet": "Don't have any students?",
     "registerStudentText": "Register one.",
+    "viewMore": "View More",
     "noScheduledEvents": "No scheduled events.",
     "noPaidInvoices": "No paid invoices yet.",
     "allCaughtUp": "You're all caught up!",
@@ -623,5 +628,26 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low"
+  },
+  "students": {
+    "title": "My Students",
+    "subtitle": "View detailed information about your students and their tutors",
+    "noStudents": "You don't have any registered students yet.",
+    "registerStudent": "Register a Student",
+    "currentTutors": "Current Tutors",
+    "noTutorsAssigned": "No tutors assigned yet",
+    "requestTutor": "Request a Tutor",
+    "changeTutor": "Change Tutor",
+    "changeTutorFor": "Change Tutor for",
+    "availableTutors": "Available Tutors",
+    "selectTutor": "Select This Tutor",
+    "noAvailableTutors": "No available tutors at the moment",
+    "tutorChangeRequestSent": "Tutor change request sent successfully!",
+    "subjects": "Subjects"
+  },
+  "errors": {
+    "couldNotLoadStudents": "Could not load students. Please try again.",
+    "couldNotLoadTutors": "Could not load available tutors. Please try again.",
+    "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again."
   }
 }

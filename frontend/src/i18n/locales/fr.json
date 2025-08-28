@@ -69,7 +69,13 @@
     "all": "Tous",
     "none": "Aucun",
     "service": "Service",
-    "id": "ID"
+    "id": "ID",
+    "unknownStudent": "Étudiant Inconnu",
+    "noTutor": "Aucun Tuteur",
+    "unknown": "Inconnu",
+    "address": "Adresse",
+    "city": "Ville",
+    "phone": "Téléphone"
   },
   "navigation": {
     "home": "Accueil",
@@ -90,7 +96,8 @@
     "profile": "Profil",
     "login": "Connexion",
     "register": "S'inscrire",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "students": "Étudiants"
   },
   "navbar": {
     "tutoring": "Tutorat",
@@ -145,6 +152,7 @@
     "requestTutorText": "Demandez un tuteur pour votre enfant.",
     "noStudentsYet": "Vous n'avez pas d'étudiants ?",
     "registerStudentText": "Inscrivez-en un.",
+    "viewMore": "Voir Plus",
     "noScheduledEvents": "Aucun événement planifié.",
     "noPaidInvoices": "Aucune facture payée pour le moment.",
     "allCaughtUp": "Vous êtes à jour !",
@@ -611,5 +619,26 @@
     "high": "Élevé",
     "medium": "Moyen",
     "low": "Faible"
+  },
+  "students": {
+    "title": "Mes Étudiants",
+    "subtitle": "Voir des informations détaillées sur vos étudiants et leurs tuteurs",
+    "noStudents": "Vous n'avez pas encore d'étudiants inscrits.",
+    "registerStudent": "Inscrire un Étudiant",
+    "currentTutors": "Tuteurs Actuels",
+    "noTutorsAssigned": "Aucun tuteur assigné pour le moment",
+    "requestTutor": "Demander un Tuteur",
+    "changeTutor": "Changer de Tuteur",
+    "changeTutorFor": "Changer de Tuteur pour",
+    "availableTutors": "Tuteurs Disponibles",
+    "selectTutor": "Sélectionner ce Tuteur",
+    "noAvailableTutors": "Aucun tuteur disponible pour le moment",
+    "tutorChangeRequestSent": "Demande de changement de tuteur envoyée avec succès !",
+    "subjects": "Matières"
+  },
+  "errors": {
+    "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
+    "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
+    "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer."
   }
 }
