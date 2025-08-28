@@ -82,7 +82,7 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "request": "Request a Tutor",
-    "replies": "Replies",
+    "replies": "Current Requests",
     "logHours": "Log Hours",
     "loggedHours": "Logged Hours",
     "weeklyHours": "Weekly Hours",
@@ -212,7 +212,9 @@
     "createdAt": "Created At",
     "cancel": "Cancel",
     "writeMessage": "Write your message!",
-    "sendMessage": "Send Message"
+    "sendMessage": "Send Message",
+    "confirmDelete": "Are you sure you want to delete this request?",
+    "deleteWarning": "This action cannot be undone. All replies to this request will also be deleted."
   },
   "logHours": {
     "title": "Log Tutoring Hours",
@@ -665,6 +667,7 @@
     "couldNotLoadStudents": "Could not load students. Please try again.",
     "couldNotLoadTutors": "Could not load available tutors. Please try again.",
     "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
-    "studentUpdateFailed": "Failed to update student. Please try again."
+    "studentUpdateFailed": "Failed to update student. Please try again.",
+    "deleteRequestFailed": "Failed to delete request. Please try again."
   }
 }

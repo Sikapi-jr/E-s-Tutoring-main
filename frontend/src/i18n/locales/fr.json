@@ -82,7 +82,7 @@
     "home": "Accueil",
     "dashboard": "Tableau de bord",
     "request": "Demander un tuteur",
-    "replies": "Réponses",
+    "replies": "Demandes actuelles",
     "logHours": "Enregistrer les heures",
     "loggedHours": "Heures enregistrées",
     "weeklyHours": "Heures hebdomadaires",
@@ -210,7 +210,9 @@
     "createdAt": "Créé le",
     "cancel": "Annuler",
     "writeMessage": "Écrivez votre message !",
-    "sendMessage": "Envoyer le message"
+    "sendMessage": "Envoyer le message",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette demande ?",
+    "deleteWarning": "Cette action ne peut pas être annulée. Toutes les réponses à cette demande seront également supprimées."
   },
   "logHours": {
     "title": "Enregistrer les heures de tutorat",
@@ -655,6 +657,7 @@
     "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
     "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
     "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
-    "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer."
+    "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
+    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   }
 }

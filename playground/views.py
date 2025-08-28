@@ -1310,6 +1310,38 @@ class PersonalRequestListView(APIView):
         ).order_by('-created_at')
         serializer = RequestSerializer(request_qs, many=True)
         return Response(serializer.data)
+    
+    def delete(self, request):
+        """Delete a tutoring request (only by the parent who created it)"""
+        request_id = request.query_params.get('request_id', None)
+        parent_id = request.query_params.get('parent_id', None)
+        
+        if not request_id or not parent_id:
+            return Response({"error": "Missing 'request_id' or 'parent_id' query parameter."}, status=400)
+
+        try:
+            # Find the request and verify it belongs to this parent
+            tutoring_request = TutoringRequest.objects.get(
+                id=request_id,
+                parent=parent_id
+            )
+            
+            # Delete related data first to avoid foreign key constraints
+            # Delete tutor responses first
+            TutorResponse.objects.filter(request=tutoring_request).delete()
+            
+            # Delete accepted tutors relationships
+            AcceptedTutor.objects.filter(request=tutoring_request).delete()
+            
+            # Finally delete the request itself
+            tutoring_request.delete()
+            
+            return Response({"success": "Request deleted successfully"}, status=200)
+            
+        except TutoringRequest.DoesNotExist:
+            return Response({"error": "Request not found or you don't have permission to delete it"}, status=404)
+        except Exception as e:
+            return Response({"error": f"Failed to delete request: {str(e)}"}, status=500)
 
 
 class ReplyListView(APIView):

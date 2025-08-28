@@ -25,6 +25,7 @@ const ViewReply = () => {
   const [showReplies, setShowReplies] = useState(false);
   const [error, setError] = useState("");
   const [tutorDocuments, setTutorDocuments] = useState({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   /* fetch requests for parent */
   useEffect(() => {
@@ -137,6 +138,32 @@ const ViewReply = () => {
     }
   };
 
+  /* delete request */
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      await api.delete(
+        `/api/requests/PersonalList/?request_id=${requestId}&parent_id=${parent}`
+      );
+      
+      // Remove the deleted request from the state
+      setRequests(prevRequests => prevRequests.filter(req => req.id !== requestId));
+      
+      // Close confirmation dialog
+      setShowDeleteConfirm(null);
+      
+      // Reset selected request if it was deleted
+      if (selectedRequestID === requestId) {
+        setSelectedRequestID(null);
+        setShowReplies(false);
+        setReplies([]);
+      }
+      
+    } catch (err) {
+      console.error("Error deleting request:", err);
+      alert(t('errors.deleteRequestFailed') || 'Failed to delete request. Please try again.');
+    }
+  };
+
   /* render */
   return (
     <div className="view-reply-wrapper">
@@ -165,14 +192,23 @@ const ViewReply = () => {
                     </strong>
                   </div>
                 ) : (
-                  <button
-                    className="toggle-btn"
-                    onClick={() => handleRequestSelection(request)}
-                  >
-                    {selectedRequestID === request.id && showReplies
-                      ? t('common.cancel')
-                      : t('dashboard.viewReplies')}
-                  </button>
+                  <div className="request-actions">
+                    <button
+                      className="toggle-btn"
+                      onClick={() => handleRequestSelection(request)}
+                    >
+                      {selectedRequestID === request.id && showReplies
+                        ? t('common.cancel')
+                        : t('dashboard.viewReplies')}
+                    </button>
+                    <button
+                      className="delete-request-btn"
+                      onClick={() => setShowDeleteConfirm(request.id)}
+                      title={t('common.delete')}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 )}
 
                 {selectedRequestID === request.id && showReplies && !isAccepted && (
@@ -252,6 +288,30 @@ const ViewReply = () => {
         )}
 
         {error && <p className="error-message">{error}</p>}
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <div className="delete-confirm-dialog">
+              <h3>{t('requests.confirmDelete') || 'Are you sure you want to delete this request?'}</h3>
+              <p>{t('requests.deleteWarning') || 'This action cannot be undone. All replies to this request will also be deleted.'}</p>
+              <div className="delete-confirm-actions">
+                <button
+                  className="confirm-delete-btn"
+                  onClick={() => handleDeleteRequest(showDeleteConfirm)}
+                >
+                  {t('common.yes')}
+                </button>
+                <button
+                  className="cancel-delete-btn"
+                  onClick={() => setShowDeleteConfirm(null)}
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
