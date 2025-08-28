@@ -621,6 +621,12 @@
     "medium": "Moyen",
     "low": "Faible"
   },
+  "admin": {
+    "adminTools": "Outils d'Administration",
+    "createTutor": "Créer un Nouveau Tuteur",
+    "manageDisputes": "Gérer les Différends",
+    "manageComplaints": "Gérer les Plaintes"
+  },
   "students": {
     "title": "Mes Étudiants",
     "subtitle": "Voir des informations détaillées sur vos étudiants et leurs tuteurs",

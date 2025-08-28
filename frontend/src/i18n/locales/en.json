@@ -630,6 +630,12 @@
     "medium": "Medium",
     "low": "Low"
   },
+  "admin": {
+    "adminTools": "Admin Tools",
+    "createTutor": "Create New Tutor",
+    "manageDisputes": "Manage Disputes",
+    "manageComplaints": "Manage Complaints"
+  },
   "students": {
     "title": "My Students",
     "subtitle": "View detailed information about your students and their tutors",

@@ -876,7 +876,7 @@ export default function Home() {
                     {t('admin.createTutor', 'Create New Tutor')}
                   </button>
                   <button
-                    onClick={() => window.location.href = '/admin/disputes'}
+                    onClick={() => window.location.href = '/admin-disputes'}
                     style={{
                       width: "100%",
                       backgroundColor: "#ffc107",
@@ -892,7 +892,7 @@ export default function Home() {
                     {t('admin.manageDisputes', 'Manage Disputes')}
                   </button>
                   <button
-                    onClick={() => window.location.href = '/admin/complaints'}
+                    onClick={() => window.location.href = '/admin-complaints'}
                     style={{
                       width: "100%",
                       backgroundColor: "#17a2b8",
