@@ -212,7 +212,10 @@
     "writeMessage": "Écrivez votre message !",
     "sendMessage": "Envoyer le message",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette demande ?",
-    "deleteWarning": "Cette action ne peut pas être annulée. Toutes les réponses à cette demande seront également supprimées."
+    "deleteWarning": "Cette action ne peut pas être annulée. Toutes les réponses à cette demande seront également supprimées.",
+    "hasAccepted": "a accepté !",
+    "noRequestsMade": "Vous n'avez fait aucune demande pour le moment.",
+    "city": "Ville"
   },
   "logHours": {
     "title": "Enregistrer les heures de tutorat",
@@ -548,7 +551,10 @@
     "replyAccepted": "Réponse acceptée avec succès !",
     "replyRejected": "Réponse rejetée avec succès !",
     "errorAccepting": "Erreur lors de l'acceptation de la réponse",
-    "errorRejecting": "Erreur lors du rejet de la réponse"
+    "errorRejecting": "Erreur lors du rejet de la réponse",
+    "noRepliesYet": "Aucune réponse pour le moment. Les tuteurs répondront bientôt à votre demande.",
+    "tutorDocuments": "Documents du tuteur",
+    "noDocuments": "Aucun document disponible"
   },
   "verification": {
     "verifying": "Vérification de votre courriel...",

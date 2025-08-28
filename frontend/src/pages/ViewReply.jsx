@@ -188,7 +188,7 @@ const ViewReply = () => {
                 {isAccepted ? (
                   <div className="accepted-message">
                     <strong style={{ color: '#28a745' }}>
-                      {request.accepted_tutor_name} has accepted!
+                      {request.accepted_tutor_name} {t('requests.hasAccepted')}
                     </strong>
                   </div>
                 ) : (
@@ -216,7 +216,7 @@ const ViewReply = () => {
                     {replies.length === 0 ? (
                       <li className="no-replies-message">
                         <p style={{ fontStyle: 'italic', color: '#666', textAlign: 'center', padding: '1rem' }}>
-                          No replies yet. Tutors will respond to your request soon.
+                          {t('replies.noRepliesYet')}
                         </p>
                       </li>
                     ) : (

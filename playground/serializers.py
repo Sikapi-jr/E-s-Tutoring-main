@@ -287,6 +287,7 @@ class MonthlyReportSerializer(serializers.ModelSerializer):
     
 class RequestSerializer(serializers.ModelSerializer):
     accepted_tutor_name = serializers.SerializerMethodField()
+    student = serializers.SerializerMethodField()
     
     def get_accepted_tutor_name(self, obj):
         """Get the name of the accepted tutor for this request"""
@@ -295,6 +296,17 @@ class RequestSerializer(serializers.ModelSerializer):
             return f"{accepted_tutor.tutor.firstName} {accepted_tutor.tutor.lastName}"
         except AcceptedTutor.DoesNotExist:
             return None
+    
+    def get_student(self, obj):
+        """Get the student details with firstName and lastName"""
+        if obj.student:
+            return {
+                'id': obj.student.id,
+                'firstName': obj.student.firstName,
+                'lastName': obj.student.lastName,
+                'email': obj.student.email
+            }
+        return None
     
     class Meta:
         model = TutoringRequest
