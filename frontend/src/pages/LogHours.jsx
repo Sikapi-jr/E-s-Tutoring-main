@@ -156,21 +156,25 @@ const LogHours = memo(() => {
 
                 {/* Time Row */}
                 <div className="form-row">
-                    <input
-                        className="form-input"
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        placeholder={t('logHours.startTime')}
-                    />
+                    <div className="time-field">
+                        <label className="time-label">{t('logHours.startTime')}</label>
+                        <input
+                            className="form-input"
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                        />
+                    </div>
 
-                    <input
-                        className="form-input"
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        placeholder={t('logHours.endTime')}
-                    />
+                    <div className="time-field">
+                        <label className="time-label">{t('logHours.endTime')}</label>
+                        <input
+                            className="form-input"
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 <input

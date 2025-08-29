@@ -12,7 +12,7 @@ html, body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 800px; /* Made wider for better desktop experience */
+    max-width: 600px; /* Narrower form width */
     width: 100%; /* Ensure it's responsive but doesn't exceed max-width */
     background: #fff; /* Assuming a white background */
 }
@@ -90,6 +90,19 @@ h1, h2, h3 {
   margin: 0;
 }
 
+.time-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.time-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
 /* Mobile responsiveness for form */
 @media (max-width: 768px) {
   .form-container {
@@ -123,6 +136,10 @@ h1, h2, h3 {
   }
   
   .form-row .form-input {
+    margin: 8px 0;
+  }
+  
+  .time-field {
     margin: 8px 0;
   }
   
