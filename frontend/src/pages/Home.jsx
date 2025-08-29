@@ -490,25 +490,44 @@ export default function Home() {
                 <div 
                   key={h.id} 
                   style={{ 
-                    fontSize: "0.9rem", 
-                    margin: "0.8rem 0",
-                    padding: "0.5rem",
-                    borderRadius: "4px",
-                    backgroundColor: h.has_disputes ? "#f8d7da" : "transparent",
-                    border: h.has_disputes ? "1px solid #f5c6cb" : "none"
+                    fontSize: "0.85rem", 
+                    margin: "8px 0",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    backgroundColor: h.has_disputes ? "#f8d7da" : 
+                                   (h.last_edited_at && h.last_edited_at !== h.created_at) ? "#fff3cd" : 
+                                   "#d1ecf1",
+                    border: h.has_disputes ? "1px solid #f5c6cb" : 
+                           (h.last_edited_at && h.last_edited_at !== h.created_at) ? "1px solid #ff8c00" : 
+                           "1px solid #bee5eb"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       <strong>{h.student_firstName && h.student_lastName ? `${h.student_firstName} ${h.student_lastName}` : h.studentName || h.student_name || h.student || t('common.unknownStudent')}</strong>
+                      {(h.last_edited_at && h.last_edited_at !== h.created_at) && (
+                        <span style={{ 
+                          marginLeft: "8px", 
+                          fontSize: "0.7rem", 
+                          color: "#ff8c00",
+                          fontWeight: "bold"
+                        }}>
+                          EDITED
+                        </span>
+                      )}
                   <br />
                   {h.totalTime} hrs — {h.subject}
                   <br />
                       {h.date}
                       {h.has_disputes && (
-                        <div style={{ color: "#721c24", fontSize: "0.8rem", fontStyle: "italic", marginTop: "0.25rem" }}>
-                          ⚠️ Disputed
-                        </div>
+                        <span style={{ 
+                          marginLeft: "8px", 
+                          fontSize: "0.7rem", 
+                          color: "#721c24",
+                          fontWeight: "bold"
+                        }}>
+                          DISPUTED
+                        </span>
                       )}
                     </div>
                     <button
@@ -755,35 +774,48 @@ export default function Home() {
                       {t('home.documentsUploaded', { count: tutorDocuments.length })}
                     </div>
                     {tutorDocuments.map((doc, index) => (
-                      <div key={doc.id || index} style={{ margin: "0.5rem 0", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ flex: 1 }}>
-                          <a 
-                            href={`${import.meta.env.VITE_API_URL || "http://localhost:8000"}${doc.file}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: "#192A88", textDecoration: "none", fontSize: "0.9rem" }}
-                          >
-                            📄 {doc.file.split('/').pop()}
-                          </a>
-                          <div style={{ fontSize: "0.7rem", color: "#666" }}>
-                            {new Date(doc.uploaded_at).toLocaleDateString()}
+                      <div 
+                        key={doc.id || index} 
+                        style={{ 
+                          backgroundColor: "#f8f9fa", // Light gray for documents
+                          border: "1px solid #dee2e6",
+                          borderRadius: "6px",
+                          padding: "8px 12px",
+                          margin: "8px 0",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <a 
+                              href={`${import.meta.env.VITE_API_URL || "http://localhost:8000"}${doc.file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: "#192A88", textDecoration: "none", fontWeight: "bold" }}
+                            >
+                              📄 {doc.file.split('/').pop()}
+                            </a>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ color: "#666", fontSize: "0.8rem" }}>
+                              {new Date(doc.uploaded_at).toLocaleDateString()}
+                            </span>
+                            <button
+                              onClick={() => handleDocumentDelete(doc.id, doc.file.split('/').pop())}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#dc3545",
+                                cursor: "pointer",
+                                fontSize: "1.1rem",
+                                padding: "0.25rem",
+                              }}
+                              title={t('home.deleteDocument')}
+                            >
+                              🗑️
+                            </button>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDocumentDelete(doc.id, doc.file.split('/').pop())}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#dc3545",
-                            cursor: "pointer",
-                            fontSize: "1.1rem",
-                            padding: "0.25rem",
-                            marginLeft: "0.5rem"
-                          }}
-                          title={t('home.deleteDocument')}
-                        >
-                          🗑️
-                        </button>
                       </div>
                     ))}
                   </>

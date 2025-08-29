@@ -366,7 +366,9 @@
     "additionalDetails": "Dites-nous tous les détails pertinents !",
     "readyToFindTutor": "Je suis prêt à trouver un tuteur !",
     "noRequestsMade": "Aucune demande effectuée.",
-    "city": "Ville"
+    "city": "Ville",
+    "noStudentsMessage": "Vous n'avez aucun étudiant inscrit. Inscrire un étudiant maintenant ?",
+    "registerStudent": "Inscrire un Étudiant"
   },
   "invoices": {
     "title": "Factures",

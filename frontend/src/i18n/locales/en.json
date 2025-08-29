@@ -367,7 +367,9 @@
     "additionalDetails": "Tell us any relevant details!",
     "readyToFindTutor": "I am ready to find a tutor!",
     "noRequestsMade": "No requests made.",
-    "city": "City"
+    "city": "City",
+    "noStudentsMessage": "You don't have any students registered. Register a student now?",
+    "registerStudent": "Register Student"
   },
   "invoices": {
     "title": "Invoices",
