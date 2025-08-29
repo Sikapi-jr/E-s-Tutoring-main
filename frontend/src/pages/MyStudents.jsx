@@ -228,12 +228,13 @@ const MyStudents = () => {
                 />
               </div>
               
-              <div className="modal-actions" style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+              <div className="modal-actions" style={{ display: "flex", gap: "1rem", marginTop: "1.5rem", width: "100%" }}>
                 <button
                   className="close-modal-btn"
                   onClick={() => setShowLeaveModal(false)}
                   style={{
-                    flex: 1,
+                    flex: "1 1 50%",
+                    minWidth: 0,
                     padding: "0.75rem 1rem",
                     border: "1px solid #ccc",
                     backgroundColor: "white",
@@ -241,7 +242,11 @@ const MyStudents = () => {
                     borderRadius: "6px",
                     cursor: "pointer",
                     fontSize: "0.9rem",
-                    fontWeight: "500"
+                    fontWeight: "500",
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
                   }}
                 >
                   {t('common.cancel')}
@@ -250,7 +255,8 @@ const MyStudents = () => {
                   className="confirm-leave-btn"
                   onClick={handleLeaveSubmit}
                   style={{
-                    flex: 1,
+                    flex: "1 1 50%",
+                    minWidth: 0,
                     padding: "0.75rem 1rem",
                     backgroundColor: leaveReason.trim() ? "#dc3545" : "#ccc",
                     color: "white",
@@ -259,7 +265,11 @@ const MyStudents = () => {
                     cursor: leaveReason.trim() ? "pointer" : "not-allowed",
                     fontSize: "0.9rem",
                     fontWeight: "500",
-                    opacity: leaveReason.trim() ? 1 : 0.6
+                    opacity: leaveReason.trim() ? 1 : 0.6,
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
                   }}
                   disabled={!leaveReason.trim()}
                 >
