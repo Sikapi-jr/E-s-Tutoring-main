@@ -191,14 +191,15 @@
     "notConnected": "Non Connecté",
     "calendarConnectedMessage": "Vous pouvez planifier des événements et gérer votre calendrier",
     "connectGoogleCalendar": "Connecter Google Calendar",
+    "reportConcern": "Signaler un problème concernant ce tuteur",
     "monthlyReportsDue": "Rapports Mensuels Dus",
     "reportsOverdue": "{{count}} rapports en retard",
     "month": "Mois",
     "student": "Étudiant",
     "noReportsDue": "Aucun rapport dû",
-    "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heures cette semaine !",
-    "studentWorkedHours": "Vous avez travaillé {{hours}} heures cette semaine !",
-    "tutorMonthlyHours": "Vous avez travaillé {{hours}} heures ce {{month}} !",
+    "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heure{{hours, plural, one {} other {s}}} cette semaine !",
+    "studentWorkedHours": "Vous avez travaillé {{hours}} heure{{hours, plural, one {} other {s}}} cette semaine !",
+    "tutorMonthlyHours": "Vous avez travaillé {{hours}} heure{{hours, plural, one {} other {s}}} ce {{month}} !",
     "connectCalendarMessage": "Connectez votre Google Calendar pour voir les sessions planifiées",
     "goToScheduledSessions": "Aller aux Sessions Planifiées",
     "hoursThisWeek": "heures cette semaine !",
@@ -324,7 +325,8 @@
     "every2Weeks": "Toutes les 2 semaines",
     "scheduleTutoringSession": "📅 Planifier une session de tutorat",
     "eventCreatedSuccessfully": "✅ Événement créé avec succès !",
-    "failedToCreateEvent": "❌ Échec de la création de l'événement."
+    "failedToCreateEvent": "❌ Échec de la création de l'événement.",
+    "connectFailed": "Échec de la connexion à Google Agenda"
   },
   "requests": {
     "requestTutor": "Demander un tuteur",
@@ -401,7 +403,12 @@
     "marketingEmails": "Courriels marketing",
     "saveChanges": "Enregistrer les modifications",
     "changesSaved": "Modifications enregistrées avec succès !",
-    "errorSaving": "Erreur lors de l'enregistrement. Veuillez réessayer."
+    "errorSaving": "Erreur lors de l'enregistrement. Veuillez réessayer.",
+    "currentRates": "Tarifs Actuels",
+    "onlineRate": "Tarif en Ligne",
+    "inPersonRate": "Tarif en Personne",
+    "referralCredits": "Crédits de Recommandation",
+    "creditAvailable": "crédit disponible"
   },
   "announcements": {
     "title": "Annonces",
@@ -511,6 +518,10 @@
     "paymentFailed": "Échec du paiement. Veuillez réessayer.",
     "setupRequired": "Configuration de paiement requise pour recevoir les paiements."
   },
+  "documents": {
+    "deleteSuccess": "Document supprimé avec succès",
+    "deleteFailed": "Échec de la suppression du document"
+  },
   "disputes": {
     "title": "Contester les heures",
     "disputeReason": "Raison du litige",
@@ -519,7 +530,10 @@
     "disputeError": "Erreur lors de la soumission du litige. Veuillez réessayer.",
     "disputeUnderReview": "Votre litige est en cours d'examen.",
     "disputeResolved": "Litige résolu.",
-    "disputeRejected": "Litige rejeté."
+    "disputeRejected": "Litige rejeté.",
+    "cancelDispute": "Annuler le litige",
+    "disputeSession": "Contester cette session",
+    "cancelFailed": "Échec de l'annulation du litige. Veuillez réessayer."
   },
   "replies": {
     "message": "Message",
@@ -690,7 +704,8 @@
     "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
     "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
     "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
-    "leavingStudentFailed": "Échec de quitter l'étudiant. Veuillez réessayer.",
+    "leavingStudentFailed": "Impossible d'arrêter le tutorat de cet étudiant. Veuillez réessayer.",
+    "acceptReplyFailed": "Impossible d'accepter la réponse. Veuillez réessayer.",
     "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
     "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   }

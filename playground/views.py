@@ -1576,21 +1576,35 @@ def maybe_issue_referral_credit(sender, instance, created, **kwargs):
              .aggregate(Sum("totalTime"))
              .get("totalTime__sum") or 0)
 
-    if total < 3:
+    if total < 4:
         return                              # threshold not met yet
 
-    # ---- issue $80 credit exactly once ----
+    # ---- issue $65 credit exactly once ----
     stripe.Customer.create_balance_transaction(
         customer   = ref.referrer.stripe_account_id,
-        amount     = -6000,                 # –$60 CAD credit
+        amount     = -6500,                 # –$65 CAD credit
         currency   = "cad",
-        description= "Referral reward – $60",
+        description= "Referral reward – $65",
         idempotency_key=f"referral-{ref.id}"
     )
 
     ref.reward_applied = True
     ref.reward_date  = now()
-    ref.save(update_fields=["reward_applied", "reward_date"])
+    ref.credit_amount = 65.00
+    ref.save(update_fields=["reward_applied", "reward_date", "credit_amount"])
+
+    # Send congratulations email
+    try:
+        from playground.email_backends import send_referral_congratulations_email
+        send_referral_congratulations_email(
+            user_email=ref.referrer.email,
+            user_name=ref.referrer.firstName,
+            referral_amount=65.00
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to send referral congratulations email: {e}")
 
     
 class ParentHoursListView(APIView):

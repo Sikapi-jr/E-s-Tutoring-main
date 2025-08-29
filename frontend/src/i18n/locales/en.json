@@ -198,9 +198,9 @@
     "month": "Month",
     "student": "Student",
     "noReportsDue": "No reports due",
-    "childrenWorkedHours": "Your children have worked {{hours}} hours this week!",
-    "studentWorkedHours": "You have worked {{hours}} hours this week!",
-    "tutorMonthlyHours": "You have worked {{hours}} hours this {{month}}!",
+    "childrenWorkedHours": "Your children have worked {{hours}} hour{{hours, plural, one {} other {s}}} this week!",
+    "studentWorkedHours": "You have worked {{hours}} hour{{hours, plural, one {} other {s}}} this week!",
+    "tutorMonthlyHours": "You have worked {{hours}} hour{{hours, plural, one {} other {s}}} this {{month}}!",
     "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
     "goToScheduledSessions": "Go to Scheduled Sessions",
     "hoursThisWeek": "hours this week!",
@@ -404,7 +404,12 @@
     "marketingEmails": "Marketing Emails",
     "saveChanges": "Save Changes",
     "changesSaved": "Changes saved successfully!",
-    "errorSaving": "Error saving changes. Please try again."
+    "errorSaving": "Error saving changes. Please try again.",
+    "currentRates": "Current Rates",
+    "onlineRate": "Online Rate",
+    "inPersonRate": "In-Person Rate", 
+    "referralCredits": "Referral Credits",
+    "creditAvailable": "credit available"
   },
   "announcements": {
     "title": "Announcements",
@@ -701,6 +706,7 @@
     "couldNotLoadTutors": "Could not load available tutors. Please try again.",
     "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
     "leavingStudentFailed": "Failed to leave student. Please try again.",
+    "acceptReplyFailed": "Failed to accept reply. Please try again.",
     "studentUpdateFailed": "Failed to update student. Please try again.",
     "deleteRequestFailed": "Failed to delete request. Please try again."
   }

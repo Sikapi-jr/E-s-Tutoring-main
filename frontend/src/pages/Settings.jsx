@@ -207,17 +207,10 @@ export default function Settings() {
                 width: "80px",
                 height: "80px",
                 borderRadius: "50%",
-                backgroundColor: "#bbb",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.5rem",
-                fontWeight: "bold",
-                color: "#fff",
+                backgroundColor: "#ffffff",
+                border: "2px solid #ccc",
               }}
-            >
-              ?
-            </div>
+            />
           )}
 
           <div>
@@ -233,6 +226,31 @@ export default function Settings() {
           <div className="profile-address">
             {user.address && <p>{user.address}</p>}
             {user.city && <p>{user.city}</p>}
+          </div>
+        )}
+
+        {/* ===== Rate Display (Parents and Tutors Only) ===== */}
+        {(user.roles === "parent" || user.roles === "tutor") && (
+          <div className="rate-display">
+            <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>{t('settings.currentRates')}</h4>
+            <div style={{ display: "flex", gap: "1rem", fontSize: "0.9rem" }}>
+              <div>
+                <span style={{ fontWeight: "bold" }}>{t('settings.onlineRate')}:</span> ${user.rateOnline || 0}/hr
+              </div>
+              <div>
+                <span style={{ fontWeight: "bold" }}>{t('settings.inPersonRate')}:</span> ${user.rateInPerson || 0}/hr
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== Referral Credit Display (Parents and Tutors Only) ===== */}
+        {(user.roles === "parent" || user.roles === "tutor") && user.availableReferralCredit > 0 && (
+          <div className="referral-credit-display">
+            <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>{t('settings.referralCredits')}</h4>
+            <div style={{ fontSize: "0.9rem", color: "#28a745" }}>
+              <span style={{ fontWeight: "bold" }}>${user.availableReferralCredit || 0}</span> {t('settings.creditAvailable')}
+            </div>
           </div>
         )}
 
@@ -312,17 +330,23 @@ export default function Settings() {
             </Link>
           </div>
 
-          <ul className="children-list">
-            {children.map((c) => (
-              <li key={c.id} className="child-card">
-                <div className="avatar sm" />
-                <div className="child-info">
-                  <strong>{c.name}</strong>
-                  <span className="email">{c.email}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {children.length === 0 ? (
+            <section className="children-empty-card">
+              <p>No Children accounts made</p>
+            </section>
+          ) : (
+            <ul className="children-list">
+              {children.map((c) => (
+                <li key={c.id} className="child-card">
+                  <div className="avatar sm" />
+                  <div className="child-info">
+                    <strong>{c.name}</strong>
+                    <span className="email">{c.email}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <div className="referrals-header">
             <h3>MY REFERRALS</h3>
@@ -334,7 +358,7 @@ export default function Settings() {
             </button>
           </div>
 
-          <section className="referral-card">
+          <section className="referral-card" style={{ maxHeight: "200px", overflowY: "auto" }}>
             {referrals.length === 0 ? (
               <p>No referrals yet.</p>
             ) : (

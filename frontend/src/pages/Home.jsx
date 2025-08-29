@@ -1088,8 +1088,9 @@ export default function Home() {
                   background: "#fff",
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
-                  padding: "0.5rem",
+                  padding: "1rem",
                   maxHeight: 125,
+                  minHeight: 125,
                   overflowY: "auto",
                   marginTop: "-0.5rem",
                 }}

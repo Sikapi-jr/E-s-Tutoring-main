@@ -148,6 +148,26 @@ class User(AbstractUser):
         if value:
             self._encrypted_google_refresh_token = self._get_fernet().encrypt(value.encode()).decode()
 
+    def set_default_rates_by_role(self):
+        """Set default rates based on user role"""
+        if self.roles == 'student':
+            self.rateOnline = 0.00
+            self.rateInPerson = 0.00
+        elif self.roles == 'parent':
+            self.rateOnline = 35.00
+            self.rateInPerson = 65.00
+        elif self.roles == 'tutor':
+            self.rateOnline = 20.00
+            self.rateInPerson = 28.00
+        # Don't automatically save - let the caller decide
+    
+    @property
+    def available_referral_credit(self):
+        """Calculate total available referral credit for this user"""
+        referrals = self.referrals_made.filter(reward_applied=True)
+        total_credit = sum(ref.credit_amount - ref.used_amount for ref in referrals)
+        return max(total_credit, 0.00)  # Never negative
+
     def __str__(self):
         return self.username
 
@@ -160,6 +180,8 @@ class Referral(models.Model):
                                      related_name="referral_used",
                                      on_delete=models.SET_NULL)
     reward_applied = models.BooleanField(default=False)   # sender's reward
+    credit_amount = models.DecimalField(max_digits=10, decimal_places=2, default=65.00)  # Total credit available
+    used_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)      # Amount already used
     created_at   = models.DateTimeField(auto_now_add=True)
 
     def generate_code(self):

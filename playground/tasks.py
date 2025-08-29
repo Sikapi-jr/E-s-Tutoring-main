@@ -442,6 +442,18 @@ def batch_payout_processing_async(self, payout_data_list):
                 
                 logger.info(f"Transfer {transfer.id} completed for tutor {payout_data.get('tutor_id')} - ${amount/100:.2f}")
                 
+                # Send tutor transfer notification email
+                try:
+                    from playground.email_backends import send_tutor_transfer_notification
+                    tutor = User.objects.get(id=payout_data.get('tutor_id'))
+                    send_tutor_transfer_notification(
+                        tutor_email=tutor.email,
+                        tutor_name=tutor.firstName,
+                        transfer_amount=amount/100  # Convert from cents to dollars
+                    )
+                except Exception as email_error:
+                    logger.error(f"Failed to send transfer notification email for tutor {payout_data.get('tutor_id')}: {email_error}")
+                
             except stripe.error.StripeError as e:
                 error_msg = f"Stripe error for tutor {payout_data.get('tutor_id', 'unknown')}: {str(e)}"
                 logger.error(error_msg)

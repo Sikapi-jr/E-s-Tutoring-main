@@ -85,7 +85,7 @@
                         <button 
                             type="button" 
                             className="register-student-button"
-                            onClick={() => navigate('/settings')}
+                            onClick={() => navigate('/register')}
                         >
                             {t('requests.registerStudent', 'Register Student')}
                         </button>
