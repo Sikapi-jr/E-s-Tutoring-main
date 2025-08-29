@@ -102,6 +102,7 @@
   },
   "navbar": {
     "tutoring": "Tutoring",
+    "sessions": "Sessions",
     "adminTools": "Admin Tools",
     "addTutor": "Add Tutor"
   },

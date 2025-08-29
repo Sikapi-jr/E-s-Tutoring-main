@@ -56,26 +56,30 @@ const getRoutes = (t) => ({
 const getRoleConfig = (BASE) => ({
   superuser: {
     main:   [BASE.Home],
-    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Hours, BASE.Weekly, BASE.Monthly, BASE.Ann],
-    cal:    [BASE.Events, BASE.CalCon],
+    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    sessions: [BASE.Events, BASE.Hours],
+    cal:    [BASE.CalCon],
     single: [BASE.Inv, BASE.Reports, BASE.Complaints],
   },
   parent: {
     main:   [BASE.Home],
     tutor:  [BASE.Students, BASE.Request, BASE.Replies],
-    cal:    [BASE.Events, BASE.Hours],
+    sessions: [BASE.Events, BASE.Hours],
+    cal:    [],
     single: [BASE.Inv, BASE.Reports],
   },
   tutor: {
     main:   [BASE.Home, BASE.Dash],
-    tutor:  [BASE.Log, BASE.Hours, BASE.CalCon],
-    cal:    [BASE.Events],
+    tutor:  [BASE.Log, BASE.CalCon],
+    sessions: [BASE.Events, BASE.Hours],
+    cal:    [],
     single: [BASE.Reports],
   },
   student: {
     main:   [BASE.Home],
     tutor:  [],
-    cal:    [BASE.Events, BASE.Hours],
+    sessions: [BASE.Events, BASE.Hours],
+    cal:    [],
     single: [],
   },
 });
@@ -291,6 +295,7 @@ function NavbarContent() {
 
   const mainLinks = filt(cfg.main);
   const tutorLinks = filt(cfg.tutor);
+  const sessionsLinks = filt(cfg.sessions);
   const calLinks = filt(cfg.cal);
   const singleLinks = filt(cfg.single);
 
@@ -318,6 +323,8 @@ function NavbarContent() {
         ))}
 
         {tutorLinks.length > 0 && <Dropdown dropdownId="tutoring" label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
+
+        {sessionsLinks.length > 0 && <Dropdown dropdownId="sessions" label={t('navbar.sessions')} items={sessionsLinks} onItemClick={() => setMob(false)} />}
 
         {calLinks.length > 1 ? (
           <Dropdown dropdownId="calendar" label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />

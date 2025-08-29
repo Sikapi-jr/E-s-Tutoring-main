@@ -102,6 +102,7 @@
   },
   "navbar": {
     "tutoring": "Tutorat",
+    "sessions": "Sessions",
     "adminTools": "Outils d'administration",
     "addTutor": "Ajouter un tuteur"
   },
@@ -169,7 +170,7 @@
     "deleteDocument": "Supprimer le document",
     "noDocumentsUploaded": "Aucun document téléchargé pour le moment",
     "uploadDocuments": "Télécharger des Documents",
-    "googleCalendar": "Google Calendar",
+    "googleCalendar": "Google Agenda",
     "connected": "Connecté",
     "notConnected": "Non Connecté",
     "calendarConnectedMessage": "Vous pouvez planifier des événements et gérer votre calendrier",
@@ -297,7 +298,7 @@
     "week": "Semaine",
     "month": "Mois",
     "agenda": "Agenda",
-    "googleCalendar": "Google Calendar",
+    "googleCalendar": "Google Agenda",
     "notLinked": "🔌 Vous n'avez pas lié votre Google Calendar.",
     "connectGoogleAccount": "Connecter le compte Google",
     "connected": "✅ Google Calendar est connecté !",

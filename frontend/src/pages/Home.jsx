@@ -405,7 +405,7 @@ export default function Home() {
             }, 0);
             
             const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
-            const translatedText = t('home.tutorMonthlyHours', `You have worked ${monthlyHours} hours this ${monthName}`);
+            const translatedText = t('home.tutorMonthlyHours', { hours: monthlyHours, month: monthName });
             const parts = translatedText.split(monthlyHours.toString());
             
             return (
