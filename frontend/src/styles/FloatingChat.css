@@ -5,7 +5,7 @@
   right: 20px;
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #192A88 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -175,7 +175,7 @@
 }
 
 .chat-modal-content .chat-history .message.user {
-  background: #667eea;
+  background: #192A88;
   color: white;
   margin-left: 20px;
 }
@@ -191,7 +191,7 @@
 }
 
 .chat-modal-content input[type="text"]:focus {
-  border-top: 1px solid #667eea;
+  border-top: 1px solid #192A88;
 }
 
 /* Mobile responsive */

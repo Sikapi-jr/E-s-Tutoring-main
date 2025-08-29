@@ -77,7 +77,7 @@ const AdminComplaints = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return '#ffc107';
-      case 'reviewed': return '#17a2b8';
+      case 'reviewed': return '#192A88';
       case 'resolved': return '#28a745';
       default: return '#6c757d';
     }
@@ -248,7 +248,7 @@ const AdminComplaints = () => {
                             disabled={actionLoading}
                             style={{
                               padding: '0.25rem 0.5rem',
-                              backgroundColor: '#17a2b8',
+                              backgroundColor: '#192A88',
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',

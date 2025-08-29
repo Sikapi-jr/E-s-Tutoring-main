@@ -353,10 +353,12 @@ class AcceptedTutorSerializer(serializers.ModelSerializer):
     student_firstName = serializers.CharField(source='student.firstName', read_only=True)
     student_lastName = serializers.CharField(source='student.lastName', read_only=True)
     parent_email = serializers.CharField(source='parent.email', read_only=True)
+    parent_firstName = serializers.CharField(source='parent.firstName', read_only=True)
+    parent_lastName = serializers.CharField(source='parent.lastName', read_only=True)
     tutor_firstName = serializers.CharField(source='tutor.firstName', read_only=True)
     class Meta:
         model = AcceptedTutor
-        fields = ['id', 'request','parent', 'parent_email', 'student', 'student_firstName', 'student_lastName', 'tutor', 'tutor_firstName', 'accepted_at', 'status']
+        fields = ['id', 'request','parent', 'parent_email', 'parent_firstName', 'parent_lastName', 'student', 'student_firstName', 'student_lastName', 'tutor', 'tutor_firstName', 'accepted_at', 'status']
         extra_kwargs = {
             "request": {"required": True},
             "tutor": {"required": True},

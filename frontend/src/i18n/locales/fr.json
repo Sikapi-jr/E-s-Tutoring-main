@@ -235,7 +235,8 @@
     "online": "En ligne",
     "inPerson": "En personne",
     "sessionDescription": "(IMPORTANT) Décrivez comment s'est déroulée la session.",
-    "logHoursButton": "ENREGISTRER LES HEURES"
+    "logHoursButton": "ENREGISTRER LES HEURES",
+    "viewAllHours": "Voir toutes les heures enregistrées ?"
   },
   "loggedHours": {
     "title": "Mes Heures Enregistrées",

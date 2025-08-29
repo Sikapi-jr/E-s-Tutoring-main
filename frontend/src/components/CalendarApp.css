@@ -109,7 +109,7 @@
   box-shadow: 0 0 1.5rem 1rem rgba(239, 144, 17, 0.3);
 }
 .has-event {
-  background-color: #00a3ff;
+  background-color: #192A88;
   border-radius: 75%;
 }
 
@@ -147,7 +147,7 @@
 
 .event-popup-time {
   width: clamp(4rem, 4cqi, 7rem);
-  background-color: #00a3ff;
+  background-color: #192A88;
   color: #fff;
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(1.5rem, 1.5cqi, 2.2rem);
@@ -161,8 +161,8 @@
 .time-input input {
   background-color: transparent;
   border: none;
-  border-top: 0.2rem solid #00a3ff;
-  border-bottom: 0.2rem solid #00a3ff;
+  border-top: 0.2rem solid #192A88;
+  border-bottom: 0.2rem solid #192A88;
   color: #fff;
   width: clamp(4rem, 4cqi, 7rem);
   height: 4rem;
@@ -188,7 +188,7 @@
 }
 
 .event-popup textarea:focus {
-  border: 0.1rem solid #00a3ff;
+  border: 0.1rem solid #192A88;
 }
 
 .event-popup textarea::placeholder {
@@ -234,7 +234,7 @@
 .event {
   width: 100%;
   height: 7rem;
-  background-color: #00a3ff;
+  background-color: #192A88;
   padding: 1.5rem 0;
   border-radius: 1rem;
   display: flex;

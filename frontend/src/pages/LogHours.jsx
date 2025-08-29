@@ -129,21 +129,22 @@ const LogHours = memo(() => {
                 ))}
                 </select>
 
-                {/* Subject Input */}
-                <input
-                    className="form-input"
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder={t('logHours.subject')}
-                />
+                {/* Subject and Location Row */}
+                <div className="form-row">
+                    <input
+                        className="form-input"
+                        type="text"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        placeholder={t('logHours.subject')}
+                    />
 
-                {/* Grade Selection */}
-                <select id="form-input" name="selectedLocation" onChange={(e) => setLocation(e.target.value)}>
-                    <option value="">{t('logHours.selectLocation')}</option>
-                    <option value="Online">{t('logHours.online')}</option>
-                    <option value="In-Person">{t('logHours.inPerson')}</option>
-                </select>
+                    <select className="form-input" name="selectedLocation" onChange={(e) => setLocation(e.target.value)}>
+                        <option value="">{t('logHours.selectLocation')}</option>
+                        <option value="Online">{t('logHours.online')}</option>
+                        <option value="In-Person">{t('logHours.inPerson')}</option>
+                    </select>
+                </div>
 
                 <input
                     className="form-input"
@@ -153,22 +154,24 @@ const LogHours = memo(() => {
                     placeholder={t('common.date')}
                 />
 
-                {/* Description Input */}
-                <input
-                    className="form-input"
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    placeholder={t('logHours.startTime')}
-                />
+                {/* Time Row */}
+                <div className="form-row">
+                    <input
+                        className="form-input"
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        placeholder={t('logHours.startTime')}
+                    />
 
-                <input
-                    className="form-input"
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    placeholder={t('logHours.endTime')}
-                />
+                    <input
+                        className="form-input"
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        placeholder={t('logHours.endTime')}
+                    />
+                </div>
 
                 <input
                     className="form-input"
@@ -185,7 +188,19 @@ const LogHours = memo(() => {
             </form>
 
             {/* Success Message */}
-            {successMessage && <p className="success-message" style={{ color: 'green' }}>{successMessage}</p>}
+            {successMessage && (
+                <div className="success-message" style={{ color: 'green' }}>
+                    <p>{successMessage}</p>
+                    <p>
+                        <span 
+                            style={{ textDecoration: 'underline', cursor: 'pointer', color: 'green' }}
+                            onClick={() => navigate('/tutor/weekly-hours')}
+                        >
+                            {t('logHours.viewAllHours')}
+                        </span>
+                    </p>
+                </div>
+            )}
             
             {/* Error Message */}
             {error && <p className="error-message">{error}</p>}

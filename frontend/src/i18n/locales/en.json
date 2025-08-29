@@ -237,7 +237,8 @@
     "online": "Online",
     "inPerson": "In-Person",
     "sessionDescription": "(IMPORTANT) Describe how the session went.",
-    "logHoursButton": "LOG HOURS"
+    "logHoursButton": "LOG HOURS",
+    "viewAllHours": "View all logged hours?"
   },
   "loggedHours": {
     "title": "My Logged Hours",

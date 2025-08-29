@@ -722,7 +722,7 @@ export default function Home() {
                     <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "left" }}>
                       <strong>{s.student_firstName || s.student || s.student_username || t('home.student')} {s.student_lastName || ''}</strong>
                       <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                        {t('home.parent')}: {s.parent_email || 'N/A'}
+                        {t('home.parent')}: {s.parent_firstName || ''} {s.parent_lastName || ''}
                       </div>
                     </div>
                   ))
