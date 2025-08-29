@@ -785,19 +785,32 @@ def update_google_calendar_rsvp_async(self, user_id, event_id, status):
 # New Email Notification Tasks
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_tutor_reply_notification_async(self, parent_email, tutor_name, request_subject, reply_message, document_urls=None):
+def send_tutor_reply_notification_async(self, parent_email, tutor_name, request_subject, reply_message, document_paths=None):
     """
     Send email notification when tutor replies to parent request
+    Now attaches actual files instead of URLs
+    
+    Args:
+        document_paths: List of file paths to attach to the email
     """
     try:
         subject = f'New Reply from Your Tutor - {request_subject}'
         
         # Build document attachments text
         documents_text = ""
-        if document_urls:
-            documents_text = "\n\nDocument attachments:\n"
-            for url in document_urls:
-                documents_text += f"- {url}\n"
+        attachment_files = []
+        
+        if document_paths:
+            documents_text = "\n\nDocuments from your tutor are attached to this email."
+            # Prepare files for attachment
+            for file_path in document_paths:
+                try:
+                    # Convert relative path to full path if needed
+                    if not file_path.startswith('/'):
+                        file_path = file_path.lstrip('/')
+                    attachment_files.append(file_path)
+                except Exception as file_error:
+                    logger.warning(f"Could not process document attachment: {file_path} - {str(file_error)}")
         
         message = f"""
 Hello,
@@ -817,11 +830,13 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            attachments=attachment_files if attachment_files else None
         )
         
-        logger.info(f"Tutor reply notification sent to {parent_email}")
-        return {'success': True, 'email': parent_email}
+        attachment_count = len(attachment_files) if attachment_files else 0
+        logger.info(f"Tutor reply notification sent to {parent_email} with {attachment_count} attachments")
+        return {'success': True, 'email': parent_email, 'attachments': attachment_count}
         
     except Exception as e:
         logger.error(f"Error sending tutor reply notification to {parent_email}: {str(e)}")

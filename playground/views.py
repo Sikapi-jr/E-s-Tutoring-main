@@ -1241,17 +1241,19 @@ class RequestResponseCreateView(generics.ListCreateAPIView):
                 from playground.tasks import send_tutor_reply_notification_async
                 tutor_name = f"{reply.tutor.firstName} {reply.tutor.lastName}"
                 
-                # Get document URLs if any
-                document_urls = []
+                # Get document file paths for email attachments
+                document_paths = []
                 for doc in reply.tutor.documents.all():
-                    document_urls.append(f"{settings.BACKEND_URL}{doc.file.url}")
+                    # Get the actual file path, not URL
+                    if doc.file:
+                        document_paths.append(doc.file.name)
                 
                 send_tutor_reply_notification_async.delay(
                     parent_email, 
                     tutor_name, 
                     reply.request.subject,
                     reply.message,
-                    document_urls if document_urls else None
+                    document_paths if document_paths else None
                 )
             except Exception as e:
                 # Log the error but don't fail the request
