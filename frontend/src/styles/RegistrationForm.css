@@ -77,6 +77,12 @@ select {
   background-color: var(--color-text) !important;
   color: var(--color-bg) !important;
   transition: opacity 0.2s ease-in-out;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 48px;
 }
 
 .form-button:hover {
