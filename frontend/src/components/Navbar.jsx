@@ -32,6 +32,7 @@ const useDropdown = () => useContext(DropdownContext);
 const getRoutes = (t) => ({
   Home:    { to: "/home",              label: t('navigation.home') },
   Students:{ to: "/students",          label: t('navigation.students') },
+  MyStudents:{ to: "/my-students",     label: t('navigation.myStudents') },
   Request: { to: "/request",           label: t('navigation.request') },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
   Hours:   { to: "/hours",             label: t('navigation.loggedHours') },
@@ -70,7 +71,7 @@ const getRoleConfig = (BASE) => ({
   },
   tutor: {
     main:   [BASE.Home, BASE.Dash],
-    tutor:  [BASE.Log, BASE.CalCon],
+    tutor:  [BASE.MyStudents, BASE.Log, BASE.CalCon],
     sessions: [BASE.Events, BASE.Hours],
     cal:    [],
     single: [BASE.Reports],

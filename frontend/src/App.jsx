@@ -25,6 +25,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const ViewReply = lazy(() => import("./pages/ViewReply"));
 const Students = lazy(() => import("./pages/Students"));
+const MyStudents = lazy(() => import("./pages/MyStudents"));
 const Profile = lazy(() => import("./components/Profile"));
 const Announcement = lazy(() => import("./pages/CreateAnnouncement"));
 const LogHours = lazy(() => import("./pages/LogHours"));
@@ -129,6 +130,7 @@ function AppRoutes() {
             <Route path="/log" element={<ProtectedRoute><LogHours /></ProtectedRoute>} />
             <Route path="/request-reply" element={<ProtectedRoute><ViewReply /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+            <Route path="/my-students" element={<ProtectedRoute><MyStudents /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><CalendarApp /></ProtectedRoute>} />
             <Route path="/weeklyhours" element={<ProtectedRoute><SendWeekly /></ProtectedRoute>} />
             <Route path="/monthlyhours" element={<ProtectedRoute><SendMonthly /></ProtectedRoute>} />

@@ -98,13 +98,29 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
-    "students": "Students"
+    "students": "Students",
+    "myStudents": "My Students"
   },
   "navbar": {
     "tutoring": "Tutoring",
     "sessions": "Sessions",
     "adminTools": "Admin Tools",
     "addTutor": "Add Tutor"
+  },
+  "myStudents": {
+    "title": "My Students",
+    "subtitle": "Students currently assigned to you",
+    "noStudents": "No students assigned yet",
+    "waitForAssignment": "Wait for students to be assigned to you or check the dashboard for new requests",
+    "parentName": "Parent",
+    "leaveStudent": "Stop Tutoring Student",
+    "leaveStudentConfirm": "Stop tutoring",
+    "leaveStudentWarning": "This will remove you as the tutor for this student and notify the parent. The request will be made available to other tutors.",
+    "reasonForLeaving": "Reason for leaving",
+    "reasonPlaceholder": "Please explain why you need to stop tutoring this student...",
+    "confirmLeave": "Stop Tutoring",
+    "leftStudentSuccessfully": "You have successfully stopped tutoring this student. The parent has been notified.",
+    "pleaseProvideReason": "Please provide a reason for leaving this student"
   },
   "auth": {
     "loginTitle": "Login to EGS Tutoring",
@@ -684,6 +700,7 @@
     "couldNotLoadStudents": "Could not load students. Please try again.",
     "couldNotLoadTutors": "Could not load available tutors. Please try again.",
     "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
+    "leavingStudentFailed": "Failed to leave student. Please try again.",
     "studentUpdateFailed": "Failed to update student. Please try again.",
     "deleteRequestFailed": "Failed to delete request. Please try again."
   }

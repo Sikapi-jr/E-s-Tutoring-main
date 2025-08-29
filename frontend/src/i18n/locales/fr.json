@@ -98,13 +98,29 @@
     "login": "Connexion",
     "register": "S'inscrire",
     "logout": "Déconnexion",
-    "students": "Étudiants"
+    "students": "Étudiants",
+    "myStudents": "Mes Étudiants"
   },
   "navbar": {
     "tutoring": "Tutorat",
     "sessions": "Sessions",
     "adminTools": "Outils d'administration",
     "addTutor": "Ajouter un tuteur"
+  },
+  "myStudents": {
+    "title": "Mes Étudiants",
+    "subtitle": "Étudiants actuellement assignés à vous",
+    "noStudents": "Aucun étudiant assigné pour le moment",
+    "waitForAssignment": "Attendez que des étudiants vous soient assignés ou vérifiez le tableau de bord pour de nouvelles demandes",
+    "parentName": "Parent",
+    "leaveStudent": "Arrêter le Tutorat",
+    "leaveStudentConfirm": "Arrêter le tutorat de",
+    "leaveStudentWarning": "Cela vous retirera comme tuteur de cet étudiant et notifiera le parent. La demande sera remise à disposition d'autres tuteurs.",
+    "reasonForLeaving": "Raison du départ",
+    "reasonPlaceholder": "Veuillez expliquer pourquoi vous devez arrêter le tutorat de cet étudiant...",
+    "confirmLeave": "Arrêter le Tutorat",
+    "leftStudentSuccessfully": "Vous avez arrêté avec succès le tutorat de cet étudiant. Le parent a été notifié.",
+    "pleaseProvideReason": "Veuillez fournir une raison pour quitter cet étudiant"
   },
   "auth": {
     "loginTitle": "Connexion à EGS Tutoring",
@@ -674,6 +690,7 @@
     "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
     "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
     "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
+    "leavingStudentFailed": "Échec de quitter l'étudiant. Veuillez réessayer.",
     "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
     "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   }
