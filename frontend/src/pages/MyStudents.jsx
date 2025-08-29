@@ -234,11 +234,14 @@ const MyStudents = () => {
                   onClick={() => setShowLeaveModal(false)}
                   style={{
                     flex: 1,
-                    padding: "0.75rem",
+                    padding: "0.75rem 1rem",
                     border: "1px solid #ccc",
                     backgroundColor: "white",
-                    borderRadius: "4px",
-                    cursor: "pointer"
+                    color: "#333",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    fontWeight: "500"
                   }}
                 >
                   {t('common.cancel')}
@@ -248,12 +251,15 @@ const MyStudents = () => {
                   onClick={handleLeaveSubmit}
                   style={{
                     flex: 1,
-                    padding: "0.75rem",
-                    backgroundColor: "#dc3545",
+                    padding: "0.75rem 1rem",
+                    backgroundColor: leaveReason.trim() ? "#dc3545" : "#ccc",
                     color: "white",
                     border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer"
+                    borderRadius: "6px",
+                    cursor: leaveReason.trim() ? "pointer" : "not-allowed",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                    opacity: leaveReason.trim() ? 1 : 0.6
                   }}
                   disabled={!leaveReason.trim()}
                 >

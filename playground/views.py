@@ -2586,3 +2586,112 @@ class TutorChangeRequestListView(APIView):
             print(f"Error fetching tutor change requests: {e}")
             return Response({"error": "Failed to fetch tutor change requests"}, status=500)
 
+
+class TutorLeaveStudentView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from playground.models import AcceptedTutor, User, TutoringRequest
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        # Check if user is a tutor
+        if request.user.roles != 'tutor' and not request.user.is_superuser:
+            return Response({"error": "Only tutors can leave students"}, status=403)
+        
+        try:
+            tutor_id = request.data.get('tutor_id')
+            student_id = request.data.get('student_id')
+            parent_id = request.data.get('parent_id')
+            reason = request.data.get('reason')
+            tutor_student_relation_id = request.data.get('tutor_student_relation_id')
+            request_id = request.data.get('request_id')
+            
+            if not all([tutor_id, student_id, parent_id, reason]):
+                return Response({"error": "Missing required fields: tutor_id, student_id, parent_id, reason"}, status=400)
+            
+            # Verify tutor, student, and parent exist
+            try:
+                tutor = User.objects.get(id=tutor_id, roles='tutor')
+                student = User.objects.get(id=student_id, roles='student')
+                parent = User.objects.get(id=parent_id, roles='parent')
+            except User.DoesNotExist as e:
+                return Response({"error": "User not found"}, status=404)
+            
+            # Verify the tutor is requesting to leave their own student
+            if request.user.id != int(tutor_id) and not request.user.is_superuser:
+                return Response({"error": "You can only leave your own students"}, status=403)
+            
+            # Find and remove the accepted tutor relationship
+            accepted_tutor = AcceptedTutor.objects.filter(
+                tutor=tutor,
+                student=student,
+                parent=parent,
+                status='Accepted'
+            ).first()
+            
+            if not accepted_tutor:
+                return Response({"error": "No active tutoring relationship found"}, status=404)
+            
+            # Use database transaction to ensure all operations succeed together
+            with transaction.atomic():
+                # Store the original request for reactivation
+                original_request = accepted_tutor.request
+                
+                # Remove the accepted tutor relationship
+                accepted_tutor.delete()
+                
+                # Reactivate the original tutoring request if it exists
+                if original_request:
+                    # Reset any previous tutor assignments on the request
+                    original_request.status = 'pending'  # If there's a status field
+                    original_request.save()
+                    
+                    # Remove any other accepted tutors for this request (in case of duplicates)
+                    AcceptedTutor.objects.filter(request=original_request).exclude(
+                        id=accepted_tutor.id if hasattr(accepted_tutor, 'id') else None
+                    ).delete()
+                
+                # Send email notification to parent
+                try:
+                    subject = f"Tutor Update: {tutor.firstName} {tutor.lastName} is no longer tutoring {student.firstName}"
+                    
+                    message = f"""
+Dear {parent.firstName} {parent.lastName},
+
+We wanted to inform you that {tutor.firstName} {tutor.lastName} has decided to stop tutoring {student.firstName} {student.lastName}.
+
+Reason provided: {reason}
+
+Your tutoring request has been made available again on our platform, and other qualified tutors can now respond to it. You should start receiving responses from available tutors soon.
+
+If you have any questions or concerns, please don't hesitate to contact us.
+
+Best regards,
+The EGS Tutoring Team
+                    """.strip()
+                    
+                    send_mail(
+                        subject=subject,
+                        message=message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[parent.email],
+                        fail_silently=False,
+                    )
+                    
+                    email_sent = True
+                except Exception as email_error:
+                    print(f"Failed to send email notification: {email_error}")
+                    email_sent = False
+                    # Don't fail the entire operation if email fails
+            
+            return Response({
+                "message": "Successfully left student. Parent has been notified and the request is available for other tutors.",
+                "email_sent": email_sent,
+                "request_reactivated": bool(original_request)
+            }, status=200)
+            
+        except Exception as e:
+            print(f"Error in tutor leave student: {e}")
+            return Response({"error": "Failed to process tutor leave request"}, status=500)
+

@@ -78,6 +78,9 @@ urlpatterns = [
     # Tutor change request endpoints
     path('tutor-change-requests/create/', views.TutorChangeRequestCreateView.as_view(), name='tutor-change-request-create'),
     path('tutor-change-requests/', views.TutorChangeRequestListView.as_view(), name='tutor-change-requests'),
+    
+    # Tutor leave student endpoint
+    path('tutor-leave-student/', views.TutorLeaveStudentView.as_view(), name='tutor-leave-student'),
 
 ]
 
