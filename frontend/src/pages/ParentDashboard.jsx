@@ -22,6 +22,7 @@ const ParentDashboard = () => {
   const [filterSubject, setFilterSubject] = useState("");
   const [filterGrade, setFilterGrade] = useState("");
   const [filterService, setFilterService] = useState("");
+  const [filterCity, setFilterCity] = useState("");
   const [search, setSearch] = useState("");
 
   if (user.roles !== "tutor" && user.is_superuser === 0) {
@@ -97,6 +98,14 @@ const ParentDashboard = () => {
     [requests]
   );
 
+  const cities = useMemo(
+    () =>
+      Array.from(
+        new Set((requests || []).map((r) => r.city).filter(Boolean))
+      ).sort(),
+    [requests]
+  );
+
   const filteredRequests = useMemo(() => {
     const s = search.trim().toLowerCase();
     return (requests || []).filter((r) => {
@@ -105,18 +114,20 @@ const ParentDashboard = () => {
         ? String(r.grade) === String(filterGrade)
         : true;
       const byService = filterService ? r.service === filterService : true;
+      const byCity = filterCity ? r.city === filterCity : true;
       const bySearch = s
         ? (r.subject || "").toLowerCase().includes(s) ||
           (r.description || "").toLowerCase().includes(s)
         : true;
-      return bySubject && byGrade && byService && bySearch;
+      return bySubject && byGrade && byService && byCity && bySearch;
     });
-  }, [requests, filterSubject, filterGrade, filterService, search]);
+  }, [requests, filterSubject, filterGrade, filterService, filterCity, search]);
 
   const clearFilters = () => {
     setFilterSubject("");
     setFilterGrade("");
     setFilterService("");
+    setFilterCity("");
     setSearch("");
   };
 
@@ -166,6 +177,20 @@ const ParentDashboard = () => {
               {services.map((srv) => (
                 <option key={srv} value={srv}>
                   {srv}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="filter-input"
+              value={filterCity}
+              onChange={(e) => setFilterCity(e.target.value)}
+              aria-label="Filter by city"
+            >
+              <option value="">{t('dashboard.allCities')}</option>
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
                 </option>
               ))}
             </select>

@@ -32,6 +32,7 @@ export default function Home() {
   // Tutor-specific state
   const [tutorStudents, setTutorStudents] = useState([]);
   const [tutorDocuments, setTutorDocuments] = useState([]);
+  const [tutorMonthlyReports, setTutorMonthlyReports] = useState([]);
   const [googleConnected, setGoogleConnected] = useState(false);
   
   // Parent Google Calendar state
@@ -95,6 +96,11 @@ export default function Home() {
             // Check Google connection status
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
             setGoogleConnected(googleStatusRes.data?.connected || false);
+            
+            // Get tutor's monthly reports due
+            const monthlyReportsRes = await api.get('/api/monthly-reports/');
+            const dueReports = monthlyReportsRes.data.filter(report => report.tutor === user.account_id && !report.submitted);
+            setTutorMonthlyReports(dueReports || []);
             
           } catch (tutorError) {
             console.error("Tutor data fetch failed:", tutorError);
@@ -272,7 +278,7 @@ export default function Home() {
 
   /* handle parent Google Calendar connection redirect */
   const handleParentGoogleConnect = useCallback(() => {
-    window.location.href = '/events';
+    window.location.href = '/calendarConnect';
   }, []);
 
   /* handle document deletion */
@@ -841,6 +847,43 @@ export default function Home() {
                       {t('home.connectGoogleCalendar')}
                     </button>
                   </>
+                )}
+              </div>
+
+              {/* Monthly Reports Due */}
+              <div
+                style={{
+                  background: "#fff",
+                  border: "3px solid #E1E1E1",
+                  borderRadius: 12,
+                  padding: "1rem",
+                  maxHeight: 200,
+                  overflowY: "auto",
+                }}
+              >
+                <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.monthlyReportsDue')}</h4>
+                {tutorMonthlyReports.length > 0 ? (
+                  <>
+                    <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center", marginBottom: "0.5rem" }}>
+                      {t('home.reportsOverdue', { count: tutorMonthlyReports.length })}
+                    </div>
+                    <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid #eee", paddingBottom: "0.25rem" }}>
+                      <span>{t('common.date')}</span>
+                      <span>{t('home.month')}</span>
+                      <span>{t('home.student')}</span>
+                    </div>
+                    {tutorMonthlyReports.map((report, index) => (
+                      <div key={report.id || index} style={{ margin: "0.25rem 0", fontSize: "0.8rem", display: "flex", justifyContent: "space-between", padding: "0.25rem", backgroundColor: "#fff3cd", borderRadius: "4px" }}>
+                        <span>{new Date(report.due_date || Date.now()).toLocaleDateString()}</span>
+                        <span>{new Date(report.year, report.month - 1).toLocaleDateString('en', { month: 'short', year: 'numeric' })}</span>
+                        <span>{report.student_firstName || 'Unknown'} {report.student_lastName || ''}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <p style={{ fontSize: "0.9rem", color: "#666", textAlign: "center" }}>
+                    {t('home.noReportsDue')}
+                  </p>
                 )}
               </div>
             </>

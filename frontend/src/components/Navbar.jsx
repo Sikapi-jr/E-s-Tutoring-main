@@ -34,8 +34,8 @@ const getRoutes = (t) => ({
   Students:{ to: "/students",          label: t('navigation.students') },
   Request: { to: "/request",           label: t('navigation.request') },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
-  Log:     { to: "/log",               label: t('navigation.logHours') },
   Hours:   { to: "/hours",             label: t('navigation.loggedHours') },
+  Log:     { to: "/log",               label: t('navigation.logHours') },
   Weekly:  { to: "/WeeklyHours",       label: t('navigation.weeklyHours') },
   Monthly: { to: "/MonthlyHours",      label: t('navigation.monthlyHours') },
   Reports: { to: "/monthly-reports",   label: t('monthlyReports.title') },
@@ -56,8 +56,8 @@ const getRoutes = (t) => ({
 const getRoleConfig = (BASE) => ({
   superuser: {
     main:   [BASE.Home],
-    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
-    cal:    [BASE.Events, BASE.CalCon, BASE.Hours],
+    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Hours, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    cal:    [BASE.Events, BASE.CalCon],
     single: [BASE.Inv, BASE.Reports, BASE.Complaints],
   },
   parent: {
@@ -68,8 +68,8 @@ const getRoleConfig = (BASE) => ({
   },
   tutor: {
     main:   [BASE.Home, BASE.Dash],
-    tutor:  [BASE.Log, BASE.CalCon],
-    cal:    [BASE.Events, BASE.Hours],
+    tutor:  [BASE.Log, BASE.Hours, BASE.CalCon],
+    cal:    [BASE.Events],
     single: [BASE.Reports],
   },
   student: {
