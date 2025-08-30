@@ -97,6 +97,19 @@ select {
   background-color: var(--color-accent) !important;
 }
 
+/* Ensure all form buttons have consistent dimensions */
+.form-container .form-button {
+  width: 100% !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  height: 48px !important;
+  padding: 0.8rem !important;
+  margin: 1rem 0 !important;
+  box-sizing: border-box !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+}
+
 .login-prompt {
   text-align: center;
   margin-top: 1.5rem;
@@ -144,10 +157,15 @@ select {
 /* 3. fade in the main content blocks slightly after */
 .form-container .role-buttons,
 .form-container .form-section,
-.form-container .form-button,
 .form-container .login-prompt {
   opacity: 0;
   animation: fadeInContent 0.3s ease-out 0.2s forwards;
+}
+
+/* Separate animation for form buttons to ensure consistent timing */
+.form-container .form-button {
+  opacity: 0;
+  animation: fadeInContent 0.3s ease-out 0.3s forwards;
 }
 
 body,
