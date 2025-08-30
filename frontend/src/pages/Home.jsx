@@ -484,6 +484,9 @@ export default function Home() {
             }}
           >
             <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.loggedHours')}</h3>
+            <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
+              {hours.length} total
+            </div>
             {hours.length ? (
               hours.map((h, index) => {
                 return (
@@ -1132,6 +1135,9 @@ export default function Home() {
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>
                   {t('home.unpaidInvoices')}
                 </h4>
+                <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
+                  {invoices.filter((i) => !i.paid).length} total
+                </div>
                 {invoices.filter((i) => !i.paid).length ? (
                   invoices
                     .filter((i) => !i.paid)
