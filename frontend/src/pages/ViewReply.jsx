@@ -178,7 +178,7 @@ const ViewReply = () => {
               const isAccepted = request.is_accepted === "Accepted";
               return (
               <li key={request.id} className={`request-box ${isAccepted ? 'accepted-request' : ''}`}>
-                <strong>{t('dashboard.student')}:</strong> {request.student.firstName} {request.student.lastName} <br />
+                <strong>{t('dashboard.student')}:</strong> {request.student_details?.firstName} {request.student_details?.lastName} <br />
                 <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
                 <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
                 <strong>{t('common.service')}:</strong> {request.service} <br />

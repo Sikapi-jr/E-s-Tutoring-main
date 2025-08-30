@@ -287,7 +287,7 @@ class MonthlyReportSerializer(serializers.ModelSerializer):
     
 class RequestSerializer(serializers.ModelSerializer):
     accepted_tutor_name = serializers.SerializerMethodField()
-    student = serializers.SerializerMethodField()
+    student_details = serializers.SerializerMethodField()
     
     def get_accepted_tutor_name(self, obj):
         """Get the name of the accepted tutor for this request"""
@@ -297,7 +297,7 @@ class RequestSerializer(serializers.ModelSerializer):
         except AcceptedTutor.DoesNotExist:
             return None
     
-    def get_student(self, obj):
+    def get_student_details(self, obj):
         """Get the student details with firstName and lastName"""
         if obj.student:
             return {
@@ -310,7 +310,7 @@ class RequestSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TutoringRequest
-        fields = ['id', 'parent', 'student', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_name']
+        fields = ['id', 'parent', 'student', 'student_details', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_name']
         extra_kwargs = {
             "parent": {"required": True},
             "subject": {"required": True},

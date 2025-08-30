@@ -763,7 +763,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
+                  height: 200,
                   maxHeight: 200,
+                  minHeight: 200,
                   overflowY: "auto",
                 }}
               >
