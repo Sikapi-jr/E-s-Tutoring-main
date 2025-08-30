@@ -118,8 +118,8 @@ textarea:active {
 }
 
 /* Status color coding */
-.hours-table td:last-child[data-status="accepted"] { color: #059669; } /* green */
-.hours-table td:last-child[data-status="resolved"] { color: #059669; } /* green */
+.hours-table td:last-child[data-status="accepted"] { color: #f3b945; } /* golden */
+.hours-table td:last-child[data-status="resolved"] { color: #f3b945; } /* golden */
 .hours-table td:last-child[data-status="disputed"] { color: #dc2626; } /* red */
 .hours-table td:last-child[data-status="void"] { color: #ea580c; } /* orange/canceled */
 .hours-table td:last-child[data-status="pending"] { color: #d97706; } /* amber */
@@ -790,7 +790,7 @@ textarea:active {
 
 /* Button styles for new functionality */
 .edit-btn {
-  background-color: #28a745;
+  background-color: #f3b945;
   color: white;
   border: none;
   padding: 5px 10px;
@@ -801,7 +801,7 @@ textarea:active {
 }
 
 .edit-btn:hover {
-  background-color: #218838;
+  background-color: #d4a03a;
 }
 
 .reply-btn {

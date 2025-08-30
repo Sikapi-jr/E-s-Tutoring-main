@@ -114,7 +114,7 @@
 
 .tutor-upload-section button {
   padding: 0.5rem 1rem;
-  background: #28a745;
+  background: #f3b945;
   color: white;
   border: none;
   border-radius: 4px;
@@ -127,7 +127,7 @@
 }
 
 .tutor-upload-section button:hover:not(:disabled) {
-  background: #218838;
+  background: #d4a03a;
 }
 
 /* ================================================================= */
@@ -316,7 +316,7 @@
 }
 
 .reward.yes {
-  color: #2e7d32;   /* green */
+  color: #f3b945;   /* golden */
   font-weight: 600;
 }
 .reward.no {
@@ -402,10 +402,10 @@
 }
 
 .modal-actions .save {
-  background: #d0ffd9;
+  background: #f3b945;
 }
 .modal-actions .save:hover {
-  background: #b8ffc7;
+  background: #d4a03a;
 }
 .profile-avatar {
   width: 60px;
@@ -441,7 +441,7 @@
 .google-status-box .form-button {
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  background: #28a745;
+  background: #f3b945;
   color: white;
   border: none;
   border-radius: 6px;
@@ -452,7 +452,7 @@
 }
 
 .google-status-box .form-button:hover {
-  background: #218838;
+  background: #d4a03a;
 }
 
 /* ================================================================= */

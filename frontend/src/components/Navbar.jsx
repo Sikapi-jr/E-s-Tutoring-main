@@ -56,7 +56,7 @@ const getRoutes = (t) => ({
 // Role config now uses route keys instead of BASE objects
 const getRoleConfig = (BASE) => ({
   superuser: {
-    main:   [BASE.Home],
+    main:   [BASE.Home, BASE.Dash],
     tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
     sessions: [BASE.Events, BASE.Hours],
     cal:    [],
@@ -294,11 +294,11 @@ function NavbarContent() {
   const filt = (arr) =>
     roleKey === "superuser" ? arr.filter((r) => !adminToSet.has(r.to)) : arr;
 
-  const mainLinks = filt(cfg.main);
-  const tutorLinks = filt(cfg.tutor);
-  const sessionsLinks = filt(cfg.sessions);
-  const calLinks = filt(cfg.cal);
-  const singleLinks = filt(cfg.single);
+  const mainLinks = roleKey === "superuser" ? filt(cfg.main) : cfg.main;
+  const tutorLinks = roleKey === "superuser" ? filt(cfg.tutor) : cfg.tutor;
+  const sessionsLinks = roleKey === "superuser" ? filt(cfg.sessions) : cfg.sessions;
+  const calLinks = roleKey === "superuser" ? filt(cfg.cal) : cfg.cal;
+  const singleLinks = roleKey === "superuser" ? filt(cfg.single) : cfg.single;
 
   return (
     <header className="nav">

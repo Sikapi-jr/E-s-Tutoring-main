@@ -54,8 +54,8 @@ body { background: #f8fafb; }
   background: rgba(220, 53, 69, 0.06);
 }
 .inv-paid {
-  border-color: #198754;                            /* green */
-  background: rgba(25, 135, 84, 0.06);
+  border-color: #f3b945;                            /* golden */
+  background: rgba(243, 185, 69, 0.06);
 }
 
 /* button */

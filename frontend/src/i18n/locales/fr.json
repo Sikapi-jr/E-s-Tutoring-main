@@ -197,9 +197,9 @@
     "month": "Mois",
     "student": "Étudiant",
     "noReportsDue": "Aucun rapport dû",
-    "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heure{{hours, plural, one {} other {s}}} cette semaine !",
-    "studentWorkedHours": "Vous avez travaillé {{hours}} heure{{hours, plural, one {} other {s}}} cette semaine !",
-    "tutorMonthlyHours": "Vous avez travaillé {{hours}} heure{{hours, plural, one {} other {s}}} ce {{month}} !",
+    "childrenWorkedHours": "Vos enfants ont travaillé {{hours}} heure(s) cette semaine !",
+    "studentWorkedHours": "Vous avez travaillé {{hours}} heure(s) cette semaine !",
+    "tutorMonthlyHours": "Vous avez travaillé {{hours}} heure(s) ce {{month}} !",
     "connectCalendarMessage": "Connectez votre Google Calendar pour voir les sessions planifiées",
     "goToScheduledSessions": "Aller aux Sessions Planifiées",
     "hoursThisWeek": "heures cette semaine !",
@@ -368,7 +368,8 @@
     "noRequestsMade": "Aucune demande effectuée.",
     "city": "Ville",
     "noStudentsMessage": "Vous n'avez aucun étudiant inscrit. Inscrire un étudiant maintenant ?",
-    "registerStudent": "Inscrire un Étudiant"
+    "registerStudent": "Inscrire un Étudiant",
+    "hasAccepted": "a accepté"
   },
   "invoices": {
     "title": "Factures",

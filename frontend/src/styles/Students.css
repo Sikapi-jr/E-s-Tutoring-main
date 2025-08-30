@@ -212,7 +212,7 @@
 
 .request-tutor-link {
   display: inline-block;
-  background-color: #28a745;
+  background-color: #f3b945;
   color: white;
   padding: 0.6rem 1.2rem;
   text-decoration: none;
@@ -222,7 +222,7 @@
 }
 
 .request-tutor-link:hover {
-  background-color: #218838;
+  background-color: #d4a03a;
   color: white;
 }
 
@@ -288,7 +288,7 @@
 }
 
 .select-tutor-btn {
-  background-color: #28a745;
+  background-color: #f3b945;
   color: white;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -299,7 +299,7 @@
 }
 
 .select-tutor-btn:hover {
-  background-color: #218838;
+  background-color: #d4a03a;
 }
 
 .close-modal-btn {
@@ -372,7 +372,7 @@
 }
 
 .save-student-btn {
-  background-color: #28a745;
+  background-color: #f3b945;
   color: white;
   border: none;
   padding: 0.8rem 1.5rem;
@@ -384,7 +384,7 @@
 }
 
 .save-student-btn:hover {
-  background-color: #218838;
+  background-color: #d4a03a;
 }
 
 /* Responsive design */
