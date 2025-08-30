@@ -76,6 +76,7 @@
     "address": "Address",
     "city": "City",
     "phone": "Phone",
+    "phoneNumber": "Phone Number",
     "notProvided": "Not provided"
   },
   "navigation": {

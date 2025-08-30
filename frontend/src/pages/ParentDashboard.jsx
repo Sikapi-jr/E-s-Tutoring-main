@@ -10,8 +10,21 @@ const ParentDashboard = () => {
   const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const { user } = useUser();
-  const tutor = user.username;
   const navigate = useNavigate();
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="dash-wrapper">
+        <div className="dash-card">
+          <h1>{t('dashboard.parentDashboard')}</h1>
+          <p>{t('common.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tutor = user.username;
 
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [message, setMessage] = useState("");

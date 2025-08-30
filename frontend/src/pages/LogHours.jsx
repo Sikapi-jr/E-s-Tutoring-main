@@ -10,6 +10,16 @@ const LogHours = memo(() => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user } = useUser();
+
+    // Early return if user is not loaded yet
+    if (!user) {
+        return (
+            <div style={{ padding: "2rem", textAlign: "center" }}>
+                <p>{t('common.loading')}</p>
+            </div>
+        );
+    }
+
     //////////////////////////////////////////
     const tutor_id = user.account_id;
     const [student, setStudent] = useState("");

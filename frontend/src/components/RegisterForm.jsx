@@ -148,7 +148,7 @@ function RegisterForm() {
               type="tel"
               value={phone_number}
               onChange={(e) => setPhone_number(e.target.value)}
-              placeholder={t('auth.phoneNumber', 'Phone Number')}
+              placeholder={t('common.phoneNumber')}
               required
             />
 

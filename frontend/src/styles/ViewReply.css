@@ -94,15 +94,15 @@ body { background: #f8fafb; }   /* super‑light grey */
 
 /* accepted request styling */
 .request-box.accepted-request {
-  border: 2px solid #f3b945;   /* golden outline */
-  background: rgba(243, 185, 69, 0.05);  /* light golden background */
+  border: 2px solid #28a745;   /* green outline */
+  background: rgba(40, 167, 69, 0.05);  /* light green background */
 }
 
 .accepted-message {
   padding: 0.75rem;
-  background: rgba(243, 185, 69, 0.1);
+  background: rgba(40, 167, 69, 0.1);
   border-radius: 4px;
-  border-left: 4px solid #f3b945;
+  border-left: 4px solid #28a745;
   margin-top: 0.5rem;
 }
 

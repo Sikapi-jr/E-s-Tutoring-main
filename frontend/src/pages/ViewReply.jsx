@@ -10,8 +10,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const ViewReply = () => {
   const { t } = useTranslation();
   const { user } = useUser();
-  const parent = user.account_id;
   const navigate = useNavigate();
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  const parent = user.account_id;
 
   /* redirect non‑parents */
   if (user.roles !== "parent" && user.is_superuser === 0) {

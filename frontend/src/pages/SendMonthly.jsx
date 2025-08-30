@@ -11,6 +11,15 @@ const SendMonthly = () => {
   const { user } = useUser();
   const navigate = useNavigate();
 
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
   const [startDate, setStartDate] = useState("");
   const [endDate,   setEndDate]   = useState("");
   const [hours,  setHours]  = useState([]);

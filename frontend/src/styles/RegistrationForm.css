@@ -154,18 +154,13 @@ select {
   animation: fadeInBg 0.3s ease-out forwards;
 }
 
-/* 3. fade in the main content blocks slightly after */
+/* 3. fade in the main content blocks at the same time */
 .form-container .role-buttons,
 .form-container .form-section,
-.form-container .login-prompt {
-  opacity: 0;
-  animation: fadeInContent 0.3s ease-out 0.2s forwards;
-}
-
-/* Separate animation for form buttons to ensure consistent timing */
+.form-container .login-prompt,
 .form-container .form-button {
   opacity: 0;
-  animation: fadeInContent 0.3s ease-out 0.3s forwards;
+  animation: fadeInContent 0.3s ease-out 0.2s forwards;
 }
 
 body,

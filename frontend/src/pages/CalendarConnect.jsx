@@ -8,6 +8,16 @@ import { useUser } from "../components/UserProvider";
 export default function CalendarConnect() {
   const { t } = useTranslation();
   const { user } = useUser();
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
   const tutor_id = user.account_id;
 
   /* ─────────────────────────  local state ───────────────────────── */

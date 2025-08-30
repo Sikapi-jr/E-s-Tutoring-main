@@ -39,9 +39,9 @@ body { background: #f8fafb; }
   gap: 1.25rem;
 }
 
-/* each request box (blue outline, transparent middle) */
+/* each request box (dark blue outline, transparent middle) */
 .req-box {
-  border: 2px solid #0d6efd;
+  border: 2px solid #192A88;
   border-radius: 6px;
   padding: 1rem 1.25rem;
   background: transparent;
@@ -64,8 +64,8 @@ body { background: #f8fafb; }
   transition: opacity .15s;
   color: #fff;
 }
-.reply-btn { background: #0d6efd; }
-.send-btn  { background: #198754; }
+.reply-btn { background: #192A88; }
+.send-btn  { background: #f3b945; }
 .reply-btn:hover,
 .send-btn:hover { opacity: .85; }
 

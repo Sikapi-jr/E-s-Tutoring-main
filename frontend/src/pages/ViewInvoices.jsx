@@ -9,6 +9,16 @@ const ViewInvoices = () => {
   const { user } = useUser();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
   const email = user.email;
 
   /* gate‑keep */

@@ -46,8 +46,6 @@ const Students = () => {
   const [editStudentForm, setEditStudentForm] = useState({
     firstName: "",
     lastName: "",
-    address: "",
-    city: "",
     email: ""
   });
   const [profilePicture, setProfilePicture] = useState(null);
@@ -157,8 +155,6 @@ const Students = () => {
     setEditStudentForm({
       firstName: student.student_firstName || "",
       lastName: student.student_lastName || "",
-      address: student.address || "",
-      city: student.city || "",
       email: student.email || ""
     });
     setProfilePicture(null);
@@ -172,8 +168,6 @@ const Students = () => {
       const formData = new FormData();
       formData.append("firstName", editStudentForm.firstName.trim());
       formData.append("lastName", editStudentForm.lastName.trim());
-      formData.append("address", editStudentForm.address.trim());
-      formData.append("city", editStudentForm.city.trim());
       formData.append("email", editStudentForm.email.trim());
       
       if (profilePicture) {
@@ -194,8 +188,6 @@ const Students = () => {
                 ...student,
                 student_firstName: editStudentForm.firstName,
                 student_lastName: editStudentForm.lastName,
-                address: editStudentForm.address,
-                city: editStudentForm.city,
                 email: editStudentForm.email
               }
             : student
@@ -261,8 +253,8 @@ const Students = () => {
                       {student.student_firstName} {student.student_lastName}
                     </h2>
                     <div className="student-details">
-                      <p><strong>{t('common.address')}:</strong> {student.address}</p>
-                      <p><strong>{t('common.city')}:</strong> {student.city}</p>
+                      <p><strong>Total Hours:</strong> {student.totalHours || 0} hours</p>
+                      <p><strong>Grade Level:</strong> {student.grade || t('common.notProvided')}</p>
                     </div>
                   </div>
                   {user.roles === "parent" && (
@@ -386,23 +378,6 @@ const Students = () => {
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label>{t('common.address')}</label>
-                  <input
-                    type="text"
-                    value={editStudentForm.address}
-                    onChange={(e) => setEditStudentForm({...editStudentForm, address: e.target.value})}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>{t('common.city')}</label>
-                  <input
-                    type="text"
-                    value={editStudentForm.city}
-                    onChange={(e) => setEditStudentForm({...editStudentForm, city: e.target.value})}
-                  />
-                </div>
                 
                 <div className="form-group">
                   <label>{t('students.profilePicture')}</label>

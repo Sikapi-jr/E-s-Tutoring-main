@@ -16,6 +16,15 @@ export default function Settings() {
   const { t } = useTranslation();
   const { user, setUser } = useUser();
 
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
   const [children, setChildren] = useState([]);
   const [referrals, setReferrals] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
