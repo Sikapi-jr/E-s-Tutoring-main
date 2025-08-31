@@ -104,26 +104,6 @@ export default function Home() {
             const dueReports = monthlyReportsRes.data.filter(report => report.tutor === user.account_id && !report.submitted);
             setTutorMonthlyReports(dueReports || []);
             
-            // Get recent tutor change requests (as recent parent requests)
-            // Note: This would need an API endpoint that filters by current_tutor
-            try {
-              // For now, using empty array as the API endpoint may not support tutor filtering yet
-              // TODO: Create endpoint /api/tutor-change-requests/for-tutor/{tutor_id}/
-              setRecentParentRequests([]);
-            } catch (error) {
-              console.error('Error fetching tutor change requests:', error);
-              setRecentParentRequests([]);
-            }
-            
-            // Get recent payment transfers/payouts
-            try {
-              // This would need a proper API endpoint - for now using mock data structure
-              // TODO: Replace with actual payout API when available
-              setPaymentTransfers([]); // Empty for now until proper API is available
-            } catch (error) {
-              console.error('Error fetching payment transfers:', error);
-              setPaymentTransfers([]);
-            }
             
           } catch (tutorError) {
             console.error("Tutor data fetch failed:", tutorError);
@@ -236,6 +216,55 @@ export default function Home() {
         if (eventsData) {
           setEvents(Array.isArray(eventsData.items) ? eventsData.items : []);
         } else {
+        }
+
+        // Fetch data for second row components (for all users)
+        try {
+          // Get recent parent requests based on user role
+          if (user.roles === 'parent') {
+            // For parents, get their own tutoring requests
+            const requestsRes = await api.get('/api/parentRequests/', { params: { parent: user.account_id } });
+            setRecentParentRequests(requestsRes.data.slice(0, 5) || []);
+          } else if (user.roles === 'tutor') {
+            // For tutors, get tutor change requests (when parents want to change from them)
+            // TODO: Create endpoint /api/tutor-change-requests/for-tutor/{tutor_id}/
+            setRecentParentRequests([]);
+          } else {
+            setRecentParentRequests([]);
+          }
+        } catch (error) {
+          console.error('Error fetching recent requests:', error);
+          setRecentParentRequests([]);
+        }
+        
+        try {
+          // Get payment transfers/payouts based on user role
+          if (user.roles === 'tutor') {
+            // TODO: Replace with actual payout API when available
+            setPaymentTransfers([]);
+          } else if (user.roles === 'parent') {
+            // For parents, show recent invoice payments
+            if (parentData && parentData.invoices) {
+              const recentPayments = parentData.invoices
+                .filter(invoice => invoice.paid)
+                .slice(0, 5)
+                .map(invoice => ({
+                  id: invoice.id,
+                  amount: invoice.amount_paid,
+                  status: 'completed',
+                  description: 'Invoice payment',
+                  created_at: invoice.created
+                }));
+              setPaymentTransfers(recentPayments);
+            } else {
+              setPaymentTransfers([]);
+            }
+          } else {
+            setPaymentTransfers([]);
+          }
+        } catch (error) {
+          console.error('Error fetching payment transfers:', error);
+          setPaymentTransfers([]);
         }
       } catch (e) {
         console.error("Unexpected error in fetchData:", e);
@@ -1163,8 +1192,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Second Row - Only for Tutor View */}
-      {user?.roles === 'tutor' && (
+      {/* Second Row - For All Users */}
+      {user && (
         <div
           style={{
             display: "flex",
@@ -1175,16 +1204,16 @@ export default function Home() {
             boxSizing: "border-box",
             gap: "1rem",
           }}
-          className="home-tutor-second-row"
+          className="home-second-row"
         >
-          {/* Recent Parent Requests - Same width as scheduled events for symmetry */}
+          {/* Recent Requests - Same width as scheduled events for symmetry */}
           <div
             style={{
               width: "35.5%",
               display: "flex",
               flexDirection: "column",
             }}
-            className="home-tutor-requests-column"
+            className="home-requests-column"
           >
             <div
               className="table-wrapper mobile-section recent-requests-section"
@@ -1200,10 +1229,10 @@ export default function Home() {
             >
               <div style={{ padding: "1rem", paddingBottom: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h3 style={{ textAlign: "center", margin: 0 }}>
-                  {t('home.recentParentRequests')}
+                  {user?.roles === 'parent' ? t('home.myRequests') : user?.roles === 'tutor' ? t('home.recentParentRequests') : t('home.recentRequests')}
                 </h3>
                 <button
-                  onClick={() => window.location.href = '/tutor-change-requests'}
+                  onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : '/tutor-change-requests'}
                   style={{
                     backgroundColor: "#192A88",
                     color: "white",
@@ -1256,7 +1285,7 @@ export default function Home() {
               ) : (
                 <div style={{ textAlign: "center", padding: "2rem" }}>
                   <p style={{ color: "#888" }}>
-                    {t('home.noRecentRequests')}
+                    {user?.roles === 'parent' ? t('home.noTutoringRequests') : t('home.noRecentRequests')}
                   </p>
                 </div>
               )}
@@ -1270,7 +1299,7 @@ export default function Home() {
               display: "flex",
               flexDirection: "column",
             }}
-            className="home-tutor-calendar-column"
+            className="home-calendar-column"
           >
             <div
               style={{
@@ -1336,7 +1365,7 @@ export default function Home() {
               display: "flex",
               flexDirection: "column",
             }}
-            className="home-tutor-payments-column"
+            className="home-payments-column"
           >
             <div
               style={{
