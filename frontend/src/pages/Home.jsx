@@ -854,6 +854,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
+                  height: 120,
+                  maxHeight: 120,
+                  minHeight: 120,
                 }}
               >
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.googleCalendar')}</h4>

@@ -108,6 +108,10 @@ select {
   box-sizing: border-box !important;
   font-size: 1rem !important;
   line-height: 1.2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 .login-prompt {
