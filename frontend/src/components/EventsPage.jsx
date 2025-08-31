@@ -17,6 +17,15 @@ export default function EventsPage() {
   const { user } = useUser();
   const token = localStorage.getItem(ACCESS_TOKEN);
 
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p>{t('common.loading')}</p>
+      </div>
+    );
+  }
+
   const [isConnected, setConnected] = useState(false);
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);

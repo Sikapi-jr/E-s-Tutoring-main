@@ -395,6 +395,8 @@
     "account": "Account",
     "notifications": "Notifications",
     "language": "Language",
+    "uploadedDocuments": "Uploaded Documents",
+    "documents": "Documents",
     "privacy": "Privacy",
     "security": "Security",
     "billing": "Billing",
