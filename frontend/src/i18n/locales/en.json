@@ -205,7 +205,13 @@
     "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
     "goToScheduledSessions": "Go to Scheduled Sessions",
     "hoursThisWeek": "hours this week!",
-    "invoicesSummary": "{{total}} total, {{paid}} paid"
+    "invoicesSummary": "{{total}} total, {{paid}} paid",
+    "recentParentRequests": "Recent Parent Requests",
+    "noRecentRequests": "No recent parent requests",
+    "paymentTransfers": "Payment Transfers",
+    "recentTransfers": "recent transfers",
+    "noPaymentTransfers": "No payment transfers yet",
+    "transfersWillAppearHere": "Recent payment transfers will appear here"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",

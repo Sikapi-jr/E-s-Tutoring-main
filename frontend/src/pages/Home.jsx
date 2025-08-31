@@ -34,6 +34,8 @@ export default function Home() {
   const [tutorDocuments, setTutorDocuments] = useState([]);
   const [tutorMonthlyReports, setTutorMonthlyReports] = useState([]);
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [recentParentRequests, setRecentParentRequests] = useState([]);
+  const [paymentTransfers, setPaymentTransfers] = useState([]);
   
   // Parent Google Calendar state
   const [parentGoogleConnected, setParentGoogleConnected] = useState(false);
@@ -101,6 +103,27 @@ export default function Home() {
             const monthlyReportsRes = await api.get('/api/monthly-reports/');
             const dueReports = monthlyReportsRes.data.filter(report => report.tutor === user.account_id && !report.submitted);
             setTutorMonthlyReports(dueReports || []);
+            
+            // Get recent tutor change requests (as recent parent requests)
+            // Note: This would need an API endpoint that filters by current_tutor
+            try {
+              // For now, using empty array as the API endpoint may not support tutor filtering yet
+              // TODO: Create endpoint /api/tutor-change-requests/for-tutor/{tutor_id}/
+              setRecentParentRequests([]);
+            } catch (error) {
+              console.error('Error fetching tutor change requests:', error);
+              setRecentParentRequests([]);
+            }
+            
+            // Get recent payment transfers/payouts
+            try {
+              // This would need a proper API endpoint - for now using mock data structure
+              // TODO: Replace with actual payout API when available
+              setPaymentTransfers([]); // Empty for now until proper API is available
+            } catch (error) {
+              console.error('Error fetching payment transfers:', error);
+              setPaymentTransfers([]);
+            }
             
           } catch (tutorError) {
             console.error("Tutor data fetch failed:", tutorError);
@@ -730,7 +753,7 @@ export default function Home() {
           ) : user?.roles === 'tutor' ? (
             // TUTOR VIEW
             <>
-              {/* Tutor's Current Students */}
+              {/* Tutor's Current Students - aligned with scheduled events */}
               <div
                 className="mobile-section students-section"
                 style={{
@@ -738,7 +761,10 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
+                  height: 122,
                   minHeight: 122,
+                  maxHeight: 122,
+                  overflowY: "auto",
                 }}
               >
                 <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.myStudents')}</h3>
@@ -847,57 +873,17 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Google Calendar Status */}
-              <div
-                style={{
-                  background: "#fff",
-                  border: "3px solid #E1E1E1",
-                  borderRadius: 12,
-                  padding: "1rem",
-                  height: 120,
-                  maxHeight: 120,
-                  minHeight: 120,
-                }}
-              >
-                <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.googleCalendar')}</h4>
-                {googleConnected ? (
-                  <div style={{ color: "#28a745", fontSize: "0.9rem" }}>
-                    ✅ {t('home.connected')}
-                    <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
-                      {t('home.calendarConnectedMessage')}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ color: "#dc3545", fontSize: "0.9rem", marginBottom: "1rem" }}>
-                      ❌ {t('home.notConnected')}
-                    </div>
-                    <button
-                      onClick={handleGoogleConnect}
-                      style={{
-                        backgroundColor: "#28a745",
-                        color: "white",
-                        border: "none",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "0.25rem",
-                        cursor: "pointer",
-                        fontSize: "0.9rem"
-                      }}
-                    >
-                      {t('home.connectGoogleCalendar')}
-                    </button>
-                  </>
-                )}
-              </div>
 
-              {/* Monthly Reports Due */}
+              {/* Monthly Reports Due - aligned with scheduled events */}
               <div
                 style={{
                   background: "#fff",
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  maxHeight: 200,
+                  height: 233,
+                  maxHeight: 233,
+                  minHeight: 233,
                   overflowY: "auto",
                 }}
               >
@@ -1176,6 +1162,243 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Second Row - Only for Tutor View */}
+      {user?.roles === 'tutor' && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            padding: "0 2% 1rem",
+            boxSizing: "border-box",
+            gap: "1rem",
+          }}
+          className="home-tutor-second-row"
+        >
+          {/* Recent Parent Requests - Same width as scheduled events for symmetry */}
+          <div
+            style={{
+              width: "35.5%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            className="home-tutor-requests-column"
+          >
+            <div
+              className="table-wrapper mobile-section recent-requests-section"
+              style={{
+                background: "#fff",
+                border: "3px solid #E1E1E1",
+                borderRadius: 12,
+                overflow: "auto",
+                height: 355,
+                minHeight: 355,
+                maxHeight: 355,
+              }}
+            >
+              <div style={{ padding: "1rem", paddingBottom: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ textAlign: "center", margin: 0 }}>
+                  {t('home.recentParentRequests')}
+                </h3>
+                <button
+                  onClick={() => window.location.href = '/tutor-change-requests'}
+                  style={{
+                    backgroundColor: "#192A88",
+                    color: "white",
+                    border: "none",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.8rem"
+                  }}
+                >
+                  {t('home.viewMore')}
+                </button>
+              </div>
+              
+              {recentParentRequests.length > 0 ? (
+                <div style={{ padding: "0 1rem 1rem" }}>
+                  {recentParentRequests.map((request, index) => (
+                    <div 
+                      key={request.id || index} 
+                      style={{ 
+                        backgroundColor: "#f8f9fa",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "6px",
+                        padding: "12px",
+                        margin: "8px 0",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                        <strong style={{ color: "#192A88" }}>
+                          {request.student_name || `${request.student?.firstName || 'Student'} ${request.student?.lastName || ''}`}
+                        </strong>
+                        <span style={{ 
+                          fontSize: "0.75rem", 
+                          color: request.status === 'pending' ? '#ffc107' : request.status === 'approved' ? '#28a745' : '#dc3545',
+                          fontWeight: "bold"
+                        }}>
+                          {request.status?.toUpperCase() || 'PENDING'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.25rem" }}>
+                        <strong>Reason:</strong> {request.reason_display || request.reason || 'Not specified'}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "#888" }}>
+                        {new Date(request.created_at || request.date_created || Date.now()).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "2rem" }}>
+                  <p style={{ color: "#888" }}>
+                    {t('home.noRecentRequests')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Google Calendar Status */}
+          <div
+            style={{
+              width: "30%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            className="home-tutor-calendar-column"
+          >
+            <div
+              style={{
+                background: "#fff",
+                border: "3px solid #E1E1E1",
+                borderRadius: 12,
+                padding: "1rem",
+                height: 355,
+                maxHeight: 355,
+                minHeight: 355,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+              }}
+            >
+              <h4 style={{ marginTop: 0, marginBottom: "1.5rem" }}>{t('home.googleCalendar')}</h4>
+              {googleConnected ? (
+                <div>
+                  <div style={{ color: "#28a745", fontSize: "3rem", marginBottom: "1rem" }}>
+                    ✅
+                  </div>
+                  <div style={{ color: "#28a745", fontSize: "1.1rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+                    {t('home.connected')}
+                  </div>
+                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
+                    {t('home.calendarConnectedMessage')}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ color: "#dc3545", fontSize: "3rem", marginBottom: "1rem" }}>
+                    ❌
+                  </div>
+                  <div style={{ color: "#dc3545", fontSize: "1.1rem", fontWeight: "bold", marginBottom: "1rem" }}>
+                    {t('home.notConnected')}
+                  </div>
+                  <button
+                    onClick={handleGoogleConnect}
+                    style={{
+                      backgroundColor: "#28a745",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem 1.5rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    {t('home.connectGoogleCalendar')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Transfers - Similar styling to paid invoices */}
+          <div
+            style={{
+              width: "30%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            className="home-tutor-payments-column"
+          >
+            <div
+              style={{
+                background: "#fff",
+                border: "3px solid #E1E1E1",
+                borderRadius: 12,
+                padding: "1rem",
+                height: 355,
+                maxHeight: 355,
+                minHeight: 355,
+                overflowY: "auto",
+              }}
+            >
+              <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.paymentTransfers')}</h4>
+              <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center", marginBottom: "1rem" }}>
+                {paymentTransfers.length} {t('home.recentTransfers')}
+              </div>
+              
+              {paymentTransfers.length > 0 ? (
+                paymentTransfers.map((transfer, index) => (
+                  <div
+                    key={transfer.id || index}
+                    style={{
+                      backgroundColor: getInvoiceAgeColor(transfer.created_at),
+                      padding: "0.75rem",
+                      marginBottom: "0.75rem",
+                      borderRadius: 6,
+                      fontSize: "0.9rem",
+                      border: "1px solid #dee2e6",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                      <strong style={{ color: "#28a745" }}>
+                        ${((transfer.amount || 0) / 100).toFixed(2)}
+                      </strong>
+                      <span style={{ fontSize: "0.75rem", color: "#666" }}>
+                        {transfer.status === 'completed' ? '✅' : transfer.status === 'pending' ? '⏳' : '❌'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.25rem" }}>
+                      {transfer.description || 'Monthly payout'}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#888" }}>
+                      {new Date(transfer.created_at || transfer.created || Date.now()).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: "2rem" }}>
+                  <p style={{ color: "#888", fontSize: "0.9rem" }}>
+                    {t('home.noPaymentTransfers')}
+                  </p>
+                  <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "0.5rem" }}>
+                    {t('home.transfersWillAppearHere')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
 
       {/* Dispute Modal */}
       <DisputeModal
