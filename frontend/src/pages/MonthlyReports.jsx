@@ -226,8 +226,8 @@ const MonthlyReports = () => {
           <button
             onClick={handleNewReport}
             style={{
-              backgroundColor: '#28a745',
-              color: 'white',
+              backgroundColor: '#ffd700',
+              color: '#333',
               border: 'none',
               padding: '1rem 2rem',
               borderRadius: '8px',
@@ -240,11 +240,11 @@ const MonthlyReports = () => {
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#218838';
+              e.target.style.backgroundColor = '#e6c200';
               e.target.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#28a745';
+              e.target.style.backgroundColor = '#ffd700';
               e.target.style.transform = 'translateY(0)';
             }}
           >
@@ -347,7 +347,7 @@ const MonthlyReports = () => {
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', color: '#ffd700' }}>
                 {[...new Set(reports.map(r => r.student))].length}
               </h3>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Students Reported</p>
@@ -524,7 +524,7 @@ const MonthlyReports = () => {
                               width: '12px',
                               height: '12px',
                               borderRadius: '50%',
-                              backgroundColor: '#28a745'
+                              backgroundColor: '#ffd700'
                             }} title="Report Submitted" />
                             
                             <h3 style={{ margin: '0 0 1rem 0', color: '#333', paddingRight: '2rem' }}>

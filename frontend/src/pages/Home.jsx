@@ -910,9 +910,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  height: 233,
-                  maxHeight: 233,
-                  minHeight: 233,
+                  height: 355,
+                  maxHeight: 355,
+                  minHeight: 355,
                   overflowY: "auto",
                 }}
               >
@@ -1206,10 +1206,76 @@ export default function Home() {
           }}
           className="home-second-row"
         >
-          {/* Recent Requests - Same width as scheduled events for symmetry */}
+          {/* Google Calendar Status - Same width as announcements */}
           <div
             style={{
-              width: "35.5%",
+              width: "20%",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            className="home-calendar-column"
+          >
+            <div
+              style={{
+                background: "#fff",
+                border: "3px solid #E1E1E1",
+                borderRadius: 12,
+                padding: "1rem",
+                height: 177,
+                maxHeight: 177,
+                minHeight: 177,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+              }}
+            >
+              <h4 style={{ marginTop: 0, marginBottom: "1rem" }}>{t('home.googleCalendar')}</h4>
+              {googleConnected ? (
+                <div>
+                  <div style={{ color: "#ffd700", fontSize: "2rem", marginBottom: "0.5rem" }}>
+                    ✅
+                  </div>
+                  <div style={{ color: "#ffd700", fontSize: "0.9rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                    {t('home.connected')}
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                    {t('home.calendarConnectedMessage')}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ color: "#dc3545", fontSize: "2rem", marginBottom: "0.5rem" }}>
+                    ❌
+                  </div>
+                  <div style={{ color: "#dc3545", fontSize: "0.9rem", fontWeight: "bold", marginBottom: "0.75rem" }}>
+                    {t('home.notConnected')}
+                  </div>
+                  <button
+                    onClick={handleGoogleConnect}
+                    style={{
+                      backgroundColor: "#ffd700",
+                      color: "#333",
+                      border: "none",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    {t('home.connectGoogleCalendar')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Parent Requests - Same width as scheduled events */}
+          <div
+            style={{
+              width: "55%",
               display: "flex",
               flexDirection: "column",
             }}
@@ -1222,25 +1288,26 @@ export default function Home() {
                 border: "3px solid #E1E1E1",
                 borderRadius: 12,
                 overflow: "auto",
-                height: 355,
-                minHeight: 355,
-                maxHeight: 355,
+                height: 177,
+                minHeight: 177,
+                maxHeight: 177,
               }}
             >
-              <div style={{ padding: "1rem", paddingBottom: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ textAlign: "center", margin: 0 }}>
+              <div style={{ padding: "0.75rem", paddingBottom: "0.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ textAlign: "center", margin: 0, fontSize: "1rem" }}>
                   {user?.roles === 'parent' ? t('home.myRequests') : user?.roles === 'tutor' ? t('home.recentParentRequests') : t('home.recentRequests')}
                 </h3>
                 <button
                   onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : '/tutor-change-requests'}
                   style={{
-                    backgroundColor: "#192A88",
-                    color: "white",
+                    backgroundColor: "#ffd700",
+                    color: "#333",
                     border: "none",
-                    padding: "0.4rem 0.8rem",
+                    padding: "0.3rem 0.6rem",
                     borderRadius: "4px",
                     cursor: "pointer",
-                    fontSize: "0.8rem"
+                    fontSize: "0.7rem",
+                    fontWeight: "bold"
                   }}
                 >
                   {t('home.viewMore')}
@@ -1248,43 +1315,43 @@ export default function Home() {
               </div>
               
               {recentParentRequests.length > 0 ? (
-                <div style={{ padding: "0 1rem 1rem" }}>
-                  {recentParentRequests.map((request, index) => (
+                <div style={{ padding: "0 0.75rem 0.75rem" }}>
+                  {recentParentRequests.slice(0, 3).map((request, index) => (
                     <div 
                       key={request.id || index} 
                       style={{ 
                         backgroundColor: "#f8f9fa",
                         border: "1px solid #dee2e6",
-                        borderRadius: "6px",
-                        padding: "12px",
-                        margin: "8px 0",
-                        fontSize: "0.85rem",
+                        borderRadius: "4px",
+                        padding: "6px 8px",
+                        margin: "4px 0",
+                        fontSize: "0.75rem",
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-                        <strong style={{ color: "#192A88" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.25rem" }}>
+                        <strong style={{ color: "#192A88", fontSize: "0.8rem" }}>
                           {request.student_name || `${request.student?.firstName || 'Student'} ${request.student?.lastName || ''}`}
                         </strong>
                         <span style={{ 
-                          fontSize: "0.75rem", 
+                          fontSize: "0.65rem", 
                           color: request.status === 'pending' ? '#ffc107' : request.status === 'approved' ? '#28a745' : '#dc3545',
                           fontWeight: "bold"
                         }}>
                           {request.status?.toUpperCase() || 'PENDING'}
                         </span>
                       </div>
-                      <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.25rem" }}>
+                      <div style={{ fontSize: "0.7rem", color: "#666", marginBottom: "0.15rem" }}>
                         <strong>Reason:</strong> {request.reason_display || request.reason || 'Not specified'}
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "#888" }}>
+                      <div style={{ fontSize: "0.65rem", color: "#888" }}>
                         {new Date(request.created_at || request.date_created || Date.now()).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: "center", padding: "2rem" }}>
-                  <p style={{ color: "#888" }}>
+                <div style={{ textAlign: "center", padding: "1rem" }}>
+                  <p style={{ color: "#888", fontSize: "0.8rem", margin: 0 }}>
                     {user?.roles === 'parent' ? t('home.noTutoringRequests') : t('home.noRecentRequests')}
                   </p>
                 </div>
@@ -1292,76 +1359,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Google Calendar Status */}
+          {/* Payment Transfers - Same width as monthly reports */}
           <div
             style={{
-              width: "30%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-            className="home-calendar-column"
-          >
-            <div
-              style={{
-                background: "#fff",
-                border: "3px solid #E1E1E1",
-                borderRadius: 12,
-                padding: "1rem",
-                height: 355,
-                maxHeight: 355,
-                minHeight: 355,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
-              }}
-            >
-              <h4 style={{ marginTop: 0, marginBottom: "1.5rem" }}>{t('home.googleCalendar')}</h4>
-              {googleConnected ? (
-                <div>
-                  <div style={{ color: "#28a745", fontSize: "3rem", marginBottom: "1rem" }}>
-                    ✅
-                  </div>
-                  <div style={{ color: "#28a745", fontSize: "1.1rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
-                    {t('home.connected')}
-                  </div>
-                  <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                    {t('home.calendarConnectedMessage')}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ color: "#dc3545", fontSize: "3rem", marginBottom: "1rem" }}>
-                    ❌
-                  </div>
-                  <div style={{ color: "#dc3545", fontSize: "1.1rem", fontWeight: "bold", marginBottom: "1rem" }}>
-                    {t('home.notConnected')}
-                  </div>
-                  <button
-                    onClick={handleGoogleConnect}
-                    style={{
-                      backgroundColor: "#28a745",
-                      color: "white",
-                      border: "none",
-                      padding: "0.75rem 1.5rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    {t('home.connectGoogleCalendar')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Payment Transfers - Similar styling to paid invoices */}
-          <div
-            style={{
-              width: "30%",
+              width: "20%",
               display: "flex",
               flexDirection: "column",
             }}
@@ -1373,14 +1374,14 @@ export default function Home() {
                 border: "3px solid #E1E1E1",
                 borderRadius: 12,
                 padding: "1rem",
-                height: 355,
-                maxHeight: 355,
-                minHeight: 355,
+                height: 177,
+                maxHeight: 177,
+                minHeight: 177,
                 overflowY: "auto",
               }}
             >
-              <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.paymentTransfers')}</h4>
-              <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center", marginBottom: "1rem" }}>
+              <h4 style={{ textAlign: "center", marginTop: 0, fontSize: "1rem", marginBottom: "0.5rem" }}>{t('home.paymentTransfers')}</h4>
+              <div style={{ fontSize: "0.7rem", color: "#888", textAlign: "center", marginBottom: "0.5rem" }}>
                 {paymentTransfers.length} {t('home.recentTransfers')}
               </div>
               
@@ -1390,10 +1391,10 @@ export default function Home() {
                     key={transfer.id || index}
                     style={{
                       backgroundColor: getInvoiceAgeColor(transfer.created_at),
-                      padding: "0.75rem",
-                      marginBottom: "0.75rem",
-                      borderRadius: 6,
-                      fontSize: "0.9rem",
+                      padding: "0.5rem",
+                      marginBottom: "0.5rem",
+                      borderRadius: 4,
+                      fontSize: "0.75rem",
                       border: "1px solid #dee2e6",
                     }}
                   >
