@@ -23,6 +23,11 @@
   box-sizing: border-box;
 }
 
+/* Override margin for recent requests to align with other second row elements */
+.recent-requests-section.table-wrapper {
+  margin-top: 0 !important;
+}
+
 /* nicer scrollbar */
 .table-wrapper::-webkit-scrollbar { width: 6px; }
 .table-wrapper::-webkit-scrollbar-thumb {
