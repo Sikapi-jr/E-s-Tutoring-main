@@ -911,9 +911,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  height: 213,
-                  maxHeight: 213,
-                  minHeight: 213,
+                  height: 224,
+                  maxHeight: 224,
+                  minHeight: 224,
                   overflowY: "auto",
                 }}
               >
@@ -1296,10 +1296,10 @@ export default function Home() {
                 maxHeight: 177,
               }}
             >
-              <div style={{ padding: "0.75rem", paddingBottom: "0.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ textAlign: "center", margin: 0, fontSize: "1rem" }}>
+              <div style={{ padding: "1rem 1rem 0.25rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h4 style={{ textAlign: "center", margin: 0, fontSize: "1rem" }}>
                   {user?.roles === 'parent' ? t('home.myRequests') : user?.roles === 'tutor' ? t('home.recentParentRequests') : t('home.recentRequests')}
-                </h3>
+                </h4>
                 <button
                   onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : '/tutor-change-requests'}
                   style={{
@@ -1318,7 +1318,7 @@ export default function Home() {
               </div>
               
               {recentParentRequests.length > 0 ? (
-                <div style={{ padding: "0 0.75rem 0.75rem" }}>
+                <div style={{ padding: "0 1rem 1rem" }}>
                   {recentParentRequests.slice(0, 3).map((request, index) => (
                     <div 
                       key={request.id || index} 
