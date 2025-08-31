@@ -910,9 +910,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  height: 355,
-                  maxHeight: 355,
-                  minHeight: 355,
+                  height: 230,
+                  maxHeight: 230,
+                  minHeight: 230,
                   overflowY: "auto",
                 }}
               >
@@ -1212,6 +1212,7 @@ export default function Home() {
               width: "20%",
               display: "flex",
               flexDirection: "column",
+              paddingTop: "0.5rem",
             }}
             className="home-calendar-column"
           >
@@ -1278,6 +1279,7 @@ export default function Home() {
               width: "55%",
               display: "flex",
               flexDirection: "column",
+              paddingTop: "0.5rem",
             }}
             className="home-requests-column"
           >
@@ -1365,6 +1367,7 @@ export default function Home() {
               width: "20%",
               display: "flex",
               flexDirection: "column",
+              paddingTop: "0.5rem",
             }}
             className="home-payments-column"
           >
