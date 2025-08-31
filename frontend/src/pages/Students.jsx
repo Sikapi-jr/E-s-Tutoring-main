@@ -45,8 +45,7 @@ const Students = () => {
   const [showEditStudentModal, setShowEditStudentModal] = useState(false);
   const [editStudentForm, setEditStudentForm] = useState({
     firstName: "",
-    lastName: "",
-    email: ""
+    lastName: ""
   });
   const [profilePicture, setProfilePicture] = useState(null);
 
@@ -154,8 +153,7 @@ const Students = () => {
     setSelectedStudentForEdit(student);
     setEditStudentForm({
       firstName: student.student_firstName || "",
-      lastName: student.student_lastName || "",
-      email: student.email || ""
+      lastName: student.student_lastName || ""
     });
     setProfilePicture(null);
     setShowEditStudentModal(true);
@@ -168,7 +166,6 @@ const Students = () => {
       const formData = new FormData();
       formData.append("firstName", editStudentForm.firstName.trim());
       formData.append("lastName", editStudentForm.lastName.trim());
-      formData.append("email", editStudentForm.email.trim());
       
       if (profilePicture) {
         formData.append("profile_picture", profilePicture);
@@ -187,8 +184,7 @@ const Students = () => {
             ? {
                 ...student,
                 student_firstName: editStudentForm.firstName,
-                student_lastName: editStudentForm.lastName,
-                email: editStudentForm.email
+                student_lastName: editStudentForm.lastName
               }
             : student
         )
@@ -254,7 +250,6 @@ const Students = () => {
                     </h2>
                     <div className="student-details">
                       <p><strong>Total Hours:</strong> {student.totalHours || 0} hours</p>
-                      <p><strong>Grade Level:</strong> {student.grade || t('common.notProvided')}</p>
                     </div>
                   </div>
                   {user.roles === "parent" && (
@@ -369,14 +364,6 @@ const Students = () => {
                   />
                 </div>
                 
-                <div className="form-group">
-                  <label>{t('common.email')}</label>
-                  <input
-                    type="email"
-                    value={editStudentForm.email}
-                    onChange={(e) => setEditStudentForm({...editStudentForm, email: e.target.value})}
-                  />
-                </div>
                 
                 
                 <div className="form-group">
