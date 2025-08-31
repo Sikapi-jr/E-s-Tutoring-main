@@ -672,24 +672,25 @@ export default function Home() {
               </table>
             ) : (
               <div style={{ textAlign: "center", padding: "2rem" }}>
-                {user?.roles === 'parent' && !parentGoogleConnected ? (
+                {((user?.roles === 'parent' && !parentGoogleConnected) || (user?.roles !== 'parent' && !googleConnected)) ? (
                   <div>
                     <p style={{ color: "#666", marginBottom: "1rem" }}>
-                      {t('home.connectCalendarMessage')}
+                      Google account isn't connected, connect now?
                     </p>
                     <button
-                      onClick={handleParentGoogleConnect}
+                      onClick={user?.roles === 'parent' ? handleParentGoogleConnect : handleGoogleConnect}
                       style={{
-                        backgroundColor: "#192A88",
-                        color: "white",
+                        backgroundColor: "#ffd700",
+                        color: "#333",
                         border: "none",
                         padding: "0.75rem 1.5rem",
                         borderRadius: "6px",
                         cursor: "pointer",
-                        fontSize: "0.9rem"
+                        fontSize: "0.9rem",
+                        fontWeight: "bold"
                       }}
                     >
-{t('home.goToScheduledSessions')}
+                      Connect Google Calendar
                     </button>
                   </div>
                 ) : (
@@ -910,9 +911,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  height: 230,
-                  maxHeight: 230,
-                  minHeight: 230,
+                  height: 213,
+                  maxHeight: 213,
+                  minHeight: 213,
                   overflowY: "auto",
                 }}
               >
