@@ -523,7 +523,7 @@ export default function Home() {
           className="home-left-column"
         >
           <div
-            className="mobile-section logged-hours-section"
+            className="mobile-section quick-stats-section"
             style={{
               background: "#fff",
               border: "3px solid #E1E1E1",
@@ -532,15 +532,42 @@ export default function Home() {
               height: 200,
               minHeight: 200,
               maxHeight: 200,
-              overflow: "auto",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
             }}
           >
-            <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.loggedHours')}</h3>
-            <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-              {hours.length} total
+            <h3 style={{ margin: "0 0 1rem 0" }}>Quick Stats</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#192A88" }}>
+                {hours.length}
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                Total Hours Logged
+              </div>
             </div>
-            {hours.length ? (
-              hours.map((h, index) => {
+            {user && (
+              <div style={{ marginTop: "1rem" }}>
+                <button
+                  onClick={() => window.location.href = '/logged-hours'}
+                  style={{
+                    backgroundColor: "#ffd700",
+                    color: "#333",
+                    border: "none",
+                    padding: "0.5rem 1rem",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  View All Hours
+                </button>
+              </div>
+            ) && false ? (
+              [].map((h, index) => {
                 return (
                 <div 
                   key={h.id} 
@@ -672,24 +699,25 @@ export default function Home() {
               </table>
             ) : (
               <div style={{ textAlign: "center", padding: "2rem" }}>
-                {user?.roles === 'parent' && !parentGoogleConnected ? (
+                {((user?.roles === 'parent' && !parentGoogleConnected) || (user?.roles !== 'parent' && !googleConnected)) ? (
                   <div>
                     <p style={{ color: "#666", marginBottom: "1rem" }}>
-                      {t('home.connectCalendarMessage')}
+                      Google account isn't connected, connect now?
                     </p>
                     <button
-                      onClick={handleParentGoogleConnect}
+                      onClick={user?.roles === 'parent' ? handleParentGoogleConnect : handleGoogleConnect}
                       style={{
-                        backgroundColor: "#192A88",
-                        color: "white",
+                        backgroundColor: "#ffd700",
+                        color: "#333",
                         border: "none",
                         padding: "0.75rem 1.5rem",
                         borderRadius: "6px",
                         cursor: "pointer",
-                        fontSize: "0.9rem"
+                        fontSize: "0.9rem",
+                        fontWeight: "bold"
                       }}
                     >
-{t('home.goToScheduledSessions')}
+                      Connect Google Calendar
                     </button>
                   </div>
                 ) : (
@@ -910,9 +938,9 @@ export default function Home() {
                   border: "3px solid #E1E1E1",
                   borderRadius: 12,
                   padding: "1rem",
-                  height: 230,
-                  maxHeight: 230,
-                  minHeight: 230,
+                  height: 213,
+                  maxHeight: 213,
+                  minHeight: 213,
                   overflowY: "auto",
                 }}
               >
