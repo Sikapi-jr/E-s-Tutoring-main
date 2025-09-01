@@ -680,8 +680,8 @@ export default function Home() {
                     <button
                       onClick={user?.roles === 'parent' ? handleParentGoogleConnect : handleGoogleConnect}
                       style={{
-                        backgroundColor: "#ffd700",
-                        color: "#333",
+                        backgroundColor: "#192A88",
+                        color: "#fff",
                         border: "none",
                         padding: "0.75rem 1.5rem",
                         borderRadius: "6px",
@@ -1207,7 +1207,7 @@ export default function Home() {
           }}
           className="home-second-row"
         >
-          {/* Google Calendar Status - Same width as announcements */}
+          {/* Notifications - Same width as announcements */}
           <div
             style={{
               width: "20%",
@@ -1215,7 +1215,7 @@ export default function Home() {
               flexDirection: "column",
               paddingTop: "0.5rem",
             }}
-            className="home-calendar-column"
+            className="home-notifications-column"
           >
             <div
               style={{
@@ -1226,51 +1226,122 @@ export default function Home() {
                 height: 177,
                 maxHeight: 177,
                 minHeight: 177,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
+                overflowY: "auto",
               }}
             >
-              <h4 style={{ marginTop: 0, marginBottom: "1rem" }}>{t('home.googleCalendar')}</h4>
-              {googleConnected ? (
-                <div>
-                  <div style={{ color: "#ffd700", fontSize: "2rem", marginBottom: "0.5rem" }}>
-                    ✅
-                  </div>
-                  <div style={{ color: "#ffd700", fontSize: "0.9rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
-                    {t('home.connected')}
-                  </div>
-                  <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                    {t('home.calendarConnectedMessage')}
-                  </div>
+              <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "1rem" }}>{t('home.notifications')}</h4>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {/* Sample notifications based on user role */}
+                {user?.roles === 'parent' && (
+                  <>
+                    <div style={{ 
+                      backgroundColor: "#d1ecf1", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #bee5eb"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#192A88" }}>📅 Session Scheduled</div>
+                      <div style={{ color: "#666" }}>New tutoring session booked</div>
+                    </div>
+                    
+                    <div style={{ 
+                      backgroundColor: "#d4edda", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #c3e6cb"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#28a745" }}>💳 Payment Processed</div>
+                      <div style={{ color: "#666" }}>Invoice payment successful</div>
+                    </div>
+                  </>
+                )}
+                
+                {user?.roles === 'tutor' && (
+                  <>
+                    <div style={{ 
+                      backgroundColor: "#fff3cd", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #ffeaa7"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#856404" }}>📝 Report Due</div>
+                      <div style={{ color: "#666" }}>Monthly report deadline approaching</div>
+                    </div>
+                    
+                    <div style={{ 
+                      backgroundColor: "#d1ecf1", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #bee5eb"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#192A88" }}>👨‍🎓 New Student</div>
+                      <div style={{ color: "#666" }}>Student assignment updated</div>
+                    </div>
+                  </>
+                )}
+                
+                {user?.roles === 'student' && (
+                  <>
+                    <div style={{ 
+                      backgroundColor: "#d4edda", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #c3e6cb"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#28a745" }}>✅ Session Complete</div>
+                      <div style={{ color: "#666" }}>Last tutoring session logged</div>
+                    </div>
+                    
+                    <div style={{ 
+                      backgroundColor: "#d1ecf1", 
+                      padding: "0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem",
+                      border: "1px solid #bee5eb"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: "#192A88" }}>📚 Resources</div>
+                      <div style={{ color: "#666" }}>New study materials available</div>
+                    </div>
+                  </>
+                )}
+                
+                {/* Common notification for all users */}
+                <div style={{ 
+                  backgroundColor: "#f8d7da", 
+                  padding: "0.5rem", 
+                  borderRadius: "4px", 
+                  fontSize: "0.75rem",
+                  border: "1px solid #f5c6cb"
+                }}>
+                  <div style={{ fontWeight: "bold", color: "#721c24" }}>🔔 System Update</div>
+                  <div style={{ color: "#666" }}>Platform maintenance scheduled</div>
                 </div>
-              ) : (
-                <div>
-                  <div style={{ color: "#dc3545", fontSize: "2rem", marginBottom: "0.5rem" }}>
-                    ❌
-                  </div>
-                  <div style={{ color: "#dc3545", fontSize: "0.9rem", fontWeight: "bold", marginBottom: "0.75rem" }}>
-                    {t('home.notConnected')}
-                  </div>
-                  <button
-                    onClick={handleGoogleConnect}
-                    style={{
-                      backgroundColor: "#ffd700",
-                      color: "#333",
-                      border: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "0.8rem",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    {t('home.connectGoogleCalendar')}
-                  </button>
-                </div>
-              )}
+              </div>
+              
+              {/* View all notifications button */}
+              <div style={{ textAlign: "center", marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px solid #e1e1e1" }}>
+                <button
+                  onClick={() => window.location.href = '/notifications'}
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "#192A88",
+                    border: "1px solid #192A88",
+                    padding: "0.25rem 0.75rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.7rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {t('home.viewAll')}
+                </button>
+              </div>
             </div>
           </div>
 

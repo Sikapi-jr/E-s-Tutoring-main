@@ -25,7 +25,7 @@
 
 /* Override margin for recent requests to align with other second row elements */
 .recent-requests-section.table-wrapper {
-  margin-top: 0.5rem !important;
+  margin-top: 0.7rem !important;
 }
 
 /* nicer scrollbar */
