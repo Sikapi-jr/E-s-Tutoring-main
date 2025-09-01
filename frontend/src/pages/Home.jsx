@@ -185,6 +185,20 @@ export default function Home() {
           } catch (studentError) {
             console.error("Student data fetch failed:", studentError);
           }
+        } else if (user.is_superuser) {
+          // Fetch admin data - ALL hours for superuser
+          try {
+            // Get all hours for admin view
+            const allHoursRes = await api.get('/api/allHours/'); // Assuming this endpoint exists
+            setHours(allHoursRes.data || []);
+            
+            // Get all monthly reports for admin
+            const allReportsRes = await api.get('/api/monthly-reports/');
+            setTutorMonthlyReports(allReportsRes.data || []);
+            
+          } catch (adminError) {
+            console.error("Admin data fetch failed:", adminError);
+          }
         }
 
         // Fetch events data separately
@@ -650,8 +664,7 @@ export default function Home() {
               return total;
             }, 0);
             
-            const monthName = new Date().toLocaleDateString('en-US', { month: 'long' });
-            const translatedText = t('home.tutorMonthlyHours', { hours: monthlyHours, month: monthName });
+            const translatedText = t('home.tutorMonthlyHours', { hours: monthlyHours, month: t('home.thisMonth') });
             const parts = translatedText.split(monthlyHours.toString());
             
             return (
@@ -743,10 +756,12 @@ export default function Home() {
                     margin: "8px 0",
                     padding: "8px 12px",
                     borderRadius: "6px",
-                    backgroundColor: h.has_disputes ? "#f8d7da" : 
+                    backgroundColor: h.status === 'Disputed' ? "#f8d7da" : 
+                                   h.status === 'Resolved' ? "#e2e3e5" :
                                    (h.last_edited_at && h.last_edited_at !== h.created_at) ? "#fff3cd" : 
                                    "#d1ecf1",
-                    border: h.has_disputes ? "1px solid #f5c6cb" : 
+                    border: h.status === 'Disputed' ? "1px solid #f5c6cb" : 
+                           h.status === 'Resolved' ? "1px solid #6c757d" :
                            (h.last_edited_at && h.last_edited_at !== h.created_at) ? "1px solid #ff8c00" : 
                            "1px solid #bee5eb"
                   }}
@@ -768,7 +783,7 @@ export default function Home() {
                   {h.totalTime} hrs — {h.subject}
                   <br />
                       {h.date}
-                      {h.has_disputes && (
+                      {h.status === 'Disputed' && (
                         <span style={{ 
                           marginLeft: "8px", 
                           fontSize: "0.7rem", 
@@ -776,6 +791,16 @@ export default function Home() {
                           fontWeight: "bold"
                         }}>
                           DISPUTED
+                        </span>
+                      )}
+                      {h.status === 'Resolved' && (
+                        <span style={{ 
+                          marginLeft: "8px", 
+                          fontSize: "0.7rem", 
+                          color: "#6c757d",
+                          fontWeight: "bold"
+                        }}>
+                          RESOLVED
                         </span>
                       )}
                     </div>

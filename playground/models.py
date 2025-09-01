@@ -430,7 +430,6 @@ class Hours(models.Model):
         ('Void', 'VOID'),
     ]
     ELIGIBLE_CHOICES = [
-        ('Submitted', 'SUBMITTED'),
         ('Late', 'LATE'),
         ('Eligible', 'ELIGIBLE'),
     ]
