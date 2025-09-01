@@ -1553,25 +1553,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              
-              {/* View all notifications button */}
-              <div style={{ textAlign: "center", marginTop: "0.75rem", paddingTop: "0.5rem", borderTop: "1px solid #e1e1e1" }}>
-                <button
-                  onClick={() => window.location.href = '/notifications'}
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "#192A88",
-                    border: "1px solid #192A88",
-                    padding: "0.25rem 0.75rem",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "0.7rem",
-                    fontWeight: "bold"
-                  }}
-                >
-                  {t('home.viewAll')}
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1605,8 +1586,8 @@ export default function Home() {
                 <button
                   onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : '/tutor-change-requests'}
                   style={{
-                    backgroundColor: "#ffd700",
-                    color: "#333",
+                    backgroundColor: "#192A88",
+                    color: "#fff",
                     border: "none",
                     padding: "0.3rem 0.6rem",
                     borderRadius: "4px",
