@@ -10,6 +10,7 @@ import AnnouncementCarousel from "../components/AnnouncementCarousel";
 import DisputeModal from "../components/DisputeModal";
 import TutorComplaintModal from "../components/TutorComplaintModal";
 import TutorRegistrationForm from "../components/TutorRegistrationForm";
+import AdminNotificationTool from "../components/AdminNotificationTool";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -42,6 +43,10 @@ export default function Home() {
   
   // Admin state
   const [showTutorForm, setShowTutorForm] = useState(false);
+  const [showNotificationTool, setShowNotificationTool] = useState(false);
+  
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
   
   // Dispute modal state
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -266,6 +271,176 @@ export default function Home() {
           console.error('Error fetching payment transfers:', error);
           setPaymentTransfers([]);
         }
+
+        // Fetch notifications
+        try {
+          // Fetch user-specific notifications
+          const notificationsRes = await api.get('/api/notifications/', { params: { user_id: user.account_id } });
+          const userNotifications = notificationsRes.data || [];
+          
+          // Fetch system notifications that match user role
+          let systemNotifications = [];
+          try {
+            const systemNotificationsRes = await api.get('/api/admin/system-notifications/active/', { 
+              params: { user_role: user.roles } 
+            });
+            systemNotifications = systemNotificationsRes.data || [];
+          } catch (systemError) {
+            console.error('Error fetching system notifications:', systemError);
+          }
+          
+          // Generate some realistic notifications based on user data and role
+          const generatedNotifications = [];
+          
+          if (user.roles === 'parent') {
+            // Check for recent sessions
+            if (hoursData && hoursData.length > 0) {
+              const recentSession = hoursData[0];
+              generatedNotifications.push({
+                id: `session-${recentSession.id}`,
+                type: 'session_logged',
+                title: 'Session Logged',
+                message: `Tutoring session for ${recentSession.student_firstName || 'your child'} has been logged`,
+                created_at: recentSession.created_at || new Date().toISOString(),
+                read: false,
+                icon: '📚'
+              });
+            }
+            
+            // Check for unpaid invoices
+            if (invoicesData && invoicesData.some(i => !i.paid)) {
+              const unpaidCount = invoicesData.filter(i => !i.paid).length;
+              generatedNotifications.push({
+                id: 'unpaid-invoices',
+                type: 'payment_due',
+                title: 'Payment Due',
+                message: `You have ${unpaidCount} unpaid invoice${unpaidCount > 1 ? 's' : ''}`,
+                created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+                read: false,
+                icon: '💳'
+              });
+            }
+            
+            // Check for recent payments
+            if (invoicesData && invoicesData.some(i => i.paid)) {
+              const recentPayment = invoicesData.find(i => i.paid);
+              if (recentPayment) {
+                generatedNotifications.push({
+                  id: `payment-${recentPayment.id}`,
+                  type: 'payment_success',
+                  title: 'Payment Processed',
+                  message: `Payment of $${(recentPayment.amount_paid / 100).toFixed(2)} processed successfully`,
+                  created_at: new Date(recentPayment.created * 1000).toISOString(),
+                  read: true,
+                  icon: '✅'
+                });
+              }
+            }
+          } else if (user.roles === 'tutor') {
+            // Check for monthly reports due
+            if (tutorMonthlyReports && tutorMonthlyReports.length > 0) {
+              generatedNotifications.push({
+                id: 'reports-due',
+                type: 'report_due',
+                title: 'Reports Due',
+                message: `You have ${tutorMonthlyReports.length} monthly report${tutorMonthlyReports.length > 1 ? 's' : ''} due`,
+                created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+                read: false,
+                icon: '📝'
+              });
+            }
+            
+            // Check for new students
+            if (tutorStudents && tutorStudents.length > 0) {
+              const recentStudent = tutorStudents[0];
+              generatedNotifications.push({
+                id: `student-${recentStudent.id}`,
+                type: 'new_student',
+                title: 'Student Assignment',
+                message: `New student ${recentStudent.student_firstName || 'assigned'} ${recentStudent.student_lastName || ''}`,
+                created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+                read: true,
+                icon: '👨‍🎓'
+              });
+            }
+            
+            // Check for recent hours logged
+            if (hoursData && hoursData.length > 0) {
+              const recentHour = hoursData[0];
+              generatedNotifications.push({
+                id: `hour-${recentHour.id}`,
+                type: 'session_complete',
+                title: 'Session Complete',
+                message: `Session with ${recentHour.student_firstName || 'student'} completed and logged`,
+                created_at: recentHour.created_at || new Date().toISOString(),
+                read: true,
+                icon: '✅'
+              });
+            }
+          } else if (user.roles === 'student') {
+            // Check for completed sessions
+            if (hoursData && hoursData.length > 0) {
+              const recentSession = hoursData[0];
+              generatedNotifications.push({
+                id: `session-complete-${recentSession.id}`,
+                type: 'session_complete',
+                title: 'Session Complete',
+                message: `Your tutoring session has been completed and logged`,
+                created_at: recentSession.created_at || new Date().toISOString(),
+                read: false,
+                icon: '✅'
+              });
+            }
+            
+            // Add a resources notification
+            generatedNotifications.push({
+              id: 'new-resources',
+              type: 'resources',
+              title: 'Study Materials',
+              message: 'New practice problems available in your dashboard',
+              created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+              read: true,
+              icon: '📚'
+            });
+          }
+          
+          // Add a system notification for all users
+          generatedNotifications.push({
+            id: 'system-update',
+            type: 'system',
+            title: 'System Update',
+            message: 'Platform maintenance scheduled for next weekend',
+            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+            read: false,
+            icon: '🔔'
+          });
+          
+          // Combine all notifications: API user notifications, system notifications, and generated ones
+          const allNotifications = [
+            ...userNotifications, 
+            ...systemNotifications,
+            ...generatedNotifications
+          ]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 5); // Show only latest 5 notifications
+            
+          setNotifications(allNotifications);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+          // Fallback to basic notifications
+          const fallbackNotifications = [
+            {
+              id: 'welcome',
+              type: 'system',
+              title: 'Welcome!',
+              message: 'Welcome to the EGS Tutoring Portal',
+              created_at: new Date().toISOString(),
+              read: false,
+              icon: '👋'
+            }
+          ];
+          setNotifications(fallbackNotifications);
+        }
       } catch (e) {
         console.error("Unexpected error in fetchData:", e);
         // Don't reset any state on unexpected errors - let existing data remain
@@ -399,6 +574,25 @@ export default function Home() {
     // Just close modal, no need to refresh
     setComplaintModalOpen(false);
     setSelectedTutorForComplaint(null);
+  }, []);
+
+  /* handle notification click/read */
+  const handleNotificationClick = useCallback(async (notificationId) => {
+    try {
+      // Mark as read in backend (if API exists)
+      // await api.post(`/api/notifications/${notificationId}/mark-read/`);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId 
+            ? { ...notif, read: true }
+            : notif
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   }, []);
 
 
@@ -675,7 +869,7 @@ export default function Home() {
                 {((user?.roles === 'parent' && !parentGoogleConnected) || (user?.roles !== 'parent' && !googleConnected)) ? (
                   <div>
                     <p style={{ color: "#666", marginBottom: "1rem" }}>
-                      Google account isn't connected, connect now?
+                      {t('home.googleAccountNotConnected')}
                     </p>
                     <button
                       onClick={user?.roles === 'parent' ? handleParentGoogleConnect : handleGoogleConnect}
@@ -690,7 +884,7 @@ export default function Home() {
                         fontWeight: "bold"
                       }}
                     >
-                      Connect Google Calendar
+                      {t('home.connectGoogleCalendar')}
                     </button>
                   </div>
                 ) : (
@@ -975,6 +1169,22 @@ export default function Home() {
                     {t('admin.createTutor', 'Create New Tutor')}
                   </button>
                   <button
+                    onClick={() => setShowNotificationTool(true)}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#192A88",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.manageNotifications', 'Manage Notifications')}
+                  </button>
+                  <button
                     onClick={() => window.location.href = '/admin-disputes'}
                     style={{
                       width: "100%",
@@ -1000,10 +1210,26 @@ export default function Home() {
                       padding: "0.75rem",
                       borderRadius: "6px",
                       cursor: "pointer",
-                      fontSize: "0.9rem"
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
                     }}
                   >
                     {t('admin.manageComplaints', 'Manage Complaints')}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/admin-stale-requests'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    {t('admin.manageStaleRequests', 'Manage Stale Requests')}
                   </button>
                 </div>
               </div>
@@ -1232,96 +1458,100 @@ export default function Home() {
               <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "1rem" }}>{t('home.notifications')}</h4>
               
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {/* Sample notifications based on user role */}
-                {user?.roles === 'parent' && (
-                  <>
-                    <div style={{ 
-                      backgroundColor: "#d1ecf1", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #bee5eb"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#192A88" }}>📅 Session Scheduled</div>
-                      <div style={{ color: "#666" }}>New tutoring session booked</div>
-                    </div>
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => {
+                    // Determine background color based on notification type and read status
+                    const getNotificationStyle = (type, read) => {
+                      const baseStyle = {
+                        padding: "0.5rem",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
+                        opacity: read ? 0.7 : 1,
+                      };
+                      
+                      switch (type) {
+                        case 'payment_due':
+                        case 'report_due':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#fff3cd",
+                            border: "1px solid #ffeaa7"
+                          };
+                        case 'payment_success':
+                        case 'session_complete':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#d4edda",
+                            border: "1px solid #c3e6cb"
+                          };
+                        case 'session_logged':
+                        case 'new_student':
+                        case 'resources':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#d1ecf1",
+                            border: "1px solid #bee5eb"
+                          };
+                        case 'system':
+                        default:
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#f8d7da",
+                            border: "1px solid #f5c6cb"
+                          };
+                      }
+                    };
                     
-                    <div style={{ 
-                      backgroundColor: "#d4edda", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #c3e6cb"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#28a745" }}>💳 Payment Processed</div>
-                      <div style={{ color: "#666" }}>Invoice payment successful</div>
-                    </div>
-                  </>
+                    return (
+                      <div 
+                        key={notification.id} 
+                        style={{
+                          ...getNotificationStyle(notification.type, notification.read),
+                          position: "relative",
+                          cursor: "pointer"
+                        }}
+                        onClick={() => handleNotificationClick(notification.id)}
+                      >
+                        <div style={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: "flex-start",
+                          marginBottom: "0.25rem"
+                        }}>
+                          <div style={{ fontWeight: "bold", color: "#192A88" }}>
+                            {notification.icon} {notification.title}
+                          </div>
+                          <div style={{ 
+                            fontSize: "0.65rem", 
+                            color: "#888",
+                            marginLeft: "0.5rem"
+                          }}>
+                            {new Date(notification.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div style={{ color: "#666", fontSize: "0.7rem" }}>
+                          {notification.message}
+                        </div>
+                        {!notification.read && (
+                          <div style={{ 
+                            position: "absolute", 
+                            right: "0.5rem", 
+                            top: "0.5rem",
+                            width: "8px", 
+                            height: "8px", 
+                            backgroundColor: "#dc3545",
+                            borderRadius: "50%"
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
+                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔔</div>
+                    <div style={{ fontSize: "0.8rem" }}>No notifications yet</div>
+                  </div>
                 )}
-                
-                {user?.roles === 'tutor' && (
-                  <>
-                    <div style={{ 
-                      backgroundColor: "#fff3cd", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #ffeaa7"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#856404" }}>📝 Report Due</div>
-                      <div style={{ color: "#666" }}>Monthly report deadline approaching</div>
-                    </div>
-                    
-                    <div style={{ 
-                      backgroundColor: "#d1ecf1", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #bee5eb"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#192A88" }}>👨‍🎓 New Student</div>
-                      <div style={{ color: "#666" }}>Student assignment updated</div>
-                    </div>
-                  </>
-                )}
-                
-                {user?.roles === 'student' && (
-                  <>
-                    <div style={{ 
-                      backgroundColor: "#d4edda", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #c3e6cb"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#28a745" }}>✅ Session Complete</div>
-                      <div style={{ color: "#666" }}>Last tutoring session logged</div>
-                    </div>
-                    
-                    <div style={{ 
-                      backgroundColor: "#d1ecf1", 
-                      padding: "0.5rem", 
-                      borderRadius: "4px", 
-                      fontSize: "0.75rem",
-                      border: "1px solid #bee5eb"
-                    }}>
-                      <div style={{ fontWeight: "bold", color: "#192A88" }}>📚 Resources</div>
-                      <div style={{ color: "#666" }}>New study materials available</div>
-                    </div>
-                  </>
-                )}
-                
-                {/* Common notification for all users */}
-                <div style={{ 
-                  backgroundColor: "#f8d7da", 
-                  padding: "0.5rem", 
-                  borderRadius: "4px", 
-                  fontSize: "0.75rem",
-                  border: "1px solid #f5c6cb"
-                }}>
-                  <div style={{ fontWeight: "bold", color: "#721c24" }}>🔔 System Update</div>
-                  <div style={{ color: "#666" }}>Platform maintenance scheduled</div>
-                </div>
               </div>
               
               {/* View all notifications button */}
@@ -1483,7 +1713,7 @@ export default function Home() {
                       </span>
                     </div>
                     <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.25rem" }}>
-                      {transfer.description || 'Monthly payout'}
+                      {transfer.description || t('home.monthlyPayout')}
                     </div>
                     <div style={{ fontSize: "0.75rem", color: "#888" }}>
                       {new Date(transfer.created_at || transfer.created || Date.now()).toLocaleDateString()}
@@ -1529,6 +1759,11 @@ export default function Home() {
             <TutorRegistrationForm onClose={() => setShowTutorForm(false)} />
           </div>
         </div>
+      )}
+
+      {/* Admin Notification Tool Modal */}
+      {showNotificationTool && (
+        <AdminNotificationTool onClose={() => setShowNotificationTool(false)} />
       )}
 
     </div>
