@@ -374,20 +374,56 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     invoice_item = stripe.InvoiceItem.create(
                         customer=customer_id,
                         amount=amount,
-                        currency='usd',
+                        currency='cad',  # Changed to CAD
                         description=description,
                     )
                     
-                    # Create invoice
+                    # Calculate due date (14 days from now)
+                    import time
+                    due_date = int(time.time()) + (14 * 24 * 60 * 60)  # 14 days in seconds
+                    
+                    # Create invoice with due date and tax
                     invoice = stripe.Invoice.create(
                         customer=customer_id,
                         metadata=invoice_metadata or {},
-                        auto_advance=True,  # Automatically finalize and attempt payment
+                        due_date=due_date,
+                        collection_method='send_invoice',  # Required when setting due_date
+                        days_until_due=14,  # 14 days to pay
+                        auto_advance=False,  # Don't auto-advance when using due_date
+                        default_tax_rates=[],  # We'll add tax rate below
                     )
                     
+                    # Add 13% CAD tax to the invoice
+                    try:
+                        # First check if tax rate exists
+                        tax_rates = stripe.TaxRate.list(limit=100)
+                        cad_tax_rate = None
+                        for rate in tax_rates.data:
+                            if rate.display_name == "CAD Tax 13%" and rate.percentage == 13.0:
+                                cad_tax_rate = rate
+                                break
+                        
+                        # Create tax rate if it doesn't exist
+                        if not cad_tax_rate:
+                            cad_tax_rate = stripe.TaxRate.create(
+                                display_name="CAD Tax 13%",
+                                description="13% tax for Canadian services",
+                                jurisdiction="CA",
+                                percentage=13.0,
+                                inclusive=False,
+                            )
+                        
+                        # Apply tax rate to the invoice item
+                        stripe.InvoiceItem.modify(
+                            invoice_item.id,
+                            tax_rates=[cad_tax_rate.id]
+                        )
+                    except Exception as tax_error:
+                        logger.warning(f"Could not apply tax to invoice {invoice.id}: {tax_error}")
+                    
                     # Finalize and send invoice
-                    invoice.finalize_invoice()
-                    invoice.send_invoice()
+                    invoice = stripe.Invoice.finalize_invoice(invoice.id)
+                    invoice = stripe.Invoice.send_invoice(invoice.id)
                     
                     results.append({
                         'customer_id': customer_id,

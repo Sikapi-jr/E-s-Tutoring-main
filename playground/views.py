@@ -1959,8 +1959,11 @@ class CreateInvoiceView(APIView):
                             print(f"Error creating Stripe customer for {email_str}: {e}")
                             continue  # Skip this parent if customer creation fails
                     
-                    # Convert amount to cents as integer
+                    # Convert amount to cents as integer (Stripe expects cents)
                     amount_cents = int(total_before_tax * 100)
+                    
+                    # Debug logging to ensure correct amounts
+                    print(f"Parent {parent_id}: ${total_before_tax:.2f} = {amount_cents} cents")
                     
                     customer_data_list.append({
                         'customer_id': customer.id,
