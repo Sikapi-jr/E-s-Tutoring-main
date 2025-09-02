@@ -370,14 +370,6 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     amount = customer_data['amount']  # in cents
                     description = customer_data.get('description', 'Tutoring Services')
                     
-                    # Create invoice item
-                    invoice_item = stripe.InvoiceItem.create(
-                        customer=customer_id,
-                        amount=amount,
-                        currency='cad',  # Changed to CAD
-                        description=description,
-                    )
-                    
                     # Calculate due date (14 days from now)
                     import time
                     due_date = int(time.time()) + (14 * 24 * 60 * 60)  # 14 days in seconds
@@ -390,6 +382,15 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         collection_method='send_invoice',  # Required when setting due_date
                         auto_advance=False,  # Don't auto-advance when using due_date
                         default_tax_rates=[],  # We'll add tax rate below
+                    )
+                    
+                    # Add invoice item directly to the invoice
+                    invoice_item = stripe.InvoiceItem.create(
+                        customer=customer_id,
+                        invoice=invoice.id,  # Attach directly to this invoice
+                        amount=amount,
+                        currency='cad',  # Changed to CAD
+                        description=description,
                     )
                     
                     # Add 13% CAD tax to the invoice
