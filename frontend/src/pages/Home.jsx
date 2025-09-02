@@ -1444,8 +1444,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Second Row - For All Users */}
-      {user && (
+      {/* Second Row - For Tutors Only */}
+      {user && user.roles === 'tutor' && (
         <div
           style={{
             display: "flex",
@@ -1728,12 +1728,43 @@ export default function Home() {
                 ))
               ) : (
                 <div style={{ textAlign: "center", padding: "2rem" }}>
-                  <p style={{ color: "#888", fontSize: "0.9rem" }}>
-                    {t('home.noPaymentTransfers')}
-                  </p>
-                  <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "0.5rem" }}>
-                    {t('home.transfersWillAppearHere')}
-                  </p>
+                  {!user?.stripe_account_id ? (
+                    // Show Stripe setup message if tutor hasn't completed onboarding
+                    <div>
+                      <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>💳</div>
+                      <p style={{ color: "#dc3545", fontSize: "0.9rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+                        {t('home.stripeNotSetup')}
+                      </p>
+                      <p style={{ color: "#666", fontSize: "0.8rem", marginBottom: "1rem" }}>
+                        {t('home.stripeSetupRequired')}
+                      </p>
+                      <button
+                        onClick={() => alert(t('home.checkEmailStripe'))}
+                        style={{
+                          backgroundColor: "#192A88",
+                          color: "white",
+                          border: "none",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "0.8rem",
+                          fontWeight: "bold"
+                        }}
+                      >
+                        {t('home.setupStripeAccount')}
+                      </button>
+                    </div>
+                  ) : (
+                    // Show normal "no transfers" message if Stripe is set up
+                    <div>
+                      <p style={{ color: "#888", fontSize: "0.9rem" }}>
+                        {t('home.noPaymentTransfers')}
+                      </p>
+                      <p style={{ color: "#666", fontSize: "0.8rem", marginTop: "0.5rem" }}>
+                        {t('home.transfersWillAppearHere')}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

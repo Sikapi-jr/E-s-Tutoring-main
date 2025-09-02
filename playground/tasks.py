@@ -64,9 +64,7 @@ def create_stripe_account_async(self, user_id):
         
         logger.info(f"Stripe account created for user {user_id}: {account.id}")
         
-        # Send onboarding email
-        send_stripe_onboarding_email_async.delay(user_id, account_link.url)
-        
+        # Return the onboarding link instead of sending separate email
         return {
             'success': True,
             'account_id': account.id,
@@ -166,49 +164,75 @@ def send_stripe_onboarding_email_async(self, user_id, onboarding_link):
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
-def send_tutor_welcome_email_async(self, user_id, verification_link):
+def send_tutor_welcome_email_async(self, user_id, verification_link, stripe_onboarding_link=None):
     """
     Send welcome email to admin-created tutors with verification and Stripe onboarding info
     """
     try:
+        import os
         user = User.objects.get(id=user_id)
         
-        # Provide Stripe onboarding instructions
-        stripe_link = """
+        # Include actual Stripe onboarding link if provided
+        if stripe_onboarding_link:
+            stripe_section = f"""
+        
+PAYMENT SETUP:
+Click the link below to set up your payment information for receiving tutoring payments:
+
+{stripe_onboarding_link}
+
+This secure link will guide you through setting up your payment information with our payment processor. This is required to receive payments from your tutoring sessions.
+        """
+        else:
+            stripe_section = """
         
 PAYMENT SETUP:
 You'll receive a separate email shortly with instructions to set up your payment information for receiving tutoring payments. This is required to receive payments from your tutoring sessions.
         """
         
-        subject = 'Welcome to EGS Tutoring - Verify Your Account'
-        message = f"""
-        Hello {user.firstName},
+        subject = 'Welcome to EGS Tutoring - Verify Your Account & Setup Payment'
+        message = f"""Hello {user.firstName},
+
+Welcome to EGS Tutoring! Your tutor account has been created by an administrator.
+
+FIRST STEP - VERIFY YOUR EMAIL:
+Please click the link below to verify your email address and activate your account:
+
+{verification_link}
+{stripe_section}
+
+Once verified, you'll be able to:
+- Access your tutor dashboard
+- View tutoring requests
+- Log your tutoring hours
+- Connect your Google Calendar
+
+Please find attached helpful guides to get you started with the EGS Tutoring platform and payment setup process.
+
+If you have any questions, please contact our support team.
+
+Best regards,
+EGS Tutoring Team"""
         
-        Welcome to EGS Tutoring! Your tutor account has been created by an administrator.
+        # Prepare onboarding document attachments
+        media_path = os.path.join(settings.BASE_DIR, 'media', 'onboarding')
+        attachments = []
         
-        FIRST STEP - VERIFY YOUR EMAIL:
-        Please click the link below to verify your email address and activate your account:
+        # Add the two onboarding documents
+        onboarding_guide_path = os.path.join(media_path, 'EGS Tutoring Portal Onboarding Guide.pdf')
+        stripe_guide_path = os.path.join(media_path, 'Stripe Onboarding Guide EN.pdf')
         
-        {verification_link}
-        {stripe_link}
+        if os.path.exists(onboarding_guide_path):
+            attachments.append(onboarding_guide_path)
+        if os.path.exists(stripe_guide_path):
+            attachments.append(stripe_guide_path)
         
-        Once verified, you'll be able to:
-        - Access your tutor dashboard
-        - View tutoring requests
-        - Log your tutoring hours
-        - Connect your Google Calendar
-        
-        If you have any questions, please contact our support team.
-        
-        Best regards,
-        EGS Tutoring Team
-        """
-        
-        # Use Mailgun API instead of Django's send_mail
+        # Use Mailgun API with attachments
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            attachments=attachments if attachments else None
         )
         
         logger.info(f"Tutor welcome email sent to user {user_id} ({user.email})")

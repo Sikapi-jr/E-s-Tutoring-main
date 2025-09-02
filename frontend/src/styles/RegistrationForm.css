@@ -98,7 +98,10 @@ select {
 }
 
 /* Ensure all form buttons have consistent dimensions */
-.form-container .form-button {
+.form-container .form-button,
+.form-container > .form-button,
+.form-section .form-button,
+button.form-button {
   width: 100% !important;
   min-height: 48px !important;
   max-height: 48px !important;
@@ -112,6 +115,16 @@ select {
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  background-color: var(--color-text) !important;
+  color: var(--color-bg) !important;
+  transition: opacity 0.2s ease-in-out !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .login-prompt {
@@ -165,6 +178,13 @@ select {
 .form-container .form-button {
   opacity: 0;
   animation: fadeInContent 0.3s ease-out 0.2s forwards;
+}
+
+/* Ensure all buttons maintain their size during animation */
+.form-container .form-button {
+  min-height: 48px !important;
+  height: 48px !important;
+  max-height: 48px !important;
 }
 
 body,

@@ -20,8 +20,8 @@
         "description": "Generate detailed monthly reports and track student progress with comprehensive analytics and insights."
       },
       "communication": {
-        "title": "Parent Communication",
-        "description": "Stay connected with parents through announcements, updates, and direct messaging features."
+        "title": "Communication Between Parents and Tutors",
+        "description": "Build trust through transparency and constant support. Parents and tutors stay connected via clear progress tracking and dispute resolution features."
       },
       "invoicing": {
         "title": "Invoice Management",
@@ -222,7 +222,11 @@
     "connectGoogleCalendar": "Connect Google Calendar",
     "monthlyPayout": "Monthly payout",
     "thisMonth": "this month",
-    "thisWeek": "this week"
+    "thisWeek": "this week",
+    "stripeNotSetup": "Payment Account Not Set Up",
+    "stripeSetupRequired": "You need to set up your Stripe account to receive payments from tutoring sessions.",
+    "checkEmailStripe": "Please check your email for Stripe onboarding instructions.",
+    "setupStripeAccount": "Set Up Payment Account"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",
@@ -280,7 +284,20 @@
     "inPerson": "In-Person",
     "sessionDescription": "(IMPORTANT) Describe how the session went.",
     "logHoursButton": "LOG HOURS",
-    "viewAllHours": "View all logged hours?"
+    "viewAllHours": "View all logged hours?",
+    "selectStudentRequired": "Please select a student.",
+    "subjectRequired": "Please enter a subject.",
+    "locationRequired": "Please select a location (Online or In-Person).",
+    "dateRequired": "Please select a date.",
+    "startTimeRequired": "Please select a start time.",
+    "endTimeRequired": "Please select an end time.",
+    "notesRequired": "Please describe how the session went.",
+    "sessionTooLong": "Session cannot be longer than 8 hours. Please check your times.",
+    "futureDate": "Cannot log hours for future dates. Please select today or a past date.",
+    "currentWeekOnly": "You can only log hours for the current week.",
+    "futureEndTime": "Cannot log hours that end in the future. Please check your date and time.",
+    "duplicateHours": "You have already logged hours for this student at this exact date and time.",
+    "allFieldsRequired": "Please fill in all required fields."
   },
   "loggedHours": {
     "title": "My Logged Hours",
@@ -387,7 +404,8 @@
     "noRequestsMade": "No requests made.",
     "city": "City",
     "noStudentsMessage": "You don't have any students registered. Register a student now?",
-    "registerStudent": "Register Student"
+    "registerStudent": "Register Student",
+    "hasAccepted": "has accepted!"
   },
   "invoices": {
     "title": "Invoices",
@@ -431,7 +449,13 @@
     "onlineRate": "Online Rate",
     "inPersonRate": "In-Person Rate", 
     "referralCredits": "Referral Credits",
-    "creditAvailable": "credit available"
+    "creditAvailable": "credit available",
+    "paymentAccount": "Payment Account",
+    "stripeNotSetup": "Payment Account Not Set Up",
+    "stripeSetupRequired": "You need to set up your Stripe account to receive payments from tutoring sessions.",
+    "checkEmailStripe": "Please check your email for Stripe onboarding instructions.",
+    "setupStripeAccount": "Set Up Payment Account",
+    "stripeAccountConnected": "Payment account is connected and ready!"
   },
   "announcements": {
     "title": "Announcements",
@@ -505,6 +529,9 @@
     "couldNotLoadRequests": "Could not load requests.",
     "couldNotLoadReplies": "Could not load replies.",
     "couldNotLoadInvoices": "Could not load invoices.",
+    "hoursValidationError": "Please check your hours entry and try again.",
+    "hoursNetworkError": "Network error while logging hours. Please check your connection.",
+    "hoursServerError": "Server error occurred while logging hours. Please try again.",
     "failedToFetchWeeklyData": "Failed to fetch weekly data.",
     "failedToCreateWeeklyHours": "Failed to create weekly hours.",
     "failedToTriggerCheckout": "Failed to trigger checkout.",
@@ -512,7 +539,14 @@
     "failedToCreateMonthlyHours": "Failed to create monthly hours.",
     "failedToLoadEvents": "Failed to load events.",
     "couldNotUpdateRSVP": "Could not update RSVP.",
-    "failedToLoadLoggedHours": "Failed to load logged hours."
+    "failedToLoadLoggedHours": "Failed to load logged hours.",
+    "couldNotLoadStudents": "Could not load students. Please try again.",
+    "couldNotLoadTutors": "Could not load available tutors. Please try again.",
+    "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
+    "leavingStudentFailed": "Failed to leave student. Please try again.",
+    "acceptReplyFailed": "Failed to accept reply. Please try again.",
+    "studentUpdateFailed": "Failed to update student. Please try again.",
+    "deleteRequestFailed": "Failed to delete request. Please try again."
   },
   "footer": {
     "company": "Company",
@@ -693,7 +727,8 @@
     "needsImprovement": "Needs Improvement",
     "high": "High",
     "medium": "Medium",
-    "low": "Low"
+    "low": "Low",
+    "parentDescription": "View monthly progress reports submitted by your children's tutors. Reports are only created when tutors have taught at least 3 hours in a month."
   },
   "admin": {
     "adminTools": "Admin Tools",
@@ -752,14 +787,5 @@
     "editStudentInfo": "Edit Student Information for",
     "profilePicture": "Profile Picture",
     "studentUpdatedSuccessfully": "Student updated successfully!"
-  },
-  "errors": {
-    "couldNotLoadStudents": "Could not load students. Please try again.",
-    "couldNotLoadTutors": "Could not load available tutors. Please try again.",
-    "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",
-    "leavingStudentFailed": "Failed to leave student. Please try again.",
-    "acceptReplyFailed": "Failed to accept reply. Please try again.",
-    "studentUpdateFailed": "Failed to update student. Please try again.",
-    "deleteRequestFailed": "Failed to delete request. Please try again."
   }
 }

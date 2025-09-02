@@ -263,6 +263,50 @@ export default function Settings() {
           </div>
         )}
 
+        {/* ===== Stripe Account Status (Tutors Only) ===== */}
+        {user.roles === "tutor" && (
+          <div className="stripe-status-display">
+            <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>{t('settings.paymentAccount')}</h4>
+            {!user.stripe_account_id ? (
+              <div style={{ 
+                backgroundColor: "#fff3cd", 
+                border: "1px solid #ffeaa7", 
+                borderRadius: "6px", 
+                padding: "1rem", 
+                marginBottom: "1rem" 
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>💳</span>
+                  <span style={{ fontWeight: "bold", color: "#856404" }}>{t('settings.stripeNotSetup')}</span>
+                </div>
+                <p style={{ fontSize: "0.9rem", color: "#856404", margin: "0 0 1rem 0" }}>
+                  {t('settings.stripeSetupRequired')}
+                </p>
+                <button
+                  onClick={() => alert(t('settings.checkEmailStripe'))}
+                  style={{
+                    backgroundColor: "#192A88",
+                    color: "white",
+                    border: "none",
+                    padding: "0.5rem 1rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {t('settings.setupStripeAccount')}
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontSize: "0.9rem", color: "#28a745", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>✅</span>
+                <span>{t('settings.stripeAccountConnected')}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <button className="edit-btn" onClick={() => setShowEdit(true)}>
           EDIT PROFILE
         </button>

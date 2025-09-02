@@ -1543,7 +1543,7 @@ class LogHoursCreateView(APIView):
 
         # Set eligibility status based on current week
         is_eligible = cur_ws <= session_date <= cur_we
-        eligible_status = "Submitted" if is_eligible else "Late"
+        eligible_status = "Eligible" if is_eligible else "Late"
             
         data.update({
             "parent": parent,
@@ -1780,7 +1780,7 @@ class WeeklyHoursListView(APIView):
             start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
+        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -1852,7 +1852,7 @@ class calculateTotal(APIView):
         start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date))
+        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson')
@@ -1995,7 +1995,7 @@ class MonthlyHoursListView(APIView):
         start_date = datetime.strptime(start_date_raw, "%Y-%m-%d")
         end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date)).order_by('date')
+        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
         print(f"MonthlyHoursListView found {monthly_hours.count()} hours")
         serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
         print(f"MonthlyHoursListView serialized {len(serializer.data)} hours")
@@ -2084,7 +2084,7 @@ class calculateMonthlyTotal(APIView):
             print(f"calculateMonthlyTotal date parsing error: {e}")
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved']).order_by('date')
+        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved'], eligible='Eligible').order_by('date')
         tutors = set(monthly_hours.values_list('tutor', flat=True))
 
         results = []
@@ -2479,12 +2479,18 @@ class AdminCreateTutorView(generics.CreateAPIView):
         
         # Create Stripe account and send tutor welcome email with both verification and Stripe links
         try:
-            create_stripe_account_async.delay(user.id)
-            send_tutor_welcome_email_async.delay(user.id, verify_url)
+            # First create the Stripe account synchronously to get the onboarding link
+            stripe_result = create_stripe_account_async.apply(args=[user.id])
+            onboarding_link = None
+            if stripe_result.successful() and stripe_result.result.get('success'):
+                onboarding_link = stripe_result.result.get('onboarding_link')
+            
+            # Send welcome email with both verification and Stripe links
+            send_tutor_welcome_email_async.delay(user.id, verify_url, onboarding_link)
         except (OperationalError, Exception) as email_error:
             print(f"Email or Stripe setup failed: {email_error}")
-            # Don't fail the registration if email/stripe fails
-            pass
+            # Don't fail the registration if email/stripe fails - send welcome email without Stripe link
+            send_tutor_welcome_email_async.delay(user.id, verify_url)
 
 
 class TutorChangeRequestCreateView(APIView):

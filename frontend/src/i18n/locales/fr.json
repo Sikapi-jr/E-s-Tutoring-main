@@ -20,8 +20,8 @@
         "description": "Générez des rapports mensuels détaillés et suivez les progrès des étudiants avec des analyses et insights complets."
       },
       "communication": {
-        "title": "Communication avec les parents",
-        "description": "Restez connecté avec les parents grâce aux annonces, mises à jour et fonctionnalités de messagerie directe."
+        "title": "Communication entre parents et tuteurs",
+        "description": "Favorisez la communication entre parents et tuteurs grâce à la transparence totale et un soutien constant. Restez connectés via un suivi de progrès transparent et des outils de résolution de différends pour assurer une collaboration harmonieuse."
       },
       "invoicing": {
         "title": "Gestion des factures",
@@ -221,7 +221,11 @@
     "connectGoogleCalendar": "Connecter Google Calendar",
     "monthlyPayout": "Paiement mensuel",
     "thisMonth": "ce mois",
-    "thisWeek": "cette semaine"
+    "thisWeek": "cette semaine",
+    "stripeNotSetup": "Compte de Paiement Non Configuré",
+    "stripeSetupRequired": "Vous devez configurer votre compte Stripe pour recevoir les paiements des sessions de tutorat.",
+    "checkEmailStripe": "Veuillez vérifier votre courriel pour les instructions d'intégration Stripe.",
+    "setupStripeAccount": "Configurer le Compte de Paiement"
   },
   "dashboard": {
     "parentDashboard": "Tableau de bord parent",
@@ -279,7 +283,20 @@
     "inPerson": "En personne",
     "sessionDescription": "(IMPORTANT) Décrivez comment s'est déroulée la session.",
     "logHoursButton": "ENREGISTRER LES HEURES",
-    "viewAllHours": "Voir toutes les heures enregistrées ?"
+    "viewAllHours": "Voir toutes les heures enregistrées ?",
+    "selectStudentRequired": "Veuillez sélectionner un étudiant.",
+    "subjectRequired": "Veuillez entrer une matière.",
+    "locationRequired": "Veuillez sélectionner un lieu (En ligne ou En personne).",
+    "dateRequired": "Veuillez sélectionner une date.",
+    "startTimeRequired": "Veuillez sélectionner une heure de début.",
+    "endTimeRequired": "Veuillez sélectionner une heure de fin.",
+    "notesRequired": "Veuillez décrire comment s'est déroulée la session.",
+    "sessionTooLong": "La session ne peut pas durer plus de 8 heures. Veuillez vérifier vos heures.",
+    "futureDate": "Impossible d'enregistrer des heures pour des dates futures. Veuillez sélectionner aujourd'hui ou une date passée.",
+    "currentWeekOnly": "Vous ne pouvez enregistrer des heures que pour la semaine actuelle.",
+    "futureEndTime": "Impossible d'enregistrer des heures qui se terminent dans le futur. Veuillez vérifier votre date et heure.",
+    "duplicateHours": "Vous avez déjà enregistré des heures pour cet étudiant à cette date et heure exactes.",
+    "allFieldsRequired": "Veuillez remplir tous les champs obligatoires."
   },
   "loggedHours": {
     "title": "Mes Heures Enregistrées",
@@ -431,7 +448,13 @@
     "onlineRate": "Tarif en Ligne",
     "inPersonRate": "Tarif en Personne",
     "referralCredits": "Crédits de Recommandation",
-    "creditAvailable": "crédit disponible"
+    "creditAvailable": "crédit disponible",
+    "paymentAccount": "Compte de Paiement",
+    "stripeNotSetup": "Compte de Paiement Non Configuré",
+    "stripeSetupRequired": "Vous devez configurer votre compte Stripe pour recevoir les paiements des sessions de tutorat.",
+    "checkEmailStripe": "Veuillez vérifier votre courriel pour les instructions d'intégration Stripe.",
+    "setupStripeAccount": "Configurer le Compte de Paiement",
+    "stripeAccountConnected": "Le compte de paiement est connecté et prêt !"
   },
   "announcements": {
     "title": "Annonces",
@@ -505,6 +528,9 @@
     "couldNotLoadRequests": "Impossible de charger les demandes.",
     "couldNotLoadReplies": "Impossible de charger les réponses.",
     "couldNotLoadInvoices": "Impossible de charger les factures.",
+    "hoursValidationError": "Veuillez vérifier votre saisie d'heures et réessayer.",
+    "hoursNetworkError": "Erreur réseau lors de l'enregistrement des heures. Veuillez vérifier votre connexion.",
+    "hoursServerError": "Erreur serveur lors de l'enregistrement des heures. Veuillez réessayer.",
     "failedToFetchWeeklyData": "Échec de la récupération des données hebdomadaires.",
     "failedToCreateWeeklyHours": "Échec de la création des heures hebdomadaires.",
     "failedToTriggerCheckout": "Échec du déclenchement de la finalisation.",
@@ -512,7 +538,14 @@
     "failedToCreateMonthlyHours": "Échec de la création des heures mensuelles.",
     "failedToLoadEvents": "Échec du chargement des événements.",
     "couldNotUpdateRSVP": "Impossible de mettre à jour la RSVP.",
-    "failedToLoadLoggedHours": "Échec du chargement des heures enregistrées."
+    "failedToLoadLoggedHours": "Échec du chargement des heures enregistrées.",
+    "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
+    "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
+    "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
+    "leavingStudentFailed": "Impossible d'arrêter le tutorat de cet étudiant. Veuillez réessayer.",
+    "acceptReplyFailed": "Impossible d'accepter la réponse. Veuillez réessayer.",
+    "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
+    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   },
   "footer": {
     "company": "Entreprise",
@@ -693,7 +726,8 @@
     "needsImprovement": "À Améliorer",
     "high": "Élevé",
     "medium": "Moyen",
-    "low": "Faible"
+    "low": "Faible",
+    "parentDescription": "Consultez les rapports de progrès mensuels soumis par les tuteurs de vos enfants. Les rapports sont uniquement créés lorsque les tuteurs ont enseigné au moins 3 heures dans le mois."
   },
   "admin": {
     "adminTools": "Outils d'Administration",
@@ -752,14 +786,5 @@
     "editStudentInfo": "Modifier les Informations de l'Étudiant pour",
     "profilePicture": "Photo de Profil",
     "studentUpdatedSuccessfully": "Étudiant mis à jour avec succès !"
-  },
-  "errors": {
-    "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
-    "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
-    "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",
-    "leavingStudentFailed": "Impossible d'arrêter le tutorat de cet étudiant. Veuillez réessayer.",
-    "acceptReplyFailed": "Impossible d'accepter la réponse. Veuillez réessayer.",
-    "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
-    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   }
 }

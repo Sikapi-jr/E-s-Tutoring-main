@@ -118,6 +118,9 @@ const ViewReply = () => {
       
       alert(t('replies.replyAccepted') || 'Reply accepted successfully!');
       
+      // Force page refresh to prevent crashes when accepting multiple requests
+      window.location.reload();
+      
     } catch {
       console.error("Error creating relation");
       alert(t('errors.acceptReplyFailed') || 'Failed to accept reply. Please try again.');

@@ -72,11 +72,102 @@ const LogHours = memo(() => {
         return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
     }, []);
 
+    // Helper function to get current week date range
+    const getCurrentWeekRange = useCallback(() => {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        
+        return {
+            min: startOfWeek.toISOString().split('T')[0], // Format: YYYY-MM-DD
+            max: endOfWeek.toISOString().split('T')[0]    // Format: YYYY-MM-DD
+        };
+    }, []);
+
+    // Client-side validation function
+    const validateForm = () => {
+        // Check required fields
+        if (!student) {
+            return t('logHours.selectStudentRequired');
+        }
+        if (!subject.trim()) {
+            return t('logHours.subjectRequired');
+        }
+        if (!location) {
+            return t('logHours.locationRequired');
+        }
+        if (!date) {
+            return t('logHours.dateRequired');
+        }
+        if (!startTime) {
+            return t('logHours.startTimeRequired');
+        }
+        if (!endTime) {
+            return t('logHours.endTimeRequired');
+        }
+        if (!notes.trim()) {
+            return t('logHours.notesRequired');
+        }
+
+        // Validate time range
+        const totalHours = parseFloat(getTotalTime(startTime, endTime));
+        if (totalHours <= 0) {
+            return t('logHours.invalidTimeRange');
+        }
+        if (totalHours > 8) {
+            return t('logHours.sessionTooLong');
+        }
+
+        // Validate date is not in the future
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today
+        
+        if (selectedDate > today) {
+            return t('logHours.futureDate');
+        }
+
+        // Validate date is within current week
+        const currentDate = new Date();
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week (Sunday)
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        if (selectedDate < startOfWeek || selectedDate > endOfWeek) {
+            return t('logHours.currentWeekOnly') + ' (' + 
+                   startOfWeek.toLocaleDateString() + ' - ' + endOfWeek.toLocaleDateString() + ')';
+        }
+
+        // Validate session time is not in the future
+        const sessionDateTime = new Date(date + 'T' + endTime);
+        const now = new Date();
+        if (sessionDateTime > now) {
+            return t('logHours.futureEndTime');
+        }
+
+        return null; // No validation errors
+    };
+
     const handleSubmit = async (e) => {
         const decimalHours = getTotalTime(startTime, endTime)
         e.preventDefault();
         setError(""); // Clear error message on button press
         setSuccessMessage(""); // Clear success message
+        
+        // Run client-side validation first
+        const validationError = validateForm();
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+        
         setLoading(true);
 
         try {
@@ -108,14 +199,40 @@ const LogHours = memo(() => {
             setNotes("");
             
         } catch (error) {
-            if (error.response && error.response.data && error.response.data.detail) {
-                setError(error.response.data.detail);
+            console.error('Error logging hours:', error);
+            
+            if (error.response && error.response.data) {
+                // Handle specific backend validation errors
+                const errorMessage = error.response.data.detail || error.response.data.message;
+                
+                if (typeof errorMessage === 'string') {
+                    // Map common backend errors to user-friendly messages
+                    if (errorMessage.includes('Cannot log hours for future dates/times')) {
+                        setError('Cannot log hours for future dates or times. Please select a past date and time.');
+                    } else if (errorMessage.includes('Cannot log hours that end in the future')) {
+                        setError('The session end time cannot be in the future. Please check your date and end time.');
+                    } else if (errorMessage.includes('Can only log hours for the current week')) {
+                        setError('You can only log hours for the current week. Please select a date from this week.');
+                    } else if (errorMessage.includes('Hours already logged for this tutor, student, date, and time slot')) {
+                        setError('You have already logged hours for this student at this exact date and time. Please check your existing entries or select a different time.');
+                    } else if (errorMessage.includes('Missing') && errorMessage.includes('field')) {
+                        setError('Please fill in all required fields: student, subject, location, date, start time, end time, and session description.');
+                    } else if (errorMessage.includes('Invalid date/time format')) {
+                        setError('Invalid date or time format. Please check your entries and try again.');
+                    } else {
+                        setError(errorMessage);
+                    }
+                } else if (Array.isArray(errorMessage)) {
+                    setError(errorMessage.join(', '));
+                } else {
+                    setError('Failed to log hours. Please check all fields and try again.');
+                }
             } else if (error.response) {
-                setError(t('errors.serverError'));
+                setError('Server error occurred. Please try again later or contact support if the problem persists.');
             } else if (error.request) {
-                setError(t('errors.networkError'));
+                setError('Network connection error. Please check your internet connection and try again.');
             } else {
-                setError(t('logHours.errorLogging'));
+                setError('An unexpected error occurred while logging hours. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -162,6 +279,9 @@ const LogHours = memo(() => {
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     placeholder={t('common.date')}
+                    min={getCurrentWeekRange().min}
+                    max={getCurrentWeekRange().max}
+                    title="You can only select dates from the current week"
                 />
 
                 {/* Time Row */}

@@ -307,7 +307,7 @@ const MonthlyReports = () => {
       <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
         {user?.roles === 'parent' ? (
           <p style={{ margin: 0, color: '#666' }}>
-            View monthly progress reports submitted by your children's tutors. Reports are only created when tutors have taught at least 3 hours in a month.
+            {t('monthlyReports.parentDescription')}
           </p>
         ) : user?.roles === 'tutor' ? (
           <p style={{ margin: 0, color: '#666' }}>
