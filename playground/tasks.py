@@ -480,7 +480,7 @@ def batch_payout_processing_async(self, payout_data_list):
             try:
                 tutor_stripe_account = payout_data['stripe_account_id']
                 amount = payout_data['amount']  # in cents
-                currency = payout_data.get('currency', 'usd')
+                currency = payout_data.get('currency', 'cad')
                 description = payout_data.get('description', 'Tutoring payment')
                 metadata = payout_data.get('metadata', {})
                 
@@ -572,7 +572,7 @@ def process_referral_reward_async(self, referrer_user_id, amount_cents=1000):
         balance_transaction = stripe.Customer.create_balance_transaction(
             customer.id,
             amount=amount_cents,
-            currency='usd',
+            currency='cad',
             description=f'Referral reward for {referrer.firstName} {referrer.lastName}',
         )
         
