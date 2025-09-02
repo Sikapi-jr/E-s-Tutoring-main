@@ -206,6 +206,8 @@ class CreateUserView(generics.CreateAPIView):
             except (OperationalError, Exception) as e:
                 # Log error but don't fail registration
                 print(f"Stripe account creation failed: {e}")
+        
+        # Note: Stripe customers for parents are created on-demand during invoice generation
 
     
 
@@ -1939,19 +1941,32 @@ class CreateInvoiceView(APIView):
             if total_before_tax > 0:
                 email_str = parent_email_dict.get(parent_id)
                 if email_str:
-                    # Find stripe customers by email
+                    # Find or create stripe customer by email
                     result = stripe.Customer.list(email=email_str)
                     if result and result.data:
                         customer = result.data[0]
-                        
-                        # Convert amount to cents as integer
-                        amount_cents = int(total_before_tax * 100)
-                        
-                        customer_data_list.append({
-                            'customer_id': customer.id,
-                            'amount': amount_cents,
-                            'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})'
-                        })
+                    else:
+                        # Auto-create Stripe customer if it doesn't exist
+                        try:
+                            parent_user = User.objects.get(id=parent_id)
+                            customer = stripe.Customer.create(
+                                email=email_str,
+                                name=f"{parent_user.firstName} {parent_user.lastName}",
+                                description=f"Parent account for tutoring services"
+                            )
+                            print(f"Created Stripe customer {customer.id} for {email_str}")
+                        except Exception as e:
+                            print(f"Error creating Stripe customer for {email_str}: {e}")
+                            continue  # Skip this parent if customer creation fails
+                    
+                    # Convert amount to cents as integer
+                    amount_cents = int(total_before_tax * 100)
+                    
+                    customer_data_list.append({
+                        'customer_id': customer.id,
+                        'amount': amount_cents,
+                        'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})'
+                    })
 
         if customer_data_list:
             # Process invoices asynchronously
@@ -1977,7 +1992,8 @@ class InvoiceListView(APIView):
 
         result = stripe.Customer.list(email=customer_email)
         if not result.data:
-            return Response({"error": "No Stripe customer found with this email"}, status=404)
+            # Return empty list instead of 404 error - customer may not have invoices yet
+            return Response([])
 
         customer = result.data[0]
         invoices = stripe.Invoice.list(customer=customer.id, limit=55)
