@@ -72,14 +72,17 @@ const LogHours = memo(() => {
         return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
     }, []);
 
-    // Helper function to get current week date range
+    // Helper function to get current week date range (Monday to Sunday to match backend)
     const getCurrentWeekRange = useCallback(() => {
         const today = new Date();
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        // Get Monday as start of week (getDay() returns 0=Sunday, 1=Monday, etc.)
+        const dayOfWeek = today.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 6 days from Monday
+        startOfWeek.setDate(today.getDate() - daysFromMonday);
         
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Sunday)
         
         return {
             min: startOfWeek.toISOString().split('T')[0], // Format: YYYY-MM-DD
@@ -130,14 +133,17 @@ const LogHours = memo(() => {
             return t('logHours.futureDate');
         }
 
-        // Validate date is within current week
+        // Validate date is within current week (Monday to Sunday to match backend)
         const currentDate = new Date();
         const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week (Sunday)
+        // Get Monday as start of week to match backend logic
+        const dayOfWeek = currentDate.getDay();
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 6 days from Monday
+        startOfWeek.setDate(currentDate.getDate() - daysFromMonday);
         startOfWeek.setHours(0, 0, 0, 0);
         
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Sunday)
         endOfWeek.setHours(23, 59, 59, 999);
 
         if (selectedDate < startOfWeek || selectedDate > endOfWeek) {
@@ -187,7 +193,7 @@ const LogHours = memo(() => {
             // Show success message with student name
             const selectedStudent = students.find(stud => stud.student == student);
             const studentName = selectedStudent ? `${selectedStudent.student_firstName} ${selectedStudent.student_lastName}` : "student";
-            setSuccessMessage(`${decimalHours} hours added with ${studentName}`);
+            setSuccessMessage(t('logHours.hoursAddedSuccess', { hours: decimalHours, student: studentName }));
             
             // Clear form fields
             setStudent("");
@@ -328,7 +334,7 @@ const LogHours = memo(() => {
                     <p>
                         <span 
                             style={{ textDecoration: 'underline', cursor: 'pointer', color: 'green' }}
-                            onClick={() => navigate('/tutor/weekly-hours')}
+                            onClick={() => navigate('/loggedHours')}
                         >
                             {t('logHours.viewAllHours')}
                         </span>

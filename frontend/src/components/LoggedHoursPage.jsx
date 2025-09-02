@@ -172,9 +172,14 @@ export default function LoggedHoursPage() {
   });
 
   const disputedHours = filteredHours.filter(h => {
-    console.log('Hour data:', h); // Debug log
     return h.status === "Disputed" || h.dispute_id;
   });
+  
+  // Non-disputed hours for the main table (exclude disputed hours)
+  const nonDisputedHours = filteredHours.filter(h => {
+    return !(h.status === "Disputed" || h.dispute_id);
+  });
+  
   const totalHours = filteredHours.reduce((sum, h) => sum + parseFloat(h.totalTime || h.total_hours || 0), 0);
 
   const getPeriodLabel = () => {
@@ -287,7 +292,7 @@ export default function LoggedHoursPage() {
             </div>
           </div>
           
-          {filteredHours.length ? (
+          {nonDisputedHours.length ? (
             <table className="hours-table">
               <thead>
                 <tr>
@@ -304,7 +309,7 @@ export default function LoggedHoursPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredHours.map((h) => (
+                {nonDisputedHours.map((h) => (
                   <tr 
                     key={h.id} 
                     className={h.edited_at ? 'edited-row clickable-row' : ''} 

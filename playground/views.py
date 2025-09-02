@@ -1617,13 +1617,13 @@ class ParentHoursListView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
         
-        # Filter hours based on user role
+        # Filter hours based on user role (only show eligible hours)
         if user.roles == 'parent':
-            records = Hours.objects.filter(parent=user).order_by('-created_at')
+            records = Hours.objects.filter(parent=user, eligible='Eligible').order_by('-created_at')
         elif user.roles == 'student':
-            records = Hours.objects.filter(student=user).order_by('-created_at')
+            records = Hours.objects.filter(student=user, eligible='Eligible').order_by('-created_at')
         elif user.roles == 'tutor':
-            records = Hours.objects.filter(tutor=user).order_by('-created_at')
+            records = Hours.objects.filter(tutor=user, eligible='Eligible').order_by('-created_at')
         else:
             records = Hours.objects.none()  # Return empty queryset for unknown roles
             
@@ -1846,11 +1846,23 @@ class calculateTotal(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        date_str = request.query_params.get("currentDay")
-        target_date = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
-
-        start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date_raw = request.query_params.get("start")
+        end_date_raw = request.query_params.get("end")
+        
+        if not start_date_raw or not end_date_raw:
+            # Fall back to old currentDay parameter for backward compatibility
+            date_str = request.query_params.get("currentDay")
+            if date_str:
+                target_date = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
+                start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            else:
+                return Response({"error": "Missing date parameters"}, status=400)
+        else:
+            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
         parents = set(weekly_hours.values_list('parent', flat=True))

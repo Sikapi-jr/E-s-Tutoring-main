@@ -36,10 +36,10 @@ const SendWeekly = () => {
     setError("");
     setLoading(true);
     try {
-      console.log("Fetching hours with params:", { currentDay, endDay });
+      console.log("Fetching hours with params:", { start: currentDay, end: endDay });
       const hrsRes = await api.get(
         `/api/weeklyHours/`,
-        { params: { currentDay, endDay } }
+        { params: { start: currentDay, end: endDay } }
       );
       console.log("Hours response:", hrsRes.data);
       setHours(hrsRes.data);
@@ -47,7 +47,7 @@ const SendWeekly = () => {
       console.log("Fetching totals...");
       const totRes = await api.get(
         `/api/calculateHours/`,
-        { params: { currentDay, endDay } }
+        { params: { start: currentDay, end: endDay } }
       );
       console.log("Totals response:", totRes.data);
       setTotal(totRes.data);

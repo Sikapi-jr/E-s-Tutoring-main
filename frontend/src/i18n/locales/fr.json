@@ -296,7 +296,8 @@
     "currentWeekOnly": "Vous ne pouvez enregistrer des heures que pour la semaine actuelle.",
     "futureEndTime": "Impossible d'enregistrer des heures qui se terminent dans le futur. Veuillez vérifier votre date et heure.",
     "duplicateHours": "Vous avez déjà enregistré des heures pour cet étudiant à cette date et heure exactes.",
-    "allFieldsRequired": "Veuillez remplir tous les champs obligatoires."
+    "allFieldsRequired": "Veuillez remplir tous les champs obligatoires.",
+    "hoursAddedSuccess": "{{hours}} heures ajoutées avec {{student}}"
   },
   "loggedHours": {
     "title": "Mes Heures Enregistrées",

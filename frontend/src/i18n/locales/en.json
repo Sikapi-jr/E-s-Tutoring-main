@@ -297,7 +297,8 @@
     "currentWeekOnly": "You can only log hours for the current week.",
     "futureEndTime": "Cannot log hours that end in the future. Please check your date and time.",
     "duplicateHours": "You have already logged hours for this student at this exact date and time.",
-    "allFieldsRequired": "Please fill in all required fields."
+    "allFieldsRequired": "Please fill in all required fields.",
+    "hoursAddedSuccess": "{{hours}} hours added with {{student}}"
   },
   "loggedHours": {
     "title": "My Logged Hours",
