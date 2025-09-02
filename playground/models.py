@@ -496,6 +496,14 @@ class MonthlyHours(models.Model):
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Payout tracking
+    PAYOUT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+    ]
+    payout_status = models.CharField(max_length=10, choices=PAYOUT_STATUS_CHOICES, default='pending')
+    transfer_id = models.CharField(max_length=100, blank=True, null=True, help_text="Stripe transfer ID if paid")
 
 class StripePayout(models.Model):
     tutor          = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stripe_payouts")

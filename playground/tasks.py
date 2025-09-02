@@ -503,6 +503,16 @@ def batch_payout_processing_async(self, payout_data_list):
                     metadata=metadata,
                 )
                 
+                # Update MonthlyHours status AFTER transfer is successful to prevent race conditions
+                monthly_hours_id = payout_data.get('monthly_hours_id')
+                if monthly_hours_id:
+                    from playground.models import MonthlyHours
+                    MonthlyHours.objects.filter(id=monthly_hours_id).update(
+                        payout_status='paid',
+                        transfer_id=transfer.id
+                    )
+                    logger.info(f"Updated MonthlyHours {monthly_hours_id} to paid status for transfer {transfer.id}")
+                
                 results.append({
                     'tutor_id': payout_data.get('tutor_id'),
                     'stripe_account_id': tutor_stripe_account,

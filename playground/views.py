@@ -2206,7 +2206,7 @@ class BatchMonthlyHoursPayoutView(APIView):
             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
             
             rows = (MonthlyHours.objects
-                    .filter(end_date=end_date_obj, start_date=start_date_obj))
+                    .filter(end_date=end_date_obj, start_date=start_date_obj, payout_status='pending'))
             
             print(f"Found {rows.count()} MonthlyHours records for date range {start_date} to {end_date}")
 
@@ -2248,6 +2248,7 @@ class BatchMonthlyHoursPayoutView(APIView):
                 'amount': amount_cents,
                 'currency': 'cad',
                 'description': f"MonthlyHours #{mh.id} payout",
+                'monthly_hours_id': mh.id,  # Add for easy access in task
                 'metadata': {
                     "monthly_hours_id": mh.id,
                     "tutor_id": tutor.id,
