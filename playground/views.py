@@ -2132,7 +2132,7 @@ class calculateMonthlyTotal(APIView):
             start_date_raw = request.query_params.get("start")
             last_date = datetime.strptime(last_date_raw, "%Y-%m-%d")
             start_date = datetime.strptime(start_date_raw, "%Y-%m-%d")
-            start_date = (start_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
             end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         except Exception as e:
             print(f"calculateMonthlyTotal date parsing error: {e}")
@@ -2244,7 +2244,7 @@ class BatchMonthlyHoursPayoutView(APIView):
 
             payout_data_list.append({
                 'tutor_id': tutor.id,
-                'stripe_account_id': tutor.stripe_account_id,
+                'stripe_account_id': tutor.stripe_account_id.strip() if tutor.stripe_account_id else None,
                 'amount': amount_cents,
                 'currency': 'cad',
                 'description': f"MonthlyHours #{mh.id} payout",

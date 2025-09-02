@@ -488,7 +488,7 @@ def batch_payout_processing_async(self, payout_data_list):
     try:
         for payout_data in payout_data_list:
             try:
-                tutor_stripe_account = payout_data['stripe_account_id']
+                tutor_stripe_account = payout_data['stripe_account_id'].strip()
                 amount = payout_data['amount']  # in cents
                 currency = payout_data.get('currency', 'cad')
                 description = payout_data.get('description', 'Tutoring payment')
