@@ -1933,9 +1933,17 @@ class CreateInvoiceView(APIView):
             online_hours = Decimal(parent_hours.filter(location='Online').aggregate(Sum('totalTime'))['totalTime__sum'] or 0)
             inperson_hours = Decimal(parent_hours.filter(location='In-Person').aggregate(Sum('totalTime'))['totalTime__sum'] or 0)
 
-            total_online = online_hours * online_rate_dict.get(parent_id, Decimal('0'))
-            total_inperson = inperson_hours * inperson_rate_dict.get(parent_id, Decimal('0'))
+            # Debug logging for rates and hours
+            online_rate = online_rate_dict.get(parent_id, Decimal('0'))
+            inperson_rate = inperson_rate_dict.get(parent_id, Decimal('0'))
+            print(f"Parent {parent_id}: Online hours: {online_hours}, rate: ${online_rate}")
+            print(f"Parent {parent_id}: In-person hours: {inperson_hours}, rate: ${inperson_rate}")
+            
+            total_online = online_hours * online_rate
+            total_inperson = inperson_hours * inperson_rate
             total_before_tax = total_online + total_inperson
+            
+            print(f"Parent {parent_id}: Total online: ${total_online}, total in-person: ${total_inperson}, total: ${total_before_tax}")
             
             # Only create invoice if there's an amount to charge
             if total_before_tax > 0:
