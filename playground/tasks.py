@@ -377,6 +377,7 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     # Create invoice with due date and tax
                     invoice = stripe.Invoice.create(
                         customer=customer_id,
+                        currency='cad',  # Set invoice currency to CAD
                         metadata=invoice_metadata or {},
                         due_date=due_date,
                         collection_method='send_invoice',  # Required when setting due_date
