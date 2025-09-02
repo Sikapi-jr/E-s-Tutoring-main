@@ -388,7 +388,6 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         metadata=invoice_metadata or {},
                         due_date=due_date,
                         collection_method='send_invoice',  # Required when setting due_date
-                        days_until_due=14,  # 14 days to pay
                         auto_advance=False,  # Don't auto-advance when using due_date
                         default_tax_rates=[],  # We'll add tax rate below
                     )
