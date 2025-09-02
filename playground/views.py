@@ -1923,9 +1923,14 @@ class CreateInvoiceView(APIView):
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
+        print(f"Rate data query result: {list(rate_data)}")
+        
         online_rate_dict = {item['id']: Decimal(item['rateOnline'] or 0) for item in rate_data}
         inperson_rate_dict = {item['id']: Decimal(item['rateInPerson'] or 0) for item in rate_data}
         parent_email_dict = {item['id']: item['email'] for item in rate_data}
+        
+        print(f"Online rate dict: {online_rate_dict}")
+        print(f"In-person rate dict: {inperson_rate_dict}")
 
         customer_data_list = []
         for parent_id in parents:
