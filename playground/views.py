@@ -1896,50 +1896,68 @@ class CreateInvoiceView(APIView):
             print(f"Error importing bulk_invoice_generation_async: {e}")
             return Response({"error": f"Task import error: {str(e)}"}, status=500)
         
-        today_str = request.query_params.get('currentDay')
-        if not today_str:
+        # Use start/end parameters instead of currentDay
+        start_date_raw = request.query_params.get('start')
+        end_date_raw = request.query_params.get('end')
+        
+        if not start_date_raw or not end_date_raw:
             # Debug: Show what parameters were actually sent
             return Response({
-                "error": "Missing 'currentDay' query parameter", 
+                "error": "Missing 'start' and 'end' query parameters", 
                 "received_query_params": dict(request.query_params),
                 "received_data": dict(request.data)
             }, status=400)
 
         try:
-            today = datetime.strptime(today_str, "%Y-%m-%d").date()
+            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         except ValueError:
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        # Get all parent users for today
-        customers_email_qs = WeeklyHours.objects.filter(date=today).values_list('parent__email', flat=True).distinct()
+        # Calculate totals from actual hours data (same logic as calculateTotal view)
+        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
+        parents = set(weekly_hours.values_list('parent', flat=True))
+
+        rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
+        online_rate_dict = {item['id']: Decimal(item['rateOnline'] or 0) for item in rate_data}
+        inperson_rate_dict = {item['id']: Decimal(item['rateInPerson'] or 0) for item in rate_data}
+        parent_email_dict = {item['id']: item['email'] for item in rate_data}
 
         customer_data_list = []
-        for email_str in customers_email_qs:
-            if not email_str:  # Skip if no email
-                continue
-                
-            # Find stripe customers by email
-            result = stripe.Customer.list(email=email_str)
-            if result and result.data:
-                customer = result.data[0]
-                
-                # Get the total before tax amount for this customer's email and date
-                amount_dict = WeeklyHours.objects.filter(date=today, parent__email=email_str).values('TotalBeforeTax').first()
-                if amount_dict and 'TotalBeforeTax' in amount_dict:
-                    # Convert amount to cents as integer
-                    amount_cents = int(Decimal(amount_dict['TotalBeforeTax']) * 100)
-                    
-                    customer_data_list.append({
-                        'customer_id': customer.id,
-                        'amount': amount_cents,
-                        'description': 'Tutoring Sessions'
-                    })
+        for parent_id in parents:
+            parent_hours = weekly_hours.filter(parent_id=parent_id)
+            online_hours = Decimal(parent_hours.filter(location='Online').aggregate(Sum('totalTime'))['totalTime__sum'] or 0)
+            inperson_hours = Decimal(parent_hours.filter(location='In-Person').aggregate(Sum('totalTime'))['totalTime__sum'] or 0)
+
+            total_online = online_hours * online_rate_dict.get(parent_id, Decimal('0'))
+            total_inperson = inperson_hours * inperson_rate_dict.get(parent_id, Decimal('0'))
+            total_before_tax = total_online + total_inperson
+            
+            # Only create invoice if there's an amount to charge
+            if total_before_tax > 0:
+                email_str = parent_email_dict.get(parent_id)
+                if email_str:
+                    # Find stripe customers by email
+                    result = stripe.Customer.list(email=email_str)
+                    if result and result.data:
+                        customer = result.data[0]
+                        
+                        # Convert amount to cents as integer
+                        amount_cents = int(total_before_tax * 100)
+                        
+                        customer_data_list.append({
+                            'customer_id': customer.id,
+                            'amount': amount_cents,
+                            'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})'
+                        })
 
         if customer_data_list:
             # Process invoices asynchronously
             bulk_invoice_generation_async.delay(
                 customer_data_list,
-                {'date': today_str, 'currency': 'cad'}
+                {'start_date': start_date_raw, 'end_date': end_date_raw, 'currency': 'cad'}
             )
             return Response({
                 "message": f"Bulk invoice generation started for {len(customer_data_list)} customers",

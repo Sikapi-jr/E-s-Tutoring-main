@@ -85,7 +85,7 @@ const SendWeekly = () => {
       await api.post(
         `/api/checkout/`,
         {},
-        { params: { currentDay, endDay } }
+        { params: { start: currentDay, end: endDay } }
       );
       alert(t('weekly.checkoutTriggered'));
     } catch (e) {
