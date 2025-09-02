@@ -1766,19 +1766,12 @@ class WeeklyHoursListView(APIView):
         end_date_raw = request.query_params.get("end")
         
         if not start_date_raw or not end_date_raw:
-            # Fall back to old currentDay parameter for backward compatibility
-            current_day = request.query_params.get("currentDay")
-            if current_day:
-                target_date = make_aware(datetime.strptime(current_day, "%Y-%m-%d"))
-                start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
-            else:
-                return Response({"error": "Missing date parameters"}, status=400)
-        else:
-            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
-            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
-            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            return Response({"error": "start and end parameters are required"}, status=400)
+        
+        start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+        end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
@@ -1850,19 +1843,13 @@ class calculateTotal(APIView):
         end_date_raw = request.query_params.get("end")
         
         if not start_date_raw or not end_date_raw:
-            # Fall back to old currentDay parameter for backward compatibility
-            date_str = request.query_params.get("currentDay")
-            if date_str:
-                target_date = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
-                start_date = (target_date - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = (target_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
-            else:
-                return Response({"error": "Missing date parameters"}, status=400)
-        else:
-            start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
-            end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
-            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            return Response({"error": "start and end parameters are required"}, status=400)
+        
+        start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+        end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        result_date = end_date.date()
 
         weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
         parents = set(weekly_hours.values_list('parent', flat=True))
@@ -1883,7 +1870,7 @@ class calculateTotal(APIView):
             total_before_tax = total_online + total_inperson
 
             results.append({
-                "date": target_date.date(),
+                "date": result_date,
                 "parent": parent_id,
                 "OnlineHours": float(online_hours),
                 "InPersonHours": float(inperson_hours),
