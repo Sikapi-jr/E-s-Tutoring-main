@@ -461,6 +461,14 @@ class Hours(models.Model):
     edited_at = models.DateTimeField(null=True, blank=True)
     edit_history = models.JSONField(default=dict, blank=True)
     tutor_reply = models.TextField(blank=True, null=True)
+    
+    # Invoice tracking
+    INVOICE_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('invoiced', 'Invoiced'),
+    ]
+    invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS_CHOICES, default='pending')
+    invoice_id = models.CharField(max_length=100, blank=True, null=True, help_text="Stripe invoice ID if invoiced")
 
 
 class WeeklyHours(models.Model):

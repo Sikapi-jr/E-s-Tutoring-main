@@ -426,6 +426,16 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     invoice = stripe.Invoice.finalize_invoice(invoice.id)
                     invoice = stripe.Invoice.send_invoice(invoice.id)
                     
+                    # Update hours status AFTER invoice is successfully sent to prevent race conditions
+                    hour_ids = customer_data.get('hour_ids', [])
+                    if hour_ids:
+                        from playground.models import Hours
+                        Hours.objects.filter(id__in=hour_ids).update(
+                            invoice_status='invoiced',
+                            invoice_id=invoice.id
+                        )
+                        logger.info(f"Updated {len(hour_ids)} hours to invoiced status for invoice {invoice.id}")
+                    
                     results.append({
                         'customer_id': customer_id,
                         'invoice_id': invoice.id,

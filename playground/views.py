@@ -1919,7 +1919,8 @@ class CreateInvoiceView(APIView):
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
         # Calculate totals from actual hours data (same logic as calculateTotal view)
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
+        # Only include hours that haven't been invoiced yet to prevent duplicates
+        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible', invoice_status='pending')
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
@@ -1975,13 +1976,17 @@ class CreateInvoiceView(APIView):
                     # Convert amount to cents as integer (Stripe expects cents)
                     amount_cents = int(total_before_tax * 100)
                     
+                    # Get hour IDs for this parent to update after invoice is sent
+                    parent_hour_ids = list(parent_hours.values_list('id', flat=True))
+                    
                     # Debug logging to ensure correct amounts
                     print(f"Parent {parent_id}: ${total_before_tax:.2f} = {amount_cents} cents")
                     
                     customer_data_list.append({
                         'customer_id': customer.id,
                         'amount': amount_cents,
-                        'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})'
+                        'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})',
+                        'hour_ids': parent_hour_ids  # Include hour IDs for status update
                     })
 
         if customer_data_list:
