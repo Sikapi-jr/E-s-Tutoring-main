@@ -81,6 +81,10 @@ urlpatterns = [
     
     # Tutor leave student endpoint
     path('tutor-leave-student/', views.TutorLeaveStudentView.as_view(), name='tutor-leave-student'),
+    
+    # Debug endpoints for hours
+    path('existing-weekly-hours/', views.existing_weekly_hours, name='existing-weekly-hours'),
+    path('existing-monthly-hours/', views.existing_monthly_hours, name='existing-monthly-hours'),
 
 ]
 

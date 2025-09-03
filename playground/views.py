@@ -1808,14 +1808,23 @@ class WeeklyHoursListView(APIView):
                     print(f"Date parsing error for entry {entry}: {e}")
                     continue
 
+                # Check for both duplicates and overlaps
+                # For WeeklyHours, we check if there's already a record for the same parent on the same date
                 exists = WeeklyHours.objects.filter(
                     date=date_obj,
+                    parent=parent_user
+                ).exists()
+                
+                # Also check for potential overlaps within a date range (e.g., same week)
+                from datetime import timedelta
+                week_start = date_obj - timedelta(days=date_obj.weekday())
+                week_end = week_start + timedelta(days=6)
+                overlap_exists = WeeklyHours.objects.filter(
                     parent=parent_user,
-                    OnlineHours=entry.get('OnlineHours'),
-                    InPersonHours=entry.get('InPersonHours')
+                    date__range=[week_start, week_end]
                 ).exists()
 
-                if not exists:
+                if not exists and not overlap_exists:
                     WeeklyHours.objects.create(
                         date=date_obj,
                         parent=parent_user,
@@ -1825,8 +1834,10 @@ class WeeklyHoursListView(APIView):
                     )
                     created = True
                     print(f"Created WeeklyHours for parent {parent_id}")
-                else:
-                    print(f"WeeklyHours already exists for parent {parent_id}")
+                elif exists:
+                    print(f"WeeklyHours already exists for parent {parent_id} on {date_obj}")
+                elif overlap_exists:
+                    print(f"WeeklyHours overlap detected for parent {parent_id} in week {week_start} to {week_end}")
 
         except Exception as e:
             print(f"Error in WeeklyHoursListView.post: {e}")
@@ -2090,15 +2101,26 @@ class MonthlyHoursListView(APIView):
                     print(f"Date parsing error for entry {entry}: {e}")
                     continue
 
+                # Check for both duplicates and overlaps
                 exists = MonthlyHours.objects.filter(
                     end_date=end_date,
                     start_date=start_date,
-                    tutor=tutor_user,
-                    OnlineHours=entry.get('OnlineHours'),
-                    InPersonHours=entry.get('InPersonHours')
+                    tutor=tutor_user
+                ).exists()
+                
+                # Check for overlapping periods for the same tutor
+                # An overlap exists if any existing record has dates that intersect with our range
+                overlap_exists = MonthlyHours.objects.filter(
+                    tutor=tutor_user
+                ).filter(
+                    # Check if start_date falls within existing range OR end_date falls within existing range
+                    # OR the new range completely encompasses an existing range
+                    Q(start_date__lte=start_date, end_date__gte=start_date) |
+                    Q(start_date__lte=end_date, end_date__gte=end_date) |
+                    Q(start_date__gte=start_date, end_date__lte=end_date)
                 ).exists()
 
-                if not exists:
+                if not exists and not overlap_exists:
                     MonthlyHours.objects.create(
                         end_date=end_date,
                         start_date=start_date,
@@ -2109,8 +2131,10 @@ class MonthlyHoursListView(APIView):
                     )
                     created = True
                     print(f"Created MonthlyHours for tutor {tutor_id}")
-                else:
-                    print(f"MonthlyHours already exists for tutor {tutor_id}")
+                elif exists:
+                    print(f"MonthlyHours already exists for tutor {tutor_id} from {start_date} to {end_date}")
+                elif overlap_exists:
+                    print(f"MonthlyHours overlap detected for tutor {tutor_id} with period {start_date} to {end_date}")
 
         except Exception as e:
             print(f"Error in MonthlyHoursListView.post: {e}")
@@ -2769,4 +2793,59 @@ The EGS Tutoring Team
         except Exception as e:
             print(f"Error in tutor leave student: {e}")
             return Response({"error": "Failed to process tutor leave request"}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def existing_weekly_hours(request):
+    """
+    Debug endpoint to fetch all existing WeeklyHours records from database
+    """
+    try:
+        weekly_hours = WeeklyHours.objects.all().order_by('-created_at')
+        data = []
+        for wh in weekly_hours:
+            data.append({
+                'id': wh.id,
+                'parent': wh.parent,
+                'date': wh.date,
+                'start_date': wh.date,  # WeeklyHours uses 'date' field
+                'end_date': wh.date,    # Same date for weekly
+                'OnlineHours': wh.OnlineHours,
+                'InPersonHours': wh.InPersonHours,
+                'TotalBeforeTax': wh.TotalBeforeTax,
+                'created_at': wh.created_at,
+                'online_hours': wh.OnlineHours,  # Alternative field names
+                'in_person_hours': wh.InPersonHours,
+                'total_before_tax': wh.TotalBeforeTax,
+            })
+        return Response(data)
+    except Exception as e:
+        return Response({"error": f"Failed to fetch existing weekly hours: {str(e)}"}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def existing_monthly_hours(request):
+    """
+    Debug endpoint to fetch all existing MonthlyHours records from database
+    """
+    try:
+        monthly_hours = MonthlyHours.objects.all().order_by('-created_at')
+        data = []
+        for mh in monthly_hours:
+            data.append({
+                'id': mh.id,
+                'tutor': mh.tutor,
+                'start_date': mh.start_date,
+                'end_date': mh.end_date,
+                'OnlineHours': mh.OnlineHours,
+                'InPersonHours': mh.InPersonHours,
+                'TotalBeforeTax': mh.TotalBeforeTax,
+                'created_at': mh.created_at,
+                'online_hours': mh.OnlineHours,  # Alternative field names
+                'in_person_hours': mh.InPersonHours,
+                'total_before_tax': mh.TotalBeforeTax,
+            })
+        return Response(data)
+    except Exception as e:
+        return Response({"error": f"Failed to fetch existing monthly hours: {str(e)}"}, status=500)
 
