@@ -1372,7 +1372,9 @@ export default function Home() {
                       >
                         <div
                           style={{
-                            backgroundColor: getInvoiceAgeColor(i.created),
+                            backgroundColor: "#d4edda",
+                            border: "2px solid #28a745",
+                            color: "#155724",
                             padding: "0.5rem",
                             marginBottom: "0.5rem",
                             borderRadius: 5,
@@ -1421,7 +1423,9 @@ export default function Home() {
                       >
                         <div
                           style={{
-                            backgroundColor: getInvoiceAgeColor(i.created),
+                            backgroundColor: "#f8d7da",
+                            border: "2px solid #dc3545",
+                            color: "#721c24",
                             padding: "0.5rem",
                             marginBottom: "0.5rem",
                             borderRadius: 5,
@@ -1458,129 +1462,6 @@ export default function Home() {
           }}
           className="home-second-row"
         >
-          {/* Notifications - Same width as announcements */}
-          <div
-            style={{
-              width: "20%",
-              display: "flex",
-              flexDirection: "column",
-              paddingTop: "0.5rem",
-            }}
-            className="home-notifications-column"
-          >
-            <div
-              style={{
-                background: "#fff",
-                border: "3px solid #E1E1E1",
-                borderRadius: 12,
-                padding: "1rem",
-                height: 177,
-                maxHeight: 177,
-                minHeight: 177,
-                overflowY: "auto",
-              }}
-            >
-              <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "1rem" }}>{t('home.notifications')}</h4>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => {
-                    // Determine background color based on notification type and read status
-                    const getNotificationStyle = (type, read) => {
-                      const baseStyle = {
-                        padding: "0.5rem",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        opacity: read ? 0.7 : 1,
-                      };
-                      
-                      switch (type) {
-                        case 'payment_due':
-                        case 'report_due':
-                          return {
-                            ...baseStyle,
-                            backgroundColor: "#fff3cd",
-                            border: "1px solid #ffeaa7"
-                          };
-                        case 'payment_success':
-                        case 'session_complete':
-                          return {
-                            ...baseStyle,
-                            backgroundColor: "#d4edda",
-                            border: "1px solid #c3e6cb"
-                          };
-                        case 'session_logged':
-                        case 'new_student':
-                        case 'resources':
-                          return {
-                            ...baseStyle,
-                            backgroundColor: "#d1ecf1",
-                            border: "1px solid #bee5eb"
-                          };
-                        case 'system':
-                        default:
-                          return {
-                            ...baseStyle,
-                            backgroundColor: "#f8d7da",
-                            border: "1px solid #f5c6cb"
-                          };
-                      }
-                    };
-                    
-                    return (
-                      <div 
-                        key={notification.id} 
-                        style={{
-                          ...getNotificationStyle(notification.type, notification.read),
-                          position: "relative",
-                          cursor: "pointer"
-                        }}
-                        onClick={() => handleNotificationClick(notification.id)}
-                      >
-                        <div style={{ 
-                          display: "flex", 
-                          justifyContent: "space-between", 
-                          alignItems: "flex-start",
-                          marginBottom: "0.25rem"
-                        }}>
-                          <div style={{ fontWeight: "bold", color: "#192A88" }}>
-                            {notification.icon} {notification.title}
-                          </div>
-                          <div style={{ 
-                            fontSize: "0.65rem", 
-                            color: "#888",
-                            marginLeft: "0.5rem"
-                          }}>
-                            {new Date(notification.created_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div style={{ color: "#666", fontSize: "0.7rem" }}>
-                          {notification.message}
-                        </div>
-                        {!notification.read && (
-                          <div style={{ 
-                            position: "absolute", 
-                            right: "0.5rem", 
-                            top: "0.5rem",
-                            width: "8px", 
-                            height: "8px", 
-                            backgroundColor: "#dc3545",
-                            borderRadius: "50%"
-                          }} />
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
-                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔔</div>
-                    <div style={{ fontSize: "0.8rem" }}>No notifications yet</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Recent Parent Requests - Same width as scheduled events */}
           <div
             style={{
@@ -1767,6 +1648,129 @@ export default function Home() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Notifications - Same width as announcements */}
+          <div
+            style={{
+              width: "20%",
+              display: "flex",
+              flexDirection: "column",
+              paddingTop: "0.5rem",
+            }}
+            className="home-notifications-column"
+          >
+            <div
+              style={{
+                background: "#fff",
+                border: "3px solid #E1E1E1",
+                borderRadius: 12,
+                padding: "1rem",
+                height: 177,
+                maxHeight: 177,
+                minHeight: 177,
+                overflowY: "auto",
+              }}
+            >
+              <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "1rem" }}>{t('home.notifications')}</h4>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => {
+                    // Determine background color based on notification type and read status
+                    const getNotificationStyle = (type, read) => {
+                      const baseStyle = {
+                        padding: "0.5rem",
+                        borderRadius: "4px",
+                        fontSize: "0.75rem",
+                        opacity: read ? 0.7 : 1,
+                      };
+                      
+                      switch (type) {
+                        case 'payment_due':
+                        case 'report_due':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#fff3cd",
+                            border: "1px solid #ffeaa7"
+                          };
+                        case 'payment_success':
+                        case 'session_complete':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#d4edda",
+                            border: "1px solid #c3e6cb"
+                          };
+                        case 'session_logged':
+                        case 'new_student':
+                        case 'resources':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#d1ecf1",
+                            border: "1px solid #bee5eb"
+                          };
+                        case 'system':
+                        default:
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#f8d7da",
+                            border: "1px solid #f5c6cb"
+                          };
+                      }
+                    };
+                    
+                    return (
+                      <div 
+                        key={notification.id} 
+                        style={{
+                          ...getNotificationStyle(notification.type, notification.read),
+                          position: "relative",
+                          cursor: "pointer"
+                        }}
+                        onClick={() => handleNotificationClick(notification.id)}
+                      >
+                        <div style={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: "flex-start",
+                          marginBottom: "0.25rem"
+                        }}>
+                          <div style={{ fontWeight: "bold", color: "#192A88" }}>
+                            {notification.icon} {notification.title}
+                          </div>
+                          <div style={{ 
+                            fontSize: "0.65rem", 
+                            color: "#888",
+                            marginLeft: "0.5rem"
+                          }}>
+                            {new Date(notification.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div style={{ color: "#666", fontSize: "0.7rem" }}>
+                          {notification.message}
+                        </div>
+                        {!notification.read && (
+                          <div style={{ 
+                            position: "absolute", 
+                            right: "0.5rem", 
+                            top: "0.5rem",
+                            width: "8px", 
+                            height: "8px", 
+                            backgroundColor: "#dc3545",
+                            borderRadius: "50%"
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
+                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔔</div>
+                    <div style={{ fontSize: "0.8rem" }}>No notifications yet</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

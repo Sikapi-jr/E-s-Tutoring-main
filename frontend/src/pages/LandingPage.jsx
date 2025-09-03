@@ -60,6 +60,28 @@ const LandingPage = () => {
             </div>
           </section>
 
+          <section className="getting-started-section">
+            <h2>{t('landing.gettingStarted')}</h2>
+            <p className="steps-subtitle">{t('landing.stepsSubtitle')}</p>
+            <div className="steps-container">
+              <div className="step-card">
+                <div className="step-number">1</div>
+                <h3>📝 {t('landing.steps.step1.title')}</h3>
+                <p>{t('landing.steps.step1.description')}</p>
+              </div>
+              <div className="step-card">
+                <div className="step-number">2</div>
+                <h3>🔍 {t('landing.steps.step2.title')}</h3>
+                <p>{t('landing.steps.step2.description')}</p>
+              </div>
+              <div className="step-card">
+                <div className="step-number">3</div>
+                <h3>💬 {t('landing.steps.step3.title')}</h3>
+                <p>{t('landing.steps.step3.description')}</p>
+              </div>
+            </div>
+          </section>
+
           <section className="benefits-section">
             <h2>{t('landing.whyPortal')}</h2>
             <ul className="benefits-list">

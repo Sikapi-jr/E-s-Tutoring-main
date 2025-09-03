@@ -151,6 +151,7 @@
     "homeAddress": "Adresse du domicile",
     "selectCity": "Sélectionner une ville",
     "privateInformation": "Vos informations privées",
+    "studentPrivateInformation": "Informations privées de l'étudiant",
     "verificationEmailSent": "Courriel de vérification envoyé à {{email}}",
     "registerAs": "S'inscrire en tant que {{role}}",
     "noUserLoggedIn": "Aucun utilisateur n'est connecté.",

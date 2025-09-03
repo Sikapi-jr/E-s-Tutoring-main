@@ -302,7 +302,7 @@ function NavbarContent() {
 
   return (
     <header className="nav">
-      <NavLink to="/home" className="nav__brand">
+      <NavLink to="/" className="nav__brand">
         <EGSLogo className="nav__logo" />
       </NavLink>
 

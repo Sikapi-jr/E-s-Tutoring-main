@@ -92,18 +92,41 @@ def send_verification_email_async(self, user_id, verification_link):
         user = User.objects.get(id=user_id)
         
         subject = 'Verify Your EGS Tutoring Account'
-        message = f"""
-        Hello {user.firstName},
         
-        Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+        # Different message based on user role
+        if user.roles == 'parent':
+            message = f"""
+Hello {user.firstName},
+
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+
+{verification_link}
+
+Next Steps for Parents:
+1. Create accounts for your children through your parent dashboard
+2. Submit a tutoring request on the Request page specifying your child's needs
+3. Review tutor replies on the Current Requests page and accept the best fit
+
+You can access your dashboard at https://egstutoring.ca/home after verification.
+
+If you didn't create this account, please ignore this email.
+
+Best regards,
+EGS Tutoring Team
+            """
+        else:
+            message = f"""
+Hello {user.firstName},
         
-        {verification_link}
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
         
-        If you didn't create this account, please ignore this email.
+{verification_link}
         
-        Best regards,
-        EGS Tutoring Team
-        """
+If you didn't create this account, please ignore this email.
+        
+Best regards,
+EGS Tutoring Team
+            """
         
         # Use Mailgun API instead of Django's send_mail
         send_mailgun_email(
@@ -914,7 +937,10 @@ Reply:
 {reply_message}
 {documents_text}
 
-Please visit your dashboard to view the full conversation and take action if needed.
+Please visit your Current Requests page to view the full conversation and take action:
+https://egstutoring.ca/request-reply
+
+You can also access this through your dashboard at https://egstutoring.ca/home
 
 Best regards,
 EGS Tutoring Team
@@ -1263,3 +1289,72 @@ def delete_mapulus_pin_async(self, pin_id, user_info=None):
     except Exception as e:
         logger.error(f"Error in delete_mapulus_pin_async for pin {pin_id}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_system_notification_email_async(self, notification_title, notification_message, target_role='all', priority='normal', icon='🔔'):
+    """
+    Send system notification email to all active users based on role
+    """
+    try:
+        from playground.models import User
+        
+        # Determine which users to email based on target_role
+        if target_role == 'all':
+            users = User.objects.filter(is_active=True).exclude(email='')
+        else:
+            users = User.objects.filter(is_active=True, roles=target_role).exclude(email='')
+        
+        subject = f'{icon} EGS Tutoring System Notification - {notification_title}'
+        
+        # Prepare priority indicator
+        priority_text = ''
+        if priority == 'urgent':
+            priority_text = '🚨 URGENT: '
+        elif priority == 'high':
+            priority_text = '⚠️ HIGH PRIORITY: '
+        elif priority == 'low':
+            priority_text = 'ℹ️ '
+        
+        successful_emails = []
+        failed_emails = []
+        
+        for user in users:
+            try:
+                user_message = f"""
+Hello {user.firstName},
+
+{priority_text}{notification_title}
+
+{notification_message}
+
+You can access your dashboard at https://egstutoring.ca/home for more information.
+
+Best regards,
+EGS Tutoring Team
+                """
+                
+                send_mailgun_email(
+                    to_emails=[user.email],
+                    subject=subject,
+                    text_content=user_message
+                )
+                
+                successful_emails.append(user.email)
+                logger.info(f"System notification sent to {user.email}")
+                
+            except Exception as email_error:
+                failed_emails.append(user.email)
+                logger.error(f"Failed to send system notification to {user.email}: {str(email_error)}")
+        
+        logger.info(f"System notification sent to {len(successful_emails)} users, {len(failed_emails)} failed")
+        return {
+            'success': True, 
+            'sent_count': len(successful_emails),
+            'failed_count': len(failed_emails),
+            'successful_emails': successful_emails,
+            'failed_emails': failed_emails
+        }
+        
+    except Exception as e:
+        logger.error(f"Error sending system notification emails: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))

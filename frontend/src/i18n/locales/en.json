@@ -39,6 +39,22 @@
       "secure": "Secure data handling with encrypted communications",
       "mobile": "Mobile-responsive design for access anywhere, anytime",
       "efficient": "Streamlined workflows that save time and reduce administrative burden"
+    },
+    "gettingStarted": "Getting Started as a Parent",
+    "stepsSubtitle": "Follow these simple steps to get your child connected with the perfect tutor:",
+    "steps": {
+      "step1": {
+        "title": "Create Accounts",
+        "description": "Register an account for yourself, then create student accounts for your children through your parent dashboard."
+      },
+      "step2": {
+        "title": "Request a Tutor", 
+        "description": "Submit a tutoring request specifying your child's grade, subject needs, and preferred learning format (online or in-person)."
+      },
+      "step3": {
+        "title": "Review Replies",
+        "description": "Check the Current Requests page to see tutor responses, compare qualifications, and accept the best fit for your child."
+      }
     }
   },
   "common": {
@@ -151,6 +167,7 @@
     "homeAddress": "Home Address",
     "selectCity": "Select a city",
     "privateInformation": "Your Private Information",
+    "studentPrivateInformation": "Student Private Information",
     "verificationEmailSent": "Verification email sent to {{email}}",
     "registerAs": "Register as {{role}}",
     "noUserLoggedIn": "No user is logged in.",

@@ -152,7 +152,7 @@ function RegisterForm() {
               required
             />
 
-            <h2>{t('auth.privateInformation')}</h2>
+            <h2 style={{ textAlign: 'center' }}>{t('auth.privateInformation')}</h2>
 
             <input
               className="form-input"
@@ -237,7 +237,7 @@ function RegisterForm() {
               placeholder={t('auth.parentUsername')}
               required
             />
-            <h2>{t('auth.privateInformation')}</h2>
+            <h2 style={{ textAlign: 'center' }}>{t('auth.studentPrivateInformation')}</h2>
 
             <input
               className="form-input"
