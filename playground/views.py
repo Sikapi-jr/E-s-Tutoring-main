@@ -683,7 +683,8 @@ def list_egs_tutoring_events_unfiltered(request):
         "maxResults": 250,
     }
 
-    default_time_min = datetime.now(timezone.utc).isoformat()
+    from datetime import timezone as dt_timezone
+    default_time_min = datetime.now(dt_timezone.utc).isoformat()
     params["timeMin"] = default_time_min
 
     # Allow caller to override/extend certain Google params

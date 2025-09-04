@@ -24,6 +24,7 @@ export default function CalendarConnect() {
   const [students, setStudents] = useState([]);
   const [parentEmail, setParentEmail] = useState("");       // hidden option value
   const [isConnected, setIsConnected] = useState(false);
+  const [scheduledEvents, setScheduledEvents] = useState([]);
 
   const [formData, setFormData] = useState({
     subject: "",
@@ -52,7 +53,7 @@ export default function CalendarConnect() {
         setIsConnected(false);
       });
 
-    // 2) fetch tutor’s students
+    // 2) fetch tutor's students
     (async () => {
       try {
         const res = await api.get(
@@ -63,9 +64,23 @@ export default function CalendarConnect() {
         console.error("Error fetching students:", err);
       }
     })();
-  }, [token, tutor_id, user.account_id]);
+
+    // 3) fetch scheduled events if connected
+    if (isConnected) {
+      fetchScheduledEvents();
+    }
+  }, [token, tutor_id, user.account_id, isConnected]);
 
   /* ─────────────────────────  helpers ───────────────────────────── */
+  const fetchScheduledEvents = async () => {
+    try {
+      const res = await api.get(`/api/google/events/?id=${user.account_id}`);
+      setScheduledEvents(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Error fetching scheduled events:", err);
+    }
+  };
+
   const handleConnect = () => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
     window.location.href = `${API_BASE_URL}/api/google/oauth/init?token=${token}`;
@@ -106,6 +121,8 @@ export default function CalendarConnect() {
     try {
       await api.post("/api/create-event/", payload);
       alert(t('calendar.eventCreatedSuccessfully'));
+      // Refresh the events list after creating a new event
+      fetchScheduledEvents();
     } catch (err) {
       console.error("Error creating event:", err);
       alert(t('calendar.failedToCreateEvent'));
@@ -200,6 +217,106 @@ export default function CalendarConnect() {
               {t('calendar.scheduleTutoringSession')}
             </button>
           </form>
+
+          {/* Scheduled Sessions Table */}
+          <div style={{ marginTop: "2rem" }}>
+            <h2>{t('calendar.scheduledSessions')}</h2>
+            {scheduledEvents.length > 0 ? (
+              <div className="table-wrapper" style={{ overflowX: "auto" }}>
+                <table className="events-table" style={{ 
+                  width: "100%", 
+                  borderCollapse: "collapse",
+                  marginTop: "1rem"
+                }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#f8f9fa" }}>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.subject')}
+                      </th>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.student')}
+                      </th>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.date')}
+                      </th>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.time')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scheduledEvents.map((event, index) => {
+                      const startDate = new Date(event.start?.dateTime || event.start?.date);
+                      const endDate = new Date(event.end?.dateTime || event.end?.date);
+                      
+                      return (
+                        <tr key={event.id || index} style={{ 
+                          borderBottom: "1px solid #dee2e6"
+                        }}>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee"
+                          }}>
+                            {event.summary || t('calendar.noTitle')}
+                          </td>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee"
+                          }}>
+                            {event.description || "-"}
+                          </td>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee"
+                          }}>
+                            {startDate.toLocaleDateString()}
+                          </td>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee"
+                          }}>
+                            {event.start?.dateTime ? 
+                              `${startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
+                              : t('calendar.allDay')
+                            }
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ 
+                textAlign: "center", 
+                color: "#6c757d", 
+                fontStyle: "italic",
+                marginTop: "1rem"
+              }}>
+                {t('calendar.noScheduledSessions')}
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>
