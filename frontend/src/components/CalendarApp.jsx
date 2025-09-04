@@ -233,7 +233,7 @@ export default function EventsPage() {
                 <th>Start</th>
                 <th>End</th>
                 <th>Description</th>
-                <th>Can’t attend</th>
+                <th title="Can't attend">❌</th>
               </tr>
             </thead>
             <tbody>
@@ -251,8 +251,10 @@ export default function EventsPage() {
                       <button
                         onClick={() => markCantAttend(ev.id)}
                         className="cant-btn"
+                        style={{ fontSize: "1.2rem" }}
+                        title="Can't attend"
                       >
-                        Can’t attend
+                        ❌
                       </button>
                     </td>
                   </tr>

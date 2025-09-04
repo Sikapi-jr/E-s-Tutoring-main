@@ -876,13 +876,14 @@ export default function Home() {
                         <button
                           onClick={() => markCantAttend(ev.id)}
                           style={{
-                            color: "red",
                             border: "none",
                             background: "none",
                             cursor: "pointer",
+                            fontSize: "1.2rem"
                           }}
+                          title="Can't attend"
                         >
-                          {t('home.cantAttend')}
+                          ❌
                         </button>
                       </td>
                     </tr>
