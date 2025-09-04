@@ -403,6 +403,9 @@ class GoogleOAuthCallbackView(APIView):
         profile = User.objects.get(id=user_id)
         profile._encrypted_google_access_token = access_token
         profile._encrypted_google_refresh_token = refresh_token
+        # Set token expiry time
+        from datetime import timezone as dt_timezone
+        profile.google_token_expiry = datetime.now(dt_timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
         profile.save()
 
         return redirect(f"{settings.FRONTEND_URL}/calendarConnect")
@@ -422,8 +425,8 @@ def refresh_google_access_token(user):
         logger.error("No Google refresh token found for user. User must reconnect Google account.")
         return "RECONNECT_GOOGLE"
     data = {
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
     }
@@ -800,8 +803,8 @@ class UpdateEventRsvpView(APIView):
             token=user._encrypted_google_access_token,
             refresh_token=user._encrypted_google_refresh_token,
             token_uri="https://oauth2.googleapis.com/token",
-            client_id=settings.GOOGLE_CLIENT_ID,
-            client_secret=settings.GOOGLE_CLIENT_SECRET,
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET,
             scopes=["https://www.googleapis.com/auth/calendar"]
         )
         return build("calendar", "v3", credentials=creds, cache_discovery=False)
