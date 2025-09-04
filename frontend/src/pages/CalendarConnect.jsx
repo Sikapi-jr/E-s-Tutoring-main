@@ -75,7 +75,8 @@ export default function CalendarConnect() {
   const fetchScheduledEvents = async () => {
     try {
       const res = await api.get(`/api/google/events/?id=${user.account_id}`);
-      setScheduledEvents(Array.isArray(res.data) ? res.data : []);
+      const events = res.data?.items || res.data || [];
+      setScheduledEvents(Array.isArray(events) ? events : []);
     } catch (err) {
       console.error("Error fetching scheduled events:", err);
     }
@@ -93,8 +94,8 @@ export default function CalendarConnect() {
   // grab both hidden email and visible username
   const handleStudentSelect = e => {
     const email = e.target.value;
-    const username =
-      e.target.options[e.target.selectedIndex].dataset.username;
+    const selectedOption = e.target.options[e.target.selectedIndex];
+    const username = selectedOption.dataset.username || selectedOption.text;
 
     setParentEmail(email);
     setFormData(prev => ({
@@ -244,7 +245,15 @@ export default function CalendarConnect() {
                         borderBottom: "2px solid #dee2e6",
                         fontWeight: "600"
                       }}>
-                        {t('calendar.student')}
+                        {t('calendar.tutor')}
+                      </th>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.attendee')}
                       </th>
                       <th style={{ 
                         padding: "0.75rem", 
@@ -262,12 +271,31 @@ export default function CalendarConnect() {
                       }}>
                         {t('calendar.time')}
                       </th>
+                      <th style={{ 
+                        padding: "0.75rem", 
+                        textAlign: "left", 
+                        borderBottom: "2px solid #dee2e6",
+                        fontWeight: "600"
+                      }}>
+                        {t('calendar.status')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {scheduledEvents.map((event, index) => {
                       const startDate = new Date(event.start?.dateTime || event.start?.date);
                       const endDate = new Date(event.end?.dateTime || event.end?.date);
+                      
+                      // Extract tutor (creator) and attendee information
+                      const creator = event.creator?.displayName || event.creator?.email || user?.first_name + " " + user?.last_name || "Unknown";
+                      const attendee = event.attendees?.find(att => att.email !== event.creator?.email);
+                      const attendeeName = attendee?.displayName || attendee?.email || event.description || "-";
+                      
+                      // Determine status based on attendee response
+                      const status = attendee?.responseStatus === 'accepted' ? 'Accepted' : 
+                                    attendee?.responseStatus === 'declined' ? 'Declined' :
+                                    attendee?.responseStatus === 'tentative' ? 'Tentative' : 
+                                    'Pending';
                       
                       return (
                         <tr key={event.id || index} style={{ 
@@ -283,7 +311,13 @@ export default function CalendarConnect() {
                             padding: "0.75rem", 
                             borderBottom: "1px solid #eee"
                           }}>
-                            {event.description || "-"}
+                            {creator}
+                          </td>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee"
+                          }}>
+                            {attendeeName}
                           </td>
                           <td style={{ 
                             padding: "0.75rem", 
@@ -299,6 +333,15 @@ export default function CalendarConnect() {
                               `${startDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` 
                               : t('calendar.allDay')
                             }
+                          </td>
+                          <td style={{ 
+                            padding: "0.75rem", 
+                            borderBottom: "1px solid #eee",
+                            color: status === 'Accepted' ? '#28a745' : 
+                                  status === 'Declined' ? '#dc3545' : 
+                                  status === 'Tentative' ? '#ffc107' : '#6c757d'
+                          }}>
+                            {status}
                           </td>
                         </tr>
                       );
