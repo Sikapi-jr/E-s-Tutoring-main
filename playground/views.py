@@ -348,7 +348,8 @@ def get_google_redirect_uri(request):
     """Get the correct Google redirect URI based on the current request domain"""
     # Use the current request's host to build the redirect URI
     current_host = request.get_host()
-    scheme = 'https' if request.is_secure() else 'http'
+    # Always use HTTPS for production domains
+    scheme = 'https'
     return f"{scheme}://{current_host}/api/google/oauth2callback"
 
 class GoogleOAuthInitView(APIView):
