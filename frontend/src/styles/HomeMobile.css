@@ -159,6 +159,37 @@
     max-width: 100vw !important;
     overflow-x: hidden !important;
   }
+
+  /* Second Row Mobile Layout: Recent Requests, Payment Transfers, Notifications */
+  .home-second-row {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 1rem !important;
+    padding: 0 !important;
+    margin-top: 1rem !important;
+  }
+
+  /* All second row columns take full width and stack vertically */
+  .home-requests-column,
+  .home-payments-column,
+  .home-notifications-column {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+    padding-top: 0 !important;
+  }
+
+  /* Specific ordering for mobile second row */
+  .home-requests-column {
+    order: 1 !important;
+  }
+
+  .home-payments-column {
+    order: 2 !important;
+  }
+
+  .home-notifications-column {
+    order: 3 !important;
+  }
 }
 
 /* Tablet devices (769px to 1024px) */
