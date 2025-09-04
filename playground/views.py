@@ -342,8 +342,14 @@ def delete_tutor_document(request, document_id):
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URL") or f"{settings.BACKEND_URL}/api/google/oauth2callback"
 GOOGLE_AUTH_SCOPE = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.events.readonly"
+
+def get_google_redirect_uri(request):
+    """Get the correct Google redirect URI based on the current request domain"""
+    # Use the current request's host to build the redirect URI
+    current_host = request.get_host()
+    scheme = 'https' if request.is_secure() else 'http'
+    return f"{scheme}://{current_host}/api/google/oauth2callback"
 
 class GoogleOAuthInitView(APIView):
     permission_classes=[AllowAny]
@@ -359,10 +365,11 @@ class GoogleOAuthInitView(APIView):
             return Response({"error": "Invalid token"}, status=403)
 
         request.session["oauth_user_id"] = user_id
+        redirect_uri = get_google_redirect_uri(request)
         auth_url = (
             f"https://accounts.google.com/o/oauth2/v2/auth?"
             f"client_id={GOOGLE_CLIENT_ID}&"
-            f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+            f"redirect_uri={redirect_uri}&"
             f"response_type=code&"
             f"scope={GOOGLE_AUTH_SCOPE}&"
             f"access_type=offline&prompt=consent"
@@ -374,12 +381,13 @@ class GoogleOAuthCallbackView(APIView):
     def get(self, request):
         code = request.GET.get("code")
         user_id = request.session.get("oauth_user_id")
+        redirect_uri = get_google_redirect_uri(request)
 
         token_data = {
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
         }
 
