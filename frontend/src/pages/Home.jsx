@@ -857,37 +857,57 @@ export default function Home() {
                 <thead>
                   <tr>
                     <th>{t('common.title')}</th>
+                    <th>{t('calendar.tutor')}</th>
+                    <th>{t('calendar.attendee')}</th>
                     <th>{t('common.date')}</th>
                     <th>{t('events.startTime')}</th>
                     <th>{t('events.endTime')}</th>
-                    <th>{t('common.description')}</th>
-                    <th>{t('home.cantAttend')}</th>
+                    <th>{t('calendar.status')}</th>
+                    {user?.roles !== 'student' && <th title="Can't attend">❌</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {processedEvents.map((ev) => (
-                    <tr key={ev.id}>
-                      <td>{ev.title}</td>
-                      <td>{ev.date}</td>
-                      <td>{ev.startTime}</td>
-                      <td>{ev.endTime}</td>
-                      <td>{ev.description}</td>
-                      <td>
-                        <button
-                          onClick={() => markCantAttend(ev.id)}
-                          style={{
-                            border: "none",
-                            background: "none",
-                            cursor: "pointer",
-                            fontSize: "1.2rem"
-                          }}
-                          title="Can't attend"
-                        >
-                          ❌
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {processedEvents.map((ev) => {
+                    // Extract tutor (creator) and attendee information from original event data
+                    const originalEvent = events.find(e => e.id === ev.id);
+                    const creator = originalEvent?.creator?.displayName || originalEvent?.creator?.email || user?.first_name + " " + user?.last_name || "Unknown";
+                    const attendee = originalEvent?.attendees?.find(att => att.email !== originalEvent?.creator?.email);
+                    const attendeeName = attendee?.displayName || attendee?.email || ev.description || "-";
+                    
+                    // Determine status based on attendee response
+                    const status = attendee?.responseStatus === 'accepted' ? '✅' : 
+                                  attendee?.responseStatus === 'declined' ? '❌' :
+                                  attendee?.responseStatus === 'tentative' ? '⏳' : 
+                                  '⏸️';
+                    
+                    return (
+                      <tr key={ev.id}>
+                        <td>{ev.title}</td>
+                        <td>{creator}</td>
+                        <td>{attendeeName}</td>
+                        <td>{ev.date}</td>
+                        <td>{ev.startTime}</td>
+                        <td>{ev.endTime}</td>
+                        <td style={{ fontSize: "1.2rem", textAlign: "center" }}>{status}</td>
+                        {user?.roles !== 'student' && (
+                          <td>
+                            <button
+                              onClick={() => markCantAttend(ev.id)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                cursor: "pointer",
+                                fontSize: "1.2rem"
+                              }}
+                              title="Can't attend"
+                            >
+                              ❌
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             ) : (
