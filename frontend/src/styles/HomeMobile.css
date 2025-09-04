@@ -176,19 +176,22 @@
     width: 100% !important;
     margin-bottom: 1rem !important;
     padding-top: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box !important;
   }
 
-  /* Specific ordering for mobile second row */
+  /* Specific ordering for mobile second row - override desktop order */
+  .home-notifications-column {
+    order: 3 !important; /* Last on mobile */
+  }
+
   .home-requests-column {
-    order: 1 !important;
+    order: 1 !important; /* First on mobile */
   }
 
   .home-payments-column {
-    order: 2 !important;
-  }
-
-  .home-notifications-column {
-    order: 3 !important;
+    order: 2 !important; /* Second on mobile */
   }
 }
 
