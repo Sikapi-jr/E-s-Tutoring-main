@@ -292,10 +292,10 @@ export default function CalendarConnect() {
                       const attendeeName = attendee?.displayName || attendee?.email || event.description || "-";
                       
                       // Determine status based on attendee response
-                      const status = attendee?.responseStatus === 'accepted' ? 'Accepted' : 
-                                    attendee?.responseStatus === 'declined' ? 'Declined' :
-                                    attendee?.responseStatus === 'tentative' ? 'Tentative' : 
-                                    'Pending';
+                      const status = attendee?.responseStatus === 'accepted' ? '✅' : 
+                                    attendee?.responseStatus === 'declined' ? '❌' :
+                                    attendee?.responseStatus === 'tentative' ? '⏳' : 
+                                    '⏸️';
                       
                       return (
                         <tr key={event.id || index} style={{ 
@@ -337,9 +337,8 @@ export default function CalendarConnect() {
                           <td style={{ 
                             padding: "0.75rem", 
                             borderBottom: "1px solid #eee",
-                            color: status === 'Accepted' ? '#28a745' : 
-                                  status === 'Declined' ? '#dc3545' : 
-                                  status === 'Tentative' ? '#ffc107' : '#6c757d'
+                            fontSize: "1.2rem",
+                            textAlign: "center"
                           }}>
                             {status}
                           </td>
