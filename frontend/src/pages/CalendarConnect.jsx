@@ -287,9 +287,14 @@ export default function CalendarConnect() {
                       const endDate = new Date(event.end?.dateTime || event.end?.date);
                       
                       // Extract tutor (creator) and attendee information
-                      const creator = event.creator?.displayName || event.creator?.email || user?.first_name + " " + user?.last_name || "Unknown";
+                      const creatorDisplayName = event.creator?.displayName;
+                      const creatorEmail = event.creator?.email;
+                      const creator = creatorDisplayName || (creatorEmail ? creatorEmail.split('@')[0] : user?.first_name + " " + user?.last_name || "Unknown");
+                      
                       const attendee = event.attendees?.find(att => att.email !== event.creator?.email);
-                      const attendeeName = attendee?.displayName || attendee?.email || event.description || "-";
+                      const attendeeDisplayName = attendee?.displayName;
+                      const attendeeEmail = attendee?.email;
+                      const attendeeName = attendeeDisplayName || (attendeeEmail ? attendeeEmail.split('@')[0] : event.description || "-");
                       
                       // Determine status based on attendee response
                       const status = attendee?.responseStatus === 'accepted' ? '✅' : 

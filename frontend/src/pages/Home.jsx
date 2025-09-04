@@ -890,9 +890,17 @@ export default function Home() {
                   {processedEvents.map((ev) => {
                     // Extract tutor (creator) and attendee information from original event data
                     const originalEvent = events.find(e => e.id === ev.id);
-                    const creator = originalEvent?.creator?.displayName || originalEvent?.creator?.email || user?.first_name + " " + user?.last_name || "Unknown";
+                    
+                    // Get creator info - prioritize displayName over email
+                    const creatorDisplayName = originalEvent?.creator?.displayName;
+                    const creatorEmail = originalEvent?.creator?.email;
+                    const creator = creatorDisplayName || (creatorEmail ? creatorEmail.split('@')[0] : user?.first_name + " " + user?.last_name || "Unknown");
+                    
+                    // Get attendee info - prioritize displayName over email, and avoid showing raw emails
                     const attendee = originalEvent?.attendees?.find(att => att.email !== originalEvent?.creator?.email);
-                    const attendeeName = attendee?.displayName || attendee?.email || ev.description || "-";
+                    const attendeeDisplayName = attendee?.displayName;
+                    const attendeeEmail = attendee?.email;
+                    const attendeeName = attendeeDisplayName || (attendeeEmail ? attendeeEmail.split('@')[0] : ev.description || "-");
                     
                     // Determine status based on attendee response
                     const status = attendee?.responseStatus === 'accepted' ? '✅' : 
