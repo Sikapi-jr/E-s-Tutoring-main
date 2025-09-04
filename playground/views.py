@@ -417,7 +417,7 @@ def google_status(request):
 def refresh_google_access_token(user):
     import logging
     logger = logging.getLogger(__name__)
-    refresh_token = user.refresh_token
+    refresh_token = user._encrypted_google_refresh_token
     if not refresh_token:
         logger.error("No Google refresh token found for user. User must reconnect Google account.")
         return "RECONNECT_GOOGLE"
@@ -437,8 +437,9 @@ def refresh_google_access_token(user):
         return None
 
     if response.status_code == 200 and "access_token" in tokens:
-        user.access_token = tokens["access_token"]  # Use property to encrypt and store
-        user.google_token_expiry = datetime.now(timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
+        user._encrypted_google_access_token = tokens["access_token"]  # Use encrypted property to store
+        from datetime import timezone as dt_timezone
+        user.google_token_expiry = datetime.now(dt_timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
         user.save()
         logger.info("Google access token refreshed and saved.")
         return tokens["access_token"]
@@ -454,7 +455,8 @@ def create_event(request):
     profile = User.objects.get(id=user_id)
     # Check if token is expired before API call
     if hasattr(profile, 'google_token_expiry') and profile.google_token_expiry:
-        if profile.google_token_expiry < datetime.now(timezone.utc):
+        from datetime import timezone as dt_timezone
+        if profile.google_token_expiry < datetime.now(dt_timezone.utc):
             refreshed_token = refresh_google_access_token(profile)
             if refreshed_token == "RECONNECT_GOOGLE":
                 return Response({"error": "Google account needs to be reconnected."}, status=403)
@@ -552,7 +554,8 @@ def list_egs_tutoring_events(request):
         # Check if token is expired before API call
         access_token = None
         if hasattr(profile, 'google_token_expiry') and profile.google_token_expiry:
-            if profile.google_token_expiry < datetime.now(timezone.utc):
+            from datetime import timezone as dt_timezone
+        if profile.google_token_expiry < datetime.now(dt_timezone.utc):
                 refresh_result = refresh_google_access_token(profile)
                 print(f"Google token refresh result: {refresh_result}")
                 if refresh_result == "RECONNECT_GOOGLE":
@@ -562,9 +565,9 @@ def list_egs_tutoring_events(request):
                 else:
                     return Response({"error": "Google token expired and refresh failed."}, status=403)
             else:
-                access_token = profile.access_token
+                access_token = profile._encrypted_google_access_token
         else:
-            access_token = profile.access_token
+            access_token = profile._encrypted_google_access_token
 
         # If no access token, force re-authentication
         if not access_token:
@@ -582,7 +585,7 @@ def list_egs_tutoring_events(request):
             "sharedExtendedProperty": "egs_tutoring=true",
             "privateExtendedProperty": "cant_attend=false",
             "privateExtendedProperty": "disputed=false", 
-            "timeMin": datetime.now(timezone.utc).isoformat(),
+            "timeMin": datetime.now(dt_timezone.utc).isoformat(),
             "singleEvents": True,
             "ordserBy": "startTime",
             "maxResults": 50
@@ -590,7 +593,7 @@ def list_egs_tutoring_events(request):
     else:
         params = {
             "sharedExtendedProperty": "egs_tutoring=true",
-            "timeMin": datetime.now(timezone.utc).isoformat(),
+            "timeMin": datetime.now(dt_timezone.utc).isoformat(),
             "singleEvents": True,
             "orderBy": "startTime",
             "maxResults": 50
@@ -655,7 +658,8 @@ def list_egs_tutoring_events_unfiltered(request):
         # ensure we have a valid access token
         access_token = None
         if getattr(profile, "google_token_expiry", None):
-            if profile.google_token_expiry < datetime.now(timezone.utc):
+            from datetime import timezone as dt_timezone
+        if profile.google_token_expiry < datetime.now(dt_timezone.utc):
                 refresh_result = refresh_google_access_token(profile)
                 if refresh_result == "RECONNECT_GOOGLE":
                     return Response({"error": "Google account needs to be reconnected."}, status=403)
