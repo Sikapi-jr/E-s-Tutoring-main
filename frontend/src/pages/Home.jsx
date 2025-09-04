@@ -69,7 +69,6 @@ export default function Home() {
         
         // Separate the API calls to handle errors independently
         let parentData = null;
-        let eventsData = null;
 
         // Fetch data based on user role
         if (user.roles === 'parent') {
@@ -80,7 +79,20 @@ export default function Home() {
             
             // Check Google connection status for parent
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
-            setParentGoogleConnected(googleStatusRes.data?.connected || false);
+            const isConnected = googleStatusRes.data?.connected || false;
+            setParentGoogleConnected(isConnected);
+            
+            // Fetch events if connected
+            if (isConnected) {
+              try {
+                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
+                const events = eventsRes.data?.items || eventsRes.data || [];
+                setEvents(Array.isArray(events) ? events : []);
+              } catch (eventsError) {
+                console.error("Events fetch failed:", eventsError);
+                setEvents([]);
+              }
+            }
             
           } catch (parentError) {
             console.error("Parent data fetch failed:", parentError);
@@ -102,7 +114,20 @@ export default function Home() {
             
             // Check Google connection status
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
-            setGoogleConnected(googleStatusRes.data?.connected || false);
+            const isConnected = googleStatusRes.data?.connected || false;
+            setGoogleConnected(isConnected);
+            
+            // Fetch events if connected
+            if (isConnected) {
+              try {
+                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
+                const events = eventsRes.data?.items || eventsRes.data || [];
+                setEvents(Array.isArray(events) ? events : []);
+              } catch (eventsError) {
+                console.error("Events fetch failed:", eventsError);
+                setEvents([]);
+              }
+            }
             
             // Get tutor's monthly reports due
             const monthlyReportsRes = await api.get('/api/monthly-reports/');
@@ -180,7 +205,20 @@ export default function Home() {
             
             // Check Google connection status
             const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
-            setGoogleConnected(googleStatusRes.data?.connected || false);
+            const isConnected = googleStatusRes.data?.connected || false;
+            setGoogleConnected(isConnected);
+            
+            // Fetch events if connected
+            if (isConnected) {
+              try {
+                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
+                const events = eventsRes.data?.items || eventsRes.data || [];
+                setEvents(Array.isArray(events) ? events : []);
+              } catch (eventsError) {
+                console.error("Events fetch failed:", eventsError);
+                setEvents([]);
+              }
+            }
             
           } catch (studentError) {
             console.error("Student data fetch failed:", studentError);
@@ -201,14 +239,6 @@ export default function Home() {
           }
         }
 
-        // Fetch events data separately
-        try {
-          const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
-          eventsData = eventsRes.data;
-        } catch (eventsError) {
-          console.error("Events data fetch failed:", eventsError);
-          setEvents([]); // Only reset events on events error
-        }
 
         // Process parent data if available (only for parents)
         if (parentData && user.roles === 'parent') {
@@ -231,11 +261,6 @@ export default function Home() {
           setUnpaidTotal(unpaid);
         }
 
-        // Process events data if available
-        if (eventsData) {
-          setEvents(Array.isArray(eventsData.items) ? eventsData.items : []);
-        } else {
-        }
 
         // Fetch data for second row components (for all users)
         try {
