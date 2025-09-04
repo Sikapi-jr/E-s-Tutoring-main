@@ -585,15 +585,17 @@ def list_egs_tutoring_events(request):
 
     if(profile.roles == 'parent' or profile.roles == 'student'):
         params = {
+            "sharedExtendedProperty": "egs_tutoring=true",
             "privateExtendedProperty": "cant_attend=false",
             "privateExtendedProperty": "disputed=false", 
             "timeMin": datetime.now(dt_timezone.utc).isoformat(),
             "singleEvents": True,
-            "orderBy": "startTime",
+            "ordserBy": "startTime",
             "maxResults": 50
         }
     else:
         params = {
+            "sharedExtendedProperty": "egs_tutoring=true",
             "timeMin": datetime.now(dt_timezone.utc).isoformat(),
             "singleEvents": True,
             "orderBy": "startTime",
@@ -646,7 +648,7 @@ ALLOWED_PASSTHRU = {
 def list_egs_tutoring_events_unfiltered(request):
     """
     GET /api/google/events/all?id=<user_id>&timeMin=...&timeMax=...&maxResults=...
-    Returns all calendar events for the user (both organized and attended).
+    Always enforces sharedExtendedProperty=egs_tutoring=true.
     Front-end handles any further filtering.
     """
     user_id = request.query_params.get("id")
@@ -682,8 +684,9 @@ def list_egs_tutoring_events_unfiltered(request):
         return Response({"error": str(e)}, status=500)
 
     params = {
+        "sharedExtendedProperty": "egs_tutoring=true",
         "singleEvents": True,
-        "orderBy": "startTime", 
+        "orderBy": "startTime",
         "maxResults": 250,
     }
 
