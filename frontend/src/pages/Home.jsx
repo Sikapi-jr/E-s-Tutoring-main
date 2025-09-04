@@ -82,16 +82,14 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setParentGoogleConnected(isConnected);
             
-            // Fetch events if connected
-            if (isConnected) {
-              try {
-                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
-                const events = eventsRes.data?.items || eventsRes.data || [];
-                setEvents(Array.isArray(events) ? events : []);
-              } catch (eventsError) {
-                console.error("Events fetch failed:", eventsError);
-                setEvents([]);
-              }
+            // Fetch events directly (same logic as CalendarConnect)
+            try {
+              const eventsRes = await api.get(`/api/google/events/?id=${user.account_id}`);
+              const events = eventsRes.data?.items || eventsRes.data || [];
+              setEvents(Array.isArray(events) ? events : []);
+            } catch (eventsError) {
+              console.error("Events fetch failed:", eventsError);
+              setEvents([]);
             }
             
           } catch (parentError) {
@@ -117,16 +115,14 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setGoogleConnected(isConnected);
             
-            // Fetch events if connected
-            if (isConnected) {
-              try {
-                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
-                const events = eventsRes.data?.items || eventsRes.data || [];
-                setEvents(Array.isArray(events) ? events : []);
-              } catch (eventsError) {
-                console.error("Events fetch failed:", eventsError);
-                setEvents([]);
-              }
+            // Fetch events directly (same logic as CalendarConnect)
+            try {
+              const eventsRes = await api.get(`/api/google/events/?id=${user.account_id}`);
+              const events = eventsRes.data?.items || eventsRes.data || [];
+              setEvents(Array.isArray(events) ? events : []);
+            } catch (eventsError) {
+              console.error("Events fetch failed:", eventsError);
+              setEvents([]);
             }
             
             // Get tutor's monthly reports due
@@ -209,16 +205,14 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setGoogleConnected(isConnected);
             
-            // Fetch events if connected
-            if (isConnected) {
-              try {
-                const eventsRes = await api.get('/api/google/events', { params: { id: calendarUserId } });
-                const events = eventsRes.data?.items || eventsRes.data || [];
-                setEvents(Array.isArray(events) ? events : []);
-              } catch (eventsError) {
-                console.error("Events fetch failed:", eventsError);
-                setEvents([]);
-              }
+            // Fetch events directly (same logic as CalendarConnect)
+            try {
+              const eventsRes = await api.get(`/api/google/events/?id=${calendarUserId}`);
+              const events = eventsRes.data?.items || eventsRes.data || [];
+              setEvents(Array.isArray(events) ? events : []);
+            } catch (eventsError) {
+              console.error("Events fetch failed:", eventsError);
+              setEvents([]);
             }
             
           } catch (studentError) {

@@ -43,9 +43,10 @@ export default function CalendarConnect() {
     if (!token) return;
 
     // 1) check Google Calendar status
+    const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
     api
       .get(
-        `/api/google/status/?id=${user.account_id}`
+        `/api/google/status/?id=${calendarUserId}`
       )
       .then(res => setIsConnected(res.data.connected))
       .catch(err => {
@@ -74,7 +75,9 @@ export default function CalendarConnect() {
   /* ─────────────────────────  helpers ───────────────────────────── */
   const fetchScheduledEvents = async () => {
     try {
-      const res = await api.get(`/api/google/events/?id=${user.account_id}`);
+      // For students, use their email; for others, use account_id
+      const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
+      const res = await api.get(`/api/google/events/?id=${calendarUserId}`);
       const events = res.data?.items || res.data || [];
       setScheduledEvents(Array.isArray(events) ? events : []);
     } catch (err) {
