@@ -2844,6 +2844,7 @@ def student_cant_attend(request):
         event_start_time = data.get('event_start_time', '')
         event_end_time = data.get('event_end_time', '')
         event_description = data.get('event_description', '')
+        tutor_name = data.get('tutor_name', 'the tutor')
         
         # Get the student user to find parent email
         student = request.user
@@ -2869,6 +2870,7 @@ def student_cant_attend(request):
         # Format event information
         event_info = f"""
 Event: {event_title}
+Tutor: {tutor_name}
 Date: {event_date}
 Time: {event_start_time} - {event_end_time}
 Description: {event_description}

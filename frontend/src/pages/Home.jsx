@@ -500,7 +500,7 @@ export default function Home() {
   }, [user?.account_id]);
 
   /* student can't attend - sends email to parent */
-  const studentCantAttend = useCallback(async (eventData) => {
+  const studentCantAttend = useCallback(async (eventData, tutorName) => {
     try {
       await api.post(`/api/student-cant-attend/`, {
         event_id: eventData.id,
@@ -509,7 +509,8 @@ export default function Home() {
         event_date: eventData.date,
         event_start_time: eventData.startTime,
         event_end_time: eventData.endTime,
-        event_description: eventData.description
+        event_description: eventData.description,
+        tutor_name: tutorName
       });
       alert("Parent has been notified that you cannot attend this event.");
     } catch (err) {
@@ -912,7 +913,7 @@ export default function Home() {
                           <button
                             onClick={() => 
                               user?.roles === 'student' 
-                                ? studentCantAttend(ev)
+                                ? studentCantAttend(ev, creator)
                                 : markCantAttend(ev.id)
                             }
                             style={{
