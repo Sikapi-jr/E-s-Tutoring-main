@@ -499,6 +499,25 @@ export default function Home() {
     }
   }, [user?.account_id]);
 
+  /* student can't attend - sends email to parent */
+  const studentCantAttend = useCallback(async (eventData) => {
+    try {
+      await api.post(`/api/student-cant-attend/`, {
+        event_id: eventData.id,
+        student_name: user.first_name + " " + user.last_name,
+        event_title: eventData.title,
+        event_date: eventData.date,
+        event_start_time: eventData.startTime,
+        event_end_time: eventData.endTime,
+        event_description: eventData.description
+      });
+      alert("Parent has been notified that you cannot attend this event.");
+    } catch (err) {
+      console.error("Error sending student can't attend notification:", err);
+      alert("Failed to notify parent. Please contact them directly.");
+    }
+  }, [user.first_name, user.last_name]);
+
   /* handle document upload for tutors */
   const handleDocumentUpload = useCallback(() => {
     // Navigate to settings page or trigger file upload
@@ -863,7 +882,7 @@ export default function Home() {
                     <th>{t('events.startTime')}</th>
                     <th>{t('events.endTime')}</th>
                     <th>{t('calendar.status')}</th>
-                    {user?.roles !== 'student' && <th title="Can't attend">❌</th>}
+                    <th title="Can't attend">❌</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -889,22 +908,28 @@ export default function Home() {
                         <td>{ev.startTime}</td>
                         <td>{ev.endTime}</td>
                         <td style={{ fontSize: "1.2rem", textAlign: "center" }}>{status}</td>
-                        {user?.roles !== 'student' && (
-                          <td>
-                            <button
-                              onClick={() => markCantAttend(ev.id)}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                cursor: "pointer",
-                                fontSize: "1.2rem"
-                              }}
-                              title="Can't attend"
-                            >
-                              ❌
-                            </button>
-                          </td>
-                        )}
+                        <td>
+                          <button
+                            onClick={() => 
+                              user?.roles === 'student' 
+                                ? studentCantAttend(ev)
+                                : markCantAttend(ev.id)
+                            }
+                            style={{
+                              border: "none",
+                              background: "none",
+                              cursor: "pointer",
+                              fontSize: "1.2rem"
+                            }}
+                            title={
+                              user?.roles === 'student' 
+                                ? "Notify parent you can't attend" 
+                                : "Can't attend"
+                            }
+                          >
+                            ❌
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

@@ -2832,6 +2832,82 @@ def existing_weekly_hours(request):
     except Exception as e:
         return Response({"error": f"Failed to fetch existing weekly hours: {str(e)}"}, status=500)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def student_cant_attend(request):
+    """Handle student can't attend notifications to parents"""
+    try:
+        data = request.data
+        student_name = data.get('student_name', 'Your child')
+        event_title = data.get('event_title', 'Tutoring Session')
+        event_date = data.get('event_date', '')
+        event_start_time = data.get('event_start_time', '')
+        event_end_time = data.get('event_end_time', '')
+        event_description = data.get('event_description', '')
+        
+        # Get the student user to find parent email
+        student = request.user
+        if not student:
+            return JsonResponse({"error": "User not authenticated"}, status=401)
+        
+        # Find parent email - assuming student has parent_email field or similar
+        parent_email = getattr(student, 'parent_email', None)
+        if not parent_email and hasattr(student, 'email'):
+            # If no direct parent email, we might need to find it through relationships
+            # For now, let's try to find it through the student's profile
+            try:
+                # Check if student has accepted tutors that might have parent info
+                accepted_tutors = AcceptedTutor.objects.filter(student_username=student.username)
+                if accepted_tutors.exists():
+                    parent_email = accepted_tutors.first().parent_email
+            except:
+                pass
+        
+        if not parent_email:
+            return JsonResponse({"error": "Parent email not found"}, status=400)
+        
+        # Format event information
+        event_info = f"""
+Event: {event_title}
+Date: {event_date}
+Time: {event_start_time} - {event_end_time}
+Description: {event_description}
+"""
+        
+        # Backend URL for the link
+        backend_url = os.getenv('BACKEND_URL', 'https://egstutoring-portal.ca')
+        scheduled_sessions_link = f"{backend_url}/calendarConnect"
+        
+        # Email subject and body
+        subject = f"{student_name} Cannot Attend Tutoring Session"
+        body = f"""
+Dear Parent,
+
+Your child, {student_name}, says they cannot attend this event:
+
+{event_info}
+
+Please review your scheduled sessions here: {scheduled_sessions_link}
+
+If you need to reschedule or have any questions, please contact us.
+
+Best regards,
+EGS Tutoring Team
+"""
+        
+        # Send email using existing email task
+        from .tasks import send_system_notification_email_async
+        send_system_notification_email_async.delay(
+            parent_email,
+            subject,
+            body
+        )
+        
+        return JsonResponse({"success": "Parent notification sent successfully"})
+        
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to send notification: {str(e)}"}, status=500)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def existing_monthly_hours(request):
