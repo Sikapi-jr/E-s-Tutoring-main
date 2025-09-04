@@ -203,15 +203,16 @@ export default function Home() {
               }
             }
             
-            // Check Google connection status
-            const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
+            // Check Google connection status - for students, use their email instead of account_id
+            const calendarUserId = user.email;  // Students use their email for calendar access
+            const googleStatusRes = await api.get('/api/google/status/', { params: { id: calendarUserId } });
             const isConnected = googleStatusRes.data?.connected || false;
             setGoogleConnected(isConnected);
             
             // Fetch events if connected
             if (isConnected) {
               try {
-                const eventsRes = await api.get('/api/google/events', { params: { id: user.account_id } });
+                const eventsRes = await api.get('/api/google/events', { params: { id: calendarUserId } });
                 const events = eventsRes.data?.items || eventsRes.data || [];
                 setEvents(Array.isArray(events) ? events : []);
               } catch (eventsError) {
@@ -512,17 +513,18 @@ export default function Home() {
   /* mark "can't attend" (declined) on Google Calendar */
   const markCantAttend = useCallback(async (id) => {
     try {
+      const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
       await api.get(`/api/google/update-rsvp/`, {
-        params: { event_id: id, status: "cant_attend", user_id: user.account_id }
+        params: { event_id: id, status: "cant_attend", user_id: calendarUserId }
       });
       // Invalidate events cache to force refresh
-      api.invalidateCache('/api/google/events', { id: user.account_id });
+      api.invalidateCache('/api/google/events', { id: calendarUserId });
       // Update local state immediately for better UX
       setEvents((prev) => prev.filter((ev) => ev.id !== id));
     } catch (e) {
       console.error("RSVP update failed:", e);
     }
-  }, [user?.account_id]);
+  }, [user?.account_id, user?.email, user?.roles]);
 
   /* student can't attend - sends email to parent */
   const studentCantAttend = useCallback(async (eventData, tutorName) => {
@@ -916,16 +918,12 @@ export default function Home() {
                     // Extract tutor (creator) and attendee information from original event data
                     const originalEvent = events.find(e => e.id === ev.id);
                     
-                    // Get creator info - prioritize displayName over email
-                    const creatorDisplayName = originalEvent?.creator?.displayName;
-                    const creatorEmail = originalEvent?.creator?.email;
-                    const creator = creatorDisplayName || (creatorEmail ? creatorEmail.split('@')[0] : user?.first_name + " " + user?.last_name || "Unknown");
+                    // Get creator info - show organizer email
+                    const creator = originalEvent?.creator?.email || "Unknown";
                     
-                    // Get attendee info - prioritize displayName over email, and avoid showing raw emails
+                    // Get attendee info - show attendee email
                     const attendee = originalEvent?.attendees?.find(att => att.email !== originalEvent?.creator?.email);
-                    const attendeeDisplayName = attendee?.displayName;
-                    const attendeeEmail = attendee?.email;
-                    const attendeeName = attendeeDisplayName || (attendeeEmail ? attendeeEmail.split('@')[0] : ev.description || "-");
+                    const attendeeName = attendee?.email || "-";
                     
                     // Determine status based on attendee response
                     const status = attendee?.responseStatus === 'accepted' ? '✅' : 
