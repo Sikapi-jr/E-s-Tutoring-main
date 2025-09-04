@@ -909,14 +909,12 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {processedEvents.map((ev) => {
-                    // Extract tutor (creator) and attendee information from original event data
-                    const originalEvent = events.find(e => e.id === ev.id);
-                    
+                    // ev already contains the original event data, no need to find it
                     // Get creator info - show organizer email
-                    const creator = originalEvent?.creator?.email || "Unknown";
+                    const creator = ev?.creator?.email || "Unknown";
                     
                     // Get attendee info - show attendee email
-                    const attendee = originalEvent?.attendees?.find(att => att.email !== originalEvent?.creator?.email);
+                    const attendee = ev?.attendees?.find(att => att.email !== ev?.creator?.email);
                     const attendeeName = attendee?.email || "-";
                     
                     // Determine status based on attendee response
