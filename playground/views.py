@@ -555,7 +555,7 @@ def list_egs_tutoring_events(request):
         access_token = None
         if hasattr(profile, 'google_token_expiry') and profile.google_token_expiry:
             from datetime import timezone as dt_timezone
-        if profile.google_token_expiry < datetime.now(dt_timezone.utc):
+            if profile.google_token_expiry < datetime.now(dt_timezone.utc):
                 refresh_result = refresh_google_access_token(profile)
                 print(f"Google token refresh result: {refresh_result}")
                 if refresh_result == "RECONNECT_GOOGLE":
@@ -659,7 +659,7 @@ def list_egs_tutoring_events_unfiltered(request):
         access_token = None
         if getattr(profile, "google_token_expiry", None):
             from datetime import timezone as dt_timezone
-        if profile.google_token_expiry < datetime.now(dt_timezone.utc):
+            if profile.google_token_expiry < datetime.now(dt_timezone.utc):
                 refresh_result = refresh_google_access_token(profile)
                 if refresh_result == "RECONNECT_GOOGLE":
                     return Response({"error": "Google account needs to be reconnected."}, status=403)
