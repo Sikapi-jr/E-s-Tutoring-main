@@ -98,7 +98,7 @@ const AnnouncementCarousel = memo(() => {
 
       {/* image + arrows */}
       <div style={{ position: "relative", flexGrow: 1 }}>
-        {current.image ? (
+        {current.image && (
           <img
             key={currentIndex} // fade re‑render
             src={`/uploads/announcements/${current.image.split('/').pop()}`}
@@ -112,23 +112,6 @@ const AnnouncementCarousel = memo(() => {
               transition: "opacity 0.4s ease-in-out",
             }}
           />
-        ) : (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "#f5f5f5",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#888",
-              fontSize: "1rem",
-            }}
-          >
-            No Image Available
-          </div>
         )}
 
         {/* left arrow */}
