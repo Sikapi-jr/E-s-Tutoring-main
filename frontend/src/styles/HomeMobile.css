@@ -147,10 +147,31 @@
     text-align: center !important;
   }
 
-  /* Make tables responsive */
+  /* Make tables responsive with sticky header */
   .table-wrapper {
     overflow-x: auto !important;
     max-width: 100% !important;
+  }
+
+  /* Sticky header for scheduled events table on mobile */
+  .scheduled-events-section .table-wrapper {
+    position: relative !important;
+  }
+
+  .scheduled-events-section .events-table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: var(--color-primary) !important;
+  }
+
+  .scheduled-events-section .events-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    background: var(--color-primary) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.2) !important;
   }
 
   /* Fix navbar width */
