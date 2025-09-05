@@ -38,26 +38,46 @@
 /* ───────── core table ───────── */
 .events-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 800px; /* Increased to accommodate more columns */
   border-collapse: collapse;
   font-family: "Segoe UI", sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.9rem; /* Slightly smaller for more content */
+  table-layout: fixed; /* Fixed layout for better column control */
 }
 
 /* header bar now sits inside the rounded wrapper – no own radius */
 .events-table thead {
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-primary) !important;
+  color: #fff !important;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.events-table th {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
 }
 
 /* cells */
 .events-table th,
 .events-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.8rem; /* Slightly tighter padding */
   text-align: left;
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* Specific column widths */
+.events-table th:nth-child(1), .events-table td:nth-child(1) { width: 20%; } /* Title */
+.events-table th:nth-child(2), .events-table td:nth-child(2) { width: 15%; } /* Tutor */
+.events-table th:nth-child(3), .events-table td:nth-child(3) { width: 15%; } /* Attendee */
+.events-table th:nth-child(4), .events-table td:nth-child(4) { width: 12%; } /* Date */
+.events-table th:nth-child(5), .events-table td:nth-child(5) { width: 10%; } /* Start */
+.events-table th:nth-child(6), .events-table td:nth-child(6) { width: 10%; } /* End */
+.events-table th:nth-child(7), .events-table td:nth-child(7) { width: 8%; }  /* Status */
+.events-table th:nth-child(8), .events-table td:nth-child(8) { width: 10%; } /* Can't attend */
 .events-table tbody tr:nth-child(even) td { background: var(--color-light); }
 .events-table tbody tr:hover td {
   background: rgba(255, 179, 27, 0.15);

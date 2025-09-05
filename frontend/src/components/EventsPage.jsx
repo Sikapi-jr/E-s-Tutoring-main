@@ -220,10 +220,12 @@ export default function EventsPage() {
                 <thead>
                   <tr>
                     <th>{t('common.title')}</th>
+                    <th>{t('calendar.tutor')}</th>
+                    <th>{t('calendar.attendee')}</th>
                     <th>{t('common.date')}</th>
                     <th>{t('events.start')}</th>
                     <th>{t('events.end')}</th>
-                    <th>{t('common.description')}</th>
+                    <th>{t('calendar.status')}</th>
                     <th>{t('events.cantAttend')}</th>
                   </tr>
                 </thead>
@@ -231,19 +233,35 @@ export default function EventsPage() {
                   {filteredEvents.map((ev) => {
                     const s = new Date(ev.start?.dateTime || ev.start?.date);
                     const e = new Date(ev.end?.dateTime || ev.end?.date);
+                    
+                    // Get organizer info - show organizer email  
+                    const creator = ev?.organizer?.email || "Unknown";
+                    
+                    // Get attendee info - show attendee email
+                    const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
+                    const attendeeName = attendee?.email || "-";
+                    
+                    // Determine status based on attendee response
+                    const status = attendee?.responseStatus === 'accepted' ? '✅' : 
+                                  attendee?.responseStatus === 'declined' ? '❌' :
+                                  attendee?.responseStatus === 'tentative' ? '⏳' : 
+                                  '⏸️';
+                    
                     return (
                       <tr key={ev.id}>
                         <td>{ev.summary || t('events.noTitle')}</td>
+                        <td>{creator}</td>
+                        <td>{attendeeName}</td>
                         <td>{s.toLocaleDateString()}</td>
                         <td>{s.toLocaleTimeString()}</td>
                         <td>{e.toLocaleTimeString()}</td>
-                        <td>{ev.description || ""}</td>
+                        <td style={{ fontSize: "1.2rem", textAlign: "center" }}>{status}</td>
                         <td>
                           <button
                             onClick={() => markCantAttend(ev.id)}
                             className="cant-btn"
                           >
-                            {t('home.cantAttend')}
+                            ❌
                           </button>
                         </td>
                       </tr>

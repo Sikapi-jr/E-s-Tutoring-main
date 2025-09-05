@@ -911,11 +911,11 @@ export default function Home() {
                 <tbody>
                   {processedEvents.map((ev) => {
                     // ev already contains the original event data, no need to find it
-                    // Get creator info - show organizer email
-                    const creator = ev?.creator?.email || "Unknown";
+                    // Get organizer info - show organizer email
+                    const creator = ev?.organizer?.email || "Unknown";
                     
                     // Get attendee info - show attendee email
-                    const attendee = ev?.attendees?.find(att => att.email !== ev?.creator?.email);
+                    const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
                     const attendeeName = attendee?.email || "-";
                     
                     // Determine status based on attendee response
