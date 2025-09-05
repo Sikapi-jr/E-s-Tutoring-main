@@ -98,22 +98,38 @@ const AnnouncementCarousel = memo(() => {
 
       {/* image + arrows */}
       <div style={{ position: "relative", flexGrow: 1 }}>
-        <img
-          key={currentIndex} // fade re‑render
-          src={current.image ? `/uploads/announcements/${current.image.split('/').pop()}` : '/uploads/default-announcement.jpg'}
-          alt="Announcement"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "opacity 0.4s ease-in-out",
-          }}
-          onError={(e) => {
-            e.target.src = '/uploads/default-announcement.jpg';
-          }}
-        />
+        {current.image ? (
+          <img
+            key={currentIndex} // fade re‑render
+            src={`/uploads/announcements/${current.image.split('/').pop()}`}
+            alt="Announcement"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              transition: "opacity 0.4s ease-in-out",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "#f5f5f5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#888",
+              fontSize: "1rem",
+            }}
+          >
+            No Image Available
+          </div>
+        )}
 
         {/* left arrow */}
         <div
@@ -221,9 +237,6 @@ const AnnouncementCarousel = memo(() => {
                     maxHeight: "400px",
                     objectFit: "contain",
                     borderRadius: 8,
-                  }}
-                  onError={(e) => {
-                    e.target.src = '/uploads/default-announcement.jpg';
                   }}
                 />
               </div>
