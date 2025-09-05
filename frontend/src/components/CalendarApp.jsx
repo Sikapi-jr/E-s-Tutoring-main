@@ -134,9 +134,10 @@ export default function EventsPage() {
   /** mark can't attend */
   const markCantAttend = async (eventId) => {
     try {
-      await api.post(
-        `/api/google/update-rsvp/?id=${eventId}&action=decline`
-      );
+      const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
+      await api.get(`/api/google/update-rsvp/`, {
+        params: { event_id: eventId, status: "cant_attend", user_id: calendarUserId }
+      });
       // update in place
       setAllEvents((prev) =>
         prev.map((e) =>
