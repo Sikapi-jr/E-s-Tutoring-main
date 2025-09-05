@@ -488,21 +488,30 @@ export default function Home() {
     paidTotal + unpaidTotal ? (paidTotal / (paidTotal + unpaidTotal)) * 100 : 0;
 
   // Memoize processed events to avoid recalculating dates on every render
+  // Filter to show only events in the next 10 days
   const processedEvents = useMemo(() => {
-    return events.map((ev) => {
-      const startDate = new Date(ev.start?.dateTime || ev.start?.date);
-      const endDate = new Date(ev.end?.dateTime || ev.end?.date);
-      
-      return {
-        ...ev, // Preserve all original event data
-        id: ev.id,
-        title: ev.summary || t('events.noTitle'),
-        date: startDate.toLocaleDateString(),
-        startTime: startDate.toLocaleTimeString(),
-        endTime: endDate.toLocaleTimeString(),
-        description: ev.description || ""
-      };
-    });
+    const now = new Date();
+    const tenDaysFromNow = new Date(now.getTime() + (10 * 24 * 60 * 60 * 1000)); // 10 days from now
+    
+    return events
+      .filter((ev) => {
+        const startDate = new Date(ev.start?.dateTime || ev.start?.date);
+        return startDate >= now && startDate <= tenDaysFromNow;
+      })
+      .map((ev) => {
+        const startDate = new Date(ev.start?.dateTime || ev.start?.date);
+        const endDate = new Date(ev.end?.dateTime || ev.end?.date);
+        
+        return {
+          ...ev, // Preserve all original event data
+          id: ev.id,
+          title: ev.summary || t('events.noTitle'),
+          date: startDate.toLocaleDateString(),
+          startTime: startDate.toLocaleTimeString(),
+          endTime: endDate.toLocaleTimeString(),
+          description: ev.description || ""
+        };
+      });
   }, [events]);
 
   /* mark "can't attend" (declined) on Google Calendar */
@@ -891,10 +900,25 @@ export default function Home() {
               maxHeight: 355,
             }}
           >
-            <h3 style={{ textAlign: "center", margin: "1rem 0", padding: "0 1rem" }}>
-              {t('home.scheduledEvents')}
-            </h3>
-            {events.length ? (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "1rem 0", padding: "0 1rem" }}>
+              <h3 style={{ margin: 0 }}>
+                {t('home.scheduledEvents')}
+              </h3>
+              <a 
+                href="/events" 
+                style={{ 
+                  color: "#192A88", 
+                  textDecoration: "none", 
+                  fontSize: "0.9rem",
+                  fontWeight: "500"
+                }}
+                onMouseOver={(e) => e.target.style.textDecoration = "underline"}
+                onMouseOut={(e) => e.target.style.textDecoration = "none"}
+              >
+                {t('home.viewMoreUpdateRsvp')}
+              </a>
+            </div>
+            {processedEvents.length ? (
               <table className="events-table">
                 <thead>
                   <tr>
@@ -904,8 +928,6 @@ export default function Home() {
                     <th>{t('common.date')}</th>
                     <th>{t('events.startTime')}</th>
                     <th>{t('events.endTime')}</th>
-                    <th>{t('calendar.status')}</th>
-                    <th title="Can't attend">❌</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -918,12 +940,6 @@ export default function Home() {
                     const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
                     const attendeeName = attendee?.email || "-";
                     
-                    // Determine status based on attendee response
-                    const status = attendee?.responseStatus === 'accepted' ? '✅' : 
-                                  attendee?.responseStatus === 'declined' ? '❌' :
-                                  attendee?.responseStatus === 'tentative' ? '⏳' : 
-                                  '⏸️';
-                    
                     return (
                       <tr key={ev.id}>
                         <td>{ev.title}</td>
@@ -932,29 +948,6 @@ export default function Home() {
                         <td>{ev.date}</td>
                         <td>{ev.startTime}</td>
                         <td>{ev.endTime}</td>
-                        <td style={{ fontSize: "1.2rem", textAlign: "center" }}>{status}</td>
-                        <td>
-                          <button
-                            onClick={() => 
-                              user?.roles === 'student' 
-                                ? studentCantAttend(ev, creator)
-                                : markCantAttend(ev.id)
-                            }
-                            style={{
-                              border: "none",
-                              background: "none",
-                              cursor: "pointer",
-                              fontSize: "1.2rem"
-                            }}
-                            title={
-                              user?.roles === 'student' 
-                                ? "Notify parent you can't attend" 
-                                : "Can't attend"
-                            }
-                          >
-                            ❌
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}
