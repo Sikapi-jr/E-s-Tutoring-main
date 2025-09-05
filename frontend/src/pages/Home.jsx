@@ -82,9 +82,9 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setParentGoogleConnected(isConnected);
             
-            // Fetch events directly (same logic as CalendarConnect)
+            // Fetch events directly (same logic as EventsPage)
             try {
-              const eventsRes = await api.get(`/api/google/events/?id=${user.account_id}`);
+              const eventsRes = await api.get(`/api/google/events/all?id=${user.account_id}`);
               const events = eventsRes.data?.items || eventsRes.data || [];
               setEvents(Array.isArray(events) ? events : []);
             } catch (eventsError) {
@@ -115,9 +115,9 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setGoogleConnected(isConnected);
             
-            // Fetch events directly (same logic as CalendarConnect)
+            // Fetch events directly (same logic as EventsPage)
             try {
-              const eventsRes = await api.get(`/api/google/events/?id=${user.account_id}`);
+              const eventsRes = await api.get(`/api/google/events/all?id=${user.account_id}`);
               const events = eventsRes.data?.items || eventsRes.data || [];
               setEvents(Array.isArray(events) ? events : []);
             } catch (eventsError) {
@@ -205,9 +205,9 @@ export default function Home() {
             const isConnected = googleStatusRes.data?.connected || false;
             setGoogleConnected(isConnected);
             
-            // Fetch events directly (same logic as CalendarConnect)
+            // Fetch events directly (same logic as EventsPage)
             try {
-              const eventsRes = await api.get(`/api/google/events/?id=${calendarUserId}`);
+              const eventsRes = await api.get(`/api/google/events/all?id=${calendarUserId}`);
               const events = eventsRes.data?.items || eventsRes.data || [];
               setEvents(Array.isArray(events) ? events : []);
             } catch (eventsError) {
