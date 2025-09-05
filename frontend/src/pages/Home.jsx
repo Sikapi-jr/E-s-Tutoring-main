@@ -494,6 +494,7 @@ export default function Home() {
       const endDate = new Date(ev.end?.dateTime || ev.end?.date);
       
       return {
+        ...ev, // Preserve all original event data
         id: ev.id,
         title: ev.summary || t('events.noTitle'),
         date: startDate.toLocaleDateString(),
