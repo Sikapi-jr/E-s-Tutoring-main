@@ -431,6 +431,21 @@ export default function LoggedHoursPage() {
                         : h.studentName || h.student_name || h.student || h.student_username || t("common.unknownStudent")}
                     </div>
                     <div>{h.totalTime || h.total_hours}h</div>
+                    {h.dispute_id && user.roles !== "tutor" && (
+                      <div>
+                        <button
+                          className="cancel-dispute-btn small"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCancelDispute(h.dispute_id);
+                          }}
+                          title="Cancel dispute"
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

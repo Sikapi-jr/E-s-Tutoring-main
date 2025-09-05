@@ -292,7 +292,7 @@ textarea:active {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 0.5rem;
   align-items: center;
 }
@@ -618,7 +618,7 @@ textarea:active {
   .disputed-item {
     padding: 0.5rem;
     margin-bottom: 0.5rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
     gap: 0.25rem;
     text-align: left;
   }
@@ -681,6 +681,14 @@ textarea:active {
     width: 100%;
     margin-top: 0.25rem;
   }
+  
+  .cancel-dispute-btn.small {
+    padding: 0.3rem;
+    font-size: 0.6rem;
+    width: auto;
+    margin-top: 0;
+    align-self: center;
+  }
 }
 
 /* ───────────────────────── dispute button styles ─────────────────── */
@@ -718,6 +726,14 @@ textarea:active {
 .cancel-dispute-btn:focus {
   outline: none !important;
   box-shadow: 0 0 0 2px #192A88 !important;
+}
+
+.cancel-dispute-btn.small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6rem;
+  border-radius: 3px;
+  min-width: auto;
+  width: auto;
 }
 
 /* ─────────────── filters bar ─────────────── */
