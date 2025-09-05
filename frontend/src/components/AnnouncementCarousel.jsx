@@ -10,6 +10,8 @@ const AnnouncementCarousel = memo(() => {
   const { t } = useTranslation();
   const [announcements, setAnnouncements] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   // No longer need separate state for image src since it's served directly
   const { user } = useUser();
 
@@ -37,8 +39,19 @@ const AnnouncementCarousel = memo(() => {
   if (!announcements.length) return null;
   const current = announcements[currentIndex];
 
+  const handleAnnouncementClick = () => {
+    setSelectedAnnouncement(current);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedAnnouncement(null);
+  };
+
   /* ───────────────────────── render ───────────────────────── */
   return (
+    <>
     <div
       style={{
         width: "100%",
@@ -51,7 +64,9 @@ const AnnouncementCarousel = memo(() => {
         overflow: "hidden",
         outline: "none",
         boxShadow: "none",
+        cursor: "pointer",
       }}
+      onClick={handleAnnouncementClick}
     >
       {/* top heading */}
       <div
@@ -85,7 +100,7 @@ const AnnouncementCarousel = memo(() => {
       <div style={{ position: "relative", flexGrow: 1 }}>
         <img
           key={currentIndex} // fade re‑render
-          src={`${API_BASE_URL}${current.image}`}
+          src={current.image ? `/uploads/announcements/${current.image.split('/').pop()}` : '/uploads/default-announcement.jpg'}
           alt="Announcement"
           style={{
             position: "absolute",
@@ -95,15 +110,19 @@ const AnnouncementCarousel = memo(() => {
             objectFit: "cover",
             transition: "opacity 0.4s ease-in-out",
           }}
+          onError={(e) => {
+            e.target.src = '/uploads/default-announcement.jpg';
+          }}
         />
 
         {/* left arrow */}
         <div
-          onClick={() =>
+          onClick={(e) => {
+            e.stopPropagation();
             setCurrentIndex(
               (currentIndex - 1 + announcements.length) % announcements.length
-            )
-          }
+            );
+          }}
           style={{...arrowStyle("left"), outline: "none", boxShadow: "none"}}
         >
           &#9664;
@@ -111,9 +130,10 @@ const AnnouncementCarousel = memo(() => {
 
         {/* right arrow */}
         <div
-          onClick={() =>
-            setCurrentIndex((currentIndex + 1) % announcements.length)
-          }
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex((currentIndex + 1) % announcements.length);
+          }}
           style={{...arrowStyle("right"), outline: "none", boxShadow: "none"}}
         >
           &#9654;
@@ -135,6 +155,134 @@ const AnnouncementCarousel = memo(() => {
         {current.start_time || ""}
       </div>
     </div>
+
+    {/* Announcement Modal */}
+    {showModal && selectedAnnouncement && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000,
+        }}
+        onClick={closeModal}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: 12,
+            padding: "2rem",
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            overflow: "auto",
+            position: "relative",
+            minWidth: "400px",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeModal}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              right: "1rem",
+              background: "none",
+              border: "none",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              color: "#666",
+            }}
+          >
+            ×
+          </button>
+
+          {/* Modal content */}
+          <div style={{ marginTop: "1rem" }}>
+            {selectedAnnouncement.name && (
+              <h2 style={{ color: "#192A88", marginBottom: "1rem" }}>
+                {selectedAnnouncement.name}
+              </h2>
+            )}
+
+            {selectedAnnouncement.image && (
+              <div style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+                <img
+                  src={`/uploads/announcements/${selectedAnnouncement.image.split('/').pop()}`}
+                  alt="Announcement"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "400px",
+                    objectFit: "contain",
+                    borderRadius: 8,
+                  }}
+                  onError={(e) => {
+                    e.target.src = '/uploads/default-announcement.jpg';
+                  }}
+                />
+              </div>
+            )}
+
+            {selectedAnnouncement.description && (
+              <div style={{ marginBottom: "1rem" }}>
+                <h4 style={{ color: "#333", marginBottom: "0.5rem" }}>Description:</h4>
+                <p style={{ color: "#666", lineHeight: 1.5 }}>
+                  {selectedAnnouncement.description}
+                </p>
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              {selectedAnnouncement.start_time && (
+                <div>
+                  <h4 style={{ color: "#333", marginBottom: "0.5rem" }}>Start Time:</h4>
+                  <p style={{ color: "#666" }}>
+                    {new Date(selectedAnnouncement.start_time).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {selectedAnnouncement.end_time && (
+                <div>
+                  <h4 style={{ color: "#333", marginBottom: "0.5rem" }}>End Time:</h4>
+                  <p style={{ color: "#666" }}>
+                    {new Date(selectedAnnouncement.end_time).toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {selectedAnnouncement.address && (
+              <div style={{ marginBottom: "1rem" }}>
+                <h4 style={{ color: "#333", marginBottom: "0.5rem" }}>Location:</h4>
+                <p style={{ color: "#666" }}>{selectedAnnouncement.address}</p>
+              </div>
+            )}
+
+            {selectedAnnouncement.link && (
+              <div style={{ marginBottom: "1rem" }}>
+                <h4 style={{ color: "#333", marginBottom: "0.5rem" }}>Link:</h4>
+                <a
+                  href={selectedAnnouncement.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#192A88", textDecoration: "underline" }}
+                >
+                  {selectedAnnouncement.link}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 });
 
