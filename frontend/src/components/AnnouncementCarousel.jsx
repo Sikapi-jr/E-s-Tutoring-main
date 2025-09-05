@@ -101,7 +101,7 @@ const AnnouncementCarousel = memo(() => {
         {current.image && (
           <img
             key={currentIndex} // fade re‑render
-            src={`/uploads/announcements/${current.image.split('/').pop()}`}
+            src={`${API_BASE_URL}${current.image}`}
             alt="Announcement"
             style={{
               position: "absolute",
@@ -213,7 +213,7 @@ const AnnouncementCarousel = memo(() => {
             {selectedAnnouncement.image && (
               <div style={{ marginBottom: "1.5rem", textAlign: "center" }}>
                 <img
-                  src={`/uploads/announcements/${selectedAnnouncement.image.split('/').pop()}`}
+                  src={`${API_BASE_URL}${selectedAnnouncement.image}`}
                   alt="Announcement"
                   style={{
                     maxWidth: "100%",
