@@ -1,11 +1,11 @@
-// src/components/CalendarConnect.jsx
+// src/pages/ScheduleSession.jsx
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import { useUser } from "../components/UserProvider";
 
-export default function CalendarConnect() {
+export default function ScheduleSession() {
   const { t } = useTranslation();
   const { user } = useUser();
 

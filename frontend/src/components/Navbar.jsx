@@ -44,7 +44,7 @@ const getRoutes = (t) => ({
   Complaints: { to: "/admin-complaints", label: "Student Complaints" },
   Cal:     { to: "/calendar",          label: t('navigation.calendar') },
   Events:  { to: "/events",            label: t('navigation.events') },
-  CalCon:  { to: "/calendarConnect",   label: t('navigation.scheduleSession') },
+  CalCon:  { to: "/schedule-session",   label: t('navigation.scheduleSession') },
   Inv:     { to: "/ViewInvoices",      label: t('navigation.invoices') },
   Dash:    { to: "/parent-dashboard",  label: t('navigation.dashboard') },
   Set:     { to: "/settings",          label: t('navigation.settings') },

@@ -33,7 +33,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const SendWeekly = lazy(() => import("./pages/SendWeekly"));
 const SendMonthly = lazy(() => import("./pages/SendMonthly"));
 const ViewInvoices = lazy(() => import("./pages/ViewInvoices"));
-const CalendarConnect = lazy(() => import("./pages/CalendarConnect"));
+const ScheduleSession = lazy(() => import("./pages/ScheduleSession"));
 const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const PasswordResetConfirm = lazy(() => import("./pages/PasswordResetConfirm"));
 const StripeComplete = lazy(() => import("./pages/stripeComplete"));
@@ -155,9 +155,9 @@ function AppRoutes() {
               </SupabaseProtectedRoute>
             } />
 
-            <Route path="/calendar-connect" element={
+            <Route path="/schedule-session" element={
               <SupabaseProtectedRoute requiredRole="tutor">
-                <CalendarConnect />
+                <ScheduleSession />
               </SupabaseProtectedRoute>
             } />
 

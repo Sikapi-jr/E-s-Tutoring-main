@@ -367,7 +367,9 @@
     "scheduleTutoringSession": "📅 Planifier une session de tutorat",
     "eventCreatedSuccessfully": "✅ Événement créé avec succès !",
     "failedToCreateEvent": "❌ Échec de la création de l'événement.",
-    "connectFailed": "Échec de la connexion à Google Agenda"
+    "connectFailed": "Échec de la connexion à Google Agenda",
+    "scheduledSessions": "Sessions planifiées",
+    "noScheduledSessions": "Aucune session planifiée trouvée."
   },
   "requests": {
     "requestTutor": "Demander un tuteur",

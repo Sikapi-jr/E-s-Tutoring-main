@@ -384,7 +384,9 @@
     "scheduleTutoringSession": "📅 Schedule Tutoring Session",
     "eventCreatedSuccessfully": "✅ Event created successfully!",
     "failedToCreateEvent": "❌ Failed to create event.",
-    "connectFailed": "Failed to connect to Google Calendar"
+    "connectFailed": "Failed to connect to Google Calendar",
+    "scheduledSessions": "Scheduled Sessions",
+    "noScheduledSessions": "No scheduled sessions found."
   },
   "requests": {
     "requestTutor": "Request a Tutor",
