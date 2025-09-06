@@ -160,7 +160,7 @@ class CreateUserView(generics.CreateAPIView):
                 ref.referrer.save(update_fields=["pending_rewards"])
 
         # Post-creation actions (outside transaction to avoid rollback on email failures)
-        from playground.tasks import send_verification_email_async, create_stripe_account_async
+        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_parent_registration_notification_async
         from kombu.exceptions import OperationalError
         from django.core.mail import send_mail
         
@@ -208,6 +208,16 @@ class CreateUserView(generics.CreateAPIView):
                 print(f"Stripe account creation failed: {e}")
         
         # Note: Stripe customers for parents are created on-demand during invoice generation
+        
+        # Send admin notification when parent registers (don't fail if this fails)
+        if role == 'parent':
+            try:
+                parent_name = f"{user.firstName} {user.lastName}"
+                parent_city = getattr(user, 'city', 'Unknown')
+                send_parent_registration_notification_async.delay(parent_name, parent_city)
+            except (OperationalError, Exception) as e:
+                # Log error but don't fail registration
+                print(f"Parent registration notification failed: {e}")
 
     
 

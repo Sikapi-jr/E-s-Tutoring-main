@@ -1358,3 +1358,40 @@ EGS Tutoring Team
     except Exception as e:
         logger.error(f"Error sending system notification emails: {str(e)}")
         raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_parent_registration_notification_async(self, parent_name, parent_city):
+    """
+    Send email notification to egstutor@gmail.com when a parent registers
+    """
+    try:
+        admin_email = 'egstutor@gmail.com'
+        subject = 'New Parent Registration - EGS Tutoring'
+        message = f"""
+Hello,
+
+A new parent has registered on the EGS Tutoring platform:
+
+Parent Name: {parent_name}
+City: {parent_city}
+
+Please review their account and provide any necessary assistance.
+
+Best regards,
+EGS Tutoring System
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [admin_email],
+            fail_silently=False,
+        )
+        
+        logger.info(f"Parent registration notification sent for: {parent_name} from {parent_city}")
+        return {'success': True, 'parent_name': parent_name, 'parent_city': parent_city}
+        
+    except Exception as e:
+        logger.error(f"Error sending parent registration notification: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
