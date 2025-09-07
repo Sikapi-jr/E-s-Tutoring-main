@@ -2954,3 +2954,47 @@ def existing_monthly_hours(request):
     except Exception as e:
         return Response({"error": f"Failed to fetch existing monthly hours: {str(e)}"}, status=500)
 
+class UsernamePasswordResetView(APIView):
+    """
+    Custom password reset view that accepts username instead of email
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django_rest_passwordreset.models import ResetPasswordToken
+        from django_rest_passwordreset.signals import reset_password_token_created
+        
+        username = request.data.get('username')
+        if not username:
+            return Response({"error": "Username is required"}, status=400)
+        
+        try:
+            # Find user by username
+            user = User.objects.get(username=username, is_active=True)
+        except User.DoesNotExist:
+            # Don't reveal if username exists or not for security
+            return Response({"message": "If a user with that username exists, a password reset email will be sent."}, status=200)
+        
+        # Check if user has an email address
+        if not user.email:
+            return Response({"error": "No email address associated with this username"}, status=400)
+        
+        try:
+            # Delete any existing tokens for this user to ensure only one active token
+            ResetPasswordToken.objects.filter(user=user).delete()
+            
+            # Create new reset token
+            token = ResetPasswordToken.objects.create(user=user)
+            
+            # Send the signal to trigger our custom email handler
+            reset_password_token_created.send(
+                sender=self.__class__,
+                instance=self,
+                reset_password_token=token
+            )
+            
+            return Response({"message": "Password reset email sent successfully"}, status=200)
+            
+        except Exception as e:
+            return Response({"error": "Failed to process password reset request"}, status=500)
+

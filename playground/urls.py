@@ -43,6 +43,7 @@ urlpatterns = [
     path("chat/sessions/", create_chat_session),
     path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
+    path('password-reset-username/', views.UsernamePasswordResetView.as_view(), name='password-reset-username'),
     path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),
     path('announcements/create/', views.AnnouncementCreateView.as_view(), name='create-announcement'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
