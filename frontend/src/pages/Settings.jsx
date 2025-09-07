@@ -217,7 +217,7 @@ export default function Settings() {
                 height: "80px",
                 borderRadius: "50%",
                 backgroundColor: "#ffffff",
-                border: "2px solid #ccc",
+                border: "2px solid #000000",
               }}
             />
           )}
