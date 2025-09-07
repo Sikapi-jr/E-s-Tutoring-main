@@ -364,6 +364,9 @@ WHITENOISE_AUTOREFRESH = True
 # Tell WhiteNoise to serve media files
 WHITENOISE_ROOT_SQUASH = 3600  # Cache media files for 1 hour
 
+# Django REST Password Reset configuration
+DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
+
 # Stripe configuration - use environment variables
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') 

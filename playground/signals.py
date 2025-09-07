@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.conf import settings
+from playground.email_utils import send_mailgun_email
 import logging
 
 from django_rest_passwordreset.signals import reset_password_token_created
@@ -27,36 +28,41 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     """
     Handles password reset tokens
     When a token is created, an e-mail needs to be sent to the user
-    :param sender: View Class that sent the signal
-    :param instance: View Instance that sent the signal
-    :param reset_password_token: Token Model Object
-    :param args:
-    :param kwargs:
-    :return:
+    Uses Mailgun instead of SMTP to avoid connection issues
     """
-    # send an e-mail to the user
-    context = {
-        'current_user': reset_password_token.user,
-        'username': reset_password_token.user.username,
-        'email': reset_password_token.user.email,
-        'reset_password_url': f"{settings.FRONTEND_URL}/reset-password/?token={reset_password_token.key}",
-    }
-    # render email text
-    email_html_message = render_to_string('email/password_reset_email.html', context)
-    email_plaintext_message = render_to_string('email/password_reset_email.txt', context)
+    try:
+        user = reset_password_token.user
+        reset_url = f"{settings.FRONTEND_URL}/password-reset-confirm?token={reset_password_token.key}"
+        
+        subject = "Password Reset for EGS Tutoring Portal"
+        
+        # Create a simple text message since we're using Mailgun
+        message = f"""
+Hello {user.firstName or user.username},
 
-    msg = EmailMultiAlternatives(
-        # title:
-        "Password Reset for {title}".format(title="EGS TUTORING PORTAL"),
-        # message:
-        email_plaintext_message,
-        # from:
-        settings.DEFAULT_FROM_EMAIL,
-        # to:
-        [reset_password_token.user.email]
-    )
-    msg.attach_alternative(email_html_message, "text/html")
-    msg.send()
+You have requested to reset your password for your EGS Tutoring account.
+
+Please click the following link to reset your password:
+{reset_url}
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+EGS Tutoring Team
+        """
+        
+        # Use Mailgun API instead of Django's SMTP
+        send_mailgun_email(
+            to_emails=[user.email],
+            subject=subject,
+            text_content=message
+        )
+        
+        logger.info(f"Password reset email sent via Mailgun to {user.email}")
+        
+    except Exception as e:
+        logger.error(f"Error sending password reset email: {str(e)}")
+        # Don't raise the exception to prevent the password reset from failing completely
 
 
 @receiver(post_save, sender=User)
