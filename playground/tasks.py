@@ -102,14 +102,28 @@ Thank you for registering with EGS Tutoring! Please click the link below to veri
 
 {verification_link}
 
-📋 We've attached a Parent Onboarding Guide to help you get started with the platform.
+📋 GETTING STARTED - PARENT ONBOARDING GUIDE:
 
-Next Steps for Parents:
-1. Create accounts for your children through your parent dashboard
-2. Submit a tutoring request on the Request page specifying your child's needs
-3. Review tutor replies on the Current Requests page and accept the best fit
+Welcome to EGS Tutoring! Here's how to get started as a parent:
 
-You can access your dashboard at https://egstutoring.ca/home after verification.
+1. REGISTER YOUR CHILDREN
+   Visit the registration page to create accounts for your children:
+   {settings.FRONTEND_URL}/register
+
+2. SUBMIT A TUTORING REQUEST
+   Once verified, submit a request specifying your child's tutoring needs:
+   {settings.FRONTEND_URL}/request
+
+3. REVIEW TUTORING REPLIES
+   Check and accept tutor responses to your requests:
+   {settings.FRONTEND_URL}/request-reply
+
+Additional Resources:
+• Access your dashboard: {settings.FRONTEND_URL}/home
+• View invoices and billing: {settings.FRONTEND_URL}/viewinvoices
+• Manage your profile: {settings.FRONTEND_URL}/profile
+
+Our tutoring platform connects you with qualified tutors in your area. After verification, you can create student accounts for your children, submit specific tutoring requests, and review responses from available tutors.
 
 If you didn't create this account, please ignore this email.
 
@@ -130,24 +144,14 @@ Best regards,
 EGS Tutoring Team
             """
         
-        # Use Mailgun API with attachments for parents
-        attachments = []
-        if user.roles == 'parent':
-            # Add parent onboarding PDF for parent users
-            import os
-            from django.conf import settings
-            parent_guide_path = os.path.join(settings.MEDIA_ROOT, 'onboarding', 'EGS Tutoring Portal Parent Onboarding Guide.pdf')
-            if os.path.exists(parent_guide_path):
-                attachments.append(parent_guide_path)
-        
+        # Use Mailgun API 
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message,
-            attachments=attachments if attachments else None
+            text_content=message
         )
         
-        logger.info(f"Verification email sent to user {user_id} ({user.email}) with {len(attachments)} attachments")
+        logger.info(f"Verification email sent to user {user_id} ({user.email})")
         return {'success': True, 'email': user.email}
         
     except User.DoesNotExist:
