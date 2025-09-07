@@ -32,7 +32,7 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     """
     try:
         user = reset_password_token.user
-        reset_url = f"{settings.FRONTEND_URL}/password-reset-confirm?token={reset_password_token.key}"
+        reset_url = f"{settings.FRONTEND_URL}/password-reset-confirm/{user.id}/{reset_password_token.key}"
         
         subject = "Password Reset for EGS Tutoring Portal"
         

@@ -1,15 +1,14 @@
 import { useState } from "react";
 import api from "../api";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 
 function PasswordResetConfirm() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const { uid, token } = useParams();
     const [password, setPassword] = useState("");
     const [passwordValid, setPasswordValid] = useState("");    
-    const token = searchParams.get("token");
     const [error, setError] = useState(null);
 
     
