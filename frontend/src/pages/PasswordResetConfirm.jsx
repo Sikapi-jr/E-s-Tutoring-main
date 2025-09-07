@@ -28,6 +28,7 @@ function PasswordResetConfirm() {
         // Check if password is entirely numeric (Django's NumericPasswordValidator)
         const numericOnlyRegex = /^\d+$/;
         if (numericOnlyRegex.test(password)) {
+            console.log("Password is entirely numeric:", password); // Debug log
             return "Password cannot be entirely numeric";
         }
         

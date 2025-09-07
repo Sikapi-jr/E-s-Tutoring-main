@@ -57,6 +57,7 @@ function RegisterForm() {
     // Check if password is entirely numeric (Django's NumericPasswordValidator)
     const numericOnlyRegex = /^\d+$/;
     if (numericOnlyRegex.test(password)) {
+      console.log("Password is entirely numeric:", password); // Debug log
       setPasswordError("Password cannot be entirely numeric");
       return false;
     }
