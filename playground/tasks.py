@@ -102,6 +102,8 @@ Thank you for registering with EGS Tutoring! Please click the link below to veri
 
 {verification_link}
 
+📋 We've attached a Parent Onboarding Guide to help you get started with the platform.
+
 Next Steps for Parents:
 1. Create accounts for your children through your parent dashboard
 2. Submit a tutoring request on the Request page specifying your child's needs
@@ -128,14 +130,24 @@ Best regards,
 EGS Tutoring Team
             """
         
-        # Use Mailgun API instead of Django's send_mail
+        # Use Mailgun API with attachments for parents
+        attachments = []
+        if user.roles == 'parent':
+            # Add parent onboarding PDF for parent users
+            import os
+            from django.conf import settings
+            parent_guide_path = os.path.join(settings.MEDIA_ROOT, 'onboarding', 'EGS Tutoring Portal Parent Onboarding Guide.pdf')
+            if os.path.exists(parent_guide_path):
+                attachments.append(parent_guide_path)
+        
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            attachments=attachments if attachments else None
         )
         
-        logger.info(f"Verification email sent to user {user_id} ({user.email})")
+        logger.info(f"Verification email sent to user {user_id} ({user.email}) with {len(attachments)} attachments")
         return {'success': True, 'email': user.email}
         
     except User.DoesNotExist:
