@@ -25,6 +25,7 @@ function RegisterForm() {
   const [username, setUsername] = useState("");
   const [parent, setParent] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
   const [roles, setRole] = useState("");
   const [firstName, setFname] = useState("");
@@ -36,6 +37,7 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [clicked, setClicked] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const navigate = useNavigate();
 
   const validatePassword = (password) => {
@@ -56,6 +58,15 @@ function RegisterForm() {
     return true;
   };
 
+  const validatePasswordMatch = (password, confirmPassword) => {
+    if (confirmPassword && password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match");
+      return false;
+    }
+    setConfirmPasswordError("");
+    return true;
+  };
+
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
@@ -64,6 +75,16 @@ function RegisterForm() {
     } else {
       setPasswordError("");
     }
+    // Check password match when password changes
+    if (confirmPassword) {
+      validatePasswordMatch(newPassword, confirmPassword);
+    }
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    validatePasswordMatch(password, newConfirmPassword);
   };
 
   const handleSubmit = async (e) => {
@@ -71,8 +92,13 @@ function RegisterForm() {
     setLoading(true);
     setClicked(true);
 
-    // Validate password before submitting
+    // Validate password and confirm password before submitting
     if (!validatePassword(password)) {
+      setLoading(false);
+      return;
+    }
+
+    if (!validatePasswordMatch(password, confirmPassword)) {
       setLoading(false);
       return;
     }
@@ -135,6 +161,15 @@ function RegisterForm() {
               required
             />
             {passwordError && <p className="password-error">{passwordError}</p>}
+            <input
+              className="form-input"
+              type="password"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder={t('auth.confirmPassword')}
+              required
+            />
+            {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
             <input
               className="form-input"
               type="email"
@@ -221,6 +256,15 @@ function RegisterForm() {
               required
             />
             {passwordError && <p className="password-error">{passwordError}</p>}
+            <input
+              className="form-input"
+              type="password"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder={t('auth.confirmPassword')}
+              required
+            />
+            {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
             <input
               className="form-input"
               type="email"
