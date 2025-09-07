@@ -44,12 +44,24 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
                     if isinstance(attachment, str):
                         # File path provided
                         file_path = attachment
-                        if default_storage.exists(file_path):
-                            with default_storage.open(file_path, 'rb') as f:
-                                filename = os.path.basename(file_path)
-                                files.append(('attachment', (filename, f.read())))
+                        
+                        # Handle both absolute and relative paths
+                        if os.path.isabs(file_path):
+                            # Absolute path - check directly on filesystem
+                            if os.path.exists(file_path):
+                                with open(file_path, 'rb') as f:
+                                    filename = os.path.basename(file_path)
+                                    files.append(('attachment', (filename, f.read())))
+                            else:
+                                logger.warning(f"Attachment file not found: {file_path}")
                         else:
-                            logger.warning(f"Attachment file not found: {file_path}")
+                            # Relative path - use Django storage
+                            if default_storage.exists(file_path):
+                                with default_storage.open(file_path, 'rb') as f:
+                                    filename = os.path.basename(file_path)
+                                    files.append(('attachment', (filename, f.read())))
+                            else:
+                                logger.warning(f"Attachment file not found: {file_path}")
                     elif isinstance(attachment, tuple) and len(attachment) == 3:
                         # (filename, file_content, content_type) tuple
                         filename, file_content, content_type = attachment
