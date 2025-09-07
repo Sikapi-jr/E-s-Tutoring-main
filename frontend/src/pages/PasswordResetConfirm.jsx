@@ -24,6 +24,12 @@ function PasswordResetConfirm() {
         if (password.length < 8) {
             return "Password must be at least 8 characters long";
         }
+
+        // Check if password is entirely numeric (Django's NumericPasswordValidator)
+        const numericOnlyRegex = /^\d+$/;
+        if (numericOnlyRegex.test(password)) {
+            return "Password cannot be entirely numeric";
+        }
         
         return "";
     };

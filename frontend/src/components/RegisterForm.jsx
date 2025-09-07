@@ -53,6 +53,13 @@ function RegisterForm() {
       setPasswordError("Password must be at least 8 characters long");
       return false;
     }
+
+    // Check if password is entirely numeric (Django's NumericPasswordValidator)
+    const numericOnlyRegex = /^\d+$/;
+    if (numericOnlyRegex.test(password)) {
+      setPasswordError("Password cannot be entirely numeric");
+      return false;
+    }
     
     setPasswordError("");
     return true;
