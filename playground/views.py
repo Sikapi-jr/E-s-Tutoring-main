@@ -2566,8 +2566,8 @@ class AdminCreateTutorView(generics.CreateAPIView):
         
         # Use atomic transaction to ensure all database operations succeed or none do
         with transaction.atomic():
-            # Create the user with encrypted password
-            user = serializer.save()
+            # Create the user with encrypted password (inactive by default)
+            user = serializer.save(is_active=False)
             user.set_password(serializer.validated_data['password'])
             user.save()
             
