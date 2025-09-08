@@ -151,6 +151,10 @@ class CreateUserView(generics.CreateAPIView):
                 
             user = serializer.save(is_active=False)
             
+            # Set default rates based on user role
+            user.set_default_rates_by_role()
+            user.save()
+            
             # Handle referral logic within transaction
             if role == 'tutor' and ref:
                 ref.referred = user
@@ -2569,6 +2573,9 @@ class AdminCreateTutorView(generics.CreateAPIView):
             # Create the user with encrypted password (inactive by default)
             user = serializer.save(is_active=False)
             user.set_password(serializer.validated_data['password'])
+            
+            # Set default rates based on user role
+            user.set_default_rates_by_role()
             user.save()
             
         # Post-creation actions (outside transaction to avoid rollback on email failures)
