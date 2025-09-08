@@ -25,9 +25,12 @@ const LogHours = memo(() => {
     const [student, setStudent] = useState("");
         //WIll add logic to find parent in view/serializer
     const [subject, setSubject] = useState("");
-    const [date, setDate] = useState(new Date());
-    const [startTime, setStartTime] = useState(new Date());
-    const [endTime, setEndTime] = useState(new Date());
+    const [date, setDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    });
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
     const [totalTime, setTotalTime] = useState("");
     const [location, setLocation] = useState("");
     const [notes, setNotes] = useState("");
@@ -198,9 +201,9 @@ const LogHours = memo(() => {
             // Clear form fields
             setStudent("");
             setSubject("");
-            setDate(new Date());
-            setStartTime(new Date());
-            setEndTime(new Date());
+            setDate(new Date().toISOString().split('T')[0]); // Format: YYYY-MM-DD
+            setStartTime("");
+            setEndTime("");
             setLocation("");
             setNotes("");
             
