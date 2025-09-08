@@ -1554,12 +1554,19 @@ class LogHoursCreateView(APIView):
         if session_end_datetime > current_datetime:
             raise ValidationError("Cannot log hours that end in the future")
         
-        # Validation 2: Can only log hours within current week
-        cur_ws = week_start(current_date)
-        cur_we = cur_ws + timedelta(days=6)
+        # Validation 2: Can only log hours within current week (Monday to Sunday)
+        cur_ws = week_start(current_date)  # Monday of current week
+        cur_we = cur_ws + timedelta(days=6)  # Sunday of current week
+        
+        # Debug logging
+        print(f"Current date: {current_date}")
+        print(f"Session date: {session_date}")
+        print(f"Current week start (Monday): {cur_ws}")
+        print(f"Current week end (Sunday): {cur_we}")
+        print(f"Is session date in range? {cur_ws <= session_date <= cur_we}")
         
         if not (cur_ws <= session_date <= cur_we):
-            raise ValidationError("Can only log hours for the current week")
+            raise ValidationError(f"Can only log hours for the current week (Monday {cur_ws.strftime('%Y-%m-%d')} to Sunday {cur_we.strftime('%Y-%m-%d')}). You tried to log for {session_date.strftime('%Y-%m-%d')}.")
         
         # Validation 3: Check for duplicate hours
         tutor_id = data.get("tutor")
