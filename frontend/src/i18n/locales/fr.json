@@ -332,7 +332,8 @@
     "changedOn": "Changé le",
     "noEditsHistory": "Aucune modification n'a été apportée à cette entrée",
     "originallyCreated": "Créé à l'origine",
-    "lastEdited": "Dernière modification"
+    "lastEdited": "Dernière modification",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer les heures enregistrées pour {{date}} ? Cette action ne peut pas être annulée."
   },
   "calendar": {
     "title": "Calendrier",
@@ -547,6 +548,7 @@
     "failedToLoadEvents": "Échec du chargement des événements.",
     "couldNotUpdateRSVP": "Impossible de mettre à jour la RSVP.",
     "failedToLoadLoggedHours": "Échec du chargement des heures enregistrées.",
+    "failedToDeleteHour": "Échec de la suppression de l'heure. Veuillez réessayer.",
     "couldNotLoadStudents": "Impossible de charger les étudiants. Veuillez réessayer.",
     "couldNotLoadTutors": "Impossible de charger les tuteurs disponibles. Veuillez réessayer.",
     "tutorChangeRequestFailed": "Échec de l'envoi de la demande de changement de tuteur. Veuillez réessayer.",

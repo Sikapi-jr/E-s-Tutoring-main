@@ -349,7 +349,8 @@
     "changedOn": "Changed On",
     "noEditsHistory": "No edits have been made to this entry",
     "originallyCreated": "Originally Created",
-    "lastEdited": "Last Edited"
+    "lastEdited": "Last Edited",
+    "confirmDelete": "Are you sure you want to delete the hours logged for {{date}}? This action cannot be undone."
   },
   "calendar": {
     "title": "Calendar",
@@ -564,6 +565,7 @@
     "failedToLoadEvents": "Failed to load events.",
     "couldNotUpdateRSVP": "Could not update RSVP.",
     "failedToLoadLoggedHours": "Failed to load logged hours.",
+    "failedToDeleteHour": "Failed to delete hour. Please try again.",
     "couldNotLoadStudents": "Could not load students. Please try again.",
     "couldNotLoadTutors": "Could not load available tutors. Please try again.",
     "tutorChangeRequestFailed": "Failed to submit tutor change request. Please try again.",

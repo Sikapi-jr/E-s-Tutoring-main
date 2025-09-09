@@ -44,6 +44,23 @@ export default function LoggedHoursPage() {
     setEditHistoryModalOpen(true);
   }, []);
 
+  const handleDeleteClick = useCallback(async (hour) => {
+    if (!window.confirm(t('loggedHours.confirmDelete', { date: new Date(hour.date).toLocaleDateString() }))) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/hours/${hour.id}/edit/`);
+      
+      // Refresh hours data
+      const res = await api.get(`/api/parentHours/?id=${user.account_id}`);
+      setHours(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Failed to delete hour:", error);
+      alert(error.response?.data?.detail || t('errors.failedToDeleteHour'));
+    }
+  }, [user, t]);
+
   const [tutorReplyModalOpen, setTutorReplyModalOpen] = useState(false);
   const [selectedHourForReply, setSelectedHourForReply] = useState(null);
 
@@ -365,16 +382,37 @@ export default function LoggedHoursPage() {
                             </button>
                           </div>
                         ) : (
-                          <button
-                            className="edit-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditClick(h);
-                            }}
-                            title="Edit hours"
-                          >
-                            ✏️ Edit
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              className="edit-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditClick(h);
+                              }}
+                              title="Edit hours"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              className="delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(h);
+                              }}
+                              title="Delete hours"
+                              style={{ 
+                                backgroundColor: '#dc3545', 
+                                color: 'white',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
                         )
                       ) : (
                         // Parent view: Dispute/Cancel buttons

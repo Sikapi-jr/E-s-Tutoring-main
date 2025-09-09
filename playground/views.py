@@ -1720,6 +1720,26 @@ class EditHoursView(APIView):
             return Response({"detail": "Hour record not found"}, status=404)
         except Exception as e:
             return Response({"detail": f"Error updating hours: {str(e)}"}, status=400)
+    
+    def delete(self, request, hour_id):
+        try:
+            hour = Hours.objects.get(id=hour_id)
+            
+            # Only tutors can delete their own hours
+            if request.user != hour.tutor:
+                return Response({"detail": "Only the tutor can delete this hour record"}, status=403)
+            
+            # Check if the hour is already processed/accepted - maybe we don't want to allow deletion in that case
+            if hour.status == "Accepted":
+                return Response({"detail": "Cannot delete accepted hours. Contact admin if needed."}, status=400)
+            
+            hour.delete()
+            return Response({"detail": "Hours deleted successfully"}, status=200)
+            
+        except Hours.DoesNotExist:
+            return Response({"detail": "Hour record not found"}, status=404)
+        except Exception as e:
+            return Response({"detail": f"Error deleting hours: {str(e)}"}, status=400)
 
 class TutorReplyView(APIView):
     permission_classes = [IsAuthenticated]
