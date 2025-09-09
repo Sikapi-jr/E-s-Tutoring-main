@@ -63,7 +63,7 @@ const LogHours = memo(() => {
       }, [tutor_id]);
 
     const getTotalTime = useCallback((startTime, endTime) => {
-        if (!startTime || !endTime) return 0;
+        if (!startTime || !endTime || typeof startTime !== 'string' || typeof endTime !== 'string') return 0;
         
         const [startHours, startMinutes] = startTime.split(":").map(Number);
         const [endHours, endMinutes] = endTime.split(":").map(Number);
@@ -258,11 +258,11 @@ const LogHours = memo(() => {
                     onChange={(e) => setStudent(e.target.value)}
                 >
                     <option value="">{t('logHours.selectStudent')}</option>
-                        {students.map((stud) => (
+                        {students && students.map((stud) => (
                             <option key={stud.id} value={stud.student}>
                                 {stud.student_firstName} {stud.student_lastName}
                             </option>
-                ))}
+                        ))}
                 </select>
 
                 {/* Subject and Location Row */}
