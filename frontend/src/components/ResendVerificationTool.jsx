@@ -5,7 +5,7 @@ import api from '../api';
 
 const ResendVerificationTool = ({ onClose }) => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -18,19 +18,19 @@ const ResendVerificationTool = ({ onClose }) => {
 
     try {
       const response = await api.post('/api/admin/resendVerification/', {
-        email: email.trim()
+        username: username.trim()
       });
       
       const userData = response.data;
       setMessage(t('admin.verificationEmailSent', 
         `Verification email sent successfully to {{email}}. User: {{userName}} ({{userRole}})`, {
-        email: email,
+        email: userData.message.split(' to ')[1].split('.')[0], // Extract email from message
         userName: userData.user_name,
         userRole: userData.user_role
       }));
       
       // Clear form after success
-      setEmail('');
+      setUsername('');
       
     } catch (error) {
       console.error('Error resending verification email:', error);
@@ -56,14 +56,14 @@ const ResendVerificationTool = ({ onClose }) => {
     <div>
       <p style={{ color: '#666', marginBottom: '1.5rem', lineHeight: '1.5' }}>
         {t('admin.resendVerificationDescription', 
-          'Enter the email address of the user to resend their verification email. The system will send the appropriate email based on their role (tutor, parent, or student).'
+          'Enter the username of the user to resend their verification email. The system will send the appropriate email based on their role (tutor, parent, or student).'
         )}
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label 
-            htmlFor="email" 
+            htmlFor="username" 
             style={{ 
               display: 'block', 
               marginBottom: '0.5rem', 
@@ -71,15 +71,15 @@ const ResendVerificationTool = ({ onClose }) => {
               color: '#333'
             }}
           >
-            {t('admin.emailAddress', 'Email Address')}
+            {t('admin.username', 'Username')}
           </label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
-            placeholder={t('admin.enterEmailPlaceholder', 'Enter user email address')}
+            placeholder={t('admin.enterUsernamePlaceholder', 'Enter username')}
             style={{
               width: '100%',
               padding: '0.75rem',
@@ -134,14 +134,14 @@ const ResendVerificationTool = ({ onClose }) => {
           
           <button
             type="submit"
-            disabled={isSubmitting || !email.trim()}
+            disabled={isSubmitting || !username.trim()}
             style={{
               padding: '0.75rem 1.5rem',
               border: 'none',
               borderRadius: '6px',
-              backgroundColor: isSubmitting || !email.trim() ? '#ccc' : '#6f42c1',
+              backgroundColor: isSubmitting || !username.trim() ? '#ccc' : '#6f42c1',
               color: 'white',
-              cursor: isSubmitting || !email.trim() ? 'not-allowed' : 'pointer',
+              cursor: isSubmitting || !username.trim() ? 'not-allowed' : 'pointer',
               fontSize: '1rem',
               fontWeight: 'bold'
             }}

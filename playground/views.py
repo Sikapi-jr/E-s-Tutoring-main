@@ -924,12 +924,12 @@ class AdminResendVerificationView(APIView):
         if not request.user.is_superuser:
             return Response({"error": "Only administrators can resend verification emails"}, status=403)
         
-        email = request.data.get("email")
-        if not email:
-            return Response({"error": "Email is required"}, status=400)
+        username = request.data.get("username")
+        if not username:
+            return Response({"error": "Username is required"}, status=400)
         
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(username=username)
             
             # Generate verification token and URL
             uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -1023,13 +1023,14 @@ EGS Tutoring Team"""
                 )
             
             return Response({
-                "message": f"Verification email resent successfully to {email}",
+                "message": f"Verification email resent successfully to {user.email}",
                 "user_role": user.roles,
-                "user_name": f"{user.firstName} {user.lastName}"
+                "user_name": f"{user.firstName} {user.lastName}",
+                "username": user.username
             }, status=200)
             
         except User.DoesNotExist:
-            return Response({"error": "User with this email not found"}, status=404)
+            return Response({"error": "User with this username not found"}, status=404)
         except Exception as e:
             return Response({"error": f"Failed to resend verification email: {str(e)}"}, status=500)
 
