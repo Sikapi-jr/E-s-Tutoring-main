@@ -916,6 +916,123 @@ class ResendVerificationView(APIView):
             # Don't reveal if email exists or not for security
             return Response({"message": "If the email exists, a verification email has been sent"}, status=200)
 
+class AdminResendVerificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Only allow superusers/admins to use this endpoint
+        if not request.user.is_superuser:
+            return Response({"error": "Only administrators can resend verification emails"}, status=403)
+        
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Generate verification token and URL
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+            
+            # Send the appropriate email based on user role
+            from playground.tasks import send_verification_email_async, send_tutor_welcome_email_async
+            from kombu.exceptions import OperationalError
+            
+            try:
+                if user.roles == 'tutor':
+                    # For tutors, send the full welcome email with verification
+                    # Try to get Stripe onboarding link if possible
+                    onboarding_link = None
+                    try:
+                        from playground.tasks import create_stripe_account_async
+                        stripe_result = create_stripe_account_async.apply(args=[user.id])
+                        if stripe_result.successful() and stripe_result.result.get('success'):
+                            onboarding_link = stripe_result.result.get('onboarding_link')
+                    except:
+                        pass  # Continue without Stripe link if it fails
+                    
+                    send_tutor_welcome_email_async.delay(user.id, verify_url, onboarding_link)
+                else:
+                    # For parents and students, send regular verification email
+                    send_verification_email_async.delay(user.id, verify_url)
+                    
+            except OperationalError:
+                # Fallback to direct email sending if Celery is unavailable
+                from django.core.mail import send_mail
+                
+                if user.roles == 'tutor':
+                    subject = 'Welcome to EGS Tutoring - Verify Your Account'
+                    message = f"""Hello {user.firstName},
+
+Welcome to EGS Tutoring! Please click the link below to verify your email address:
+
+{verify_url}
+
+Best regards,
+EGS Tutoring Team"""
+                elif user.roles == 'parent':
+                    subject = 'Verify Your EGS Tutoring Account'
+                    message = f"""Hello {user.firstName},
+
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+
+{verify_url}
+
+📋 GETTING STARTED - PARENT ONBOARDING GUIDE:
+
+Welcome to EGS Tutoring! Here's how to get started as a parent:
+
+1. REGISTER YOUR CHILDREN
+   Visit the registration page to create accounts for your children:
+   {settings.FRONTEND_URL}/register
+
+2. SUBMIT A TUTORING REQUEST
+   Once verified, submit a request specifying your child's tutoring needs:
+   {settings.FRONTEND_URL}/request
+
+3. REVIEW TUTORING REPLIES
+   Check and accept tutor responses to your requests:
+   {settings.FRONTEND_URL}/request-reply
+
+Additional Resources:
+• Access your dashboard: {settings.FRONTEND_URL}/home
+• View invoices and billing: {settings.FRONTEND_URL}/viewinvoices
+• Manage your profile: {settings.FRONTEND_URL}/profile
+
+Best regards,
+EGS Tutoring Team"""
+                else:
+                    subject = 'Verify Your EGS Tutoring Account'
+                    message = f"""Hello {user.firstName},
+
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+
+{verify_url}
+
+Best regards,
+EGS Tutoring Team"""
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+            
+            return Response({
+                "message": f"Verification email resent successfully to {email}",
+                "user_role": user.roles,
+                "user_name": f"{user.firstName} {user.lastName}"
+            }, status=200)
+            
+        except User.DoesNotExist:
+            return Response({"error": "User with this email not found"}, status=404)
+        except Exception as e:
+            return Response({"error": f"Failed to resend verification email: {str(e)}"}, status=500)
+
 class ParentHomeCreateView(generics.ListCreateAPIView):
     permission_classes=[AllowAny]
 

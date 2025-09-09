@@ -25,6 +25,7 @@ urlpatterns = [
     path("log/", views.LogHoursCreateView.as_view(), name="logHours"),
     path("verifyEmail/", views.VerifyEmailView.as_view(), name="verifyEmail"),
     path("resendVerification/", views.ResendVerificationView.as_view(), name="resendVerification"),
+    path("admin/resendVerification/", views.AdminResendVerificationView.as_view(), name="adminResendVerification"),
     path("parentHours/", views.ParentHoursListView.as_view(), name="ParentCalendar"),
     path('monthly-reports/create/', views.MonthlyReportCreateView.as_view(), name='monthly-report-create'),
     path('monthly-reports/', views.MonthlyReportListView.as_view(), name='monthly-reports-list'),

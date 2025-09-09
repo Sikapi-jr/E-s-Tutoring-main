@@ -11,6 +11,7 @@ import DisputeModal from "../components/DisputeModal";
 import TutorComplaintModal from "../components/TutorComplaintModal";
 import TutorRegistrationForm from "../components/TutorRegistrationForm";
 import AdminNotificationTool from "../components/AdminNotificationTool";
+import ResendVerificationTool from "../components/ResendVerificationTool";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -44,6 +45,7 @@ export default function Home() {
   // Admin state
   const [showTutorForm, setShowTutorForm] = useState(false);
   const [showNotificationTool, setShowNotificationTool] = useState(false);
+  const [showResendVerificationTool, setShowResendVerificationTool] = useState(false);
   
   // Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -1315,10 +1317,26 @@ export default function Home() {
                       padding: "0.75rem",
                       borderRadius: "6px",
                       cursor: "pointer",
-                      fontSize: "0.9rem"
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
                     }}
                   >
                     {t('admin.manageStaleRequests', 'Manage Stale Requests')}
+                  </button>
+                  <button
+                    onClick={() => setShowResendVerificationTool(true)}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#6f42c1",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    {t('admin.resendVerificationEmail', 'Resend Verification Email')}
                   </button>
                 </div>
               </div>
@@ -1869,6 +1887,51 @@ export default function Home() {
       {/* Admin Notification Tool Modal */}
       {showNotificationTool && (
         <AdminNotificationTool onClose={() => setShowNotificationTool(false)} />
+      )}
+
+      {/* Admin Resend Verification Tool Modal */}
+      {showResendVerificationTool && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: '#192A88' }}>
+                {t('admin.resendVerificationEmail', 'Resend Verification Email')}
+              </h2>
+              <button
+                onClick={() => setShowResendVerificationTool(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <ResendVerificationTool onClose={() => setShowResendVerificationTool(false)} />
+          </div>
+        </div>
       )}
 
     </div>
