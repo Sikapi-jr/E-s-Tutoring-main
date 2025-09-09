@@ -330,6 +330,20 @@ export default function Settings() {
         </section>
       )}
 
+      {/* ===== Password Reset ===== */}
+      <section className="password-reset-section">
+        <h3>{t('settings.passwordReset')}</h3>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          {t('settings.passwordResetDescription')}
+        </p>
+        <button 
+          className="form-button"
+          onClick={() => window.open('https://egstutoring-portal.ca/password-reset', '_blank')}
+        >
+          {t('settings.resetPassword')}
+        </button>
+      </section>
+
       {/* ===== Email Notification Settings ===== */}
       <NotificationSettings />
 

@@ -879,7 +879,7 @@ export default function Home() {
               })
             ) : (
               <Link 
-                to={user?.roles === 'tutor' ? '/log-hours' : '/request'} 
+                to={user?.roles === 'tutor' ? '/log' : '/request'} 
                 style={{ color: "#192A88", textAlign: "center", display: "block" }}
               >
                 {t('home.noHoursYet')} {user?.roles === 'tutor' ? t('home.startLoggingHours') : t('home.requestTutorText')}

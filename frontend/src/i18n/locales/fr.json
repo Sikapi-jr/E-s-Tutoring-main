@@ -464,7 +464,10 @@
     "stripeSetupRequired": "Vous devez configurer votre compte Stripe pour recevoir les paiements des sessions de tutorat.",
     "checkEmailStripe": "Veuillez vérifier votre courriel pour les instructions d'intégration Stripe.",
     "setupStripeAccount": "Configurer le Compte de Paiement",
-    "stripeAccountConnected": "Le compte de paiement est connecté et prêt !"
+    "stripeAccountConnected": "Le compte de paiement est connecté et prêt !",
+    "passwordReset": "Réinitialisation du mot de passe",
+    "passwordResetDescription": "Besoin de changer votre mot de passe ? Cliquez sur le bouton ci-dessous pour le réinitialiser en toute sécurité.",
+    "resetPassword": "Réinitialiser le mot de passe"
   },
   "announcements": {
     "title": "Annonces",

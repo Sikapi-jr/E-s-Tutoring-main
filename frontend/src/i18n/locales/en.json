@@ -481,7 +481,10 @@
     "stripeSetupRequired": "You need to set up your Stripe account to receive payments from tutoring sessions.",
     "checkEmailStripe": "Please check your email for Stripe onboarding instructions.",
     "setupStripeAccount": "Set Up Payment Account",
-    "stripeAccountConnected": "Payment account is connected and ready!"
+    "stripeAccountConnected": "Payment account is connected and ready!",
+    "passwordReset": "Password Reset",
+    "passwordResetDescription": "Need to change your password? Click the button below to reset it securely.",
+    "resetPassword": "Reset Password"
   },
   "announcements": {
     "title": "Announcements",
