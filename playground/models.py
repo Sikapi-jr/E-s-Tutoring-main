@@ -520,6 +520,9 @@ class StripePayout(models.Model):
 class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    message_count = models.IntegerField(default=0)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    last_message_at = models.DateTimeField(null=True, blank=True)
 
     def get_last_request(self):
         """"Gets most recent request linked to current session"""
@@ -694,7 +697,43 @@ Stay focused on platform support, be helpful and professional about EGS Tutoring
                 pass
         return all_messages
 
+    def check_rate_limit(self):
+        """Check if session has exceeded rate limits"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        
+        # Limit: 30 messages per session total
+        if self.message_count >= 30:
+            return False, "Message limit exceeded. Maximum 30 messages per session."
+        
+        # Limit: 5 messages per minute (if last message was sent)
+        if self.last_message_at:
+            time_since_last = now - self.last_message_at
+            if time_since_last < timedelta(seconds=12):  # 5 messages per minute = 12 seconds between messages
+                return False, "Rate limit exceeded. Please wait a moment before sending another message."
+        
+        # Check messages in last hour: max 20 per hour per IP
+        if self.ip_address:
+            recent_sessions = AiChatSession.objects.filter(
+                ip_address=self.ip_address,
+                created_at__gte=now - timedelta(hours=1)
+            ).aggregate(total_messages=models.Sum('message_count'))['total_messages'] or 0
+            
+            if recent_sessions >= 20:
+                return False, "Hourly limit exceeded. Please try again later."
+        
+        return True, None
+
     def send(self, message):
+        from django.utils import timezone
+        
+        # Check rate limits first
+        can_send, error_message = self.check_rate_limit()
+        if not can_send:
+            raise ValueError(error_message)
+        
         last_request = self.get_last_request()  # Fetching last request.
 
         if not last_request:
@@ -710,6 +749,11 @@ Stay focused on platform support, be helpful and professional about EGS Tutoring
             )
         else:
             return
+        
+        # Update rate limiting fields
+        self.message_count += 1
+        self.last_message_at = timezone.now()
+        self.save()
 
        
 class AiRequest(models.Model):

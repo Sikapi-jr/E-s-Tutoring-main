@@ -2467,10 +2467,35 @@ class BatchMonthlyHoursPayoutView(APIView):
                 "skipped": skipped
             })
     
+def get_client_ip(request):
+    """Get the client's IP address from request headers"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_chat_session(request):
-    session = AiChatSession.objects.create()
+    ip_address = get_client_ip(request)
+    
+    # Check if IP has too many recent sessions
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    recent_sessions = AiChatSession.objects.filter(
+        ip_address=ip_address,
+        created_at__gte=timezone.now() - timedelta(hours=1)
+    ).count()
+    
+    if recent_sessions >= 5:  # Max 5 sessions per hour per IP
+        return Response({
+            'error': 'Too many chat sessions. Please wait before starting a new session.'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    session = AiChatSession.objects.create(ip_address=ip_address)
     serializer = AiChatSessionSerializer(session)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -2485,7 +2510,15 @@ def chat_session(request, session_id):
         message = request.data.get('message')
         if not message:
             return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
-        session.send(message)
+        
+        try:
+            session.send(message)
+        except ValueError as e:
+            # Rate limiting error
+            return Response({
+                'error': str(e),
+                'rate_limited': True
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     return Response(serializer.data)
 

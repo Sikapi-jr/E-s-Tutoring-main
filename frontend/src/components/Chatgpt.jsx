@@ -7,6 +7,9 @@ function Chatgpt(){
     const [messages, setMessages] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [rateLimited, setRateLimited] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [retryTimeout, setRetryTimeout] = useState(null);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -27,24 +30,52 @@ function Chatgpt(){
 
         return () => clearInterval(intervalId);
     }, [sessionId])
+    
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+            }
+        };
+    }, [retryTimeout])
 
     const postMessage = async (sessionId, message) => {
         const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-        await fetch(`${API_BASE_URL}/api/chat/sessions/${sessionId}/`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat/sessions/${sessionId}/`, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json", //Tells backend to expect content to be json content
             },
             body: JSON.stringify({message: message }) //String version of JSON message 
-        })
+        });
+        
+        if (response.status === 429) {
+            const errorData = await response.json();
+            setErrorMessage(errorData.error);
+            setRateLimited(true);
+            setIsLoading(false);
+            
+            // Auto-reset after 15 seconds
+            const timeout = setTimeout(() => {
+                setRateLimited(false);
+                setErrorMessage("");
+            }, 15000);
+            setRetryTimeout(timeout);
+            
+            throw new Error('Rate limited');
+        }
+        
+        return response;
     }
 
     const sendMessage = async (e) => {
-        if (e.key === 'Enter' && message.trim()) {
+        if (e.key === 'Enter' && message.trim() && !rateLimited) {
             const newMessage = { role: "user", content: message };
             setMessages(prev => [newMessage, ...prev]); 
             setMessage("");
             setIsLoading(true);
+            setErrorMessage("");
 
             try {
                 if (!sessionId) {
@@ -52,14 +83,32 @@ function Chatgpt(){
                     const response = await fetch(`${API_BASE_URL}/api/chat/sessions/`, {
                         method: 'POST',
                     });
+                    
+                    if (response.status === 429) {
+                        const errorData = await response.json();
+                        setErrorMessage(errorData.error);
+                        setRateLimited(true);
+                        setIsLoading(false);
+                        
+                        // Auto-reset after 15 seconds
+                        const timeout = setTimeout(() => {
+                            setRateLimited(false);
+                            setErrorMessage("");
+                        }, 15000);
+                        setRetryTimeout(timeout);
+                        
+                        return;
+                    }
+                    
                     const data = await response.json();
-                    setSessionId(data.id); // Fire and forget
-                    await postMessage(data.id, message); // Use data.id directly
+                    setSessionId(data.id);
+                    await postMessage(data.id, message);
                 } else {
                     await postMessage(sessionId, message);
                 }
             } catch (error) {
                 console.error('Error sending message:', error);
+                setErrorMessage('Failed to send message. Please try again.');
                 setIsLoading(false);
             }
         }
@@ -98,13 +147,36 @@ function Chatgpt(){
                             </div>
                         </div>
                     )}
+                    
+                    {errorMessage && (
+                        <div className="error-message" style={{
+                            background: '#ffe6e6',
+                            border: '1px solid #ff9999',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            margin: '10px 0',
+                            color: '#cc0000'
+                        }}>
+                            <strong>Error:</strong> {errorMessage}
+                            {rateLimited && (
+                                <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                                    <em>Please wait before sending more messages.</em>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={rateLimited ? "Rate limited - please wait..." : "Type a message..."}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyUp={sendMessage}                                                
+                    onKeyUp={sendMessage}
+                    disabled={rateLimited}
+                    style={{
+                        opacity: rateLimited ? 0.6 : 1,
+                        cursor: rateLimited ? 'not-allowed' : 'text'
+                    }}
                 />
             </div>
 
