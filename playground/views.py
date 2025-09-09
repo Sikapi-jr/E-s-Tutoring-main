@@ -1729,10 +1729,6 @@ class EditHoursView(APIView):
             if request.user != hour.tutor:
                 return Response({"detail": "Only the tutor can delete this hour record"}, status=403)
             
-            # Check if the hour is already processed/accepted - maybe we don't want to allow deletion in that case
-            if hour.status == "Accepted":
-                return Response({"detail": "Cannot delete accepted hours. Contact admin if needed."}, status=400)
-            
             hour.delete()
             return Response({"detail": "Hours deleted successfully"}, status=200)
             
