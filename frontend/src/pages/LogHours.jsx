@@ -340,7 +340,7 @@ const LogHours = memo(() => {
                     <p>
                         <span 
                             style={{ textDecoration: 'underline', cursor: 'pointer', color: 'green' }}
-                            onClick={() => navigate('/loggedHours')}
+                            onClick={() => navigate('/hours')}
                         >
                             {t('logHours.viewAllHours')}
                         </span>
