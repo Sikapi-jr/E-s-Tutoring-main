@@ -44,6 +44,7 @@ const EventsPage = lazy(() => import("./components/EventsPage"));
 const MonthlyReports = lazy(() => import("./pages/MonthlyReports"));
 const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
 const AdminDisputes = lazy(() => import("./pages/AdminDisputes"));
+const AdminStaleRequests = lazy(() => import("./pages/AdminStaleRequests"));
 const Contact = lazy(() => import("./pages/Contact"));
 
 // Loading component
@@ -142,6 +143,7 @@ function AppRoutes() {
             <Route path="/monthly-reports" element={<ProtectedRoute><MonthlyReports /></ProtectedRoute>} />
             <Route path="/admin-complaints" element={<ProtectedRoute><AdminComplaints /></ProtectedRoute>} />
             <Route path="/admin-disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
+            <Route path="/admin-stale-requests" element={<ProtectedRoute><AdminStaleRequests /></ProtectedRoute>} />
 
             {/* Public pages */}
             <Route path="/login" element={<Login />} />
