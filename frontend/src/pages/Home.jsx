@@ -878,8 +878,11 @@ export default function Home() {
                 );
               })
             ) : (
-              <Link to="/request" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
-                {t('home.noHoursYet')} {t('home.requestTutorText')}
+              <Link 
+                to={user?.roles === 'tutor' ? '/log-hours' : '/request'} 
+                style={{ color: "#192A88", textAlign: "center", display: "block" }}
+              >
+                {t('home.noHoursYet')} {user?.roles === 'tutor' ? t('home.startLoggingHours') : t('home.requestTutorText')}
               </Link>
             )}
           </div>
