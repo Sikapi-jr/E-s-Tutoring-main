@@ -95,6 +95,7 @@ def send_verification_email_async(self, user_id, verification_link):
         
         # Different message based on user role
         if user.roles == 'parent':
+            subject = 'Verify Your EGS Tutoring Account - Onboarding Guide'
             message = f"""
 Hello {user.firstName},
 
