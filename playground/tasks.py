@@ -232,7 +232,7 @@ You'll receive a separate email shortly with instructions to set up your payment
         subject = 'Welcome to EGS Tutoring - Verify Your Account & Setup Payment'
         message = f"""Hello {user.firstName},
 
-Welcome to EGS Tutoring! Your tutor account has been created by an administrator.
+Thanks for joining EGS Tutoring! Your tutor account has been created by an administrator.
 
 FIRST STEP - VERIFY YOUR EMAIL:
 Please click the link below to verify your email address and activate your account:
@@ -254,17 +254,23 @@ Best regards,
 EGS Tutoring Team"""
         
         # Prepare onboarding document attachments
-        media_path = os.path.join(settings.BASE_DIR, 'media', 'onboarding')
+        media_path = os.path.join(settings.BASE_DIR, 'public', 'uploads', 'onboarding')
         attachments = []
         
         # Add the two onboarding documents
         onboarding_guide_path = os.path.join(media_path, 'EGS Tutoring Portal Onboarding Guide.pdf')
         stripe_guide_path = os.path.join(media_path, 'Stripe Onboarding Guide EN.pdf')
         
+        logger.info(f"Checking attachment paths - Base media path: {media_path}")
+        logger.info(f"Onboarding guide path: {onboarding_guide_path}, exists: {os.path.exists(onboarding_guide_path)}")
+        logger.info(f"Stripe guide path: {stripe_guide_path}, exists: {os.path.exists(stripe_guide_path)}")
+        
         if os.path.exists(onboarding_guide_path):
             attachments.append(onboarding_guide_path)
         if os.path.exists(stripe_guide_path):
             attachments.append(stripe_guide_path)
+        
+        logger.info(f"Final attachments list: {attachments}")
         
         # Use Mailgun API with attachments
         send_mailgun_email(

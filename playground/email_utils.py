@@ -39,6 +39,8 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
             import os
             from django.core.files.storage import default_storage
             
+            logger.info(f"Processing {len(attachments)} attachments: {attachments}")
+            
             for attachment in attachments:
                 try:
                     if isinstance(attachment, str):
@@ -51,7 +53,9 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
                             if os.path.exists(file_path):
                                 with open(file_path, 'rb') as f:
                                     filename = os.path.basename(file_path)
-                                    files.append(('attachment', (filename, f.read())))
+                                    file_content = f.read()
+                                    files.append(('attachment', (filename, file_content)))
+                                    logger.info(f"Added attachment: {filename}, size: {len(file_content)} bytes")
                             else:
                                 logger.warning(f"Attachment file not found: {file_path}")
                         else:
