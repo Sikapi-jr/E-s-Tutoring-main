@@ -1397,22 +1397,40 @@ EGS Tutoring Team
         raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_parent_registration_notification_async(self, parent_name, parent_city):
+def send_parent_registration_notification_async(self, parent_info):
     """
     Send email notification to egstutor@gmail.com when a parent registers
     """
     try:
         admin_email = 'egstutor@gmail.com'
         subject = 'New Parent Registration - EGS Tutoring'
+        
+        # Extract all parent information
+        parent_name = f"{parent_info.get('firstName', '')} {parent_info.get('lastName', '')}"
+        username = parent_info.get('username', 'N/A')
+        email = parent_info.get('email', 'N/A')
+        phone = parent_info.get('phone', 'N/A')
+        address = parent_info.get('address', 'N/A')
+        city = parent_info.get('city', 'N/A')
+        registration_date = parent_info.get('date_joined', 'N/A')
+        
         message = f"""
 Hello,
 
 A new parent has registered on the EGS Tutoring platform:
 
-Parent Name: {parent_name}
-City: {parent_city}
+PARENT DETAILS:
+Name: {parent_name}
+Username: {username}
+Email: {email}
+Phone: {phone}
+Address: {address}
+City: {city}
+Registration Date: {registration_date}
 
 Please review their account and provide any necessary assistance.
+
+You can access the admin panel to view more details or contact the parent directly if needed.
 
 Best regards,
 EGS Tutoring System
@@ -1426,8 +1444,8 @@ EGS Tutoring System
             fail_silently=False,
         )
         
-        logger.info(f"Parent registration notification sent for: {parent_name} from {parent_city}")
-        return {'success': True, 'parent_name': parent_name, 'parent_city': parent_city}
+        logger.info(f"Parent registration notification sent for: {parent_name} ({email}) from {city}")
+        return {'success': True, 'parent_name': parent_name, 'parent_email': email, 'parent_city': city}
         
     except Exception as e:
         logger.error(f"Error sending parent registration notification: {str(e)}")

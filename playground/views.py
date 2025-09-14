@@ -216,9 +216,18 @@ class CreateUserView(generics.CreateAPIView):
         # Send admin notification when parent registers (don't fail if this fails)
         if role == 'parent':
             try:
-                parent_name = f"{user.firstName} {user.lastName}"
-                parent_city = getattr(user, 'city', 'Unknown')
-                send_parent_registration_notification_async.delay(parent_name, parent_city)
+                # Prepare complete parent information for admin notification
+                parent_info = {
+                    'firstName': user.firstName,
+                    'lastName': user.lastName,
+                    'username': user.username,
+                    'email': user.email,
+                    'phone': getattr(user, 'phone', 'N/A'),
+                    'address': getattr(user, 'address', 'N/A'),
+                    'city': getattr(user, 'city', 'N/A'),
+                    'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A'
+                }
+                send_parent_registration_notification_async.delay(parent_info)
             except (OperationalError, Exception) as e:
                 # Log error but don't fail registration
                 print(f"Parent registration notification failed: {e}")
