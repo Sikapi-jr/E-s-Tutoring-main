@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import SEOHead from '../components/SEOHead';
+import { getSEOData } from '../config/seoConfig';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
@@ -22,8 +24,18 @@ const LandingPage = () => {
     }
   };
 
+  const seoData = getSEOData('home');
+
   return (
-    <div className="landing-page">
+    <>
+      <SEOHead 
+        title={seoData.title}
+        description={seoData.description}
+        keywords={seoData.keywords}
+        canonical={seoData.canonical}
+        structuredData={seoData.structuredData}
+      />
+      <div className="landing-page">
       <div className="landing-container">
         <header className="landing-header">
           <h1>{t('landing.title')}</h1>
@@ -108,7 +120,8 @@ const LandingPage = () => {
           </p>
         </footer>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
