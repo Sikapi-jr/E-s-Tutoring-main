@@ -35,6 +35,8 @@ function RegisterForm() {
   const [phone_number, setPhone_number] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showChildRegisterLink, setShowChildRegisterLink] = useState(false);
   const [clicked, setClicked] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -127,8 +129,17 @@ function RegisterForm() {
       const res = await api.post("/api/user/register/", payload);
       localStorage.setItem(ACCESS_TOKEN, res.data.access);
       localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-      alert(t('auth.verificationEmailSent', { email }));
-      navigate("/login");
+      
+      // Show different success messages based on role
+      if (roles === 'parent') {
+        setSuccess(t('auth.parentVerificationEmailSent', { email }));
+        setShowChildRegisterLink(true);
+        // Navigate after 5 seconds to give time to read the message
+        setTimeout(() => navigate("/login"), 5000);
+      } else {
+        setSuccess(t('auth.verificationEmailSent', { email }));
+        setTimeout(() => navigate("/login"), 3000);
+      }
     } catch (err) {
       setError(getErrorMessage(err, t));
     } finally {
@@ -345,6 +356,27 @@ function RegisterForm() {
         </span>
       </p>
 
+      {success && (
+        <div className="success-message">
+          <p>{success}</p>
+          {showChildRegisterLink && (
+            <p>
+              <span 
+                style={{ 
+                  textDecoration: 'underline', 
+                  cursor: 'pointer', 
+                  color: '#28a745',
+                  fontWeight: 'bold'
+                }}
+                onClick={() => navigate("/register")}
+              >
+                Click here to register your child's account!
+              </span>
+            </p>
+          )}
+        </div>
+      )}
+      
       {error && <p className="error-message">{error}</p>}
     </div>
   );

@@ -153,6 +153,7 @@
     "privateInformation": "Vos informations privées",
     "studentPrivateInformation": "Informations privées de l'étudiant",
     "verificationEmailSent": "Courriel de vérification envoyé à {{email}}",
+    "parentVerificationEmailSent": "Merci de vous être inscrit! Courriel de vérification envoyé à {{email}}. Inscrivez également le compte de votre enfant pour commencer!",
     "registerAs": "S'inscrire en tant que {{role}}",
     "noUserLoggedIn": "Aucun utilisateur n'est connecté.",
     "verificationFailed": "Échec de la vérification.",

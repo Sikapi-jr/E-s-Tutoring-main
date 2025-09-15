@@ -169,6 +169,7 @@
     "privateInformation": "Your Private Information",
     "studentPrivateInformation": "Student Private Information",
     "verificationEmailSent": "Verification email sent to {{email}}",
+    "parentVerificationEmailSent": "Thank you for registering! Verification email sent to {{email}}. Register your child's account as well to get started!",
     "registerAs": "Register as {{role}}",
     "noUserLoggedIn": "No user is logged in.",
     "verificationFailed": "Verification failed.",
