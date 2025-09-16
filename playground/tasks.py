@@ -345,6 +345,7 @@ def send_reply_notification_email_async(self, parent_email, tutor_name, subject_
 def send_dispute_email_async(self, admin_emails, disputer_name, disputed_hours):
     """
     Send dispute notification email to administrators asynchronously
+    Now sends individual emails to maintain privacy (no CC)
     """
     try:
         subject = 'Hours Dispute Submitted - EGS Tutoring'
@@ -359,15 +360,32 @@ def send_dispute_email_async(self, admin_emails, disputer_name, disputed_hours):
         EGS Tutoring System
         """
         
-        # Use Mailgun API instead of Django's send_mail
-        send_mailgun_email(
-            to_emails=admin_emails,
-            subject=subject,
-            text_content=message
-        )
+        successful_emails = []
+        failed_emails = []
         
-        logger.info(f"Dispute email sent to administrators: {admin_emails}")
-        return {'success': True, 'recipients': admin_emails}
+        # Send individual emails to maintain privacy
+        for admin_email in admin_emails:
+            try:
+                send_mailgun_email(
+                    to_emails=[admin_email],  # Send to one admin at a time
+                    subject=subject,
+                    text_content=message
+                )
+                successful_emails.append(admin_email)
+                logger.info(f"Dispute email sent to: {admin_email}")
+                
+            except Exception as email_error:
+                failed_emails.append(admin_email)
+                logger.error(f"Failed to send dispute email to {admin_email}: {str(email_error)}")
+        
+        logger.info(f"Dispute email sent to {len(successful_emails)} administrators, {len(failed_emails)} failed")
+        return {
+            'success': True,
+            'sent_count': len(successful_emails),
+            'failed_count': len(failed_emails),
+            'successful_emails': successful_emails,
+            'failed_emails': failed_emails
+        }
         
     except Exception as e:
         logger.error(f"Error sending dispute email: {str(e)}")
@@ -1002,6 +1020,7 @@ EGS Tutoring Team
 def send_new_request_notification_async(self, tutor_emails, parent_name, student_name, subject, grade, service, city):
     """
     Send email notification to tutors when new requests are created
+    Now sends individual emails to maintain privacy (no CC)
     """
     try:
         email_subject = f'New Tutoring Request Available - {subject} for {student_name}'
@@ -1023,14 +1042,32 @@ Best regards,
 EGS Tutoring Team
         """
         
-        send_mailgun_email(
-            to_emails=tutor_emails,
-            subject=email_subject,
-            text_content=message
-        )
+        successful_emails = []
+        failed_emails = []
         
-        logger.info(f"New request notification sent to tutors: {tutor_emails}")
-        return {'success': True, 'recipients': tutor_emails}
+        # Send individual emails to maintain privacy
+        for tutor_email in tutor_emails:
+            try:
+                send_mailgun_email(
+                    to_emails=[tutor_email],  # Send to one tutor at a time
+                    subject=email_subject,
+                    text_content=message
+                )
+                successful_emails.append(tutor_email)
+                logger.info(f"New request notification sent to: {tutor_email}")
+                
+            except Exception as email_error:
+                failed_emails.append(tutor_email)
+                logger.error(f"Failed to send new request notification to {tutor_email}: {str(email_error)}")
+        
+        logger.info(f"New request notification sent to {len(successful_emails)} tutors, {len(failed_emails)} failed")
+        return {
+            'success': True,
+            'sent_count': len(successful_emails),
+            'failed_count': len(failed_emails),
+            'successful_emails': successful_emails,
+            'failed_emails': failed_emails
+        }
         
     except Exception as e:
         logger.error(f"Error sending new request notification: {str(e)}")
