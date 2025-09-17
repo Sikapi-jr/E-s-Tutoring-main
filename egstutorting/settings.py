@@ -90,6 +90,16 @@ CELERY_TASK_ACKS_LATE = True  # Don't ack tasks until they complete successfully
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Only prefetch 1 task at a time to reduce memory
 CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Reject tasks if worker dies
 
+# Celery Beat Schedule Configuration
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'send-weekly-tutor-hour-reminders': {
+        'task': 'playground.tasks.send_weekly_tutor_hour_reminders',
+        'schedule': crontab(hour=23, minute=0, day_of_week=0),  # Sunday 6pm Toronto (11pm UTC during EST)
+        'options': {'timezone': 'America/Toronto'}
+    },
+}
+
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "https://egstutoring-portal.ca/api/google/oauth2callback")

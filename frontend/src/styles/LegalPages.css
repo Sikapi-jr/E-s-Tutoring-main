@@ -1,0 +1,122 @@
+.legal-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.legal-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.back-button {
+  background: #192A88;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  margin: 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-button:hover {
+  background: #0f1f5f;
+}
+
+.legal-content {
+  padding: 0 2rem 2rem 2rem;
+  max-height: 70vh;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.legal-paragraph {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 0.95rem;
+  text-align: justify;
+}
+
+.legal-paragraph:first-child {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #192A88;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.legal-paragraph:nth-child(2) {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+/* Style headings within content */
+.legal-paragraph:not(:first-child):not(:nth-child(2)) {
+  line-height: 1.7;
+}
+
+/* Style bullet points */
+.legal-paragraph:contains("•") {
+  padding-left: 1rem;
+}
+
+/* Custom scrollbar for content */
+.legal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.legal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.legal-content::-webkit-scrollbar-thumb {
+  background: #192A88;
+  border-radius: 4px;
+}
+
+.legal-content::-webkit-scrollbar-thumb:hover {
+  background: #0f1f5f;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .legal-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .legal-container {
+    margin: 0;
+    border-radius: 8px;
+  }
+
+  .legal-content {
+    padding: 0 1rem 1rem 1rem;
+    max-height: 60vh;
+  }
+
+  .back-button {
+    margin: 1rem;
+  }
+
+  .legal-paragraph {
+    font-size: 0.9rem;
+  }
+
+  .legal-paragraph:first-child {
+    font-size: 1.3rem;
+  }
+}

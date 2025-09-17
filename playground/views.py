@@ -98,6 +98,12 @@ def current_user_view(request):
             "roles": request.user.roles,
             "is_active": request.user.is_active,
             "is_superuser": request.user.is_superuser,
+            "address": request.user.address,
+            "city": request.user.city,
+            "rateOnline": float(request.user.rateOnline),
+            "rateInPerson": float(request.user.rateInPerson),
+            "availableReferralCredit": float(request.user.availableReferralCredit) if request.user.availableReferralCredit else 0,
+            "stripe_account_id": request.user.stripe_account_id,
             "profile_picture": (
                 request.build_absolute_uri(request.user.profile_picture.url)
                 if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
@@ -1268,20 +1274,20 @@ class AnnouncementListView(APIView):
             user_role = User.objects.get(id=user_id).roles
         except User.DoesNotExist:
             user_role = None
-        
-        if user_role == 'parent':
-            announcements = Announcements.objects.filter(Q(audience='all') | Q(audience='parent') | Q(audience='student')).order_by('-created_at')[:7]
-            serializer = AnnouncementSerializer(announcements, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        elif user_role == 'tutor' or user_role == 'admin':  # Fixed case sensitivity
-            announcements = Announcements.objects.filter(Q(audience='all') | Q(audience='tutor')).order_by('-created_at')[:7]
-            serializer = AnnouncementSerializer(announcements, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            # Default case: return all announcements for unknown/invalid roles
-            announcements = Announcements.objects.filter(audience='all').order_by('-created_at')[:7]
-            serializer = AnnouncementSerializer(announcements, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Get all announcements first
+        all_announcements = Announcements.objects.all().order_by('-created_at')[:20]  # Get more to filter
+
+        # Filter announcements based on user role using the model method
+        visible_announcements = []
+        for announcement in all_announcements:
+            if announcement.is_visible_to_role(user_role or 'guest'):
+                visible_announcements.append(announcement)
+                if len(visible_announcements) >= 7:  # Limit to 7 results
+                    break
+
+        serializer = AnnouncementSerializer(visible_announcements, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ReferralCreateView(APIView):
     permission_classes = [AllowAny]
@@ -3182,8 +3188,22 @@ class UsernamePasswordResetView(APIView):
                 instance=self,
                 reset_password_token=token
             )
-            
-            return Response({"message": "Password reset email sent successfully"}, status=200)
+
+            # Create censored email for response
+            def censor_email(email):
+                if '@' not in email:
+                    return email
+                local, domain = email.split('@', 1)
+                if len(local) <= 4:
+                    # If local part is too short, show first and last char with * in between
+                    censored_local = local[0] + '*' * (len(local) - 2) + local[-1] if len(local) > 1 else local
+                else:
+                    # Show first 2 and last 2 characters with * in between
+                    censored_local = local[:2] + '*' * (len(local) - 4) + local[-2:]
+                return f"{censored_local}@{domain}"
+
+            censored_email = censor_email(user.email)
+            return Response({"message": f"Password reset email sent to {censored_email}"}, status=200)
             
         except Exception as e:
             return Response({"error": "Failed to process password reset request"}, status=500)

@@ -12,6 +12,7 @@ import TutorComplaintModal from "../components/TutorComplaintModal";
 import TutorRegistrationForm from "../components/TutorRegistrationForm";
 import AdminNotificationTool from "../components/AdminNotificationTool";
 import ResendVerificationTool from "../components/ResendVerificationTool";
+import TutorDocumentUpload from "../components/TutorDocumentUpload";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -46,6 +47,9 @@ export default function Home() {
   const [showTutorForm, setShowTutorForm] = useState(false);
   const [showNotificationTool, setShowNotificationTool] = useState(false);
   const [showResendVerificationTool, setShowResendVerificationTool] = useState(false);
+
+  // Document upload modal state
+  const [showDocumentUploadModal, setShowDocumentUploadModal] = useState(false);
   
   // Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -131,8 +135,19 @@ export default function Home() {
             const monthlyReportsRes = await api.get('/api/monthly-reports/');
             const dueReports = monthlyReportsRes.data.filter(report => report.tutor === user.account_id && !report.submitted);
             setTutorMonthlyReports(dueReports || []);
-            
-            
+
+            // Get recent parent requests for tutors
+            try {
+              const requestsRes = await api.get('/api/requests/list/');
+              const allRequests = requestsRes.data || [];
+              // Show most recent 5 requests
+              const recentRequests = allRequests.slice(0, 5);
+              setRecentParentRequests(recentRequests);
+            } catch (requestsError) {
+              console.error("Recent requests fetch failed:", requestsError);
+              setRecentParentRequests([]);
+            }
+
           } catch (tutorError) {
             console.error("Tutor data fetch failed:", tutorError);
           }
@@ -554,8 +569,15 @@ export default function Home() {
 
   /* handle document upload for tutors */
   const handleDocumentUpload = useCallback(() => {
-    // Navigate to settings page or trigger file upload
-    window.location.href = '/settings';
+    // Open the document upload modal
+    setShowDocumentUploadModal(true);
+  }, []);
+
+  /* handle document upload success */
+  const handleDocumentUploadSuccess = useCallback((newDoc) => {
+    // Add the new document to the list and close modal
+    setTutorDocuments(prev => [...prev, newDoc]);
+    setShowDocumentUploadModal(false);
   }, []);
 
   /* handle Google Calendar connection */
@@ -1698,7 +1720,7 @@ export default function Home() {
                   {user?.roles === 'parent' ? t('home.myRequests') : user?.roles === 'tutor' ? t('home.recentParentRequests') : t('home.recentRequests')}
                 </h4>
                 <button
-                  onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : '/tutor-change-requests'}
+                  onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : 'https://egstutoring-portal.ca/parent-dashboard'}
                   style={{
                     backgroundColor: "#192A88",
                     color: "#fff",
@@ -1730,21 +1752,24 @@ export default function Home() {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.25rem" }}>
                         <strong style={{ color: "#192A88", fontSize: "0.8rem" }}>
-                          {request.student_name || `${request.student?.firstName || 'Student'} ${request.student?.lastName || ''}`}
+                          {request.subject || 'N/A'}
                         </strong>
-                        <span style={{ 
-                          fontSize: "0.65rem", 
-                          color: request.status === 'pending' ? '#ffc107' : request.status === 'approved' ? '#28a745' : '#dc3545',
+                        <span style={{
+                          fontSize: "0.65rem",
+                          color: request.is_accepted === 'Accepted' ? '#28a745' : request.is_accepted === 'Rejected' ? '#dc3545' : '#ffc107',
                           fontWeight: "bold"
                         }}>
-                          {request.status?.toUpperCase() || 'PENDING'}
+                          {request.is_accepted?.toUpperCase() || 'PENDING'}
                         </span>
                       </div>
                       <div style={{ fontSize: "0.7rem", color: "#666", marginBottom: "0.15rem" }}>
-                        <strong>Reason:</strong> {request.reason_display || request.reason || 'Not specified'}
+                        <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
+                      </div>
+                      <div style={{ fontSize: "0.7rem", color: "#666", marginBottom: "0.15rem" }}>
+                        <strong>Grade:</strong> {request.grade || 'N/A'} | <strong>Service:</strong> {request.service || 'N/A'}
                       </div>
                       <div style={{ fontSize: "0.65rem", color: "#888" }}>
-                        {new Date(request.created_at || request.date_created || Date.now()).toLocaleDateString()}
+                        {new Date(request.created_at || Date.now()).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
@@ -1933,6 +1958,51 @@ export default function Home() {
             </div>
 
             <ResendVerificationTool onClose={() => setShowResendVerificationTool(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Document Upload Modal */}
+      {showDocumentUploadModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: '#192A88' }}>
+                {t('home.uploadDocuments', 'Upload Documents')}
+              </h2>
+              <button
+                onClick={() => setShowDocumentUploadModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <TutorDocumentUpload onUpload={handleDocumentUploadSuccess} />
           </div>
         </div>
       )}

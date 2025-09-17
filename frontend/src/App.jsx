@@ -46,6 +46,8 @@ const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
 const AdminDisputes = lazy(() => import("./pages/AdminDisputes"));
 const AdminStaleRequests = lazy(() => import("./pages/AdminStaleRequests"));
 const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 
 // Loading component
 const LoadingSpinner = () => {
@@ -150,6 +152,8 @@ function AppRoutes() {
             <Route path="/logout" element={<Logout />} />
             <Route path="/register" element={<Register />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-use" element={<TermsOfUse />} />
             <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="/password-reset-confirm/:uid/:token" element={<PasswordResetConfirm />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />

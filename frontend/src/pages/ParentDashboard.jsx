@@ -11,6 +11,7 @@ const ParentDashboard = () => {
   const [requests, setRequests] = useState([]);
   const { user } = useUser();
   const navigate = useNavigate();
+  const [tutorDocuments, setTutorDocuments] = useState([]);
 
   // Early return if user is not loaded yet
   if (!user) {
@@ -79,8 +80,22 @@ const ParentDashboard = () => {
         console.error("Error fetching requests:", error);
       }
     };
+
+    const fetchTutorDocuments = async () => {
+      try {
+        const response = await api.get(`/api/tutor/documents/?id=${user?.account_id}`);
+        setTutorDocuments(response.data || []);
+      } catch (error) {
+        console.error("Error fetching tutor documents:", error);
+        setTutorDocuments([]);
+      }
+    };
+
     fetchRequests();
-  }, []);
+    if (user?.roles === 'tutor') {
+      fetchTutorDocuments();
+    }
+  }, [user?.account_id, user?.roles]);
 
   const subjects = useMemo(
     () =>
@@ -148,6 +163,56 @@ const ParentDashboard = () => {
     <div className="dash-wrapper">
       <div className="dash-card">
         <h1>{t('dashboard.parentDashboard')}</h1>
+
+        {/* Document Reminder for Tutors without Documents */}
+        {user?.roles === 'tutor' && tutorDocuments.length === 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)',
+            border: '2px solid #ffc107',
+            borderRadius: '12px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            boxShadow: '0 4px 12px rgba(255, 193, 7, 0.15)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>📄</span>
+              <h3 style={{
+                margin: 0,
+                color: '#856404',
+                fontSize: '1.1rem',
+                fontWeight: 'bold'
+              }}>
+                {t('dashboard.documentsRecommended', 'Documents Recommended')}
+              </h3>
+            </div>
+            <p style={{
+              margin: '0 0 0.75rem 0',
+              color: '#856404',
+              fontSize: '0.95rem',
+              lineHeight: '1.4'
+            }}>
+              {t('dashboard.documentsRecommendationText', 'We recommend uploading your credentials and certifications before replying to tutoring requests. This helps parents make informed decisions and increases your chances of being selected.')}
+            </p>
+            <button
+              onClick={() => navigate('/settings')}
+              style={{
+                backgroundColor: '#192A88',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#0f1f5f'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#192A88'}
+            >
+              {t('dashboard.uploadDocuments', 'Upload Documents')}
+            </button>
+          </div>
+        )}
 
         {/* Filter Bar */}
         <div className="filter-bar">

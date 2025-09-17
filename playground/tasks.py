@@ -1441,7 +1441,7 @@ def send_parent_registration_notification_async(self, parent_info):
     try:
         admin_email = 'egstutor@gmail.com'
         subject = 'New Parent Registration - EGS Tutoring'
-        
+
         # Extract all parent information
         parent_name = f"{parent_info.get('firstName', '')} {parent_info.get('lastName', '')}"
         username = parent_info.get('username', 'N/A')
@@ -1450,7 +1450,7 @@ def send_parent_registration_notification_async(self, parent_info):
         address = parent_info.get('address', 'N/A')
         city = parent_info.get('city', 'N/A')
         registration_date = parent_info.get('date_joined', 'N/A')
-        
+
         message = f"""
 Hello,
 
@@ -1472,7 +1472,7 @@ You can access the admin panel to view more details or contact the parent direct
 Best regards,
 EGS Tutoring System
         """
-        
+
         send_mail(
             subject,
             message,
@@ -1480,10 +1480,81 @@ EGS Tutoring System
             [admin_email],
             fail_silently=False,
         )
-        
+
         logger.info(f"Parent registration notification sent for: {parent_name} ({email}) from {city}")
         return {'success': True, 'parent_name': parent_name, 'parent_email': email, 'parent_city': city}
-        
+
     except Exception as e:
         logger.error(f"Error sending parent registration notification: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_weekly_tutor_hour_reminders(self):
+    """
+    Send weekly reminder emails to all tutors to log their hours
+    Runs every Sunday at 6pm Toronto time
+    """
+    try:
+        from playground.models import User
+
+        # Get all active tutors
+        tutors = User.objects.filter(roles='tutor', is_active=True).exclude(email='')
+
+        subject = '⏰ Weekly Reminder: Log Your Tutoring Hours'
+
+        successful_emails = []
+        failed_emails = []
+
+        for tutor in tutors:
+            try:
+                message = f"""
+Hello {tutor.firstName},
+
+This is your weekly reminder to log your tutoring hours for the past week.
+
+Please visit the hour logging page to record your sessions:
+https://egstutoring-portal.ca/log
+
+📝 Don't forget to include:
+- Date and time of each session
+- Student name
+- Duration of the session
+- Session type (Online/In-Person)
+- Brief session notes
+
+Logging your hours promptly helps ensure accurate and timely payments.
+
+If you have any questions or need assistance, please don't hesitate to reach out.
+
+Best regards,
+EGS Tutoring Team
+                """
+
+                send_mailgun_email(
+                    to_emails=[tutor.email],
+                    subject=subject,
+                    text_content=message
+                )
+
+                successful_emails.append(tutor.email)
+                logger.info(f"Weekly hour reminder sent to tutor: {tutor.firstName} {tutor.lastName} ({tutor.email})")
+
+            except Exception as email_error:
+                failed_emails.append(tutor.email)
+                logger.error(f"Failed to send weekly reminder to {tutor.email}: {str(email_error)}")
+
+        total_tutors = len(tutors)
+        logger.info(f"Weekly tutor hour reminders sent to {len(successful_emails)} tutors, {len(failed_emails)} failed out of {total_tutors} total")
+
+        return {
+            'success': True,
+            'total_tutors': total_tutors,
+            'sent_count': len(successful_emails),
+            'failed_count': len(failed_emails),
+            'successful_emails': successful_emails,
+            'failed_emails': failed_emails
+        }
+
+    except Exception as e:
+        logger.error(f"Error sending weekly tutor hour reminders: {str(e)}")
         raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))

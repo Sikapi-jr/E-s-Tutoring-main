@@ -263,13 +263,22 @@ class Announcements(models.Model):
         ('student', 'Students'),
         ('tutor', 'Tutors'),
     ]
-    audience = models.CharField(max_length=20, choices=audience_choices, default='all')
+    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,student" or "all"')
 
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.name or f"Announcement #{self.id}"
+
+    def is_visible_to_role(self, user_role):
+        """Check if announcement should be visible to a specific user role"""
+        if self.audience == 'all':
+            return True
+
+        # Parse comma-separated roles
+        target_roles = [role.strip() for role in self.audience.split(',')]
+        return user_role in target_roles
         
 class Session(models.Model):
     STATUS_CHOICES = [

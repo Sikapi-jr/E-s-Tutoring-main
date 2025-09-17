@@ -13,6 +13,8 @@ function CreateAnnouncement() {
         image: null
     });
 
+    const [selectedRoles, setSelectedRoles] = useState(['all']);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -20,6 +22,34 @@ function CreateAnnouncement() {
 
     const handleImageChange = (e) => {
         setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+    };
+
+    const handleRoleChange = (role) => {
+        if (role === 'all') {
+            setSelectedRoles(['all']);
+            setFormData(prev => ({ ...prev, audience: 'all' }));
+        } else {
+            let newRoles = [...selectedRoles];
+
+            // Remove 'all' if selecting specific roles
+            if (newRoles.includes('all')) {
+                newRoles = newRoles.filter(r => r !== 'all');
+            }
+
+            if (newRoles.includes(role)) {
+                newRoles = newRoles.filter(r => r !== role);
+            } else {
+                newRoles.push(role);
+            }
+
+            // If no roles selected, default to 'all'
+            if (newRoles.length === 0) {
+                newRoles = ['all'];
+            }
+
+            setSelectedRoles(newRoles);
+            setFormData(prev => ({ ...prev, audience: newRoles.join(',') }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -47,6 +77,7 @@ function CreateAnnouncement() {
                 audience: 'all',
                 image: null
             });
+            setSelectedRoles(['all']);
         } catch (err) {
             console.error(err);
             alert('Failed to create announcement.');
@@ -76,13 +107,44 @@ function CreateAnnouncement() {
                 <label>Link (optional)</label><br />
                 <input type="url" name="link" value={formData.link} onChange={handleChange} /><br /><br />
 
-                <label>Audience</label><br />
-                <select name="audience" value={formData.audience} onChange={handleChange}>
-                    <option value="all">Everyone</option>
-                    <option value="parent">Parents</option>
-                    <option value="student">Students</option>
-                    <option value="tutor">Tutors</option>
-                </select><br /><br />
+                <label>Audience (select one or more)</label><br />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '0.5rem 0' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRoles.includes('all')}
+                            onChange={() => handleRoleChange('all')}
+                        />
+                        Everyone
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRoles.includes('parent')}
+                            onChange={() => handleRoleChange('parent')}
+                        />
+                        Parents
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRoles.includes('student')}
+                            onChange={() => handleRoleChange('student')}
+                        />
+                        Students
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRoles.includes('tutor')}
+                            onChange={() => handleRoleChange('tutor')}
+                        />
+                        Tutors
+                    </label>
+                </div>
+                <p style={{ fontSize: '0.9rem', color: '#666', margin: '0.5rem 0' }}>
+                    Selected: {selectedRoles.includes('all') ? 'Everyone' : selectedRoles.join(', ')}
+                </p><br />
 
                 <label>Image (optional)</label><br />
                 <input type="file" name="image" accept="image/*" onChange={handleImageChange} /><br /><br />

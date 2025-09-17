@@ -24,11 +24,11 @@ const AdminStaleRequests = () => {
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
       // Fetch all tutoring requests
-      const requestsRes = await api.get('/api/parentRequests/');
+      const requestsRes = await api.get('/api/requests/list/');
       const allRequests = requestsRes.data || [];
 
       // Fetch all replies
-      const repliesRes = await api.get('/api/replies/');
+      const repliesRes = await api.get('/api/requests/ViewReply/');
       const allReplies = repliesRes.data || [];
 
       // Create a map of request IDs to their replies
@@ -42,7 +42,7 @@ const AdminStaleRequests = () => {
 
       // Filter requests posted more than 1 week ago
       const staleRequests = allRequests.filter(request => {
-        const requestDate = new Date(request.date_created || request.created_at);
+        const requestDate = new Date(request.created_at);
         return requestDate < oneWeekAgo;
       });
 
@@ -85,16 +85,18 @@ const AdminStaleRequests = () => {
   };
 
   const handleContactParent = (parentInfo) => {
-    if (parentInfo.phone_number) {
-      window.open(`tel:${parentInfo.phone_number}`);
+    const phone = parentInfo.parent_phone_number || parentInfo.phone_number;
+    if (phone) {
+      window.open(`tel:${phone}`);
     } else {
       alert(t('admin.noPhoneNumber', 'No phone number available for this parent.'));
     }
   };
 
   const handleEmailParent = (parentInfo) => {
-    if (parentInfo.email) {
-      window.open(`mailto:${parentInfo.email}`);
+    const email = parentInfo.parent_email || parentInfo.email;
+    if (email) {
+      window.open(`mailto:${email}`);
     } else {
       alert(t('admin.noEmail', 'No email available for this parent.'));
     }
@@ -254,40 +256,40 @@ const AdminStaleRequests = () => {
                           {request.subject || 'N/A'}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                          <strong>Student:</strong> {request.student_name || 'N/A'}
+                          <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                          <strong>Grade:</strong> {request.grade || 'N/A'} | 
+                          <strong>Grade:</strong> {request.grade || 'N/A'} |
                           <strong> Service:</strong> {request.service || 'N/A'}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          <strong>Description:</strong> {request.description ? 
-                            (request.description.length > 50 ? 
-                              request.description.substring(0, 50) + '...' : 
+                          <strong>Description:</strong> {request.description ?
+                            (request.description.length > 50 ?
+                              request.description.substring(0, 50) + '...' :
                               request.description) : 'No description'
                           }
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                          {request.parent_firstName || ''} {request.parent_lastName || ''}
+                          {request.parent_firstName || request.parent || 'N/A'} {request.parent_lastName || ''}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
                           📧 {request.parent_email || 'No email'}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          📞 {request.parent_phone_number || 'No phone'}
+                          📞 {request.parent_phone_number || request.phone_number || 'No phone'}
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
-                        <div style={{ 
-                          color: getDaysOld(request.date_created || request.created_at) > 14 ? '#dc3545' : '#856404',
+                        <div style={{
+                          color: getDaysOld(request.created_at) > 14 ? '#dc3545' : '#856404',
                           fontWeight: 'bold'
                         }}>
-                          {getDaysOld(request.date_created || request.created_at)} days
+                          {getDaysOld(request.created_at)} days
                         </div>
                         <div style={{ fontSize: '0.7rem', color: '#888' }}>
-                          {formatDate(request.date_created || request.created_at)}
+                          {formatDate(request.created_at)}
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
@@ -405,25 +407,25 @@ const AdminStaleRequests = () => {
                           {request.subject || 'N/A'}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                          <strong>Student:</strong> {request.student_name || 'N/A'}
+                          <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                          <strong>Grade:</strong> {request.grade || 'N/A'} | 
+                          <strong>Grade:</strong> {request.grade || 'N/A'} |
                           <strong> Service:</strong> {request.service || 'N/A'}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: '#888' }}>
-                          {getDaysOld(request.date_created || request.created_at)} days old
+                          {getDaysOld(request.created_at)} days old
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                          {request.parent_firstName || ''} {request.parent_lastName || ''}
+                          {request.parent_firstName || request.parent || 'N/A'} {request.parent_lastName || ''}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
                           📧 {request.parent_email || 'No email'}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          📞 {request.parent_phone_number || 'No phone'}
+                          📞 {request.parent_phone_number || request.phone_number || 'No phone'}
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>

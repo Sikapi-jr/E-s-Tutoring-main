@@ -109,7 +109,7 @@ const LandingPage = () => {
         </main>
 
         <footer className="landing-footer">
-          <button 
+          <button
             className="portal-button"
             onClick={handleGoToPortal}
           >
@@ -118,6 +118,21 @@ const LandingPage = () => {
           <p className="landing-footer-text">
             {t('landing.footerText')}
           </p>
+          <div className="legal-links">
+            <span
+              className="legal-link"
+              onClick={() => navigate('/privacy-policy')}
+            >
+              Privacy Policy
+            </span>
+            <span className="legal-separator">|</span>
+            <span
+              className="legal-link"
+              onClick={() => navigate('/terms-of-use')}
+            >
+              Terms of Use
+            </span>
+          </div>
         </footer>
       </div>
       </div>
