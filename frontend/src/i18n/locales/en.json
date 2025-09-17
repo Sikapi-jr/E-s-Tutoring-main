@@ -829,5 +829,11 @@
     "editStudentInfo": "Edit Student Information for",
     "profilePicture": "Profile Picture",
     "studentUpdatedSuccessfully": "Student updated successfully!"
+  },
+  "legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use",
+    "backToHome": "Back to Home",
+    "lastUpdated": "Last updated: {{date}}"
   }
 }

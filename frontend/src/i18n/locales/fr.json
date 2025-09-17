@@ -812,5 +812,11 @@
     "editStudentInfo": "Modifier les Informations de l'Étudiant pour",
     "profilePicture": "Photo de Profil",
     "studentUpdatedSuccessfully": "Étudiant mis à jour avec succès !"
+  },
+  "legal": {
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfUse": "Conditions d'Utilisation",
+    "backToHome": "Retour à l'Accueil",
+    "lastUpdated": "Dernière mise à jour : {{date}}"
   }
 }

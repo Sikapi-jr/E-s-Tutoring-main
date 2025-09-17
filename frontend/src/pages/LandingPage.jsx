@@ -123,14 +123,14 @@ const LandingPage = () => {
               className="legal-link"
               onClick={() => navigate('/privacy-policy')}
             >
-              Privacy Policy
+              {t('legal.privacyPolicy')}
             </span>
             <span className="legal-separator">|</span>
             <span
               className="legal-link"
               onClick={() => navigate('/terms-of-use')}
             >
-              Terms of Use
+              {t('legal.termsOfUse')}
             </span>
           </div>
         </footer>

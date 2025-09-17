@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import '../styles/LegalPages.css';
 
 const PrivacyPolicy = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const privacyContent = `PRIVACY POLICY
 Updated at August 23rd, 2025
@@ -257,9 +259,9 @@ Powered by TCPDF (www.tcpdf.org)`;
       <div className="legal-container">
         <button
           className="back-button"
-          onClick={() => window.history.back()}
+          onClick={() => navigate('/')}
         >
-          ← {t('common.back', 'Back')}
+          ← {t('legal.backToHome')}
         </button>
 
         <div className="legal-content">
