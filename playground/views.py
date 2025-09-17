@@ -102,7 +102,7 @@ def current_user_view(request):
             "city": request.user.city,
             "rateOnline": float(request.user.rateOnline),
             "rateInPerson": float(request.user.rateInPerson),
-            "availableReferralCredit": float(request.user.availableReferralCredit) if request.user.availableReferralCredit else 0,
+            "availableReferralCredit": float(request.user.available_referral_credit()),
             "stripe_account_id": request.user.stripe_account_id,
             "profile_picture": (
                 request.build_absolute_uri(request.user.profile_picture.url)
