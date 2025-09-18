@@ -27,18 +27,25 @@ const AdminStaleRequests = () => {
       const requestsRes = await api.get('/api/requests/list/');
       const allRequests = requestsRes.data || [];
 
-      // Filter requests posted more than 1 week ago and not accepted
-      const staleRequests = allRequests.filter(request => {
+      // Separate requests into different categories
+      const oldRequests = allRequests.filter(request => {
         const requestDate = new Date(request.created_at);
-        const isOld = requestDate < oneWeekAgo;
-        const isNotAccepted = request.is_accepted === false || request.is_accepted === "Not Accepted";
-        return isOld && isNotAccepted;
+        return requestDate < oneWeekAgo;
       });
 
-      // For now, treat all stale requests as "without replies" since we can't easily distinguish
-      // This is simpler and still achieves the goal of finding stale requests
-      setRequestsWithoutReplies(staleRequests);
-      setRequestsWithoutAcceptance([]);
+      const notAcceptedRequests = allRequests.filter(request => {
+        const isNotAccepted = request.is_accepted === false || request.is_accepted === "Not Accepted";
+        return isNotAccepted;
+      });
+
+      // Requests older than 1 week and not accepted (very stale)
+      const veryStaleRequests = oldRequests.filter(request => {
+        const isNotAccepted = request.is_accepted === false || request.is_accepted === "Not Accepted";
+        return isNotAccepted;
+      });
+
+      setRequestsWithoutReplies(veryStaleRequests); // Rename to "Stale Requests"
+      setRequestsWithoutAcceptance(notAcceptedRequests); // All unaccepted requests
     } catch (error) {
       console.error('Error fetching stale requests:', error);
       setError('Failed to load stale requests. Please try again.');
@@ -170,9 +177,9 @@ const AdminStaleRequests = () => {
               alignItems: 'center',
               gap: '0.5rem'
             }}>
-              <span style={{ fontSize: '1.5rem' }}>📭</span>
-              {t('admin.noRepliesTitle', 'Requests Without Replies')}
-              <span style={{ 
+              <span style={{ fontSize: '1.5rem' }}>⏰</span>
+              {t('admin.staleRequestsTitle', 'Stale Requests (1+ Week Old)')}
+              <span style={{
                 backgroundColor: '#dc3545',
                 color: 'white',
                 padding: '0.25rem 0.5rem',
@@ -184,7 +191,7 @@ const AdminStaleRequests = () => {
               </span>
             </h2>
             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#856404' }}>
-              {t('admin.noRepliesDesc', 'Requests posted over 1 week ago with no tutor responses')}
+              {t('admin.staleRequestsDesc', 'Requests posted over 1 week ago that are still not accepted')}
             </p>
           </div>
           
@@ -299,7 +306,7 @@ const AdminStaleRequests = () => {
                 backgroundColor: 'white'
               }}>
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
-                <div>No requests without replies found!</div>
+                <div>No stale requests found!</div>
               </div>
             )}
           </div>
@@ -321,9 +328,9 @@ const AdminStaleRequests = () => {
               alignItems: 'center',
               gap: '0.5rem'
             }}>
-              <span style={{ fontSize: '1.5rem' }}>💬</span>
-              {t('admin.noAcceptanceTitle', 'Requests Without Acceptance')}
-              <span style={{ 
+              <span style={{ fontSize: '1.5rem' }}>📋</span>
+              {t('admin.notAcceptedTitle', 'All Requests Not Accepted')}
+              <span style={{
                 backgroundColor: '#ffc107',
                 color: '#212529',
                 padding: '0.25rem 0.5rem',
@@ -335,7 +342,7 @@ const AdminStaleRequests = () => {
               </span>
             </h2>
             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#0c5460' }}>
-              {t('admin.noAcceptanceDesc', 'Requests with tutor replies but no accepted offers')}
+              {t('admin.notAcceptedDesc', 'All tutoring requests that have not been accepted yet (any age)')}
             </p>
           </div>
           
@@ -355,7 +362,7 @@ const AdminStaleRequests = () => {
                   <tr style={{ backgroundColor: '#d1ecf1', borderBottom: '2px solid #bee5eb' }}>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#0c5460' }}>Request</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#0c5460' }}>Parent Info</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#0c5460' }}>Replies</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#0c5460' }}>Age</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#0c5460' }}>Actions</th>
                   </tr>
                 </thead>
@@ -376,8 +383,12 @@ const AdminStaleRequests = () => {
                           <strong>Grade:</strong> {request.grade || 'N/A'} |
                           <strong> Service:</strong> {request.service || 'N/A'}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: '#888' }}>
-                          {getDaysOld(request.created_at)} days old
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                          <strong>Description:</strong> {request.description ?
+                            (request.description.length > 50 ?
+                              request.description.substring(0, 50) + '...' :
+                              request.description) : 'No description'
+                          }
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
@@ -392,20 +403,14 @@ const AdminStaleRequests = () => {
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                          {request.replies.length} replies
+                        <div style={{
+                          color: getDaysOld(request.created_at) > 14 ? '#dc3545' : (getDaysOld(request.created_at) > 7 ? '#ffc107' : '#28a745'),
+                          fontWeight: 'bold'
+                        }}>
+                          {getDaysOld(request.created_at)} days
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>
-                          {request.replies.slice(0, 2).map((reply, idx) => (
-                            <div key={idx} style={{ marginBottom: '0.25rem' }}>
-                              • {reply.tutor_firstName || 'Tutor'} {reply.tutor_lastName || ''}
-                            </div>
-                          ))}
-                          {request.replies.length > 2 && (
-                            <div style={{ fontStyle: 'italic' }}>
-                              +{request.replies.length - 2} more...
-                            </div>
-                          )}
+                        <div style={{ fontSize: '0.7rem', color: '#888' }}>
+                          {formatDate(request.created_at)}
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
