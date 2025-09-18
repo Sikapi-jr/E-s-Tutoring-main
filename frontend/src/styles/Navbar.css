@@ -250,9 +250,9 @@
   
   /* Profile dropdown positioned below navbar on mobile */
   .profile__menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
+    position: fixed;
+    top: 72px; /* Fixed position below navbar */
+    right: 16px;
     min-width: 140px;
     background: #2f2f2f;
     border: 1px solid #444;
