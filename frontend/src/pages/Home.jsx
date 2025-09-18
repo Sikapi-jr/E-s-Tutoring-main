@@ -282,9 +282,8 @@ export default function Home() {
             const requestsRes = await api.get('/api/parentRequests/', { params: { parent: user.account_id } });
             setRecentParentRequests(requestsRes.data.slice(0, 5) || []);
           } else if (user.roles === 'tutor') {
-            // For tutors, get tutor change requests (when parents want to change from them)
-            // TODO: Create endpoint /api/tutor-change-requests/for-tutor/{tutor_id}/
-            setRecentParentRequests([]);
+            // For tutors, recent requests are already fetched in the tutor section above
+            // Don't override the data here
           } else {
             setRecentParentRequests([]);
           }
