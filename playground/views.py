@@ -437,7 +437,7 @@ class GoogleOAuthCallbackView(APIView):
         profile.google_token_expiry = datetime.now(dt_timezone.utc) + timedelta(seconds=int(tokens.get("expires_in", 3600)))
         profile.save()
 
-        return redirect(f"{settings.FRONTEND_URL}/calendarConnect")
+        return redirect(f"{settings.FRONTEND_URL}/events")
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -3091,7 +3091,7 @@ Description: {event_description}
         
         # Backend URL for the link
         backend_url = os.getenv('BACKEND_URL', 'https://egstutoring-portal.ca')
-        scheduled_sessions_link = f"{backend_url}/calendarConnect"
+        scheduled_sessions_link = f"{backend_url}/events"
         
         # Email subject and body
         subject = f"{student_name} Cannot Attend Tutoring Session"
