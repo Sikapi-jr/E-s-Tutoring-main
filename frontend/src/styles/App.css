@@ -2,6 +2,25 @@
   box-sizing: border-box;
 }
 
+/* Mobile overscroll behavior - match navbar/footer color */
+html {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  /* Set the overscroll color to match navbar/footer */
+  background-color: #292929;
+}
+
+#root {
+  /* Reset background for the main content */
+  background-color: white;
+  min-height: 100vh;
+}
+
 /* ═══════════ REMOVE ALL LIGHT BLUE COLORS - ONLY USE DARK BLUE #192A88 ═══════════ */
 *:focus {
   outline: none !important;
