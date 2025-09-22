@@ -1,10 +1,12 @@
 // src/pages/AdminStaleRequests.jsx
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 const AdminStaleRequests = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [requestsWithoutReplies, setRequestsWithoutReplies] = useState([]);
   const [requestsWithoutAcceptance, setRequestsWithoutAcceptance] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -444,7 +446,7 @@ const AdminStaleRequests = () => {
                             📧 Email
                           </button>
                           <button
-                            onClick={() => window.location.href = `/admin-request-details/${request.id}`}
+                            onClick={() => navigate(`/admin-request-detail/${request.id}`)}
                             style={{
                               backgroundColor: '#6c757d',
                               color: 'white',

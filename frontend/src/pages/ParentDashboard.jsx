@@ -300,21 +300,48 @@ const ParentDashboard = () => {
         ) : (
           <ul className="req-list">
             {filteredRequests.map((request) => (
-              <li key={request.id} className="req-box">
-                <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
-                <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
-                <strong>{t('common.service')}:</strong> {request.service} <br />
-                <strong>{t('common.description')}:</strong> {request.description} <br />
-                <strong>{t('dashboard.createdAt')}:</strong>{" "}
-                {new Date(request.created_at).toLocaleString()} <br />
-                <button
-                  className="reply-btn"
-                  onClick={() => handleMessageClick(request)}
+              <li key={request.id} className="req-box" style={{ position: 'relative' }}>
+                <div
+                  onClick={() => navigate(`/parent-request/${request.id}`)}
+                  style={{
+                    cursor: 'pointer',
+                    padding: '0.5rem',
+                    margin: '-0.5rem',
+                    borderRadius: '8px',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                  title={t('dashboard.clickToViewDetails', 'Click to view full details')}
                 >
-                  {selectedRequestID === request.id && showReplyBox
-                    ? t('dashboard.cancel')
-                    : t('dashboard.reply')}
-                </button>
+                  <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
+                  <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
+                  <strong>{t('common.service')}:</strong> {request.service} <br />
+                  <strong>{t('common.description')}:</strong> {request.description} <br />
+                  <strong>{t('dashboard.createdAt')}:</strong>{" "}
+                  {new Date(request.created_at).toLocaleString()} <br />
+                </div>
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #dee2e6' }}>
+                  <button
+                    className="reply-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMessageClick(request);
+                    }}
+                    style={{ marginRight: '1rem' }}
+                  >
+                    {selectedRequestID === request.id && showReplyBox
+                      ? t('dashboard.cancel')
+                      : t('dashboard.reply')}
+                  </button>
+                  <button
+                    className="reply-btn"
+                    onClick={() => navigate(`/parent-request/${request.id}`)}
+                    style={{ backgroundColor: '#192A88' }}
+                  >
+                    {t('dashboard.viewDetails', 'View Details')}
+                  </button>
+                </div>
 
                 {selectedRequestID === request.id && showReplyBox && (
                   <form onSubmit={handleSubmit}>

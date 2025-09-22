@@ -48,6 +48,8 @@ const AdminStaleRequests = lazy(() => import("./pages/AdminStaleRequests"));
 const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
+const ParentRequestDetail = lazy(() => import("./pages/ParentRequestDetail"));
+const AdminRequestDetail = lazy(() => import("./pages/AdminRequestDetail"));
 
 // Loading component
 const LoadingSpinner = () => {
@@ -146,6 +148,8 @@ function AppRoutes() {
             <Route path="/admin-complaints" element={<ProtectedRoute><AdminComplaints /></ProtectedRoute>} />
             <Route path="/admin-disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
             <Route path="/admin-stale-requests" element={<ProtectedRoute><AdminStaleRequests /></ProtectedRoute>} />
+            <Route path="/parent-request/:requestId" element={<ProtectedRoute><ParentRequestDetail /></ProtectedRoute>} />
+            <Route path="/admin-request-detail/:requestId" element={<ProtectedRoute><AdminRequestDetail /></ProtectedRoute>} />
 
             {/* Public pages */}
             <Route path="/login" element={<Login />} />
