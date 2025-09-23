@@ -112,7 +112,7 @@ export const generateTutoringFAQ = () => {
     },
     {
       question: "How do I schedule tutoring sessions?",
-      answer: "Once you've accepted a tutor, you can work directly with them to schedule sessions that fit both of your schedules. Our platform helps facilitate communication and session management."
+      answer: "Once you've accepted a tutor, you can work directly with them to plan sessions that fit both of your schedules. Our platform helps facilitate communication and session management."
     },
     {
       question: "Is there a minimum commitment?",

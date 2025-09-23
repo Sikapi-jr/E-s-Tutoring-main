@@ -29,7 +29,7 @@ export const seoConfig = {
   // Default/Home page SEO
   home: {
     title: "EGS Tutoring - Professional Online & In-Person Tutoring Services Canada",
-    description: "Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Schedule sessions, track progress, and improve grades with our comprehensive tutoring platform.",
+    description: "Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Plan sessions, track progress, and improve grades with our comprehensive tutoring platform.",
     keywords: "tutoring, online tutoring, in-person tutoring, Canada tutors, math tutoring, science tutoring, homework help, academic support, qualified tutors, student progress tracking",
     canonical: "https://egstutoring.ca",
     structuredData: {
@@ -54,7 +54,7 @@ export const seoConfig = {
   // Login page SEO
   login: {
     title: "Login - EGS Tutoring Portal",
-    description: "Access your EGS Tutoring account. Login to schedule tutoring sessions, track student progress, manage invoices, and connect with qualified tutors across Canada.",
+    description: "Access your EGS Tutoring account. Login to plan tutoring sessions, track student progress, manage invoices, and connect with qualified tutors across Canada.",
     keywords: "tutoring login, student portal, tutor dashboard, EGS tutoring account",
     canonical: "https://egstutoring.ca/login"
   },
@@ -62,7 +62,7 @@ export const seoConfig = {
   // Registration page SEO
   register: {
     title: "Sign Up - EGS Tutoring Platform",
-    description: "Join EGS Tutoring today! Register as a student, parent, or tutor. Get access to qualified tutors, schedule sessions, and improve academic performance across Canada.",
+    description: "Join EGS Tutoring today! Register as a student, parent, or tutor. Get access to qualified tutors, plan sessions, and improve academic performance across Canada.",
     keywords: "tutoring registration, sign up tutor, student registration, parent account, EGS tutoring signup",
     canonical: "https://egstutoring.ca/register"
   },

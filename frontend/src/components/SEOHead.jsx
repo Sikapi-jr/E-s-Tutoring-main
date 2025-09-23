@@ -3,7 +3,7 @@ import { generateSocialTags } from '../utils/seoUtils';
 
 const SEOHead = ({
   title = "EGS Tutoring - Professional Online & In-Person Tutoring Services Canada",
-  description = "Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Schedule sessions, track progress, and improve grades with our comprehensive tutoring platform.",
+  description = "Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Plan sessions, track progress, and improve grades with our comprehensive tutoring platform.",
   keywords = "tutoring, online tutoring, in-person tutoring, Canada tutors, math tutoring, science tutoring, homework help, academic support, qualified tutors, student progress tracking",
   canonical = "https://egstutoring.ca",
   ogImage = "https://egstutoring.ca/og-image.jpg",

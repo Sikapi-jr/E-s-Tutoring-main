@@ -9,7 +9,7 @@
     "features": {
       "scheduling": {
         "title": "Session Scheduling",
-        "description": "View and manage all your tutoring sessions with an integrated calendar system that syncs across all devices."
+        "description": "Optionally plan and organize your tutoring sessions with an integrated calendar system that syncs across all devices for better time management."
       },
       "requests": {
         "title": "Tutoring Requests",
@@ -107,7 +107,7 @@
     "announcements": "Announcements",
     "calendar": "Calendar",
     "events": "Upcoming Sessions",
-    "scheduleSession": "Schedule a Session",
+    "scheduleSession": "Plan a Session",
     "invoices": "Invoices",
     "chat": "Chat",
     "settings": "Settings",
@@ -185,7 +185,7 @@
     "paymentProgress": "Payment Progress",
     "paidInvoices": "Paid Invoices",
     "unpaidInvoices": "Unpaid Invoices",
-    "scheduledEvents": "Scheduled EGS Tutoring Sessions",
+    "scheduledEvents": "Planned EGS Tutoring Sessions",
     "noHoursYet": "No hours yet?",
     "requestTutorText": "Request a tutor for your child.",
     "noStudentsYet": "Don't have any students?",
@@ -193,7 +193,7 @@
     "startLoggingHours": "Start logging hours.",
     "viewMore": "View More",
     "viewMoreUpdateRsvp": "View More/Update RSVP",
-    "noScheduledEvents": "No scheduled events.",
+    "noScheduledEvents": "No planned events.",
     "noPaidInvoices": "No paid invoices yet.",
     "allCaughtUp": "You're all caught up!",
     "cantAttend": "Can't attend",
@@ -224,7 +224,7 @@
     "studentWorkedHours": "You have worked {{hours}} hour(s) this week!",
     "tutorMonthlyHours": "You have worked {{hours}} hour(s) this {{month}}!",
     "connectCalendarMessage": "Connect your Google Calendar to view scheduled sessions",
-    "goToScheduledSessions": "Go to Scheduled Sessions",
+    "goToScheduledSessions": "Go to Planned Sessions",
     "hoursThisWeek": "hours this week!",
     "invoicesSummary": "{{total}} total, {{paid}} paid",
     "recentParentRequests": "Recent Parent Requests",
@@ -384,12 +384,12 @@
     "oneTime": "One-time",
     "weekly": "Weekly",
     "every2Weeks": "Every 2 Weeks",
-    "scheduleTutoringSession": "📅 Schedule Tutoring Session",
+    "scheduleTutoringSession": "📅 Plan Tutoring Session",
     "eventCreatedSuccessfully": "✅ Event created successfully!",
     "failedToCreateEvent": "❌ Failed to create event.",
     "connectFailed": "Failed to connect to Google Calendar",
-    "scheduledSessions": "Scheduled Sessions",
-    "noScheduledSessions": "No scheduled sessions found."
+    "scheduledSessions": "Planned Sessions",
+    "noScheduledSessions": "No planned sessions found."
   },
   "requests": {
     "requestTutor": "Request a Tutor",

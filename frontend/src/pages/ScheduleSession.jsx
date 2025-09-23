@@ -18,10 +18,11 @@ export default function ScheduleSession() {
     );
   }
 
-  const tutor_id = user.account_id;
+  const user_id = user.account_id;
 
   /* ─────────────────────────  local state ───────────────────────── */
   const [students, setStudents] = useState([]);
+  const [tutorInfo, setTutorInfo] = useState(null); // Store tutor info when parent creates event
   const [parentEmail, setParentEmail] = useState("");       // hidden option value
   const [isConnected, setIsConnected] = useState(false);
   const [scheduledEvents, setScheduledEvents] = useState([]);
@@ -33,7 +34,8 @@ export default function ScheduleSession() {
     startTime: "",
     endTime: "",
     recurrence: "none",
-    parentEmail: ""
+    parentEmail: "",
+    selectedStudentId: ""  // for parent role
   });
 
   const token = localStorage.getItem(ACCESS_TOKEN);
@@ -54,13 +56,21 @@ export default function ScheduleSession() {
         setIsConnected(false);
       });
 
-    // 2) fetch tutor's students
+    // 2) fetch students based on user role
     (async () => {
       try {
-        const res = await api.get(
-          `/api/TutorStudents/?tutor=${tutor_id}`
-        );
-        setStudents(Array.isArray(res.data) ? res.data : []);
+        if (user.roles === 'tutor') {
+          // Fetch tutor's students
+          const res = await api.get(
+            `/api/TutorStudents/?tutor=${user_id}`
+          );
+          setStudents(Array.isArray(res.data) ? res.data : []);
+        } else if (user.roles === 'parent') {
+          // Fetch parent's students
+          const res = await api.get(`/api/homeParent/?id=${user_id}`);
+          const parentStudents = Array.isArray(res.data.students) ? res.data.students : [];
+          setStudents(parentStudents);
+        }
       } catch (err) {
         console.error("Error fetching students:", err);
       }
@@ -70,7 +80,7 @@ export default function ScheduleSession() {
     if (isConnected) {
       fetchScheduledEvents();
     }
-  }, [token, tutor_id, user.account_id, isConnected]);
+  }, [token, user_id, user.account_id, user.roles, isConnected]);
 
   /* ─────────────────────────  helpers ───────────────────────────── */
   const fetchScheduledEvents = async () => {
@@ -96,30 +106,82 @@ export default function ScheduleSession() {
 
   // grab both hidden email and visible username
   const handleStudentSelect = e => {
-    const email = e.target.value;
+    const value = e.target.value;
     const selectedOption = e.target.options[e.target.selectedIndex];
-    const username = selectedOption.dataset.username || selectedOption.text;
 
-    setParentEmail(email);
-    setFormData(prev => ({
-      ...prev,
-      parentEmail: email,
-      description: username         // auto‑fill description
-    }));
+    if (user.roles === 'tutor') {
+      // For tutors: value is parent email, get username from dataset
+      const email = value;
+      const username = selectedOption.dataset.username || selectedOption.text;
+      setParentEmail(email);
+      setFormData(prev => ({
+        ...prev,
+        parentEmail: email,
+        description: `Tutoring with ${username}`
+      }));
+    } else if (user.roles === 'parent') {
+      // For parents: value is student ID, need to find tutor info
+      const studentId = value;
+      const student = students.find(s => s.id.toString() === studentId);
+      if (student) {
+        // We need to get the tutor info for this student
+        // For now, we'll store the student info and fetch tutor details when creating event
+        setFormData(prev => ({
+          ...prev,
+          selectedStudentId: studentId,
+          description: `Tutoring with ${student.username}`
+        }));
+      }
+    }
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
 
+    let eventCreatorId, attendeeEmail;
+
+    if (user.roles === 'tutor') {
+      // Tutor creates event, parent is attendee
+      eventCreatorId = user.account_id;
+      attendeeEmail = parentEmail;
+    } else if (user.roles === 'parent') {
+      // Parent creates event, but tutor should be organizer
+      // First, we need to find the tutor for the selected student
+      const selectedStudent = students.find(s => s.id.toString() === formData.selectedStudentId);
+      if (!selectedStudent) {
+        alert('Please select a student');
+        return;
+      }
+
+      // For parents: we need to get the student's tutor info
+      try {
+        const tutorRes = await api.get(`/api/student-tutors/${selectedStudent.id}/`);
+        const tutors = tutorRes.data || [];
+        if (tutors.length === 0) {
+          alert('No tutor assigned to this student yet. Please assign a tutor first.');
+          return;
+        }
+
+        // Use the first tutor (assuming one tutor per student for now)
+        const tutor = tutors[0];
+        eventCreatorId = tutor.tutor_id;
+        attendeeEmail = user.email; // Parent becomes attendee
+      } catch (err) {
+        console.error('Error fetching tutor info:', err);
+        alert('Could not find tutor information for this student.');
+        return;
+      }
+    }
+
     const payload = {
-      id: user.account_id,
+      id: eventCreatorId,
       subject: formData.subject,
       description: formData.description,
       date: formData.date,
       startTime: formData.startTime,
       endTime: formData.endTime,
       recurrence: formData.recurrence,
-      parentEmail: parentEmail
+      parentEmail: attendeeEmail
     };
 
     try {
@@ -137,6 +199,22 @@ export default function ScheduleSession() {
   return (
     <div className="form-container">
       <h1>{t('calendar.googleCalendar')}</h1>
+      <div style={{
+        backgroundColor: '#f8f9fa',
+        padding: '1rem',
+        borderRadius: '8px',
+        marginBottom: '1.5rem',
+        border: '1px solid #dee2e6'
+      }}>
+        <p style={{
+          margin: 0,
+          fontSize: '0.95rem',
+          color: '#495057',
+          lineHeight: '1.5'
+        }}>
+          <strong>💡 Planning sessions is optional!</strong> This tool helps you organize your tutoring schedule for better time management. You can log hours for sessions whether they were planned in advance or not.
+        </p>
+      </div>
 
       {!isConnected ? (
         <>
@@ -168,19 +246,33 @@ export default function ScheduleSession() {
             {/* student selector */}
             <select
               className="form-input"
-              value={parentEmail}
+              value={user.roles === 'tutor' ? parentEmail : formData.selectedStudentId}
               onChange={handleStudentSelect}
             >
               <option value="">{t('requests.selectStudent')}</option>
-              {students.map(stud => (
-                <option
-                  key={stud.id}
-                  value={stud.parent_email}           /* hidden payload */
-                  data-username={stud.student_username}
-                >
-                  {stud.student_username}            {/* visible label */}
-                </option>
-              ))}
+              {students.map(stud => {
+                if (user.roles === 'tutor') {
+                  return (
+                    <option
+                      key={stud.id}
+                      value={stud.parent_email}           /* hidden payload */
+                      data-username={stud.student_username}
+                    >
+                      {stud.student_username}            {/* visible label */}
+                    </option>
+                  );
+                } else {
+                  // For parents: show their students
+                  return (
+                    <option
+                      key={stud.id}
+                      value={stud.id}
+                    >
+                      {stud.username}
+                    </option>
+                  );
+                }
+              })}
             </select>
 
             <input
