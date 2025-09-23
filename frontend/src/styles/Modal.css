@@ -237,38 +237,50 @@
   margin: 5px 0;
 }
 
-/* Plus button for adding sessions */
-.add-session-btn {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+/* Events table header with add button */
+.events-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.events-table-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.add-session-btn-table {
   background-color: #192A88;
   color: white;
   border: none;
-  font-size: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(25, 42, 136, 0.3);
   transition: all 0.2s ease;
-  z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.25rem;
 }
 
-.add-session-btn:hover {
+.add-session-btn-table:hover {
   background-color: #0056b3;
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(25, 42, 136, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(25, 42, 136, 0.3);
 }
 
-.add-session-btn:active {
-  transform: scale(0.95);
+/* Modal specific form button overrides */
+.modal-actions .form-button {
+  width: auto;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  min-width: 80px;
 }
 
-/* Secondary form button styles for modal */
 .form-button.secondary {
   background-color: #6c757d;
   color: white;
@@ -299,11 +311,13 @@
     width: 100%;
   }
 
-  .add-session-btn {
-    bottom: 1rem;
-    right: 1rem;
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
+  .events-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .add-session-btn-table {
+    align-self: flex-end;
   }
 }

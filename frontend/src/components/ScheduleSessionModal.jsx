@@ -5,6 +5,7 @@ import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import { useUser } from "./UserProvider";
 import "../styles/Modal.css";
+import "../styles/Form.css";
 
 export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
   const { t } = useTranslation();

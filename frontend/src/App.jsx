@@ -38,7 +38,6 @@ const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const VerifyEmail = lazy(() => import("./components/VerifyEmail"));
 const CalendarApp = lazy(() => import("./components/CalendarApp"));
 const StripeReauth = lazy(() => import("./pages/stripeComplete"));
-const ScheduleSession = lazy(() => import("./pages/ScheduleSession"));
 const LoggedHoursPage = lazy(() => import("./components/LoggedHoursPage"));
 const EventsPage = lazy(() => import("./components/EventsPage"));
 const MonthlyReports = lazy(() => import("./pages/MonthlyReports"));
@@ -140,7 +139,6 @@ function AppRoutes() {
             <Route path="/weeklyhours" element={<ProtectedRoute><SendWeekly /></ProtectedRoute>} />
             <Route path="/monthlyhours" element={<ProtectedRoute><SendMonthly /></ProtectedRoute>} />
             <Route path="/viewinvoices" element={<ProtectedRoute><ViewInvoices /></ProtectedRoute>} />
-            <Route path="/schedule-session" element={<ProtectedRoute><ScheduleSession /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/hours" element={<ProtectedRoute><LoggedHoursPage /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />

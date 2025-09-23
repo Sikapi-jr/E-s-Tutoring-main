@@ -593,7 +593,7 @@ export default function Home() {
 
   /* handle parent Google Calendar connection redirect */
   const handleParentGoogleConnect = useCallback(() => {
-    window.location.href = '/schedule-session';
+    window.location.href = '/events';
   }, []);
 
   /* handle document deletion */

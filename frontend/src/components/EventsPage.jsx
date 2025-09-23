@@ -219,6 +219,20 @@ export default function EventsPage() {
             />
           </form>
 
+          {/* EVENTS TABLE HEADER WITH ADD BUTTON */}
+          <div className="events-table-header">
+            <h3>{t('calendar.scheduledSessions')}</h3>
+            {(user.roles === 'tutor' || user.roles === 'parent') && isConnected && (
+              <button
+                className="add-session-btn-table"
+                onClick={() => setIsModalOpen(true)}
+                title={t('calendar.scheduleTutoringSession')}
+              >
+                + {t('calendar.addSession')}
+              </button>
+            )}
+          </div>
+
           {/* EVENTS TABLE */}
           <div className="table-wrapper">
             {filteredEvents.length ? (
@@ -284,16 +298,6 @@ export default function EventsPage() {
         </>
       )}
 
-      {/* Add Session Button - only show for tutors and parents */}
-      {(user.roles === 'tutor' || user.roles === 'parent') && isConnected && (
-        <button
-          className="add-session-btn"
-          onClick={() => setIsModalOpen(true)}
-          title={t('calendar.scheduleTutoringSession')}
-        >
-          +
-        </button>
-      )}
 
       {/* Schedule Session Modal */}
       <ScheduleSessionModal
