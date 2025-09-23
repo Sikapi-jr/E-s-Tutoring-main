@@ -237,24 +237,73 @@
   margin: 5px 0;
 }
 
+/* Plus button for adding sessions */
+.add-session-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #192A88;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(25, 42, 136, 0.3);
+  transition: all 0.2s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-session-btn:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(25, 42, 136, 0.4);
+}
+
+.add-session-btn:active {
+  transform: scale(0.95);
+}
+
+/* Secondary form button styles for modal */
+.form-button.secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.form-button.secondary:hover {
+  background-color: #5a6268;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .modal-content {
     width: 95%;
     margin: 10px;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-actions {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .btn-primary,
   .btn-secondary {
     width: 100%;
+  }
+
+  .add-session-btn {
+    bottom: 1rem;
+    right: 1rem;
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
   }
 }

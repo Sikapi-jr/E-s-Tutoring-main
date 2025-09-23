@@ -73,6 +73,7 @@ urlpatterns = [
     
     # Student tutors endpoint
     path('student/tutors/', views.StudentTutorsView.as_view(), name='student-tutors'),
+    path('student-tutors/<int:student_id>/', views.StudentTutorsDetailView.as_view(), name='student-tutors-detail'),
     
     # Admin endpoints
     path('admin/create-tutor/', views.AdminCreateTutorView.as_view(), name='admin-create-tutor'),

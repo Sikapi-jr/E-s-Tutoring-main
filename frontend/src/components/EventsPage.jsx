@@ -10,7 +10,9 @@ import api from "../api";
 import { ACCESS_TOKEN } from "../constants";
 import { useUser } from "../components/UserProvider";
 import StatusMulti from "../components/StatusMulti";
+import ScheduleSessionModal from "../components/ScheduleSessionModal";
 import "../styles/EventsFilters.css";
+import "../styles/Modal.css";
 
 export default function EventsPage() {
   const { t } = useTranslation();
@@ -30,6 +32,7 @@ export default function EventsPage() {
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     q: "",
     statuses: [],
@@ -50,23 +53,25 @@ export default function EventsPage() {
   }, [user, token]);
 
   // Load events
-  useEffect(() => {
+  const loadEvents = useCallback(async () => {
     if (!user) return;
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        const res = await api.get(
-          `/api/google/events/all?id=${user.account_id}`
-        );
-        setAllEvents(Array.isArray(res.data?.items) ? res.data.items : []);
-      } catch {
-        setErr(t('errors.failedToLoadEvents'));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [user]);
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await api.get(
+        `/api/google/events/all?id=${user.account_id}`
+      );
+      setAllEvents(Array.isArray(res.data?.items) ? res.data.items : []);
+    } catch {
+      setErr(t('errors.failedToLoadEvents'));
+    } finally {
+      setLoading(false);
+    }
+  }, [user, t]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const handleConnect = () => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -278,6 +283,24 @@ export default function EventsPage() {
           </div>
         </>
       )}
+
+      {/* Add Session Button - only show for tutors and parents */}
+      {(user.roles === 'tutor' || user.roles === 'parent') && isConnected && (
+        <button
+          className="add-session-btn"
+          onClick={() => setIsModalOpen(true)}
+          title={t('calendar.scheduleTutoringSession')}
+        >
+          +
+        </button>
+      )}
+
+      {/* Schedule Session Modal */}
+      <ScheduleSessionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={loadEvents}
+      />
     </div>
   );
 }

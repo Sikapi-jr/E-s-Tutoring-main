@@ -2736,6 +2736,57 @@ class StudentTutorsView(APIView):
         
         return Response({'tutors': tutors}, status=200)
 
+class StudentTutorsDetailView(APIView):
+    """API endpoint to get tutors for a specific student (for parents/admins)"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id):
+        # Allow parents to view their children's tutors and admins to view any student's tutors
+        if request.user.roles not in ['parent', 'admin'] and not request.user.is_superuser:
+            return Response({'error': 'Parent or admin access required'}, status=403)
+
+        try:
+            student = User.objects.get(id=student_id, roles='student')
+        except User.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=404)
+
+        # If user is a parent, verify they are the parent of this student
+        if request.user.roles == 'parent':
+            # Check if this parent has this student
+            try:
+                from django.db.models import Q
+                # Check if student exists with this parent's email
+                parent_students = User.objects.filter(
+                    roles='student',
+                    parent_email=request.user.email,
+                    id=student_id
+                )
+                if not parent_students.exists():
+                    return Response({'error': 'Access denied'}, status=403)
+            except:
+                return Response({'error': 'Access denied'}, status=403)
+
+        # Get all accepted tutors for this student
+        accepted_tutors = AcceptedTutor.objects.filter(
+            student=student,
+            status='Accepted'
+        ).select_related('tutor', 'request')
+
+        tutors = []
+        for accepted_tutor in accepted_tutors:
+            tutor = accepted_tutor.tutor
+            tutors.append({
+                'tutor_id': tutor.id,
+                'firstName': tutor.firstName,
+                'lastName': tutor.lastName,
+                'email': tutor.email,
+                'phone_number': tutor.phone_number,
+                'subject': accepted_tutor.request.subject,
+                'accepted_at': accepted_tutor.accepted_at
+            })
+
+        return Response(tutors, status=200)
+
 class AdminCreateTutorView(generics.CreateAPIView):
     """Admin-only endpoint for creating tutor accounts"""
     queryset = User.objects.all()

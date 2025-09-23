@@ -129,7 +129,7 @@ export default function ScheduleSession() {
         setFormData(prev => ({
           ...prev,
           selectedStudentId: studentId,
-          description: `Tutoring with ${student.username}`
+          description: `Tutoring with ${student.student_firstName} ${student.student_lastName}`
         }));
       }
     }
@@ -268,7 +268,7 @@ export default function ScheduleSession() {
                       key={stud.id}
                       value={stud.id}
                     >
-                      {stud.username}
+                      {stud.student_firstName} {stud.student_lastName}
                     </option>
                   );
                 }
