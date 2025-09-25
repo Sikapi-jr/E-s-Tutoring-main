@@ -384,7 +384,7 @@
     "oneTime": "One-time",
     "weekly": "Weekly",
     "every2Weeks": "Every 2 Weeks",
-    "scheduleTutoringSession": "📅 Plan Tutoring Session",
+    "scheduleTutoringSession": "Plan Tutoring Session",
     "eventCreatedSuccessfully": "✅ Event created successfully!",
     "failedToCreateEvent": "❌ Failed to create event.",
     "connectFailed": "Failed to connect to Google Calendar",

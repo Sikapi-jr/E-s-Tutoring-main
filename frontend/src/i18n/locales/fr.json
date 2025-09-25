@@ -367,7 +367,7 @@
     "oneTime": "Une fois",
     "weekly": "Hebdomadaire",
     "every2Weeks": "Toutes les 2 semaines",
-    "scheduleTutoringSession": "📅 Planifier une session de tutorat",
+    "scheduleTutoringSession": "Planifier une session de tutorat",
     "eventCreatedSuccessfully": "✅ Événement créé avec succès !",
     "failedToCreateEvent": "❌ Échec de la création de l'événement.",
     "connectFailed": "Échec de la connexion à Google Agenda",

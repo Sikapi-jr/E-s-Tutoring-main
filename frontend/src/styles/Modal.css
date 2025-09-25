@@ -120,12 +120,14 @@
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 12px;
   padding: 20px;
   border-top: 1px solid #e0e0e0;
-  margin-top: 20px;
+  margin-top: 0;
   flex-shrink: 0;
   background: white;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .btn-primary,
@@ -281,10 +283,12 @@
 
 /* Modal specific form button overrides */
 .modal-actions .form-button {
-  width: auto;
+  width: auto !important;
   margin: 0;
   padding: 0.5rem 1rem;
-  min-width: 80px;
+  min-width: 100px;
+  max-width: none;
+  flex: 0 0 auto;
 }
 
 .form-button.secondary {
@@ -308,13 +312,14 @@
   }
 
   .modal-actions {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+    justify-content: center;
   }
 
-  .btn-primary,
-  .btn-secondary {
-    width: 100%;
+  .modal-actions .form-button {
+    flex: 1;
+    max-width: 150px;
   }
 
   .events-table-header {
