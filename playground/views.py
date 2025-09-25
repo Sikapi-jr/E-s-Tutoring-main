@@ -3255,7 +3255,104 @@ class UsernamePasswordResetView(APIView):
 
             censored_email = censor_email(user.email)
             return Response({"message": f"Password reset email sent to {censored_email}"}, status=200)
-            
+
         except Exception as e:
             return Response({"error": "Failed to process password reset request"}, status=500)
+
+class AdminUserSearchView(APIView):
+    """Admin endpoint to search users by name with suggestions"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        query = request.query_params.get('q', '').strip()
+        if len(query) < 2:
+            return Response({'users': []}, status=200)
+
+        # Search users by first name or last name containing the query
+        users = User.objects.filter(
+            Q(firstName__icontains=query) |
+            Q(lastName__icontains=query) |
+            Q(username__icontains=query)
+        ).order_by('firstName', 'lastName')[:20]  # Limit to 20 results
+
+        user_list = []
+        for user in users:
+            user_list.append({
+                'id': user.id,
+                'firstName': user.firstName,
+                'lastName': user.lastName,
+                'username': user.username,
+                'email': user.email,
+                'roles': user.roles,
+                'display_name': f"{user.firstName} {user.lastName} ({user.roles})"
+            })
+
+        return Response({'users': user_list}, status=200)
+
+class AdminUserHoursView(APIView):
+    """Admin endpoint to get all hours for a specific user"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+
+        # Get user info
+        user_info = {
+            'id': user.id,
+            'firstName': user.firstName,
+            'lastName': user.lastName,
+            'username': user.username,
+            'email': user.email,
+            'roles': user.roles,
+            'phone_number': user.phone_number,
+            'address': user.address,
+            'city': user.city,
+            'created_at': user.date_joined,
+            'is_active': user.is_active
+        }
+
+        # Get all hours where user is involved (as student, parent, or tutor)
+        hours = Hours.objects.filter(
+            Q(student=user) | Q(parent=user) | Q(tutor=user)
+        ).order_by('-date', '-startTime')
+
+        # Use the existing HoursSerializer to get formatted data with names
+        serializer = HoursSerializer(hours, many=True, context={'request': request})
+
+        # Calculate total hours and stats
+        total_sessions = hours.count()
+        total_time = sum([
+            float(hour.totalTime) if hour.totalTime else 0
+            for hour in hours
+        ])
+
+        # Count by role
+        as_student = hours.filter(student=user).count()
+        as_parent = hours.filter(parent=user).count()
+        as_tutor = hours.filter(tutor=user).count()
+
+        stats = {
+            'total_sessions': total_sessions,
+            'total_hours': round(total_time, 2),
+            'as_student': as_student,
+            'as_parent': as_parent,
+            'as_tutor': as_tutor
+        }
+
+        return Response({
+            'user_info': user_info,
+            'stats': stats,
+            'hours': serializer.data
+        }, status=200)
 

@@ -92,6 +92,10 @@ urlpatterns = [
     path('existing-weekly-hours/', views.existing_weekly_hours, name='existing-weekly-hours'),
     path('existing-monthly-hours/', views.existing_monthly_hours, name='existing-monthly-hours'),
 
+    # Admin user search endpoints
+    path('admin/users/search/', views.AdminUserSearchView.as_view(), name='admin-user-search'),
+    path('admin/users/<int:user_id>/hours/', views.AdminUserHoursView.as_view(), name='admin-user-hours'),
+
 ]
 
 if settings.DEBUG:
