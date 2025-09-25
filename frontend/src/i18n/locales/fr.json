@@ -372,6 +372,7 @@
     "failedToCreateEvent": "❌ Échec de la création de l'événement.",
     "connectFailed": "Échec de la connexion à Google Agenda",
     "scheduledSessions": "Sessions planifiées",
+    "addSession": "Ajouter une session",
     "noScheduledSessions": "Aucune session planifiée trouvée."
   },
   "requests": {
@@ -521,6 +522,7 @@
     "start": "Début",
     "end": "Fin",
     "cantAttend": "Ne peut pas assister",
+    "cantAttendBtn": "Indisponible",
     "noEventsMatchFilters": "Aucun événement ne correspond à vos filtres."
   },
   "errors": {

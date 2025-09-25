@@ -389,6 +389,7 @@
     "failedToCreateEvent": "❌ Failed to create event.",
     "connectFailed": "Failed to connect to Google Calendar",
     "scheduledSessions": "Planned Sessions",
+    "addSession": "Add Session",
     "noScheduledSessions": "No planned sessions found."
   },
   "requests": {
@@ -538,6 +539,7 @@
     "start": "Start",
     "end": "End",
     "cantAttend": "Can't attend",
+    "cantAttendBtn": "Can't Attend",
     "noEventsMatchFilters": "No events match your filters."
   },
   "errors": {

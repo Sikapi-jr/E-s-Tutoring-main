@@ -279,9 +279,9 @@ export default function EventsPage() {
                         <td>
                           <button
                             onClick={() => markCantAttend(ev.id)}
-                            className="cant-btn"
+                            className="cant-attend-btn"
                           >
-                            ❌
+                            {t('events.cantAttendBtn')}
                           </button>
                         </td>
                       </tr>

@@ -100,9 +100,19 @@
   top:0;
   z-index:2;
 }
-.cant-btn{
-  color:red;
-  background:none;
-  border:none;
-  cursor:pointer;
+.cant-attend-btn{
+  color: #fff;
+  background-color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cant-attend-btn:hover{
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
 }
