@@ -234,7 +234,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
               </button>
             </>
           ) : (
-            <form onSubmit={handleSubmit} className="form-section">
+            <form onSubmit={handleSubmit} className="form-section schedule-session-form">
               <input
                 name="subject"
                 placeholder={t('calendar.subjectPlaceholder')}
@@ -322,17 +322,31 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                 <option value="biweekly">{t('calendar.every2Weeks')}</option>
               </select>
 
-              <div className="modal-actions">
-                <button type="button" className="form-button secondary" onClick={handleClose}>
-                  {t('common.cancel')}
-                </button>
-                <button type="submit" className="form-button">
-                  {t('calendar.scheduleTutoringSession')}
-                </button>
-              </div>
             </form>
           )}
         </div>
+
+        {/* Modal Actions - outside scrollable area */}
+        {isConnected && (
+          <div className="modal-actions">
+            <button type="button" className="form-button secondary" onClick={handleClose}>
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="form-button"
+              onClick={(e) => {
+                e.preventDefault();
+                const form = document.querySelector('.schedule-session-form');
+                if (form) {
+                  form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+              }}
+            >
+              {t('calendar.scheduleTutoringSession')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

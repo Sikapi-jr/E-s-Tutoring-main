@@ -262,10 +262,10 @@ export default function EventsPage() {
                     const attendeeName = attendee?.email || "-";
                     
                     // Determine status based on attendee response
-                    const status = attendee?.responseStatus === 'accepted' ? '✅' : 
-                                  attendee?.responseStatus === 'declined' ? '❌' :
-                                  attendee?.responseStatus === 'tentative' ? '⏳' : 
-                                  '⏸️';
+                    // Default to accepted for better UX - users can decline if needed
+                    const status = attendee?.responseStatus === 'declined' ? '❌' :      // Declined
+                                  attendee?.responseStatus === 'tentative' ? '⏳' :    // Maybe/Tentative
+                                  '✅';                                                 // Accepted (default)
                     
                     return (
                       <tr key={ev.id}>
