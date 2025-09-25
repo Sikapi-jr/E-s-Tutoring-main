@@ -201,24 +201,32 @@ export default function EventsPage() {
               {t('events.cantAttendOnly')}
             </label>
 
-            <input
-              className="ev-input"
-              type="date"
-              placeholder={t('events.startDateFilter')}
-              value={filters.start}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, start: e.target.value }))
-              }
-            />
-            <input
-              className="ev-input"
-              type="date"
-              placeholder={t('events.endDateFilter')}
-              value={filters.end}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, end: e.target.value }))
-              }
-            />
+            <div className="date-filter-group">
+              <label className="date-filter-label">{t('events.startDateFilter')}:</label>
+              <input
+                className="ev-input"
+                type="date"
+                placeholder={t('events.startDateFilter')}
+                title={t('events.startDateFilter')}
+                value={filters.start}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, start: e.target.value }))
+                }
+              />
+            </div>
+            <div className="date-filter-group">
+              <label className="date-filter-label">{t('events.endDateFilter')}:</label>
+              <input
+                className="ev-input"
+                type="date"
+                placeholder={t('events.endDateFilter')}
+                title={t('events.endDateFilter')}
+                value={filters.end}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, end: e.target.value }))
+                }
+              />
+            </div>
           </form>
 
           {/* EVENTS TABLE HEADER WITH ADD BUTTON */}

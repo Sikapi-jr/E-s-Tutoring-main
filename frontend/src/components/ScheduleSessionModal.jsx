@@ -284,32 +284,47 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                 })}
               </select>
 
-              <input
-                type="date"
-                name="date"
-                className="form-input"
-                required
-                value={formData.date}
-                onChange={handleChange}
-              />
+              <div className="form-field-group">
+                <label className="form-label">{t('common.date')}</label>
+                <input
+                  type="date"
+                  name="date"
+                  className="form-input"
+                  placeholder={t('common.date')}
+                  title={t('common.date')}
+                  required
+                  value={formData.date}
+                  onChange={handleChange}
+                />
+              </div>
 
-              <input
-                type="time"
-                name="startTime"
-                className="form-input"
-                required
-                value={formData.startTime}
-                onChange={handleChange}
-              />
+              <div className="form-field-group">
+                <label className="form-label">{t('logHours.startTime')}</label>
+                <input
+                  type="time"
+                  name="startTime"
+                  className="form-input"
+                  placeholder={t('logHours.startTime')}
+                  title={t('logHours.startTime')}
+                  required
+                  value={formData.startTime}
+                  onChange={handleChange}
+                />
+              </div>
 
-              <input
-                type="time"
-                name="endTime"
-                className="form-input"
-                required
-                value={formData.endTime}
-                onChange={handleChange}
-              />
+              <div className="form-field-group">
+                <label className="form-label">{t('logHours.endTime')}</label>
+                <input
+                  type="time"
+                  name="endTime"
+                  className="form-input"
+                  placeholder={t('logHours.endTime')}
+                  title={t('logHours.endTime')}
+                  required
+                  value={formData.endTime}
+                  onChange={handleChange}
+                />
+              </div>
 
               <select
                 name="recurrence"

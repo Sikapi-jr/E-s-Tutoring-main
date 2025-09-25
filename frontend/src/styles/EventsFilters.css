@@ -44,6 +44,19 @@
   font-size:.9rem;
 }
 
+.date-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin: 0;
+}
+
 /* multiselect */
 .msel{ position:relative; }
 .msel__btn{
