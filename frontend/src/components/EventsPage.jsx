@@ -204,6 +204,7 @@ export default function EventsPage() {
             <input
               className="ev-input"
               type="date"
+              placeholder={t('events.startDateFilter')}
               value={filters.start}
               onChange={(e) =>
                 setFilters((f) => ({ ...f, start: e.target.value }))
@@ -212,6 +213,7 @@ export default function EventsPage() {
             <input
               className="ev-input"
               type="date"
+              placeholder={t('events.endDateFilter')}
               value={filters.end}
               onChange={(e) =>
                 setFilters((f) => ({ ...f, end: e.target.value }))

@@ -65,14 +65,14 @@ const getRoleConfig = (BASE) => ({
   parent: {
     main:   [BASE.Home],
     tutor:  [BASE.Students, BASE.Request, BASE.Replies],
-    sessions: [BASE.Events, BASE.Hours, BASE.CalCon],
+    sessions: [BASE.Events, BASE.Hours],
     cal:    [],
     single: [BASE.Inv, BASE.Reports],
   },
   tutor: {
     main:   [BASE.Home, BASE.Dash],
     tutor:  [BASE.MyStudents, BASE.Log],
-    sessions: [BASE.Events, BASE.Hours, BASE.CalCon],
+    sessions: [BASE.Events, BASE.Hours],
     cal:    [],
     single: [BASE.Reports],
   },

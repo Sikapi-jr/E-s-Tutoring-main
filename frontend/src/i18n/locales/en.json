@@ -540,6 +540,8 @@
     "end": "End",
     "cantAttend": "Can't attend",
     "cantAttendBtn": "Can't Attend",
+    "startDateFilter": "Start Date",
+    "endDateFilter": "End Date",
     "noEventsMatchFilters": "No events match your filters."
   },
   "errors": {

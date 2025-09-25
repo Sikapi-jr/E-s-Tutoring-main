@@ -384,12 +384,14 @@ class HoursSerializer(serializers.ModelSerializer):
     student_username = serializers.CharField(source='student.username', read_only=True)
     tutor_firstName = serializers.CharField(source='tutor.firstName', read_only=True)
     tutor_lastName = serializers.CharField(source='tutor.lastName', read_only=True)
+    parent_firstName = serializers.CharField(source='parent.firstName', read_only=True)
+    parent_lastName = serializers.CharField(source='parent.lastName', read_only=True)
     has_disputes = serializers.SerializerMethodField()
     dispute_id = serializers.SerializerMethodField()
     
     class Meta:
         model = Hours
-        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'has_disputes', 'dispute_id']
+        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'parent_firstName', 'parent_lastName', 'has_disputes', 'dispute_id']
         extra_kwargs = {
             "student": {"required": True},
             "parent": {"required": False},

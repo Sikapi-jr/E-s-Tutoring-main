@@ -523,6 +523,8 @@
     "end": "Fin",
     "cantAttend": "Ne peut pas assister",
     "cantAttendBtn": "Indisponible",
+    "startDateFilter": "Date de début",
+    "endDateFilter": "Date de fin",
     "noEventsMatchFilters": "Aucun événement ne correspond à vos filtres."
   },
   "errors": {
