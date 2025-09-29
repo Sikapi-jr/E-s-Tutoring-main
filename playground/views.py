@@ -910,7 +910,7 @@ class UpdateEventRsvpView(APIView):
     def send_cancellation_emails(self, cancelling_user, event, cancel_reason, attendees):
         """Send email notifications for cancellations"""
         try:
-            from django.core.mail import send_mail
+            from playground.email_utils import send_mailgun_email
             from django.conf import settings
 
             event_title = event.get("summary", "Tutoring Session")
@@ -947,12 +947,10 @@ Best regards,
 EGS Tutoring Team
             """
 
-            send_mail(
-                confirmation_subject,
-                confirmation_message.strip(),
-                settings.DEFAULT_FROM_EMAIL,
+            send_mailgun_email(
                 [cancelling_user.email],
-                fail_silently=True,
+                confirmation_subject,
+                confirmation_message.strip()
             )
 
             # Send notification emails to other attendees
@@ -979,12 +977,10 @@ Best regards,
 EGS Tutoring Team
                     """
 
-                    send_mail(
-                        notification_subject,
-                        notification_message.strip(),
-                        settings.DEFAULT_FROM_EMAIL,
+                    send_mailgun_email(
                         [attendee_email],
-                        fail_silently=True,
+                        notification_subject,
+                        notification_message.strip()
                     )
 
         except Exception as e:
