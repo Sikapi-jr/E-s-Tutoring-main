@@ -365,16 +365,17 @@ export default function EventsPage() {
                     const cancelReason = ev.extendedProperties?.private?.cancel_reason || "";
                     const cancelledBy = ev.extendedProperties?.private?.cancelled_by || "";
 
-                    // Set row background color based on status - ensure every record is colored
+                    // Determine if anyone has cancelled this session
+                    const isAnybodyCancelled = cancelledByOther || isDeclined ||
+                                              ev.extendedProperties?.private?.cant_attend === "true";
+
+                    // Set row background color - only green or red
                     const getRowStyle = () => {
                       const baseStyle = { cursor: 'pointer' };
-                      if (cancelledByOther) {
-                        return { ...baseStyle, backgroundColor: '#f8d7da' }; // Light red for cancelled by other
-                      } else if (isDeclined || myStatus === 'declined') {
-                        return { ...baseStyle, backgroundColor: '#ffebee' }; // Light red for declined
+                      if (isAnybodyCancelled) {
+                        return { ...baseStyle, backgroundColor: '#ffebee' }; // Red for any cancellation
                       } else {
-                        // Default to green for accepted/attending or any other status
-                        return { ...baseStyle, backgroundColor: '#e8f5e8' }; // Light green for accepted
+                        return { ...baseStyle, backgroundColor: '#e8f5e8' }; // Green for attending
                       }
                     };
 
@@ -389,11 +390,19 @@ export default function EventsPage() {
                         <td>
                           {cancelledByOther ? (
                             <span style={{
-                              color: '#6c757d',
-                              fontStyle: 'italic',
+                              color: '#dc3545',
+                              fontWeight: 'bold',
                               fontSize: '12px'
                             }}>
-                              {t('events.cancelledByOther', 'Read Only')}
+                              Cancelled by {cancelledBy.includes('@') ? (cancelledBy === ev?.organizer?.email ? 'Tutor' : 'Parent') : 'Other'}
+                            </span>
+                          ) : isDeclined ? (
+                            <span style={{
+                              color: '#dc3545',
+                              fontWeight: 'bold',
+                              fontSize: '12px'
+                            }}>
+                              Cancelled by You
                             </span>
                           ) : (
                             <button
@@ -401,9 +410,9 @@ export default function EventsPage() {
                                 e.stopPropagation();
                                 toggleAttendanceStatus(ev.id, myStatus);
                               }}
-                              className={isDeclined ? "can-attend-btn" : "cant-attend-btn"}
+                              className="cant-attend-btn"
                               style={{
-                                backgroundColor: isDeclined ? '#28a745' : '#dc3545',
+                                backgroundColor: '#dc3545',
                                 color: 'white',
                                 border: 'none',
                                 padding: '6px 12px',
@@ -412,7 +421,7 @@ export default function EventsPage() {
                                 fontSize: '12px'
                               }}
                             >
-                              {isDeclined ? t('events.canAttend', 'Can Attend') : t('events.cantAttendBtn')}
+                              {t('events.cantAttendBtn')}
                             </button>
                           )}
                         </td>

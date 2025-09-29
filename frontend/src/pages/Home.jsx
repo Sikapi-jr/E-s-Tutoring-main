@@ -1074,14 +1074,16 @@ export default function Home() {
                     const cancelledByOther = ev.extendedProperties?.private?.cancelled_by &&
                                            ev.extendedProperties.private.cancelled_by.toLowerCase() !== user?.email?.toLowerCase();
 
-                    // Set row background color based on status
+                    // Determine if anyone has cancelled this session
+                    const isAnybodyCancelled = cancelledByOther || isDeclined ||
+                                              ev.extendedProperties?.private?.cant_attend === "true";
+
+                    // Set row background color - only green or red
                     const getRowStyle = () => {
-                      if (cancelledByOther) {
-                        return { backgroundColor: '#f8d7da' }; // Light red for cancelled by other
-                      } else if (isDeclined) {
-                        return { backgroundColor: '#ffebee' }; // Light red for declined
+                      if (isAnybodyCancelled) {
+                        return { backgroundColor: '#ffebee' }; // Red for any cancellation
                       } else {
-                        return { backgroundColor: '#e8f5e8' }; // Light green for accepted
+                        return { backgroundColor: '#e8f5e8' }; // Green for attending
                       }
                     };
 
