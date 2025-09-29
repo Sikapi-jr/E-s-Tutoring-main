@@ -48,6 +48,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const ParentRequestDetail = lazy(() => import("./pages/ParentRequestDetail"));
+const AdminTestEmail = lazy(() => import("./pages/AdminTestEmail"));
 const AdminRequestDetail = lazy(() => import("./pages/AdminRequestDetail"));
 const AdminUserSearch = lazy(() => import("./pages/AdminUserSearch"));
 
@@ -148,6 +149,7 @@ function AppRoutes() {
             <Route path="/admin-disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
             <Route path="/admin-stale-requests" element={<ProtectedRoute><AdminStaleRequests /></ProtectedRoute>} />
             <Route path="/admin-user-search" element={<ProtectedRoute><AdminUserSearch /></ProtectedRoute>} />
+            <Route path="/admin-test-email" element={<ProtectedRoute><AdminTestEmail /></ProtectedRoute>} />
             <Route path="/parent-request/:requestId" element={<ProtectedRoute><ParentRequestDetail /></ProtectedRoute>} />
             <Route path="/admin-request-detail/:requestId" element={<ProtectedRoute><AdminRequestDetail /></ProtectedRoute>} />
 

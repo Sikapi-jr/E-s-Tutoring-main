@@ -96,6 +96,9 @@ urlpatterns = [
     path('admin/users/search/', views.AdminUserSearchView.as_view(), name='admin-user-search'),
     path('admin/users/<int:user_id>/hours/', views.AdminUserHoursView.as_view(), name='admin-user-hours'),
 
+    # Admin test email tool
+    path('admin/test-email/', views.admin_test_email, name='admin-test-email'),
+
 ]
 
 if settings.DEBUG:

@@ -3528,3 +3528,104 @@ class AdminUserHoursView(APIView):
             'hours': serializer.data
         }, status=200)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_test_email(request):
+    """
+    Admin tool for sending test emails with attachments
+    """
+    from playground.email_utils import send_mailgun_email
+
+    # Check if user is admin/superuser
+    if not request.user.is_superuser:
+        return Response({
+            'detail': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        recipient_email = request.data.get('recipient_email')
+        subject = request.data.get('subject')
+        message = request.data.get('message')
+        admin_email = request.data.get('admin_email', 'elvissikapi@gmail.com')
+
+        if not all([recipient_email, subject, message]):
+            return Response({
+                'detail': 'recipient_email, subject, and message are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare attachments
+        attachments = []
+        for key, file in request.FILES.items():
+            if key.startswith('attachment_'):
+                # Read file content
+                file_content = file.read()
+                attachments.append((file.name, file_content, file.content_type))
+
+        # Email content with admin signature
+        email_body = f"""
+{message}
+
+---
+This is a test email sent from EGS Tutoring Admin Panel.
+Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
+Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Best regards,
+EGS Tutoring Admin Team
+        """
+
+        # Send email to recipient
+        success_recipient = send_mailgun_email(
+            [recipient_email],
+            f"[TEST] {subject}",
+            email_body.strip(),
+            attachments=attachments if attachments else None
+        )
+
+        # Send copy to admin email
+        admin_subject = f"[ADMIN COPY] Test Email Sent to {recipient_email}"
+        admin_body = f"""
+This is a copy of the test email you sent.
+
+Original Recipient: {recipient_email}
+Subject: {subject}
+
+Message:
+{message}
+
+---
+Test email sent successfully from EGS Tutoring Admin Panel.
+Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
+Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Attachments: {len(attachments)} file(s) attached
+        """
+
+        success_admin = send_mailgun_email(
+            [admin_email],
+            admin_subject,
+            admin_body.strip(),
+            attachments=attachments if attachments else None
+        )
+
+        if success_recipient and success_admin:
+            return Response({
+                'detail': f'Test emails sent successfully to {recipient_email} and {admin_email}',
+                'recipient_email': recipient_email,
+                'admin_email': admin_email,
+                'attachments_count': len(attachments)
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'detail': 'Failed to send one or both test emails',
+                'recipient_success': success_recipient,
+                'admin_success': success_admin
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        logger.error(f"Error in admin test email: {e}")
+        return Response({
+            'detail': f'Error sending test email: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

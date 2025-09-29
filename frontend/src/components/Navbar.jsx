@@ -43,6 +43,7 @@ const getRoutes = (t) => ({
   Ann:     { to: "/create-announcement", label: t('navigation.announcements') },
   Complaints: { to: "/admin-complaints", label: "Student Complaints" },
   UserSearch: { to: "/admin-user-search", label: t('admin.userSearch') },
+  TestEmail: { to: "/admin-test-email", label: t('admin.testEmail') },
   Cal:     { to: "/calendar",          label: t('navigation.calendar') },
   Events:  { to: "/events",            label: t('navigation.events') },
   CalCon:  { to: "/events",   label: t('navigation.scheduleSession') },
@@ -61,7 +62,7 @@ const getRoleConfig = (BASE) => ({
     tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Log, BASE.Weekly, BASE.Monthly, BASE.Ann],
     sessions: [BASE.Events, BASE.Hours],
     cal:    [],
-    single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch],
+    single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.TestEmail],
   },
   parent: {
     main:   [BASE.Home],
