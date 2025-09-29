@@ -3319,8 +3319,19 @@ class AdminUserHoursView(APIView):
             'address': user.address,
             'city': user.city,
             'created_at': user.date_joined,
-            'is_active': user.is_active
+            'is_active': user.is_active,
+            'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None
         }
+
+        # Add Google Calendar status for non-students
+        google_connected = False
+        if user.roles != 'student':
+            # Check if user has Google credentials stored
+            # This is a simplified check based on available user fields
+            google_connected = bool(getattr(user, 'google_refresh_token', None) or
+                                  getattr(user, 'google_access_token', None))
+
+        user_info['google_calendar_connected'] = google_connected
 
         # Get all hours where user is involved (as student, parent, or tutor)
         hours = Hours.objects.filter(
