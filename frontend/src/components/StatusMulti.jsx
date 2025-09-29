@@ -29,7 +29,7 @@ export default function StatusMulti({ value, onChange }) {
 
       {open && (
         <div className="msel__menu">
-          {["default", "declined"].map((tag) => (
+          {["accepted", "declined"].map((tag) => (
             <label key={tag} className="msel__row">
               <input
                 type="checkbox"

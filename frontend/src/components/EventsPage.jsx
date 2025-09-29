@@ -96,7 +96,7 @@ export default function EventsPage() {
     [user]
   );
 
-  const isDefaultStatus = (g) => g !== "declined";
+  const isAcceptedStatus = (g) => g !== "declined";
 
   const filteredEvents = useMemo(() => {
     return allEvents.filter((ev) => {
@@ -115,8 +115,8 @@ export default function EventsPage() {
       }
 
       if (filters.statuses.length) {
-        const tag = isDefaultStatus(getMyStatus(ev))
-          ? "default"
+        const tag = isAcceptedStatus(getMyStatus(ev))
+          ? "accepted"
           : "declined";
         if (!filters.statuses.includes(tag)) return false;
       }
@@ -337,7 +337,6 @@ export default function EventsPage() {
                     <th>{t('events.end')}</th>
                     <th>{t('calendar.tutor')}</th>
                     <th>{t('calendar.attendee')}</th>
-                    <th>{t('calendar.status')}</th>
                     <th>{t('events.cantAttend')}</th>
                   </tr>
                 </thead>
@@ -366,23 +365,26 @@ export default function EventsPage() {
                     const cancelReason = ev.extendedProperties?.private?.cancel_reason || "";
                     const cancelledBy = ev.extendedProperties?.private?.cancelled_by || "";
 
+                    // Set row background color based on status
+                    const getRowStyle = () => {
+                      const baseStyle = { cursor: 'pointer' };
+                      if (cancelledByOther) {
+                        return { ...baseStyle, backgroundColor: '#f8d7da' }; // Light red for cancelled by other
+                      } else if (isDeclined) {
+                        return { ...baseStyle, backgroundColor: '#ffebee' }; // Light red for declined
+                      } else {
+                        return { ...baseStyle, backgroundColor: '#e8f5e8' }; // Light green for accepted
+                      }
+                    };
+
                     return (
-                      <tr key={ev.id} style={{ cursor: 'pointer' }}>
+                      <tr key={ev.id} style={getRowStyle()}>
                         <td onClick={() => openDetailsModal(ev)}>{ev.summary || t('events.noTitle')}</td>
                         <td onClick={() => openDetailsModal(ev)}>{s.toLocaleDateString()}</td>
                         <td onClick={() => openDetailsModal(ev)}>{s.toLocaleTimeString()}</td>
                         <td onClick={() => openDetailsModal(ev)}>{e.toLocaleTimeString()}</td>
                         <td onClick={() => openDetailsModal(ev)}>{creator}</td>
                         <td onClick={() => openDetailsModal(ev)}>{attendeeName}</td>
-                        <td onClick={() => openDetailsModal(ev)} style={{ textAlign: "center" }}>
-                          {cancelledByOther ? (
-                            <span style={{color: '#dc3545', fontWeight: 'bold'}}>
-                              ❌ Cancelled by {cancelledBy}
-                            </span>
-                          ) : (
-                            statusDisplay
-                          )}
-                        </td>
                         <td>
                           {cancelledByOther ? (
                             <span style={{

@@ -392,40 +392,133 @@ export default function Home() {
               generatedNotifications.push({
                 id: 'reports-due',
                 type: 'report_due',
-                title: 'Reports Due',
+                title: 'Monthly Reports Due',
                 message: `You have ${tutorMonthlyReports.length} monthly report${tutorMonthlyReports.length > 1 ? 's' : ''} due`,
                 created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
                 read: false,
                 icon: '📝'
               });
             }
-            
+
+            // Check for upcoming sessions today
+            if (events && events.length > 0) {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(today.getDate() + 1);
+
+              const todaysSessions = events.filter(ev => {
+                const eventDate = new Date(ev.start?.dateTime || ev.start?.date);
+                return eventDate >= today && eventDate < tomorrow;
+              });
+
+              if (todaysSessions.length > 0) {
+                generatedNotifications.push({
+                  id: 'sessions-today',
+                  type: 'upcoming_session',
+                  title: 'Sessions Today',
+                  message: `You have ${todaysSessions.length} tutoring session${todaysSessions.length > 1 ? 's' : ''} scheduled for today`,
+                  created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                  read: false,
+                  icon: '📅'
+                });
+              }
+            }
+
+            // Check for recent parent requests
+            if (recentParentRequests && recentParentRequests.length > 0) {
+              const pendingRequests = recentParentRequests.filter(req => req.is_accepted === 'Pending' || !req.is_accepted);
+              if (pendingRequests.length > 0) {
+                generatedNotifications.push({
+                  id: 'pending-requests',
+                  type: 'pending_request',
+                  title: 'Pending Parent Requests',
+                  message: `${pendingRequests.length} parent request${pendingRequests.length > 1 ? 's' : ''} waiting for your response`,
+                  created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+                  read: false,
+                  icon: '👨‍👩‍👧‍👦'
+                });
+              }
+
+              // Check for recently accepted requests
+              const acceptedRequests = recentParentRequests.filter(req => req.is_accepted === 'Accepted');
+              if (acceptedRequests.length > 0) {
+                const latestAccepted = acceptedRequests[0];
+                generatedNotifications.push({
+                  id: `accepted-${latestAccepted.id}`,
+                  type: 'request_accepted',
+                  title: 'Request Accepted',
+                  message: `Your acceptance of a ${latestAccepted.subject || 'tutoring'} request has been confirmed`,
+                  created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+                  read: true,
+                  icon: '✅'
+                });
+              }
+            }
+
             // Check for new students
             if (tutorStudents && tutorStudents.length > 0) {
               const recentStudent = tutorStudents[0];
               generatedNotifications.push({
                 id: `student-${recentStudent.id}`,
                 type: 'new_student',
-                title: 'Student Assignment',
+                title: 'New Student Assignment',
                 message: `New student ${recentStudent.student_firstName || 'assigned'} ${recentStudent.student_lastName || ''}`,
-                created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+                created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
                 read: true,
                 icon: '👨‍🎓'
               });
             }
-            
+
             // Check for recent hours logged
-            if (hoursData && hoursData.length > 0) {
-              const recentHour = hoursData[0];
+            if (hours && hours.length > 0) {
+              const recentHour = hours[0];
               generatedNotifications.push({
                 id: `hour-${recentHour.id}`,
                 type: 'session_complete',
-                title: 'Session Complete',
-                message: `Session with ${recentHour.student_firstName || 'student'} completed and logged`,
+                title: 'Session Logged',
+                message: `Session with ${recentHour.student_firstName || 'student'} logged successfully`,
                 created_at: recentHour.created_at || new Date().toISOString(),
                 read: true,
                 icon: '✅'
               });
+            }
+
+            // Check for payment transfers
+            if (paymentTransfers && paymentTransfers.length > 0) {
+              const recentTransfer = paymentTransfers[0];
+              if (recentTransfer.status === 'completed') {
+                generatedNotifications.push({
+                  id: `payment-${recentTransfer.id}`,
+                  type: 'payment_received',
+                  title: 'Payment Received',
+                  message: `Payment of $${((recentTransfer.amount || 0) / 100).toFixed(2)} has been transferred to your account`,
+                  created_at: new Date(recentTransfer.created_at || Date.now()).toISOString(),
+                  read: false,
+                  icon: '💰'
+                });
+              }
+            }
+
+            // Check for session changes/cancellations
+            if (events && events.length > 0) {
+              const cancelledSessions = events.filter(ev =>
+                ev.extendedProperties?.private?.cant_attend === "true" ||
+                ev.extendedProperties?.private?.cancelled_by
+              );
+
+              if (cancelledSessions.length > 0) {
+                const latestCancellation = cancelledSessions[0];
+                generatedNotifications.push({
+                  id: `cancelled-${latestCancellation.id}`,
+                  type: 'session_cancelled',
+                  title: 'Session Cancelled',
+                  message: `A tutoring session has been cancelled: ${latestCancellation.summary || 'Untitled Session'}`,
+                  created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+                  read: false,
+                  icon: '❌'
+                });
+              }
             }
           } else if (user.roles === 'student') {
             // Check for completed sessions
@@ -961,13 +1054,39 @@ export default function Home() {
                     // ev already contains the original event data, no need to find it
                     // Get organizer info - show organizer email
                     const creator = ev?.organizer?.email || "Unknown";
-                    
+
                     // Get attendee info - show attendee email
                     const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
                     const attendeeName = attendee?.email || "-";
-                    
+
+                    // Get user's status for this event
+                    const getMyStatus = (event) => {
+                      const me = user?.email?.toLowerCase();
+                      if (!me) return "needsAction";
+                      const att = (event.attendees || []).find(
+                        (a) => a.email?.toLowerCase() === me
+                      );
+                      return att?.responseStatus || "needsAction";
+                    };
+
+                    const myStatus = getMyStatus(ev);
+                    const isDeclined = myStatus === 'declined';
+                    const cancelledByOther = ev.extendedProperties?.private?.cancelled_by &&
+                                           ev.extendedProperties.private.cancelled_by.toLowerCase() !== user?.email?.toLowerCase();
+
+                    // Set row background color based on status
+                    const getRowStyle = () => {
+                      if (cancelledByOther) {
+                        return { backgroundColor: '#f8d7da' }; // Light red for cancelled by other
+                      } else if (isDeclined) {
+                        return { backgroundColor: '#ffebee' }; // Light red for declined
+                      } else {
+                        return { backgroundColor: '#e8f5e8' }; // Light green for accepted
+                      }
+                    };
+
                     return (
-                      <tr key={ev.id}>
+                      <tr key={ev.id} style={getRowStyle()}>
                         <td>{ev.title}</td>
                         <td>{creator}</td>
                         <td>{attendeeName}</td>
@@ -1144,15 +1263,17 @@ export default function Home() {
                       {t('home.documentsUploaded', { count: tutorDocuments.length })}
                     </div>
                     {tutorDocuments.map((doc, index) => (
-                      <div 
-                        key={doc.id || index} 
-                        style={{ 
-                          backgroundColor: "#f8f9fa", // Light gray for documents
-                          border: "1px solid #dee2e6",
-                          borderRadius: "6px",
-                          padding: "8px 12px",
+                      <div
+                        key={doc.id || index}
+                        style={{
+                          backgroundColor: "#e3f2fd", // Light blue background
+                          border: "1px solid #90caf9",
+                          borderRadius: "8px",
+                          padding: "12px 16px", // Increased padding
                           margin: "8px 0",
                           fontSize: "0.85rem",
+                          minWidth: "200px", // Added minimum width
+                          width: "100%", // Full width of container
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1607,13 +1728,17 @@ export default function Home() {
                       switch (type) {
                         case 'payment_due':
                         case 'report_due':
+                        case 'pending_request':
+                        case 'upcoming_session':
                           return {
                             ...baseStyle,
                             backgroundColor: "#fff3cd",
                             border: "1px solid #ffeaa7"
                           };
                         case 'payment_success':
+                        case 'payment_received':
                         case 'session_complete':
+                        case 'request_accepted':
                           return {
                             ...baseStyle,
                             backgroundColor: "#d4edda",
@@ -1626,6 +1751,12 @@ export default function Home() {
                             ...baseStyle,
                             backgroundColor: "#d1ecf1",
                             border: "1px solid #bee5eb"
+                          };
+                        case 'session_cancelled':
+                          return {
+                            ...baseStyle,
+                            backgroundColor: "#ffebee",
+                            border: "1px solid #ffcdd2"
                           };
                         case 'system':
                         default:
@@ -1762,7 +1893,7 @@ export default function Home() {
                         </span>
                       </div>
                       <div style={{ fontSize: "0.7rem", color: "#666", marginBottom: "0.15rem" }}>
-                        <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
+                        <strong>City:</strong> {request.city || 'N/A'}
                       </div>
                       <div style={{ fontSize: "0.7rem", color: "#666", marginBottom: "0.15rem" }}>
                         <strong>Grade:</strong> {request.grade || 'N/A'} | <strong>Service:</strong> {request.service || 'N/A'}
