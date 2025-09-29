@@ -75,22 +75,24 @@ const LogHours = memo(() => {
         return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
     }, []);
 
-    // Helper function to get current week date range (Sunday to Saturday)
+    // Helper function to get current week date range (Monday to Sunday)
     const getCurrentWeekRange = useCallback(() => {
         const today = new Date();
         const startOfWeek = new Date(today);
-        // Get Sunday as start of week (getDay() returns 0=Sunday, 1=Monday, etc.)
+        // Get Monday as start of week (getDay() returns 0=Sunday, 1=Monday, etc.)
         const dayOfWeek = today.getDay();
-        startOfWeek.setDate(today.getDate() - dayOfWeek); // Sunday = 0 days back
-        
+        // Convert Sunday (0) to 7 for easier calculation, then subtract days to get to Monday
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(today.getDate() - daysFromMonday); // Monday = start of week
+
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
-        
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Sunday)
+
         // Debug logging
         console.log(`Today: ${today.toDateString()}, Day of week: ${dayOfWeek}`);
-        console.log(`Start of week (Sunday): ${startOfWeek.toDateString()}`);
-        console.log(`End of week (Saturday): ${endOfWeek.toDateString()}`);
-        
+        console.log(`Start of week (Monday): ${startOfWeek.toDateString()}`);
+        console.log(`End of week (Sunday): ${endOfWeek.toDateString()}`);
+
         return {
             min: startOfWeek.toISOString().split('T')[0], // Format: YYYY-MM-DD
             max: endOfWeek.toISOString().split('T')[0]    // Format: YYYY-MM-DD
@@ -140,16 +142,17 @@ const LogHours = memo(() => {
             return t('logHours.futureDate');
         }
 
-        // Validate date is within current week (Sunday to Saturday)
+        // Validate date is within current week (Monday to Sunday)
         const currentDate = new Date();
         const startOfWeek = new Date(currentDate);
-        // Get Sunday as start of week
+        // Get Monday as start of week
         const dayOfWeek = currentDate.getDay();
-        startOfWeek.setDate(currentDate.getDate() - dayOfWeek); // Sunday = 0 days back
+        const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(currentDate.getDate() - daysFromMonday); // Monday = start of week
         startOfWeek.setHours(0, 0, 0, 0);
-        
+
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Sunday)
         endOfWeek.setHours(23, 59, 59, 999);
 
         if (selectedDate < startOfWeek || selectedDate > endOfWeek) {

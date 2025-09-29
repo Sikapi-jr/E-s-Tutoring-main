@@ -302,17 +302,17 @@ const ParentDashboard = () => {
             {filteredRequests.map((request) => (
               <li key={request.id} className="req-box" style={{ position: 'relative' }}>
                 <div
-                  onClick={() => navigate(`/parent-request/${request.id}`)}
+                  onClick={user?.is_superuser ? () => navigate(`/parent-request/${request.id}`) : undefined}
                   style={{
-                    cursor: 'pointer',
+                    cursor: user?.is_superuser ? 'pointer' : 'default',
                     padding: '0.5rem',
                     margin: '-0.5rem',
                     borderRadius: '8px',
                     transition: 'background-color 0.2s'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f9fa'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                  title={t('dashboard.clickToViewDetails', 'Click to view full details')}
+                  onMouseEnter={user?.is_superuser ? (e) => e.target.style.backgroundColor = '#f8f9fa' : undefined}
+                  onMouseLeave={user?.is_superuser ? (e) => e.target.style.backgroundColor = 'transparent' : undefined}
+                  title={user?.is_superuser ? t('dashboard.clickToViewDetails', 'Click to view full details') : undefined}
                 >
                   <strong>{t('dashboard.subject')}:</strong> {request.subject} <br />
                   <strong>{t('requests.gradeLevel')}:</strong> {request.grade} <br />
@@ -334,13 +334,15 @@ const ParentDashboard = () => {
                       ? t('dashboard.cancel')
                       : t('dashboard.reply')}
                   </button>
-                  <button
-                    className="reply-btn"
-                    onClick={() => navigate(`/parent-request/${request.id}`)}
-                    style={{ backgroundColor: '#192A88' }}
-                  >
-                    {t('dashboard.viewDetails', 'View Details')}
-                  </button>
+                  {user?.is_superuser && (
+                    <button
+                      className="reply-btn"
+                      onClick={() => navigate(`/parent-request/${request.id}`)}
+                      style={{ backgroundColor: '#192A88' }}
+                    >
+                      {t('dashboard.viewDetails', 'View Details')}
+                    </button>
+                  )}
                 </div>
 
                 {selectedRequestID === request.id && showReplyBox && (

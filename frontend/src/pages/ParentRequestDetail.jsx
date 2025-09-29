@@ -29,13 +29,30 @@ const ParentRequestDetail = () => {
       const allRequests = response.data || [];
       const foundRequest = allRequests.find(req => req.id.toString() === requestId);
 
+      console.log('Found request:', foundRequest);
+      console.log('User:', user);
+      console.log('Request parent:', foundRequest?.parent);
+      console.log('User account_id:', user?.account_id);
+      console.log('User is_superuser:', user?.is_superuser);
+
       if (!foundRequest) {
         setError(t('dashboard.requestNotFound', 'Request not found'));
         return;
       }
 
       // Check if this request belongs to the current user or if user is a superuser
-      if (foundRequest.parent !== user?.account_id && !user?.is_superuser) {
+      // Convert both to strings for comparison to handle type mismatches
+      const requestParent = foundRequest.parent?.toString();
+      const userAccountId = user?.account_id?.toString();
+      const isOwner = requestParent === userAccountId;
+      const isSuperuser = user?.is_superuser === true || user?.is_superuser === 1;
+
+      console.log('Is owner:', isOwner);
+      console.log('Is superuser:', isSuperuser);
+      console.log('Access granted:', isOwner || isSuperuser);
+
+      if (!isOwner && !isSuperuser) {
+        console.log('Access denied - not owner and not superuser');
         setError(t('dashboard.accessDenied', 'Access denied'));
         return;
       }
