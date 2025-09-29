@@ -401,7 +401,11 @@
     "connectFailed": "Failed to connect to Google Calendar",
     "scheduledSessions": "Planned Sessions",
     "addSession": "Add Session",
-    "noScheduledSessions": "No planned sessions found."
+    "noScheduledSessions": "No planned sessions found.",
+    "for6Weeks": "for 6 weeks",
+    "for6Sessions": "for 6 sessions",
+    "weeklyHelp": "Will create 6 weekly sessions",
+    "biweeklyHelp": "Will create 6 sessions every 2 weeks (12 weeks total)"
   },
   "requests": {
     "requestTutor": "Request a Tutor",

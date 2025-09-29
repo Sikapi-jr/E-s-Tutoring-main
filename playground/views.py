@@ -515,9 +515,9 @@ def create_event(request):
     recurrence = data.get("recurrence")
     recurrence_rule = None
     if recurrence == "weekly":
-        recurrence_rule = "RRULE:FREQ=WEEKLY"
+        recurrence_rule = "RRULE:FREQ=WEEKLY;COUNT=6"  # 6 weeks only
     elif recurrence == "biweekly":
-        recurrence_rule = "RRULE:FREQ=WEEKLY;INTERVAL=2"
+        recurrence_rule = "RRULE:FREQ=WEEKLY;INTERVAL=2;COUNT=6"  # 6 occurrences, every 2 weeks (12 weeks total)
 
     event = {
         "summary": f"EGS TUTORING - {data['subject']}",

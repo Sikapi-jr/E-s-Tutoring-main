@@ -384,7 +384,11 @@
     "connectFailed": "Échec de la connexion à Google Agenda",
     "scheduledSessions": "Sessions planifiées",
     "addSession": "Ajouter une session",
-    "noScheduledSessions": "Aucune session planifiée trouvée."
+    "noScheduledSessions": "Aucune session planifiée trouvée.",
+    "for6Weeks": "pour 6 semaines",
+    "for6Sessions": "pour 6 sessions",
+    "weeklyHelp": "Créera 6 sessions hebdomadaires",
+    "biweeklyHelp": "Créera 6 sessions toutes les 2 semaines (12 semaines au total)"
   },
   "requests": {
     "requestTutor": "Demander un tuteur",

@@ -333,9 +333,18 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                 onChange={handleChange}
               >
                 <option value="none">{t('calendar.oneTime')}</option>
-                <option value="weekly">{t('calendar.weekly')}</option>
-                <option value="biweekly">{t('calendar.every2Weeks')}</option>
+                <option value="weekly">{t('calendar.weekly')} ({t('calendar.for6Weeks', 'for 6 weeks')})</option>
+                <option value="biweekly">{t('calendar.every2Weeks')} ({t('calendar.for6Sessions', 'for 6 sessions')})</option>
               </select>
+
+              {formData.recurrence !== 'none' && (
+                <div className="form-help" style={{marginTop: '0.5rem', fontSize: '0.85rem', color: '#666'}}>
+                  {formData.recurrence === 'weekly'
+                    ? t('calendar.weeklyHelp', 'Will create 6 weekly sessions')
+                    : t('calendar.biweeklyHelp', 'Will create 6 sessions every 2 weeks (12 weeks total)')
+                  }
+                </div>
+              )}
 
             </form>
           )}
