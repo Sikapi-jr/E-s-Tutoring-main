@@ -186,71 +186,7 @@ export default function Settings() {
 
   return (
     <div className="settings-wrapper">
-      <h1 className="settings-title">{t('settings.title')}</h1>
-
-      {/* ===== Status Information (Top Priority) ===== */}
-      <div className="status-section">
-        {/* ===== Google Calendar Status ===== */}
-        {user.roles !== "student" && (
-          <section className="google-status-box">
-            <h3>{t('calendar.googleCalendar')}</h3>
-            {!isConnected ? (
-              <>
-                <p>{t('calendar.notLinked')}</p>
-                <button className="form-button" onClick={handleGoogleConnect}>
-                  {t('calendar.connectGoogleAccount')}
-                </button>
-              </>
-            ) : (
-              <p>{t('calendar.connected')}</p>
-            )}
-          </section>
-        )}
-
-        {/* ===== Stripe Account Status (Tutors Only) ===== */}
-        {user.roles === "tutor" && (
-          <section className="stripe-status-section">
-            <h3>{t('settings.paymentAccount')}</h3>
-            {!user.stripe_account_id ? (
-              <div style={{
-                backgroundColor: "#fff3cd",
-                border: "1px solid #ffeaa7",
-                borderRadius: "6px",
-                padding: "1rem",
-                marginBottom: "1rem"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <span style={{ fontSize: "1.2rem" }}>💳</span>
-                  <span style={{ fontWeight: "bold", color: "#856404" }}>{t('settings.stripeNotSetup')}</span>
-                </div>
-                <p style={{ fontSize: "0.9rem", color: "#856404", margin: "0 0 1rem 0" }}>
-                  {t('settings.stripeSetupRequired')}
-                </p>
-                <button
-                  onClick={() => alert(t('settings.checkEmailStripe'))}
-                  style={{
-                    backgroundColor: "#192A88",
-                    color: "white",
-                    border: "none",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    fontWeight: "bold"
-                  }}
-                >
-                  {t('settings.setupStripeAccount')}
-                </button>
-              </div>
-            ) : (
-              <div style={{ fontSize: "0.9rem", color: "#28a745", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span>✅</span>
-                <span>{t('settings.stripeAccountConnected')}</span>
-              </div>
-            )}
-          </section>
-        )}
-      </div>
+      <h1 className="settings-title">Settings</h1>
 
       {/* ===== profile ===== */}
       <section className="profile-card">
@@ -327,13 +263,72 @@ export default function Settings() {
           </div>
         )}
 
+        {/* ===== Stripe Account Status (Tutors Only) ===== */}
+        {user.roles === "tutor" && (
+          <div className="stripe-status-display">
+            <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>{t('settings.paymentAccount')}</h4>
+            {!user.stripe_account_id ? (
+              <div style={{ 
+                backgroundColor: "#fff3cd", 
+                border: "1px solid #ffeaa7", 
+                borderRadius: "6px", 
+                padding: "1rem", 
+                marginBottom: "1rem" 
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>💳</span>
+                  <span style={{ fontWeight: "bold", color: "#856404" }}>{t('settings.stripeNotSetup')}</span>
+                </div>
+                <p style={{ fontSize: "0.9rem", color: "#856404", margin: "0 0 1rem 0" }}>
+                  {t('settings.stripeSetupRequired')}
+                </p>
+                <button
+                  onClick={() => alert(t('settings.checkEmailStripe'))}
+                  style={{
+                    backgroundColor: "#192A88",
+                    color: "white",
+                    border: "none",
+                    padding: "0.5rem 1rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {t('settings.setupStripeAccount')}
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontSize: "0.9rem", color: "#28a745", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span>✅</span>
+                <span>{t('settings.stripeAccountConnected')}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <button className="edit-btn" onClick={() => setShowEdit(true)}>
-          {t('common.edit')} {t('settings.profile')}
+          EDIT PROFILE
         </button>
       </section>
 
 
+      {/* ===== Google Calendar Status ===== */}
+      {user.roles !== "student" && (
+        <section className="google-status-box">
+          <h3>Google Account</h3>
+          {!isConnected ? (
+            <>
+              <p>🔌 You haven't linked your Google Calendar.</p>
+              <button className="form-button" onClick={handleGoogleConnect}>
+                Connect Google Account
+              </button>
+            </>
+          ) : (
+            <p>✅ Google Calendar is connected!</p>
+          )}
+        </section>
+      )}
 
       {/* ===== Password Reset ===== */}
       <section className="password-reset-section">
@@ -396,15 +391,15 @@ export default function Settings() {
       {user.roles === "parent" && (
         <>
           <div className="children-header">
-            <h3>{t('navigation.students')}</h3>
+            <h3>CHILDREN</h3>
             <Link to="/register?role=student" className="add-child-btn">
-              + {t('students.registerStudent')}
+              + Add Child
             </Link>
           </div>
 
           {children.length === 0 ? (
             <section className="children-empty-card">
-              <p>{t('students.noStudents')}</p>
+              <p>No Children accounts made</p>
             </section>
           ) : (
             <ul className="children-list">
@@ -421,18 +416,18 @@ export default function Settings() {
           )}
 
           <div className="referrals-header">
-            <h3>{t('referrals.title')}</h3>
+            <h3>MY REFERRALS</h3>
             <button
               className="add-referral-btn"
               onClick={() => setShowRefModal(true)}
             >
-              + {t('referrals.referFriend')}
+              + Add Referral
             </button>
           </div>
 
           <section className="referral-card" style={{ maxHeight: "200px", overflowY: "auto" }}>
             {referrals.length === 0 ? (
-              <p>{t('referrals.pendingReferrals')}: 0</p>
+              <p>No referrals yet.</p>
             ) : (
               <ul className="referral-list">
                 {referrals.map((r) => (
@@ -460,28 +455,23 @@ export default function Settings() {
       {showEdit && (
         <div className="modal-backdrop" onClick={() => setShowEdit(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{t('common.edit')} {t('settings.profile')}</h2>
-            {[
-              { field: "firstName", label: t('common.firstName') },
-              { field: "lastName", label: t('common.lastName') },
-              { field: "address", label: t('common.address') },
-              { field: "city", label: t('common.city') }
-            ].map(({ field, label }) => (
-              <label key={field}>
-                {label}
+            <h2>Edit Profile</h2>
+            {["firstName", "lastName", "address", "city"].map((f) => (
+              <label key={f}>
+                {f.replace(/^\w/, (c) => c.toUpperCase())}
                 <input
                   type="text"
-                  name={field}
-                  value={editForm[field]}
+                  name={f}
+                  value={editForm[f]}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, [field]: e.target.value })
+                    setEditForm({ ...editForm, [f]: e.target.value })
                   }
                 />
               </label>
             ))}
 
             <label>
-              {t('settings.profilePicture')}
+              Profile Picture
               <input
                 type="file"
                 accept="image/*"
@@ -491,10 +481,10 @@ export default function Settings() {
 
             <div className="modal-actions">
               <button className="cancel" onClick={() => setShowEdit(false)}>
-                {t('common.cancel')}
+                Cancel
               </button>
               <button className="save" onClick={saveProfile}>
-                {t('common.save')}
+                Save
               </button>
             </div>
           </div>
@@ -505,9 +495,9 @@ export default function Settings() {
       {showRefModal && (
         <div className="modal-backdrop" onClick={() => setShowRefModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{t('referrals.sendInvitation')}</h2>
+            <h2>Send Referral</h2>
             <label>
-              {t('referrals.friendEmail')}
+              Receiver Email
               <input
                 type="email"
                 value={refEmail}
@@ -516,10 +506,10 @@ export default function Settings() {
             </label>
             <div className="modal-actions">
               <button className="cancel" onClick={() => setShowRefModal(false)}>
-                {t('common.cancel')}
+                Cancel
               </button>
               <button className="save" onClick={createReferral}>
-                {t('referrals.sendInvitation')}
+                Send
               </button>
             </div>
           </div>
