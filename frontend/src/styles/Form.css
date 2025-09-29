@@ -42,6 +42,34 @@ html, body {
     background-color: #0f1c5e; /* Darker shade on hover */
 }
 
+/* Ensure consistent button dimensions across all forms */
+.form-container .form-button,
+.form-container form .form-button,
+button.form-button {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0.8rem 1rem !important;
+    margin: 10px 0 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    border-radius: 4px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease-in-out !important;
+}
+
 body,
 h1, h2, h3 {
   font-family: "Google Sans Text", "Product Sans", sans-serif;

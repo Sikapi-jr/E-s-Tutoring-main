@@ -187,6 +187,29 @@ button.form-button {
   max-height: 48px !important;
 }
 
+/* Extra specificity for login form buttons to ensure absolute consistency */
+.form-container form .form-button,
+.form-container > .form-button {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 0.8rem 1rem !important;
+  margin: 1rem 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 body,
 h1, h2, h3 {
   font-family: "Google Sans Text", "Product Sans", sans-serif;
