@@ -207,7 +207,10 @@
     margin-left: -5px !important;
   }
 
-  .nav__burger { display: flex; }
+  .nav__burger {
+    display: flex;
+    margin-right: 1.5rem; /* Add right margin to create gap from language/profile */
+  }
 
   .nav__links {
     margin-left: 0;
@@ -246,7 +249,14 @@
     color: #E8E496;
   }
 
-  .nav__right { margin: 0 .5rem 0 auto; }
+  .nav__right {
+    margin: 0 1rem 0 auto; /* Increased right margin to push further right */
+  }
+
+  /* Push language selector further right on mobile */
+  .nav__language {
+    margin-right: 1rem; /* Increased from 0.5rem to 1rem for more spacing */
+  }
   
   /* Profile dropdown positioned below navbar on mobile */
   .profile__menu {

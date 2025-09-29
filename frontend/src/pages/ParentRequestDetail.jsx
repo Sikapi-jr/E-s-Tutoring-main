@@ -34,8 +34,8 @@ const ParentRequestDetail = () => {
         return;
       }
 
-      // Check if this request belongs to the current user
-      if (foundRequest.parent !== user?.account_id) {
+      // Check if this request belongs to the current user or if user is a superuser
+      if (foundRequest.parent !== user?.account_id && !user?.is_superuser) {
         setError(t('dashboard.accessDenied', 'Access denied'));
         return;
       }

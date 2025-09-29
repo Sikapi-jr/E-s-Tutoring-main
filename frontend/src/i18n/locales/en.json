@@ -283,7 +283,18 @@
     "deleteWarning": "This action cannot be undone. All replies to this request will also be deleted.",
     "hasAccepted": "has accepted!",
     "noRequestsMade": "You haven't made any requests yet.",
-    "city": "City"
+    "city": "City",
+    "viewDetails": "View Details",
+    "accessDenied": "Access denied",
+    "requestNotFound": "Request not found",
+    "errorLoading": "Error loading request",
+    "loadingRequest": "Loading Request...",
+    "requestDetail": "Request Details",
+    "replySubmitted": "Reply submitted successfully!",
+    "errorSubmitting": "Error submitting reply",
+    "yourReply": "Your Reply",
+    "typeReply": "Type your reply here...",
+    "submitReply": "Submit Reply"
   },
   "logHours": {
     "title": "Log Tutoring Hours",
@@ -542,7 +553,16 @@
     "cantAttendBtn": "Can't Attend",
     "startDateFilter": "Start Date",
     "endDateFilter": "End Date",
-    "noEventsMatchFilters": "No events match your filters."
+    "noEventsMatchFilters": "No events match your filters.",
+    "canAttend": "Can Attend",
+    "sessionDetails": "Session Details",
+    "cancelSession": "Cancel Session",
+    "cancelConfirmation": "Are you sure you want to cancel this session?",
+    "cancelReason": "Cancellation Reason",
+    "cancelReasonRequired": "Please provide a reason for cancellation",
+    "cancelReasonPlaceholder": "Please provide a brief explanation for cancelling this session...",
+    "confirmCancel": "Confirm Cancellation",
+    "cancelledByOther": "Read Only"
   },
   "errors": {
     "networkError": "Network error. Please check your connection.",

@@ -758,6 +758,7 @@ def list_egs_tutoring_events_unfiltered(request):
 class UpdateEventRsvpView(APIView):
     """
     GET /api/google/update-rsvp/?event_id=xyz&status=disputed
+    POST /api/google/update-rsvp/ with JSON body
     Optional: ?calendar_id=primary  (defaults to 'primary')
     """
     permission_classes = [AllowAny]
@@ -825,7 +826,171 @@ class UpdateEventRsvpView(APIView):
             "event_id": updated.get("id"),
             "status_set": g_status
         }, status=status.HTTP_200_OK)
-    
+
+    def post(self, request):
+        """Handle POST requests with cancellation reasons and email notifications"""
+        event_id = request.data.get("event_id")
+        status_str = request.data.get("status", "").lower()
+        calendar_id = request.data.get("calendar_id", "primary")
+        user_id = request.data.get("user_id")
+        cancel_reason = request.data.get("cancel_reason", "")
+        send_emails = request.data.get("send_emails", False)
+
+        if not event_id or not status_str:
+            return Response({"detail": "event_id and status are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_str not in STATUS_MAP:
+            return Response({"detail": f"Unsupported status '{status_str}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Build the calendar service for this user
+        try:
+            user = User.objects.get(id=user_id)
+            service = self.build_service_for_user(user)
+        except Exception as e:
+            return Response({"detail": f"Auth error: {e}"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            event = service.events().get(calendarId=calendar_id, eventId=event_id).execute()
+        except googleapiclient.errors.HttpError as e:
+            return Response({"detail": f"Fetch failed: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update attendee RSVP for the current user
+        me = user.email.lower()
+        g_status = STATUS_MAP[status_str]
+
+        attendees = event.get("attendees", [])
+        found = False
+        for a in attendees:
+            if a.get("email", "").lower() == me:
+                a["responseStatus"] = g_status
+                found = True
+                break
+
+        if not found:
+            attendees.append({"email": me, "responseStatus": g_status})
+        event["attendees"] = attendees
+
+        # Store cancellation details in extendedProperties
+        if status_str == "cant_attend":
+            event.setdefault("extendedProperties", {}).setdefault("private", {})
+            event["extendedProperties"]["private"]["cant_attend"] = "true"
+            event["extendedProperties"]["private"]["cancelled_by"] = user.email
+            if cancel_reason:
+                event["extendedProperties"]["private"]["cancel_reason"] = cancel_reason
+            event["colorId"] = "11"  # red color for cancelled
+        elif status_str == "accepted":
+            # Clear cancellation data when re-accepting
+            if event.get("extendedProperties", {}).get("private"):
+                event["extendedProperties"]["private"].pop("cant_attend", None)
+                event["extendedProperties"]["private"].pop("cancelled_by", None)
+                event["extendedProperties"]["private"].pop("cancel_reason", None)
+            event.pop("colorId", None)  # remove color
+
+        # Patch event
+        try:
+            updated = service.events().patch(
+                calendarId=calendar_id,
+                eventId=event_id,
+                body=event,
+                sendUpdates="all"  # notify others
+            ).execute()
+        except googleapiclient.errors.HttpError as e:
+            return Response({"detail": f"Update failed: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Send email notifications if requested
+        if send_emails and status_str == "cant_attend":
+            self.send_cancellation_emails(user, event, cancel_reason, attendees)
+
+        return Response({
+            "detail": "RSVP updated",
+            "event_id": updated.get("id"),
+            "status_set": g_status
+        }, status=status.HTTP_200_OK)
+
+    def send_cancellation_emails(self, cancelling_user, event, cancel_reason, attendees):
+        """Send email notifications for cancellations"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+
+            event_title = event.get("summary", "Tutoring Session")
+            event_start = event.get("start", {}).get("dateTime", event.get("start", {}).get("date", ""))
+
+            # Format date nicely
+            if event_start:
+                try:
+                    if "T" in event_start:  # datetime format
+                        event_datetime = datetime.fromisoformat(event_start.replace('Z', '+00:00'))
+                        formatted_date = event_datetime.strftime("%B %d, %Y at %I:%M %p")
+                    else:  # date only format
+                        event_date = datetime.fromisoformat(event_start).date()
+                        formatted_date = event_date.strftime("%B %d, %Y")
+                except:
+                    formatted_date = event_start
+            else:
+                formatted_date = "Unknown date"
+
+            # Send confirmation email to cancelling user
+            confirmation_subject = f"Cancellation Confirmation - {event_title}"
+            confirmation_message = f"""
+Hello,
+
+You have successfully cancelled the following tutoring session:
+
+Session: {event_title}
+Date: {formatted_date}
+Reason: {cancel_reason}
+
+Both you and the other participant have been notified of this cancellation.
+
+Best regards,
+EGS Tutoring Team
+            """
+
+            send_mail(
+                confirmation_subject,
+                confirmation_message.strip(),
+                settings.DEFAULT_FROM_EMAIL,
+                [cancelling_user.email],
+                fail_silently=True,
+            )
+
+            # Send notification emails to other attendees
+            for attendee in attendees:
+                attendee_email = attendee.get("email", "").lower()
+                if attendee_email != cancelling_user.email.lower():
+                    # Determine role for better messaging
+                    canceller_role = "tutor" if cancelling_user.roles == "tutor" else "student"
+
+                    notification_subject = f"Session Cancelled - {event_title}"
+                    notification_message = f"""
+Hello,
+
+The {canceller_role} has cancelled the following tutoring session:
+
+Session: {event_title}
+Date: {formatted_date}
+Cancelled by: {cancelling_user.first_name} {cancelling_user.last_name} ({cancelling_user.email})
+Reason: {cancel_reason}
+
+Please contact the {canceller_role} if you need to reschedule or have any questions.
+
+Best regards,
+EGS Tutoring Team
+                    """
+
+                    send_mail(
+                        notification_subject,
+                        notification_message.strip(),
+                        settings.DEFAULT_FROM_EMAIL,
+                        [attendee_email],
+                        fail_silently=True,
+                    )
+
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"Error sending cancellation emails: {e}")
+
     def build_service_for_user(self, user):
     # Pull decrypted tokens from your user model
         creds = Credentials(

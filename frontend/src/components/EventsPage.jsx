@@ -41,6 +41,12 @@ export default function EventsPage() {
     end: "",
   });
 
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingEvent, setCancellingEvent] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+
   // Check Google Calendar connection
   useEffect(() => {
     if (!user || !token) return;
@@ -119,12 +125,27 @@ export default function EventsPage() {
     });
   }, [allEvents, filters, getMyStatus]);
 
-  const markCantAttend = async (id) => {
+  const toggleAttendanceStatus = async (id, currentStatus) => {
+    const event = allEvents.find(e => e.id === id);
+    if (!event) return;
+
+    if (currentStatus !== 'declined') {
+      // User wants to cancel - show cancel modal
+      setCancellingEvent(event);
+      setShowCancelModal(true);
+      return;
+    }
+
+    // User wants to re-attend
     try {
       const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
-      await api.get(`/api/google/update-rsvp/`, {
-        params: { event_id: id, status: "cant_attend", user_id: calendarUserId }
+
+      await api.post(`/api/google/update-rsvp/`, {
+        event_id: id,
+        status: 'accepted',
+        user_id: calendarUserId
       });
+
       setAllEvents((prev) =>
         prev.map((e) =>
           e.id === id
@@ -132,14 +153,16 @@ export default function EventsPage() {
                 ...e,
                 attendees: (e.attendees || []).map((a) =>
                   a.email?.toLowerCase() === user.email.toLowerCase()
-                    ? { ...a, responseStatus: "declined" }
+                    ? { ...a, responseStatus: 'accepted' }
                     : a
                 ),
                 extendedProperties: {
                   ...(e.extendedProperties || {}),
                   private: {
                     ...(e.extendedProperties?.private || {}),
-                    cant_attend: "true",
+                    cant_attend: "false",
+                    cancel_reason: "",
+                    cancelled_by: ""
                   },
                 },
               }
@@ -149,6 +172,65 @@ export default function EventsPage() {
     } catch {
       alert(t('errors.couldNotUpdateRSVP'));
     }
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!cancellingEvent || !cancelReason.trim()) {
+      alert(t('events.cancelReasonRequired', 'Please provide a reason for cancellation'));
+      return;
+    }
+
+    try {
+      const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
+
+      await api.post(`/api/google/update-rsvp/`, {
+        event_id: cancellingEvent.id,
+        status: 'cant_attend',
+        user_id: calendarUserId,
+        cancel_reason: cancelReason,
+        send_emails: true
+      });
+
+      setAllEvents((prev) =>
+        prev.map((e) =>
+          e.id === cancellingEvent.id
+            ? {
+                ...e,
+                attendees: (e.attendees || []).map((a) =>
+                  a.email?.toLowerCase() === user.email.toLowerCase()
+                    ? { ...a, responseStatus: 'declined' }
+                    : a
+                ),
+                extendedProperties: {
+                  ...(e.extendedProperties || {}),
+                  private: {
+                    ...(e.extendedProperties?.private || {}),
+                    cant_attend: "true",
+                    cancel_reason: cancelReason,
+                    cancelled_by: user.email
+                  },
+                },
+              }
+            : e
+        )
+      );
+
+      setShowCancelModal(false);
+      setCancellingEvent(null);
+      setCancelReason("");
+    } catch {
+      alert(t('errors.couldNotUpdateRSVP'));
+    }
+  };
+
+  const openDetailsModal = (event) => {
+    setSelectedEvent(event);
+    setShowDetailsModal(true);
+  };
+
+  const isEventCancelledByOther = (event) => {
+    const cancelledBy = event.extendedProperties?.private?.cancelled_by;
+    return cancelledBy && cancelledBy.toLowerCase() !== user.email.toLowerCase();
   };
 
   return (
@@ -250,11 +332,11 @@ export default function EventsPage() {
                 <thead>
                   <tr>
                     <th>{t('common.title')}</th>
-                    <th>{t('calendar.tutor')}</th>
-                    <th>{t('calendar.attendee')}</th>
                     <th>{t('common.date')}</th>
                     <th>{t('events.start')}</th>
                     <th>{t('events.end')}</th>
+                    <th>{t('calendar.tutor')}</th>
+                    <th>{t('calendar.attendee')}</th>
                     <th>{t('calendar.status')}</th>
                     <th>{t('events.cantAttend')}</th>
                   </tr>
@@ -263,36 +345,73 @@ export default function EventsPage() {
                   {filteredEvents.map((ev) => {
                     const s = new Date(ev.start?.dateTime || ev.start?.date);
                     const e = new Date(ev.end?.dateTime || ev.end?.date);
-                    
-                    // Get organizer info - show organizer email  
+
+                    // Get organizer info - show organizer email
                     const creator = ev?.organizer?.email || "Unknown";
-                    
+
                     // Get attendee info - show attendee email
                     const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
                     const attendeeName = attendee?.email || "-";
-                    
-                    // Determine status based on attendee response
-                    // Default to accepted for better UX - users can decline if needed
-                    const status = attendee?.responseStatus === 'declined' ? '❌' :      // Declined
-                                  attendee?.responseStatus === 'tentative' ? '⏳' :    // Maybe/Tentative
-                                  '✅';                                                 // Accepted (default)
-                    
+
+                    // Get current user's status
+                    const myStatus = getMyStatus(ev);
+                    const isDeclined = myStatus === 'declined';
+
+                    // Determine status display with colors
+                    const statusDisplay = isDeclined ?
+                      <span style={{color: '#dc3545', fontWeight: 'bold'}}>❌ Can't Attend</span> :
+                      <span style={{color: '#28a745', fontWeight: 'bold'}}>✅ Attending</span>;
+
+                    const cancelledByOther = isEventCancelledByOther(ev);
+                    const cancelReason = ev.extendedProperties?.private?.cancel_reason || "";
+                    const cancelledBy = ev.extendedProperties?.private?.cancelled_by || "";
+
                     return (
-                      <tr key={ev.id}>
-                        <td>{ev.summary || t('events.noTitle')}</td>
-                        <td>{creator}</td>
-                        <td>{attendeeName}</td>
-                        <td>{s.toLocaleDateString()}</td>
-                        <td>{s.toLocaleTimeString()}</td>
-                        <td>{e.toLocaleTimeString()}</td>
-                        <td style={{ fontSize: "1.2rem", textAlign: "center" }}>{status}</td>
+                      <tr key={ev.id} style={{ cursor: 'pointer' }}>
+                        <td onClick={() => openDetailsModal(ev)}>{ev.summary || t('events.noTitle')}</td>
+                        <td onClick={() => openDetailsModal(ev)}>{s.toLocaleDateString()}</td>
+                        <td onClick={() => openDetailsModal(ev)}>{s.toLocaleTimeString()}</td>
+                        <td onClick={() => openDetailsModal(ev)}>{e.toLocaleTimeString()}</td>
+                        <td onClick={() => openDetailsModal(ev)}>{creator}</td>
+                        <td onClick={() => openDetailsModal(ev)}>{attendeeName}</td>
+                        <td onClick={() => openDetailsModal(ev)} style={{ textAlign: "center" }}>
+                          {cancelledByOther ? (
+                            <span style={{color: '#dc3545', fontWeight: 'bold'}}>
+                              ❌ Cancelled by {cancelledBy}
+                            </span>
+                          ) : (
+                            statusDisplay
+                          )}
+                        </td>
                         <td>
-                          <button
-                            onClick={() => markCantAttend(ev.id)}
-                            className="cant-attend-btn"
-                          >
-                            {t('events.cantAttendBtn')}
-                          </button>
+                          {cancelledByOther ? (
+                            <span style={{
+                              color: '#6c757d',
+                              fontStyle: 'italic',
+                              fontSize: '12px'
+                            }}>
+                              {t('events.cancelledByOther', 'Read Only')}
+                            </span>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleAttendanceStatus(ev.id, myStatus);
+                              }}
+                              className={isDeclined ? "can-attend-btn" : "cant-attend-btn"}
+                              style={{
+                                backgroundColor: isDeclined ? '#28a745' : '#dc3545',
+                                color: 'white',
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              {isDeclined ? t('events.canAttend', 'Can Attend') : t('events.cantAttendBtn')}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -315,6 +434,151 @@ export default function EventsPage() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadEvents}
       />
+
+      {/* Session Details Modal */}
+      {showDetailsModal && selectedEvent && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('events.sessionDetails', 'Session Details')}</h2>
+              <button className="modal-close" onClick={() => setShowDetailsModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="session-detail-grid">
+                <div className="detail-row">
+                  <strong>{t('common.title')}:</strong>
+                  <span>{selectedEvent.summary || t('events.noTitle')}</span>
+                </div>
+                <div className="detail-row">
+                  <strong>{t('common.date')}:</strong>
+                  <span>{new Date(selectedEvent.start?.dateTime || selectedEvent.start?.date).toLocaleDateString()}</span>
+                </div>
+                <div className="detail-row">
+                  <strong>{t('common.time')}:</strong>
+                  <span>
+                    {new Date(selectedEvent.start?.dateTime || selectedEvent.start?.date).toLocaleTimeString()}
+                    {' - '}
+                    {new Date(selectedEvent.end?.dateTime || selectedEvent.end?.date).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <strong>{t('calendar.tutor')}:</strong>
+                  <span>{selectedEvent?.organizer?.email || 'Unknown'}</span>
+                </div>
+                <div className="detail-row">
+                  <strong>{t('calendar.attendee')}:</strong>
+                  <span>
+                    {selectedEvent?.attendees?.find(att => att.email !== selectedEvent?.organizer?.email)?.email || '-'}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <strong>{t('calendar.status')}:</strong>
+                  <span>
+                    {isEventCancelledByOther(selectedEvent) ? (
+                      <span style={{color: '#dc3545'}}>
+                        Cancelled by {selectedEvent.extendedProperties?.private?.cancelled_by}
+                      </span>
+                    ) : (
+                      getMyStatus(selectedEvent) === 'declined' ?
+                        <span style={{color: '#dc3545'}}>Can't Attend</span> :
+                        <span style={{color: '#28a745'}}>Attending</span>
+                    )}
+                  </span>
+                </div>
+                {selectedEvent.extendedProperties?.private?.cancel_reason && (
+                  <div className="detail-row">
+                    <strong>{t('events.cancelReason', 'Cancellation Reason')}:</strong>
+                    <span style={{fontStyle: 'italic', color: '#6c757d'}}>
+                      {selectedEvent.extendedProperties.private.cancel_reason}
+                    </span>
+                  </div>
+                )}
+                {selectedEvent.description && (
+                  <div className="detail-row">
+                    <strong>{t('common.description')}:</strong>
+                    <span>{selectedEvent.description}</span>
+                  </div>
+                )}
+                {selectedEvent.location && (
+                  <div className="detail-row">
+                    <strong>{t('calendar.location')}:</strong>
+                    <span>{selectedEvent.location}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Modal */}
+      {showCancelModal && cancellingEvent && (
+        <div className="modal-overlay" onClick={() => setShowCancelModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('events.cancelSession', 'Cancel Session')}</h2>
+              <button className="modal-close" onClick={() => setShowCancelModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{marginBottom: '1rem'}}>
+                {t('events.cancelConfirmation', 'Are you sure you want to cancel this session?')}
+              </p>
+              <div style={{marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px'}}>
+                <strong>{cancellingEvent.summary || t('events.noTitle')}</strong><br/>
+                {new Date(cancellingEvent.start?.dateTime || cancellingEvent.start?.date).toLocaleDateString()}
+                {' at '}
+                {new Date(cancellingEvent.start?.dateTime || cancellingEvent.start?.date).toLocaleTimeString()}
+              </div>
+              <div style={{marginBottom: '1rem'}}>
+                <label style={{display: 'block', marginBottom: '0.5rem', fontWeight: 'bold'}}>
+                  {t('events.cancelReason', 'Reason for cancellation')} *
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder={t('events.cancelReasonPlaceholder', 'Please explain why you need to cancel...')}
+                  style={{
+                    width: '100%',
+                    minHeight: '80px',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    resize: 'vertical'
+                  }}
+                  required
+                />
+              </div>
+              <div style={{display: 'flex', gap: '1rem', justifyContent: 'flex-end'}}>
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: '1px solid #ddd',
+                    backgroundColor: '#fff',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={handleCancelConfirm}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t('events.confirmCancel', 'Confirm Cancellation')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
