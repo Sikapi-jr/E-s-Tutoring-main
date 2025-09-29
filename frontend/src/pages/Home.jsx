@@ -1288,9 +1288,6 @@ export default function Home() {
                             </a>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ color: "#666", fontSize: "0.8rem" }}>
-                              {new Date(doc.uploaded_at).toLocaleDateString()}
-                            </span>
                             <button
                               onClick={() => handleDocumentDelete(doc.id, doc.file.split('/').pop())}
                               style={{

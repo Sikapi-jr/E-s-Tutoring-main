@@ -353,7 +353,12 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
         {/* Modal Actions - outside scrollable area */}
         {isConnected && (
           <div className="modal-actions">
-            <button type="button" className="form-button secondary" onClick={handleClose}>
+            <button
+              type="button"
+              className="form-button secondary"
+              onClick={handleClose}
+              style={{ minWidth: "150px", padding: "0.75rem 2rem" }}
+            >
               {t('common.cancel')}
             </button>
             <button
@@ -366,6 +371,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                   form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                 }
               }}
+              style={{ minWidth: "200px", padding: "0.75rem 2rem" }}
             >
               {t('calendar.scheduleTutoringSession')}
             </button>

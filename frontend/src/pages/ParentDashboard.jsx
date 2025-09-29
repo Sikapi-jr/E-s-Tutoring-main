@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
+import MultiSelectFilter from "../components/MultiSelectFilter";
 import "../styles/TutorDashboard.css";
 
 const ParentDashboard = () => {
@@ -32,11 +33,11 @@ const ParentDashboard = () => {
   const [error, setError] = useState("");
   const [selectedRequestID, setSelectedRequestID] = useState(null);
 
-  // Filters
-  const [filterSubject, setFilterSubject] = useState("");
-  const [filterGrade, setFilterGrade] = useState("");
-  const [filterService, setFilterService] = useState("");
-  const [filterCity, setFilterCity] = useState("");
+  // Filters - now using arrays for multi-select
+  const [filterSubject, setFilterSubject] = useState([]);
+  const [filterGrade, setFilterGrade] = useState([]);
+  const [filterService, setFilterService] = useState([]);
+  const [filterCity, setFilterCity] = useState([]);
   const [search, setSearch] = useState("");
 
   if (user.roles !== "tutor" && user.is_superuser === 0) {
@@ -137,12 +138,10 @@ const ParentDashboard = () => {
   const filteredRequests = useMemo(() => {
     const s = search.trim().toLowerCase();
     return (requests || []).filter((r) => {
-      const bySubject = filterSubject ? r.subject === filterSubject : true;
-      const byGrade = filterGrade
-        ? String(r.grade) === String(filterGrade)
-        : true;
-      const byService = filterService ? r.service === filterService : true;
-      const byCity = filterCity ? r.city === filterCity : true;
+      const bySubject = filterSubject.length === 0 || filterSubject.includes(r.subject);
+      const byGrade = filterGrade.length === 0 || filterGrade.includes(String(r.grade));
+      const byService = filterService.length === 0 || filterService.includes(r.service);
+      const byCity = filterCity.length === 0 || filterCity.includes(r.city);
       const bySearch = s
         ? (r.subject || "").toLowerCase().includes(s) ||
           (r.description || "").toLowerCase().includes(s)
@@ -152,10 +151,10 @@ const ParentDashboard = () => {
   }, [requests, filterSubject, filterGrade, filterService, filterCity, search]);
 
   const clearFilters = () => {
-    setFilterSubject("");
-    setFilterGrade("");
-    setFilterService("");
-    setFilterCity("");
+    setFilterSubject([]);
+    setFilterGrade([]);
+    setFilterService([]);
+    setFilterCity([]);
     setSearch("");
   };
 
@@ -217,61 +216,33 @@ const ParentDashboard = () => {
         {/* Filter Bar */}
         <div className="filter-bar">
           <div className="filter-row">
-            <select
-              className="filter-input"
+            <MultiSelectFilter
               value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
-              aria-label="Filter by subject"
-            >
-              <option value="">{t('dashboard.allSubjects')}</option>
-              {subjects.map((subj) => (
-                <option key={subj} value={subj}>
-                  {subj}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterSubject}
+              options={subjects}
+              placeholder={t('dashboard.allSubjects')}
+            />
 
-            <select
-              className="filter-input"
+            <MultiSelectFilter
               value={filterGrade}
-              onChange={(e) => setFilterGrade(e.target.value)}
-              aria-label="Filter by grade"
-            >
-              <option value="">{t('dashboard.allGrades')}</option>
-              {grades.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterGrade}
+              options={grades}
+              placeholder={t('dashboard.allGrades')}
+            />
 
-            <select
-              className="filter-input"
+            <MultiSelectFilter
               value={filterService}
-              onChange={(e) => setFilterService(e.target.value)}
-              aria-label="Filter by service"
-            >
-              <option value="">{t('dashboard.allServices')}</option>
-              {services.map((srv) => (
-                <option key={srv} value={srv}>
-                  {srv}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterService}
+              options={services}
+              placeholder={t('dashboard.allServices')}
+            />
 
-            <select
-              className="filter-input"
+            <MultiSelectFilter
               value={filterCity}
-              onChange={(e) => setFilterCity(e.target.value)}
-              aria-label="Filter by city"
-            >
-              <option value="">{t('dashboard.allCities')}</option>
-              {cities.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterCity}
+              options={cities}
+              placeholder={t('dashboard.allCities')}
+            />
 
             <input
               className="filter-search"

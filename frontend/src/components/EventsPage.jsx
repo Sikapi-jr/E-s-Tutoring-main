@@ -365,14 +365,15 @@ export default function EventsPage() {
                     const cancelReason = ev.extendedProperties?.private?.cancel_reason || "";
                     const cancelledBy = ev.extendedProperties?.private?.cancelled_by || "";
 
-                    // Set row background color based on status
+                    // Set row background color based on status - ensure every record is colored
                     const getRowStyle = () => {
                       const baseStyle = { cursor: 'pointer' };
                       if (cancelledByOther) {
                         return { ...baseStyle, backgroundColor: '#f8d7da' }; // Light red for cancelled by other
-                      } else if (isDeclined) {
+                      } else if (isDeclined || myStatus === 'declined') {
                         return { ...baseStyle, backgroundColor: '#ffebee' }; // Light red for declined
                       } else {
+                        // Default to green for accepted/attending or any other status
                         return { ...baseStyle, backgroundColor: '#e8f5e8' }; // Light green for accepted
                       }
                     };

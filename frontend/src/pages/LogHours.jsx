@@ -256,7 +256,8 @@ const LogHours = memo(() => {
 
     return (
         <div className="form-container" style={{ marginBottom: "2rem" }}>
-            <h1>{t('logHours.sessionTitle')}</h1>
+            <h1>Finished a session?</h1>
+            <h2 style={{ marginTop: "0.5rem", color: "#192A88" }}>Log your hours</h2>
             <form onSubmit={handleSubmit}>
                 <select
                     className="form-input"
