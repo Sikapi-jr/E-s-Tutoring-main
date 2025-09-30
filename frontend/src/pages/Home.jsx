@@ -1074,11 +1074,11 @@ export default function Home() {
                     const cancelledByOther = ev.extendedProperties?.private?.cancelled_by &&
                                            ev.extendedProperties.private.cancelled_by.toLowerCase() !== user?.email?.toLowerCase();
 
-                    // Determine if anyone has cancelled this session
+                    // Determine if anyone has cancelled this session - if so, it's completely read-only
                     const isAnybodyCancelled = cancelledByOther || isDeclined ||
                                               ev.extendedProperties?.private?.cant_attend === "true";
 
-                    // Set row background color - only green or red
+                    // Set row background color - red for cancelled, green for active
                     const getRowStyle = () => {
                       if (isAnybodyCancelled) {
                         return { backgroundColor: '#ffebee' }; // Red for any cancellation

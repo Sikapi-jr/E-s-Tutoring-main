@@ -365,11 +365,11 @@ export default function EventsPage() {
                     const cancelReason = ev.extendedProperties?.private?.cancel_reason || "";
                     const cancelledBy = ev.extendedProperties?.private?.cancelled_by || "";
 
-                    // Determine if anyone has cancelled this session
+                    // Determine if anyone has cancelled this session - if so, it's completely read-only
                     const isAnybodyCancelled = cancelledByOther || isDeclined ||
                                               ev.extendedProperties?.private?.cant_attend === "true";
 
-                    // Set row background color - only green or red
+                    // Set row background color - red for cancelled, green for active
                     const getRowStyle = () => {
                       const baseStyle = { cursor: 'pointer' };
                       if (isAnybodyCancelled) {
@@ -388,21 +388,13 @@ export default function EventsPage() {
                         <td onClick={() => openDetailsModal(ev)}>{creator}</td>
                         <td onClick={() => openDetailsModal(ev)}>{attendeeName}</td>
                         <td>
-                          {cancelledByOther ? (
+                          {isAnybodyCancelled ? (
                             <span style={{
                               color: '#dc3545',
                               fontWeight: 'bold',
                               fontSize: '12px'
                             }}>
-                              Cancelled by {cancelledBy.includes('@') ? (cancelledBy === ev?.organizer?.email ? 'Tutor' : 'Parent') : 'Other'}
-                            </span>
-                          ) : isDeclined ? (
-                            <span style={{
-                              color: '#dc3545',
-                              fontWeight: 'bold',
-                              fontSize: '12px'
-                            }}>
-                              Cancelled by You
+                              Session Cancelled
                             </span>
                           ) : (
                             <button
