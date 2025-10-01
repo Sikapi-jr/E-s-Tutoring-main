@@ -47,6 +47,7 @@ export default function Home() {
   const [showTutorForm, setShowTutorForm] = useState(false);
   const [showNotificationTool, setShowNotificationTool] = useState(false);
   const [showResendVerificationTool, setShowResendVerificationTool] = useState(false);
+  const [sendingHoursReminder, setSendingHoursReminder] = useState(false);
 
   // Document upload modal state
   const [showDocumentUploadModal, setShowDocumentUploadModal] = useState(false);
@@ -739,6 +740,21 @@ export default function Home() {
       alert(t('disputes.cancelFailed'));
     }
   }, []);
+
+  const handleSendHoursReminder = useCallback(async () => {
+    if (!user?.is_superuser) return;
+
+    setSendingHoursReminder(true);
+    try {
+      await api.post('/api/admin/send-hours-reminder/', {});
+      alert('Hours reminder sent successfully to all tutors!');
+    } catch (error) {
+      console.error('Error sending hours reminder:', error);
+      alert('Failed to send hours reminder. Please try again.');
+    } finally {
+      setSendingHoursReminder(false);
+    }
+  }, [user?.is_superuser]);
 
   /* handle tutor complaint modal */
   const handleComplaintClick = useCallback((tutor) => {
@@ -1477,10 +1493,28 @@ export default function Home() {
                       padding: "0.75rem",
                       borderRadius: "6px",
                       cursor: "pointer",
-                      fontSize: "0.9rem"
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
                     }}
                   >
                     {t('admin.resendVerificationEmail', 'Resend Verification Email')}
+                  </button>
+                  <button
+                    onClick={handleSendHoursReminder}
+                    disabled={sendingHoursReminder}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#fd7e14",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: sendingHoursReminder ? "not-allowed" : "pointer",
+                      fontSize: "0.9rem",
+                      opacity: sendingHoursReminder ? 0.7 : 1
+                    }}
+                  >
+                    {sendingHoursReminder ? "Sending..." : "Send Hours Reminder to Tutors"}
                   </button>
                 </div>
               </div>
