@@ -250,12 +250,36 @@
   }
 
   .nav__right {
-    margin: 0 1rem 0 auto; /* Increased right margin to push further right */
+    margin: 0 0.5rem 0 auto; /* Adjusted right margin to accommodate larger language dropdown */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Add gap between language dropdown and profile */
   }
 
-  /* Push language selector further right on mobile */
+  /* Enhanced language selector for mobile */
   .nav__language {
-    margin-right: 1rem; /* Increased from 0.5rem to 1rem for more spacing */
+    margin-right: 1.5rem; /* Push further right to prevent cutoff */
+    min-width: 120px; /* Ensure adequate width */
+  }
+
+  /* Make language dropdown larger and more accessible on mobile */
+  .nav__language select {
+    padding: 0.7rem 0.8rem !important;
+    font-size: 1rem !important;
+    min-width: 120px !important;
+    height: 42px !important;
+    background-color: #fff !important;
+    border: 2px solid #ccc !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 12px !important;
+    padding-right: 30px !important;
   }
   
   /* Profile dropdown positioned below navbar on mobile */
@@ -275,5 +299,23 @@
   .profile__item:hover {
     background: #192A88;
     color: #fff;
+  }
+}
+
+/* Extra small screens (phones) - Additional mobile optimization */
+@media (max-width: 480px) {
+  .nav__language {
+    margin-right: 0.75rem; /* Reduce margin on very small screens */
+  }
+
+  .nav__language select {
+    min-width: 110px !important; /* Slightly smaller on very small screens */
+    font-size: 0.9rem !important;
+    padding: 0.6rem 0.7rem !important;
+  }
+
+  .nav__right {
+    margin-right: 0.25rem; /* Reduce overall right margin on very small screens */
+    gap: 0.5rem; /* Reduce gap on small screens */
   }
 }
