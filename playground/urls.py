@@ -99,6 +99,9 @@ urlpatterns = [
     # Admin test email tool
     path('admin/test-email/', views.admin_test_email, name='admin-test-email'),
 
+    # Admin hours reminder
+    path('admin/send-hours-reminder/', views.AdminSendHoursReminderView.as_view(), name='admin-send-hours-reminder'),
+
 ]
 
 if settings.DEBUG:

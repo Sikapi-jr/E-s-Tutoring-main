@@ -3629,3 +3629,106 @@ Attachments: {len(attachments)} file(s) attached
             'detail': f'Error sending test email: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class AdminSendHoursReminderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Only allow superusers/admins to use this endpoint
+        if not request.user.is_superuser:
+            return Response({"error": "Only administrators can send hours reminders"}, status=403)
+
+        try:
+            # Import email utility
+            from .email_utils import send_mailgun_email
+
+            # Get all tutors (users with role 'tutor')
+            tutors = User.objects.filter(roles='tutor', is_active=True)
+            tutor_emails = [tutor.email for tutor in tutors if tutor.email]
+
+            if not tutor_emails:
+                return Response({
+                    "error": "No active tutors found with email addresses"
+                }, status=400)
+
+            # Prepare email content
+            subject = "Reminder: Please Log Your Tutoring Hours"
+
+            text_content = """
+Dear Tutor,
+
+This is a friendly reminder to please log your tutoring hours in the EGS Tutoring system.
+
+To log your hours:
+1. Visit the EGS Tutoring portal
+2. Navigate to "Log Hours" section
+3. Enter your session details
+4. Submit your hours
+
+Please ensure all your tutoring sessions are logged promptly to maintain accurate records.
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+Best regards,
+EGS Tutoring Team
+            """.strip()
+
+            html_content = """
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #192A88;">Reminder: Please Log Your Tutoring Hours</h2>
+
+                    <p>Dear Tutor,</p>
+
+                    <p>This is a friendly reminder to please log your tutoring hours in the EGS Tutoring system.</p>
+
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <h4 style="margin-top: 0; color: #192A88;">To log your hours:</h4>
+                        <ol>
+                            <li>Visit the EGS Tutoring portal</li>
+                            <li>Navigate to "Log Hours" section</li>
+                            <li>Enter your session details</li>
+                            <li>Submit your hours</li>
+                        </ol>
+                    </div>
+
+                    <p>Please ensure all your tutoring sessions are logged promptly to maintain accurate records.</p>
+
+                    <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+
+                    <p style="margin-top: 30px;">
+                        Best regards,<br>
+                        <strong>EGS Tutoring Team</strong>
+                    </p>
+                </div>
+            </body>
+            </html>
+            """.strip()
+
+            # Send email to all tutors
+            success = send_mailgun_email(
+                to_emails=tutor_emails,
+                subject=subject,
+                text_content=text_content,
+                html_content=html_content
+            )
+
+            if success:
+                logger.info(f"Hours reminder sent successfully to {len(tutor_emails)} tutors by admin {request.user.email}")
+                return Response({
+                    'detail': f'Hours reminder sent successfully to {len(tutor_emails)} tutors',
+                    'tutors_count': len(tutor_emails),
+                    'tutors_emailed': tutor_emails
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'detail': 'Failed to send hours reminder emails'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            logger.error(f"Error sending hours reminder: {e}")
+            return Response({
+                'detail': f'Error sending hours reminder: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
