@@ -162,7 +162,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
         attendeeEmail = user.email; // Parent becomes attendee
       } catch (err) {
         console.error('Error fetching tutor info:', err);
-        alert('Could not find tutor information for this student.');
+        alert('Could not find tutor information for this student. Please go to Tutoring → Request a Tutor to assign a tutor first.');
         return;
       }
     }
@@ -357,7 +357,14 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
               type="button"
               className="form-button secondary"
               onClick={handleClose}
-              style={{ minWidth: "150px", padding: "0.75rem 2rem" }}
+              style={{
+                width: "100px !important",
+                minWidth: "100px !important",
+                maxWidth: "100px !important",
+                padding: "0.5rem 0.75rem !important",
+                fontSize: "0.85rem !important",
+                flex: "0 0 100px !important"
+              }}
             >
               {t('common.cancel')}
             </button>
@@ -371,9 +378,16 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                   form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                 }
               }}
-              style={{ minWidth: "200px", padding: "0.75rem 2rem" }}
+              style={{
+                width: "110px !important",
+                minWidth: "110px !important",
+                maxWidth: "110px !important",
+                padding: "0.5rem 0.75rem !important",
+                fontSize: "0.85rem !important",
+                flex: "0 0 110px !important"
+              }}
             >
-              {t('calendar.scheduleTutoringSession')}
+              Plan Session
             </button>
           </div>
         )}
