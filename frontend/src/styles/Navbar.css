@@ -210,12 +210,13 @@
   .nav__burger {
     display: flex;
     margin-right: 1.5rem; /* Add right margin to create gap from language/profile */
+    margin-left: 0.5rem; /* Move hamburger slightly to the right */
   }
 
   .nav__links {
     margin-left: 0;
     position: absolute;
-    top: 64px; 
+    top: 64px;
     left: 50%;
     transform: translateX(-50%);
     width: 200px;                /* reduced width for smaller menu */
@@ -250,10 +251,11 @@
   }
 
   .nav__right {
-    margin: 0 0.5rem 0 auto; /* Adjusted right margin to accommodate larger language dropdown */
+    margin: 0 0 0 auto; /* Remove right margin to prevent profile icon cutoff */
     display: flex;
     align-items: center;
     gap: 0.75rem; /* Add gap between language dropdown and profile */
+    padding-right: 0.5rem; /* Add padding instead of margin for better control */
   }
 
   /* Enhanced language selector for mobile */
@@ -315,7 +317,8 @@
   }
 
   .nav__right {
-    margin-right: 0.25rem; /* Reduce overall right margin on very small screens */
+    margin-right: 0; /* Remove margin to prevent cutoff */
     gap: 0.5rem; /* Reduce gap on small screens */
+    padding-right: 0.25rem; /* Add small padding */
   }
 }
