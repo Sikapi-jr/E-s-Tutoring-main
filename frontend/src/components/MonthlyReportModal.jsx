@@ -13,13 +13,14 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
     student: student?.id || '',
     month: student?.selectedMonth || new Date().getMonth() + 1,
     year: student?.selectedYear || new Date().getFullYear(),
-    progress_summary: '',
+    overall_progress: '',
     strengths: '',
-    areas_for_improvement: '',
-    homework_completion: 'good',
-    participation_level: 'medium',
-    goals_for_next_month: '',
-    additional_comments: ''
+    challenges: '',
+    work_habits: '',
+    confidence_attitude: '',
+    homework_practice: '',
+    parent_support: '',
+    looking_ahead: ''
   });
 
   // Update form data when student changes
@@ -68,9 +69,9 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!hours?.eligible_for_report) {
-      alert(t('monthlyReports.insufficient'));
+      alert('Insufficient hours. You need 4+ hours logged to submit a report.');
       return;
     }
 
@@ -82,15 +83,15 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
       };
 
       await api.post('/api/monthly-reports/create/', submitData);
-      
-      alert(t('monthlyReports.reportSubmitted'));
+
+      alert('Monthly report submitted successfully!');
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
       console.error('Error submitting report:', error);
-      const errorMessage = error.response?.data?.non_field_errors?.[0] || 
-                          error.response?.data?.detail || 
-                          t('monthlyReports.reportError');
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.detail ||
+                          'Failed to submit report. Please try again.';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -117,7 +118,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
         backgroundColor: 'white',
         borderRadius: '8px',
         padding: '2rem',
-        maxWidth: '600px',
+        maxWidth: '700px',
         width: '100%',
         maxHeight: '90vh',
         overflowY: 'auto'
@@ -129,7 +130,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
           marginBottom: '1.5rem'
         }}>
           <h2 style={{ margin: 0 }}>
-            {t('monthlyReports.createReport')}
+            Monthly Report
           </h2>
           <button
             onClick={onClose}
@@ -145,217 +146,232 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
         </div>
 
         {student && (
-          <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+          <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
             <h4 style={{ margin: '0 0 0.5rem 0' }}>
-              {t('monthlyReports.reportFor', { student: `${student.firstName} ${student.lastName}` })}
+              Report for: {student.firstName} {student.lastName}
             </h4>
+            <div style={{ fontSize: '0.9rem', color: '#666' }}>
+              <strong>Month:</strong> {new Date(formData.year, formData.month - 1).toLocaleDateString('en', { month: 'long', year: 'numeric' })}
+            </div>
             {hours && (
-              <div style={{ fontSize: '0.9rem', color: hours.eligible_for_report ? '#28a745' : '#dc3545' }}>
-                {t('monthlyReports.hoursThisMonth', { hours: hours.total_hours })} 
-                {!hours.eligible_for_report && ` - ${t('monthlyReports.insufficient')}`}
+              <div style={{ fontSize: '0.9rem', color: hours.eligible_for_report ? '#28a745' : '#dc3545', marginTop: '0.5rem' }}>
+                <strong>Hours logged:</strong> {hours.total_hours} hours
+                {!hours.eligible_for_report && ' - Need 4+ hours to submit report'}
               </div>
             )}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                {t('monthlyReports.month')}
-              </label>
-              <select
-                name="month"
-                value={formData.month}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(2023, i).toLocaleDateString('en', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                {t('monthlyReports.year')}
-              </label>
-              <select
-                name="year"
-                value={formData.year}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
-              >
-                {Array.from({ length: 5 }, (_, i) => (
-                  <option key={i} value={new Date().getFullYear() - i}>
-                    {new Date().getFullYear() - i}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
+          {/* Overall Progress */}
+          <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              {t('monthlyReports.progressSummary')} *
+              1. Overall Progress *
             </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              How would you describe the child's progress this month?
+            </p>
             <textarea
-              name="progress_summary"
-              value={formData.progress_summary}
+              name="overall_progress"
+              value={formData.overall_progress}
               onChange={handleInputChange}
               required
-              rows="3"
+              rows="4"
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #ddd',
                 borderRadius: '4px',
-                resize: 'vertical'
+                resize: 'vertical',
+                fontSize: '0.95rem'
               }}
+              placeholder="Describe the student's overall progress, improvements, and development this month..."
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
+          {/* Strengths */}
+          <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              {t('monthlyReports.strengths')} *
+              2. Strengths *
             </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              What subject areas or skills has the child improved in or shown strong ability?
+            </p>
             <textarea
               name="strengths"
               value={formData.strengths}
               onChange={handleInputChange}
               required
-              rows="3"
+              rows="4"
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #ddd',
                 borderRadius: '4px',
-                resize: 'vertical'
+                resize: 'vertical',
+                fontSize: '0.95rem'
               }}
+              placeholder="List specific subjects, skills, or areas where the student excels..."
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              {t('monthlyReports.areasForImprovement')} *
-            </label>
-            <textarea
-              name="areas_for_improvement"
-              value={formData.areas_for_improvement}
-              onChange={handleInputChange}
-              required
-              rows="3"
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                {t('monthlyReports.homeworkCompletion')} *
-              </label>
-              <select
-                name="homework_completion"
-                value={formData.homework_completion}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
-              >
-                <option value="excellent">{t('monthlyReports.excellent')}</option>
-                <option value="good">{t('monthlyReports.good')}</option>
-                <option value="satisfactory">{t('monthlyReports.satisfactory')}</option>
-                <option value="needs_improvement">{t('monthlyReports.needsImprovement')}</option>
-              </select>
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                {t('monthlyReports.participationLevel')} *
-              </label>
-              <select
-                name="participation_level"
-                value={formData.participation_level}
-                onChange={handleInputChange}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
-              >
-                <option value="high">{t('monthlyReports.high')}</option>
-                <option value="medium">{t('monthlyReports.medium')}</option>
-                <option value="low">{t('monthlyReports.low')}</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              {t('monthlyReports.goalsNextMonth')} *
-            </label>
-            <textarea
-              name="goals_for_next_month"
-              value={formData.goals_for_next_month}
-              onChange={handleInputChange}
-              required
-              rows="3"
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
+          {/* Challenges */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              {t('monthlyReports.additionalComments')}
+              3. Challenges *
             </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              What areas still need extra support or practice?
+            </p>
             <textarea
-              name="additional_comments"
-              value={formData.additional_comments}
+              name="challenges"
+              value={formData.challenges}
               onChange={handleInputChange}
-              rows="3"
+              required
+              rows="4"
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #ddd',
                 borderRadius: '4px',
-                resize: 'vertical'
+                resize: 'vertical',
+                fontSize: '0.95rem'
               }}
+              placeholder="Identify areas that need more attention or practice..."
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+          {/* Work Habits & Effort */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              4. Work Habits & Effort *
+            </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              How is the child's focus, participation, and effort during tutoring sessions?
+            </p>
+            <textarea
+              name="work_habits"
+              value={formData.work_habits}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontSize: '0.95rem'
+              }}
+              placeholder="Describe the student's focus, engagement, and work ethic during sessions..."
+            />
+          </div>
+
+          {/* Confidence & Attitude */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              5. Confidence & Attitude *
+            </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              Do you notice any changes in the child's confidence or attitude toward learning?
+            </p>
+            <textarea
+              name="confidence_attitude"
+              value={formData.confidence_attitude}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontSize: '0.95rem'
+              }}
+              placeholder="Note any changes in confidence, attitude, or mindset toward learning..."
+            />
+          </div>
+
+          {/* Homework & Practice */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              6. Homework & Practice *
+            </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              How consistent has the child been with completing assignments or practicing skills outside of tutoring?
+            </p>
+            <textarea
+              name="homework_practice"
+              value={formData.homework_practice}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontSize: '0.95rem'
+              }}
+              placeholder="Describe homework completion, practice consistency, and independent work..."
+            />
+          </div>
+
+          {/* Parent Support */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              7. Parent Support *
+            </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              Is there anything parents can do at home to reinforce learning?
+            </p>
+            <textarea
+              name="parent_support"
+              value={formData.parent_support}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontSize: '0.95rem'
+              }}
+              placeholder="Suggest specific activities, resources, or ways parents can help at home..."
+            />
+          </div>
+
+          {/* Looking Ahead */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+              8. Looking Ahead *
+            </label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+              What will be the main focus for the next month?
+            </p>
+            <textarea
+              name="looking_ahead"
+              value={formData.looking_ahead}
+              onChange={handleInputChange}
+              required
+              rows="4"
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                resize: 'vertical',
+                fontSize: '0.95rem'
+              }}
+              placeholder="Outline goals, topics, and focus areas for the upcoming month..."
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
             <button
               type="button"
               onClick={onClose}
@@ -364,10 +380,11 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 border: '1px solid #ddd',
                 borderRadius: '4px',
                 backgroundColor: 'white',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontSize: '1rem'
               }}
             >
-              {t('common.cancel')}
+              Cancel
             </button>
             <button
               type="submit"
@@ -378,10 +395,12 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 borderRadius: '4px',
                 backgroundColor: loading || !hours?.eligible_for_report ? '#6c757d' : '#192A88',
                 color: 'white',
-                cursor: loading || !hours?.eligible_for_report ? 'not-allowed' : 'pointer'
+                cursor: loading || !hours?.eligible_for_report ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold'
               }}
             >
-              {loading ? t('common.loading') : t('monthlyReports.submitReport')}
+              {loading ? 'Submitting...' : 'Submit Report'}
             </button>
           </div>
         </form>

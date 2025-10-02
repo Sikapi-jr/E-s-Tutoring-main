@@ -227,26 +227,29 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 class MonthlyReportSerializer(serializers.ModelSerializer):
     tutor_name = serializers.CharField(source='tutor.firstName', read_only=True)
     student_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = MonthlyReport
         fields = [
             'id', 'tutor', 'tutor_name', 'student', 'student_name', 'month', 'year',
-            'progress_summary', 'strengths', 'areas_for_improvement',
-            'homework_completion', 'participation_level', 'goals_for_next_month',
-            'additional_comments', 'created_at'
+            'status', 'due_date', 'submitted_at',
+            'overall_progress', 'strengths', 'challenges', 'work_habits',
+            'confidence_attitude', 'homework_practice', 'parent_support', 'looking_ahead',
+            'created_at'
         ]
         extra_kwargs = {
             'tutor': {'required': True},
             'student': {'required': True},
             'month': {'required': True},
             'year': {'required': True},
-            'progress_summary': {'required': True},
+            'overall_progress': {'required': True},
             'strengths': {'required': True},
-            'areas_for_improvement': {'required': True},
-            'homework_completion': {'required': True},
-            'participation_level': {'required': True},
-            'goals_for_next_month': {'required': True},
+            'challenges': {'required': True},
+            'work_habits': {'required': True},
+            'confidence_attitude': {'required': True},
+            'homework_practice': {'required': True},
+            'parent_support': {'required': True},
+            'looking_ahead': {'required': True},
         }
     
     def get_student_name(self, obj):

@@ -279,12 +279,30 @@ const Students = () => {
                           </div>
                         </div>
                       ))}
-                      <button
-                        className="change-tutor-btn"
-                        onClick={() => handleChangeTutor(student)}
-                      >
-                        {t('students.changeTutor')}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                        <button
+                          className="change-tutor-btn"
+                          onClick={() => handleChangeTutor(student)}
+                        >
+                          {t('students.changeTutor')}
+                        </button>
+                        <button
+                          className="view-reports-btn"
+                          onClick={() => navigate('/monthly-reports')}
+                          style={{
+                            backgroundColor: '#192A88',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.6rem 1rem',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: '500'
+                          }}
+                        >
+                          📊 View Reports
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="no-tutors">

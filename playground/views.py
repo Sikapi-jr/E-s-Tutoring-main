@@ -1325,11 +1325,64 @@ class MonthlyReportCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """Create a new monthly report for a tutor-student pair"""
+        """Create or update a monthly report for a tutor-student pair"""
+        from datetime import datetime, timedelta
+
         data = request.data.copy()
         data['tutor'] = request.user.id
-        
-        serializer = MonthlyReportSerializer(data=data)
+
+        # Validate minimum hours (4+ hours required)
+        student_id = data.get('student')
+        month = int(data.get('month'))
+        year = int(data.get('year'))
+
+        # Calculate date range for the month
+        start_date = datetime(year, month, 1).date()
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1).date()
+        else:
+            end_date = datetime(year, month + 1, 1).date()
+
+        # Get total hours for validation
+        hours = Hours.objects.filter(
+            tutor_id=request.user.id,
+            student_id=student_id,
+            date__gte=start_date,
+            date__lt=end_date,
+            status='Accepted'
+        )
+        total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
+
+        if total_hours < 4:
+            return Response(
+                {"error": f"Insufficient hours. Need 4+ hours, but only {total_hours} hours logged."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if report already exists
+        try:
+            existing_report = MonthlyReport.objects.get(
+                tutor_id=request.user.id,
+                student_id=student_id,
+                month=month,
+                year=year
+            )
+            # Update existing report
+            data['status'] = 'submitted'
+            data['submitted_at'] = timezone.now()
+            serializer = MonthlyReportSerializer(existing_report, data=data, partial=False)
+        except MonthlyReport.DoesNotExist:
+            # Create new report
+            data['status'] = 'submitted'
+            data['submitted_at'] = timezone.now()
+            # Calculate due date (1st of next month)
+            if month == 12:
+                due_date = datetime(year + 1, 1, 1).date()
+            else:
+                due_date = datetime(year, month + 1, 1).date()
+            data['due_date'] = due_date
+            serializer = MonthlyReportSerializer(data=data)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1417,7 +1470,7 @@ class TutorStudentHoursView(APIView):
             
             return Response({
                 'total_hours': float(total_hours),
-                'eligible_for_report': total_hours >= 3,
+                'eligible_for_report': total_hours >= 4,
                 'sessions_count': hours.count(),
                 'month': month,
                 'year': year
@@ -1425,7 +1478,89 @@ class TutorStudentHoursView(APIView):
             
         except ValueError:
             return Response({"error": "Invalid month or year"}, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+class TutorStudentsReportStatusView(APIView):
+    """Get all students for a tutor with their monthly report statuses"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from datetime import datetime
+        from dateutil.relativedelta import relativedelta
+
+        tutor = request.user
+        if tutor.roles != 'tutor':
+            return Response({"error": "Only tutors can access this endpoint"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get the previous month (reports are due for previous month on the 1st)
+        today = datetime.now().date()
+        previous_month_date = today - relativedelta(months=1)
+        target_month = previous_month_date.month
+        target_year = previous_month_date.year
+
+        # Get all students for this tutor
+        from .models import AcceptedTutor
+        accepted_tutors = AcceptedTutor.objects.filter(tutor=tutor, status='Accepted').select_related('student')
+
+        students_data = []
+        for at in accepted_tutors:
+            student = at.student
+
+            # Calculate date range for the previous month
+            start_date = datetime(target_year, target_month, 1).date()
+            if target_month == 12:
+                end_date = datetime(target_year + 1, 1, 1).date()
+            else:
+                end_date = datetime(target_year, target_month + 1, 1).date()
+
+            # Get total hours for this student in the previous month
+            hours = Hours.objects.filter(
+                tutor=tutor,
+                student=student,
+                date__gte=start_date,
+                date__lt=end_date,
+                status='Accepted'
+            )
+            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
+
+            # Check if report exists
+            try:
+                report = MonthlyReport.objects.get(
+                    tutor=tutor,
+                    student=student,
+                    month=target_month,
+                    year=target_year
+                )
+                report_status = report.status
+                report_id = report.id
+            except MonthlyReport.DoesNotExist:
+                # Report is needed if 4+ hours
+                if total_hours >= 4:
+                    report_status = 'pending'
+                else:
+                    report_status = 'not_required'
+                report_id = None
+
+            students_data.append({
+                'student_id': student.id,
+                'student_name': f"{student.firstName} {student.lastName}",
+                'student_username': student.username,
+                'hours_logged': float(total_hours),
+                'report_month': target_month,
+                'report_year': target_year,
+                'report_status': report_status,
+                'report_id': report_id,
+                'requires_report': total_hours >= 4
+            })
+
+        return Response({
+            'students': students_data,
+            'target_month': target_month,
+            'target_year': target_year,
+            'month_name': datetime(target_year, target_month, 1).strftime('%B %Y')
+        })
+
+
 class AnnouncementListView(APIView):
     permission_classes=[AllowAny]
     def get(self, request):

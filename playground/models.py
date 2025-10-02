@@ -200,51 +200,37 @@ class ErrorTicket(models.Model):
     file = models.FileField(upload_to='user_error/')
 
 class MonthlyReport(models.Model):
-    HOMEWORK_COMPLETION_CHOICES = [
-        ('excellent', 'Excellent'),
-        ('good', 'Good'),
-        ('satisfactory', 'Satisfactory'),
-        ('needs_improvement', 'Needs Improvement'),
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('submitted', 'Submitted'),
     ]
-    
-    PARTICIPATION_LEVEL_CHOICES = [
-        ('high', 'High'),
-        ('medium', 'Medium'),
-        ('low', 'Low'),
-    ]
-    
+
     tutor = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_tutor')
     student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_student')
     month = models.PositiveSmallIntegerField()
     year = models.PositiveSmallIntegerField()
-    
-    # Report content fields
-    progress_summary = models.TextField(default="", help_text="Overall summary of the student's progress this month")
-    strengths = models.TextField(default="", help_text="Student's strengths observed during tutoring sessions")
-    areas_for_improvement = models.TextField(default="", help_text="Areas where the student needs to improve")
-    homework_completion = models.CharField(
-        max_length=20, 
-        choices=HOMEWORK_COMPLETION_CHOICES,
-        default="good",
-        help_text="How well the student completes homework assignments"
-    )
-    participation_level = models.CharField(
-        max_length=10,
-        choices=PARTICIPATION_LEVEL_CHOICES,
-        default="medium",
-        help_text="Student's level of participation during sessions"
-    )
-    goals_for_next_month = models.TextField(default="", help_text="Goals and objectives for the upcoming month")
-    additional_comments = models.TextField(blank=True, default="", help_text="Any additional comments or observations")
-    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', help_text="Report status")
+    due_date = models.DateField(null=True, blank=True, help_text="Date when report is due (1st of following month)")
+
+    # New Report Questions - All required text fields
+    overall_progress = models.TextField(blank=True, default="", help_text="How would you describe the child's progress this month?")
+    strengths = models.TextField(blank=True, default="", help_text="What subject areas or skills has the child improved in or shown strong ability?")
+    challenges = models.TextField(blank=True, default="", help_text="What areas still need extra support or practice?")
+    work_habits = models.TextField(blank=True, default="", help_text="How is the child's focus, participation, and effort during tutoring sessions?")
+    confidence_attitude = models.TextField(blank=True, default="", help_text="Do you notice any changes in the child's confidence or attitude toward learning?")
+    homework_practice = models.TextField(blank=True, default="", help_text="How consistent has the child been with completing assignments or practicing skills outside of tutoring?")
+    parent_support = models.TextField(blank=True, default="", help_text="Is there anything parents can do at home to reinforce learning?")
+    looking_ahead = models.TextField(blank=True, default="", help_text="What will be the main focus for the next month?")
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    submitted_at = models.DateTimeField(null=True, blank=True, help_text="Date when report was submitted")
+
     class Meta:
         unique_together = ('tutor', 'student', 'month', 'year')
         ordering = ['-year', '-month', '-created_at']
-    
+
     def __str__(self):
-        return f"Report for {self.student.firstName} {self.student.lastName} - {self.month}/{self.year}"
+        return f"Report for {self.student.firstName} {self.student.lastName} - {self.month}/{self.year} ({self.status})"
 
 class Announcements(models.Model):
     name = models.CharField(max_length=255, blank=True)

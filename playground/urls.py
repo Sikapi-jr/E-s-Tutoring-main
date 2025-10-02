@@ -30,6 +30,7 @@ urlpatterns = [
     path('monthly-reports/create/', views.MonthlyReportCreateView.as_view(), name='monthly-report-create'),
     path('monthly-reports/', views.MonthlyReportListView.as_view(), name='monthly-reports-list'),
     path('monthly-reports/<int:report_id>/', views.MonthlyReportDetailView.as_view(), name='monthly-report-detail'),
+    path('monthly-reports/students-status/', views.TutorStudentsReportStatusView.as_view(), name='tutor-students-report-status'),
     path('tutor-student-hours/', views.TutorStudentHoursView.as_view(), name='tutor-student-hours'),
     path("weeklyHours/", views.WeeklyHoursListView.as_view(), name="weeklyHours"),
     path("calculateHours/", views.calculateTotal.as_view(), name="calculateHours"),
