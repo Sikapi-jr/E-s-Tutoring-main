@@ -2266,16 +2266,17 @@ class WeeklyHoursListView(APIView):
         print(f"WeeklyHoursListView.post called with data: {request.data}")
         entries = request.data
         created = False
+        created_entries = []  # Track created entries for email notification
 
         try:
             for entry in entries:
                 print(f"Processing entry: {entry}")
-                
+
                 parent_id = entry.get('parent')
                 if not parent_id:
                     print(f"Skipping entry without parent ID: {entry}")
                     continue
-                    
+
                 # Get parent user object
                 try:
                     parent_user = User.objects.get(id=parent_id)
@@ -2297,7 +2298,7 @@ class WeeklyHoursListView(APIView):
                     date=date_obj,
                     parent=parent_user
                 ).exists()
-                
+
                 # Also check for potential overlaps within a date range (e.g., same week)
                 from datetime import timedelta
                 week_start = date_obj - timedelta(days=date_obj.weekday())
@@ -2316,11 +2317,22 @@ class WeeklyHoursListView(APIView):
                         TotalBeforeTax=entry.get('TotalBeforeTax')
                     )
                     created = True
+                    created_entries.append({
+                        'parent': parent_user,
+                        'date': date_obj,
+                        'online_hours': entry.get('OnlineHours'),
+                        'inperson_hours': entry.get('InPersonHours'),
+                        'total': entry.get('TotalBeforeTax')
+                    })
                     print(f"Created WeeklyHours for parent {parent_id}")
                 elif exists:
                     print(f"WeeklyHours already exists for parent {parent_id} on {date_obj}")
                 elif overlap_exists:
                     print(f"WeeklyHours overlap detected for parent {parent_id} in week {week_start} to {week_end}")
+
+            # Send email notifications for all created entries
+            if created_entries:
+                self._send_weekly_hours_emails(created_entries)
 
         except Exception as e:
             print(f"Error in WeeklyHoursListView.post: {e}")
@@ -2330,6 +2342,145 @@ class WeeklyHoursListView(APIView):
             return Response({"status": "created"}, status=201)
         else:
             return Response({"status": "Not Created, Duplicate"}, status=301)
+
+    def _send_weekly_hours_emails(self, created_entries):
+        """Send email notifications to parents with their weekly hours breakdown"""
+        from .email_utils import send_mailgun_email
+        from collections import defaultdict
+
+        # Group entries by parent
+        parent_entries = defaultdict(list)
+        for entry in created_entries:
+            parent_entries[entry['parent']].append(entry)
+
+        # Send email to each parent
+        for parent, entries in parent_entries.items():
+            try:
+                # Get all hours details for this parent within the date range
+                date_obj = entries[0]['date']
+                from datetime import timedelta
+                week_start = date_obj - timedelta(days=date_obj.weekday())
+                week_end = week_start + timedelta(days=6)
+
+                # Fetch detailed hours for this parent within the week
+                hours_details = Hours.objects.filter(
+                    parent=parent,
+                    date__range=[week_start, week_end],
+                    eligible='Eligible'
+                ).order_by('date', 'startTime')
+
+                # Build email content
+                subject = f"Weekly Tutoring Hours Summary - Week of {week_start.strftime('%B %d, %Y')}"
+
+                # Build HTML content
+                html_content = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <h2 style="color: #192A88; border-bottom: 3px solid #FFB31B; padding-bottom: 10px;">
+                            Weekly Tutoring Hours Summary
+                        </h2>
+                        <p>Dear {parent.firstName} {parent.lastName},</p>
+                        <p>Here is your weekly tutoring hours summary for the week of <strong>{week_start.strftime('%B %d, %Y')}</strong> to <strong>{week_end.strftime('%B %d, %Y')}</strong>:</p>
+
+                        <h3 style="color: #192A88; margin-top: 30px;">Session Details:</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background-color: #192A88; color: white;">
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Date</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Student</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Tutor</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Time</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Hours</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Subject</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                """
+
+                for hour in hours_details:
+                    html_content += f"""
+                                <tr style="background-color: #f9f9f9;">
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.date.strftime('%b %d, %Y')}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.student.firstName} {hour.student.lastName}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.tutor.firstName} {hour.tutor.lastName}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.startTime.strftime('%I:%M %p')} - {hour.endTime.strftime('%I:%M %p')}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.totalTime}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.subject}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.location}</td>
+                                </tr>
+                    """
+
+                # Summary totals
+                total_online = sum(float(e['online_hours']) for e in entries)
+                total_inperson = sum(float(e['inperson_hours']) for e in entries)
+                total_cost = sum(float(e['total']) for e in entries)
+
+                html_content += f"""
+                            </tbody>
+                        </table>
+
+                        <h3 style="color: #192A88; margin-top: 30px;">Summary:</h3>
+                        <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; border-left: 4px solid #FFB31B;">
+                            <p style="margin: 5px 0;"><strong>Online Hours:</strong> {total_online:.2f}</p>
+                            <p style="margin: 5px 0;"><strong>In-Person Hours:</strong> {total_inperson:.2f}</p>
+                            <p style="margin: 5px 0;"><strong>Total Hours:</strong> {total_online + total_inperson:.2f}</p>
+                            <p style="margin: 5px 0; font-size: 1.1em;"><strong>Total Amount:</strong> <span style="color: #192A88;">${total_cost:.2f}</span></p>
+                        </div>
+
+                        <p style="margin-top: 30px;">If you have any questions or concerns about these hours, please don't hesitate to contact us.</p>
+
+                        <p style="margin-top: 20px;">Best regards,<br>
+                        <strong>EGS Tutoring Team</strong></p>
+
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.85em; color: #666;">
+                            <p>This is an automated notification from EGS Tutoring. Please do not reply to this email.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+
+                # Plain text version
+                text_content = f"""
+Weekly Tutoring Hours Summary
+
+Dear {parent.firstName} {parent.lastName},
+
+Here is your weekly tutoring hours summary for the week of {week_start.strftime('%B %d, %Y')} to {week_end.strftime('%B %d, %Y')}:
+
+Session Details:
+"""
+                for hour in hours_details:
+                    text_content += f"\n- {hour.date.strftime('%b %d, %Y')}: {hour.student.firstName} {hour.student.lastName} with {hour.tutor.firstName} {hour.tutor.lastName}"
+                    text_content += f"\n  Time: {hour.startTime.strftime('%I:%M %p')} - {hour.endTime.strftime('%I:%M %p')} ({hour.totalTime} hours)"
+                    text_content += f"\n  Subject: {hour.subject} | Location: {hour.location}\n"
+
+                text_content += f"""
+Summary:
+- Online Hours: {total_online:.2f}
+- In-Person Hours: {total_inperson:.2f}
+- Total Hours: {total_online + total_inperson:.2f}
+- Total Amount: ${total_cost:.2f}
+
+If you have any questions or concerns about these hours, please don't hesitate to contact us.
+
+Best regards,
+EGS Tutoring Team
+                """
+
+                # Send the email
+                send_mailgun_email(
+                    to_emails=[parent.email],
+                    subject=subject,
+                    text_content=text_content,
+                    html_content=html_content
+                )
+                print(f"Weekly hours email sent to {parent.email}")
+
+            except Exception as e:
+                print(f"Error sending email to {parent.email}: {e}")
 
 class calculateTotal(APIView):
     permission_classes = [AllowAny]

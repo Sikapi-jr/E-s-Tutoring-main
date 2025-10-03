@@ -278,11 +278,6 @@
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
-    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 4px center !important;
-    background-size: 8px !important;
-    padding-right: 16px !important;
   }
   
   /* Profile dropdown positioned below navbar on mobile */

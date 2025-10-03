@@ -25,7 +25,10 @@ const LanguageSwitcher = memo(({ className = "" }) => {
           backgroundColor: '#fff',
           fontSize: '0.85rem',
           cursor: 'pointer',
-          minWidth: '48px'
+          minWidth: '48px',
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none'
         }}
         aria-label="Select language"
       >
