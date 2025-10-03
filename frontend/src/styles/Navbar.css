@@ -254,25 +254,26 @@
     margin: 0 0 0 auto; /* Remove right margin to prevent profile icon cutoff */
     display: flex;
     align-items: center;
-    gap: 0.75rem; /* Add gap between language dropdown and profile */
-    padding-right: 2rem; /* Increase padding significantly to push settings away from edge */
+    gap: 0.5rem; /* Reduced gap between language dropdown and profile */
+    padding-right: 0.5rem; /* Reduced padding to bring settings closer to edge */
   }
 
   /* Enhanced language selector for mobile */
   .nav__language {
-    margin-right: 2.5rem; /* Pushed more to the right to give space to settings dropdown */
+    margin-right: 0; /* Remove extra margin */
     min-width: 48px; /* 40% of original 120px */
   }
 
   /* Make language dropdown smaller and more compact on mobile */
   .nav__language select {
-    padding: 0.4rem 0.3rem !important;
+    padding: 0.3rem 0.25rem !important;
     font-size: 0.85rem !important;
     min-width: 48px !important; /* 40% of original 120px */
-    height: 36px !important;
+    max-width: 48px !important; /* Prevent expansion */
+    height: 32px !important;
     background-color: #fff !important;
-    border: 2px solid #ccc !important;
-    border-radius: 6px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
     cursor: pointer !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
@@ -280,15 +281,15 @@
     background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
     background-repeat: no-repeat !important;
     background-position: right 4px center !important;
-    background-size: 10px !important;
-    padding-right: 20px !important;
+    background-size: 8px !important;
+    padding-right: 16px !important;
   }
   
   /* Profile dropdown positioned below navbar on mobile */
   .profile__menu {
     position: fixed;
     top: 64px; /* Fixed position below navbar */
-    right: 16px;
+    right: 0.5rem; /* Align with profile button */
     min-width: 140px;
     background: #2f2f2f;
     border: 1px solid #444;
@@ -307,18 +308,19 @@
 /* Extra small screens (phones) - Additional mobile optimization */
 @media (max-width: 480px) {
   .nav__language {
-    margin-right: 2rem; /* Keep pushed right for settings space */
+    margin-right: 0; /* Remove extra margin */
   }
 
   .nav__language select {
     min-width: 45px !important; /* Keep compact at 40% */
+    max-width: 45px !important; /* Prevent expansion */
     font-size: 0.8rem !important;
-    padding: 0.35rem 0.25rem !important;
+    padding: 0.3rem 0.2rem !important;
   }
 
   .nav__right {
     margin-right: 0; /* Remove margin to prevent cutoff */
-    gap: 0.5rem; /* Reduce gap on small screens */
-    padding-right: 1.5rem; /* Increase padding significantly to push settings away from edge */
+    gap: 0.4rem; /* Reduce gap on small screens */
+    padding-right: 0.5rem; /* Minimal padding to keep settings visible */
   }
 }

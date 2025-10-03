@@ -19,12 +19,13 @@ const LanguageSwitcher = memo(({ className = "" }) => {
         value={i18n.language}
         onChange={(e) => handleLanguageChange(e.target.value)}
         style={{
-          padding: '0.5rem',
+          padding: '0.3rem 0.25rem',
           borderRadius: '4px',
           border: '1px solid #ccc',
           backgroundColor: '#fff',
-          fontSize: '0.9rem',
-          cursor: 'pointer'
+          fontSize: '0.85rem',
+          cursor: 'pointer',
+          minWidth: '48px'
         }}
         aria-label="Select language"
       >
