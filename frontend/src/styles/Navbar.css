@@ -255,7 +255,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem; /* Add gap between language dropdown and profile */
-    padding-right: 1rem; /* Increase padding to push settings more to the left */
+    padding-right: 2rem; /* Increase padding significantly to push settings away from edge */
   }
 
   /* Enhanced language selector for mobile */
@@ -319,6 +319,6 @@
   .nav__right {
     margin-right: 0; /* Remove margin to prevent cutoff */
     gap: 0.5rem; /* Reduce gap on small screens */
-    padding-right: 0.75rem; /* Increase padding to push settings more to the left */
+    padding-right: 1.5rem; /* Increase padding significantly to push settings away from edge */
   }
 }
