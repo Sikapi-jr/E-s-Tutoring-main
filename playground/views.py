@@ -2704,23 +2704,24 @@ class MonthlyHoursListView(APIView):
         print(f"MonthlyHoursListView.post called with data: {request.data}")
         entries = request.data
         created = False
+        created_entries = []  # Track created entries for email notification
 
         try:
             for entry in entries:
                 print(f"Processing entry: {entry}")
-                
+
                 tutor_id = entry.get('tutor')
                 if not tutor_id:
                     print(f"Skipping entry without tutor ID: {entry}")
                     continue
-                    
+
                 # Get tutor user object
                 try:
                     tutor_user = User.objects.get(id=tutor_id)
                 except User.DoesNotExist:
                     print(f"Tutor with ID {tutor_id} does not exist")
                     continue
-                
+
                 stripeID = tutor_user.stripe_account_id if hasattr(tutor_user, 'stripe_account_id') else None
                 if not stripeID:
                     print(f"Tutor {tutor_id} has no stripe account, skipping")
@@ -2741,7 +2742,7 @@ class MonthlyHoursListView(APIView):
                     start_date=start_date,
                     tutor=tutor_user
                 ).exists()
-                
+
                 # Check for overlapping periods for the same tutor
                 # An overlap exists if any existing record has dates that intersect with our range
                 overlap_exists = MonthlyHours.objects.filter(
@@ -2764,11 +2765,23 @@ class MonthlyHoursListView(APIView):
                         TotalBeforeTax=entry.get('TotalBeforeTax')
                     )
                     created = True
+                    created_entries.append({
+                        'tutor': tutor_user,
+                        'start_date': start_date,
+                        'end_date': end_date,
+                        'online_hours': entry.get('OnlineHours'),
+                        'inperson_hours': entry.get('InPersonHours'),
+                        'total': entry.get('TotalBeforeTax')
+                    })
                     print(f"Created MonthlyHours for tutor {tutor_id}")
                 elif exists:
                     print(f"MonthlyHours already exists for tutor {tutor_id} from {start_date} to {end_date}")
                 elif overlap_exists:
                     print(f"MonthlyHours overlap detected for tutor {tutor_id} with period {start_date} to {end_date}")
+
+            # Send individual email notifications for all created entries
+            if created_entries:
+                self._send_monthly_hours_emails(created_entries)
 
         except Exception as e:
             print(f"Error in MonthlyHoursListView.post: {e}")
@@ -2778,6 +2791,138 @@ class MonthlyHoursListView(APIView):
             return Response({"status": "created"}, status=201)
         else:
             return Response({"status": "Not Created, Duplicate"}, status=301)
+
+    def _send_monthly_hours_emails(self, created_entries):
+        """Send individual email notifications to each tutor with their monthly hours breakdown"""
+        from .email_utils import send_mailgun_email
+
+        # Send individual email to each tutor
+        for entry in created_entries:
+            tutor = entry['tutor']
+            start_date = entry['start_date']
+            end_date = entry['end_date']
+
+            try:
+                # Fetch detailed hours for this tutor within the date range
+                hours_details = Hours.objects.filter(
+                    tutor=tutor,
+                    date__range=[start_date, end_date],
+                    status__in=['Accepted', 'Resolved'],
+                    eligible='Eligible'
+                ).order_by('date', 'startTime')
+
+                # Build email content
+                subject = f"Monthly Tutoring Hours Summary - {start_date.strftime('%B %Y')}"
+
+                # Build HTML content
+                html_content = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <h2 style="color: #192A88; border-bottom: 3px solid #FFB31B; padding-bottom: 10px;">
+                            Monthly Tutoring Hours Summary
+                        </h2>
+                        <p>Dear {tutor.firstName} {tutor.lastName},</p>
+                        <p>Here is your monthly tutoring hours summary for <strong>{start_date.strftime('%B %d, %Y')}</strong> to <strong>{end_date.strftime('%B %d, %Y')}</strong>:</p>
+
+                        <h3 style="color: #192A88; margin-top: 30px;">Session Details:</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background-color: #192A88; color: white;">
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Date</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Student</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Parent</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Time</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Hours</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Subject</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                """
+
+                for hour in hours_details:
+                    html_content += f"""
+                                <tr style="background-color: #f9f9f9;">
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.date.strftime('%b %d, %Y')}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.student.firstName} {hour.student.lastName}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.parent.firstName} {hour.parent.lastName}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.startTime.strftime('%I:%M %p')} - {hour.endTime.strftime('%I:%M %p')}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.totalTime}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.subject}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">{hour.location}</td>
+                                </tr>
+                    """
+
+                # Summary totals
+                total_online = float(entry['online_hours'])
+                total_inperson = float(entry['inperson_hours'])
+                total_earnings = float(entry['total'])
+
+                html_content += f"""
+                            </tbody>
+                        </table>
+
+                        <h3 style="color: #192A88; margin-top: 30px;">Summary:</h3>
+                        <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; border-left: 4px solid #FFB31B;">
+                            <p style="margin: 5px 0;"><strong>Online Hours:</strong> {total_online:.2f}</p>
+                            <p style="margin: 5px 0;"><strong>In-Person Hours:</strong> {total_inperson:.2f}</p>
+                            <p style="margin: 5px 0;"><strong>Total Hours:</strong> {total_online + total_inperson:.2f}</p>
+                            <p style="margin: 5px 0; font-size: 1.1em;"><strong>Total Earnings:</strong> <span style="color: #192A88;">${total_earnings:.2f}</span></p>
+                        </div>
+
+                        <p style="margin-top: 30px;">If you have any questions or concerns about these hours, please don't hesitate to contact us.</p>
+
+                        <p style="margin-top: 20px;">Best regards,<br>
+                        <strong>EGS Tutoring Team</strong></p>
+
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.85em; color: #666;">
+                            <p>This is an automated notification from EGS Tutoring. Please do not reply to this email.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+
+                # Plain text version
+                text_content = f"""
+Monthly Tutoring Hours Summary
+
+Dear {tutor.firstName} {tutor.lastName},
+
+Here is your monthly tutoring hours summary for {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}:
+
+Session Details:
+"""
+                for hour in hours_details:
+                    text_content += f"\n- {hour.date.strftime('%b %d, %Y')}: {hour.student.firstName} {hour.student.lastName} (Parent: {hour.parent.firstName} {hour.parent.lastName})"
+                    text_content += f"\n  Time: {hour.startTime.strftime('%I:%M %p')} - {hour.endTime.strftime('%I:%M %p')} ({hour.totalTime} hours)"
+                    text_content += f"\n  Subject: {hour.subject} | Location: {hour.location}\n"
+
+                text_content += f"""
+Summary:
+- Online Hours: {total_online:.2f}
+- In-Person Hours: {total_inperson:.2f}
+- Total Hours: {total_online + total_inperson:.2f}
+- Total Earnings: ${total_earnings:.2f}
+
+If you have any questions or concerns about these hours, please don't hesitate to contact us.
+
+Best regards,
+EGS Tutoring Team
+                """
+
+                # Send individual email to this tutor
+                send_mailgun_email(
+                    to_emails=[tutor.email],
+                    subject=subject,
+                    text_content=text_content,
+                    html_content=html_content
+                )
+                print(f"Monthly hours email sent to {tutor.email}")
+
+            except Exception as e:
+                print(f"Error sending email to {tutor.email}: {e}")
 
 #Ran once hours are calculate and sent
 class calculateMonthlyTotal(APIView):
