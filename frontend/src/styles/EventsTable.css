@@ -78,9 +78,10 @@
 .events-table th:nth-child(6), .events-table td:nth-child(6) { width: 10%; } /* End */
 .events-table th:nth-child(7), .events-table td:nth-child(7) { width: 8%; }  /* Status */
 .events-table th:nth-child(8), .events-table td:nth-child(8) { width: 10%; } /* Can't attend */
-.events-table tbody tr:nth-child(even) td { background: var(--color-light); }
+/* Removed zebra striping to allow dynamic red/green row colors based on cancellation status */
+/* .events-table tbody tr:nth-child(even) td { background: var(--color-light); } */
 .events-table tbody tr:hover td {
-  background: rgba(255, 179, 27, 0.15);
+  background: rgba(255, 179, 27, 0.15) !important;
 }
 .events-table td { border-bottom: 1px solid #e1e1e1; color: var(--color-dark); }
 
