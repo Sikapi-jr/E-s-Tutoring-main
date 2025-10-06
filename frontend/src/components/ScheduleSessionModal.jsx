@@ -352,18 +352,18 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
 
         {/* Modal Actions - outside scrollable area */}
         {isConnected && (
-          <div className="modal-actions">
+          <div className="modal-actions" style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
             <button
               type="button"
               className="form-button secondary"
               onClick={handleClose}
               style={{
-                width: "100px !important",
-                minWidth: "100px !important",
-                maxWidth: "100px !important",
-                padding: "0.5rem 0.75rem !important",
-                fontSize: "0.85rem !important",
-                flex: "0 0 100px !important"
+                width: "90px",
+                minWidth: "90px",
+                maxWidth: "90px",
+                padding: "0.5rem 0.5rem",
+                fontSize: "0.85rem",
+                flex: "0 0 90px"
               }}
             >
               {t('common.cancel')}
@@ -379,12 +379,12 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                 }
               }}
               style={{
-                width: "110px !important",
-                minWidth: "110px !important",
-                maxWidth: "110px !important",
-                padding: "0.5rem 0.75rem !important",
-                fontSize: "0.85rem !important",
-                flex: "0 0 110px !important"
+                width: "100px",
+                minWidth: "100px",
+                maxWidth: "100px",
+                padding: "0.5rem 0.5rem",
+                fontSize: "0.85rem",
+                flex: "0 0 100px"
               }}
             >
               Plan Session

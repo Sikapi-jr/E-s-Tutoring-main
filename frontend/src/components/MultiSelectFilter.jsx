@@ -25,7 +25,7 @@ export default function MultiSelectFilter({ value, onChange, options, placeholde
     <div
       className="msel"
       onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}
-      style={{ minWidth: "180px" }}
+      style={{ minWidth: "180px", position: "relative" }}
     >
       <button
         type="button"
@@ -55,7 +55,8 @@ export default function MultiSelectFilter({ value, onChange, options, placeholde
           marginTop: "2px",
           maxHeight: "200px",
           overflowY: "auto",
-          width: "100%",
+          minWidth: "180px",
+          width: "max-content",
           boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
         }}>
           {options.map((option) => {
@@ -67,7 +68,8 @@ export default function MultiSelectFilter({ value, onChange, options, placeholde
                 alignItems: "center",
                 padding: "8px 12px",
                 cursor: "pointer",
-                fontSize: "0.9rem"
+                fontSize: "0.9rem",
+                whiteSpace: "nowrap"
               }}>
                 <input
                   type="checkbox"
