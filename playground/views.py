@@ -2516,9 +2516,17 @@ class calculateTotal(APIView):
             total_inperson = inperson_hours * inperson_rate_dict.get(parent_id, Decimal('0'))
             total_before_tax = total_online + total_inperson
 
+            # Get parent name
+            try:
+                parent_user = User.objects.get(id=parent_id)
+                parent_name = f"{parent_user.firstName} {parent_user.lastName}"
+            except User.DoesNotExist:
+                parent_name = f"Parent ID {parent_id}"
+
             results.append({
                 "date": result_date,
                 "parent": parent_id,
+                "parent_name": parent_name,
                 "OnlineHours": float(online_hours),
                 "InPersonHours": float(inperson_hours),
                 "TotalBeforeTax": float(total_before_tax),
@@ -2958,10 +2966,18 @@ class calculateMonthlyTotal(APIView):
             total_inperson = inperson_hours * inperson_rate_dict.get(tutor, Decimal('0'))
             total_before_tax = total_online + total_inperson
 
+            # Get tutor name
+            try:
+                tutor_user = User.objects.get(id=tutor)
+                tutor_name = f"{tutor_user.firstName} {tutor_user.lastName}"
+            except User.DoesNotExist:
+                tutor_name = f"Tutor ID {tutor}"
+
             results.append({
                 "start_date": start_date.date(),
                 "end_date": last_date.date(),
                 "tutor": tutor,
+                "tutor_name": tutor_name,
                 "OnlineHours": float(online_hours),
                 "InPersonHours": float(inperson_hours),
                 "TotalBeforeTax": float(total_before_tax)

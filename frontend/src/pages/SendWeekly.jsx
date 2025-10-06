@@ -173,7 +173,7 @@ const SendWeekly = () => {
           {total.map((totalItem) => (
             <li key={totalItem.id ?? `${totalItem.parent}-${totalItem.date}`}>
               <strong>{t('common.date')}:</strong> {totalItem.date} <br />
-              <strong>{t('auth.parent')}:</strong> {totalItem.parent} <br />
+              <strong>{t('auth.parent')}:</strong> {totalItem.parent_name || totalItem.parent} <br />
               <strong>{t('weekly.onlineHours')}:</strong> {totalItem.OnlineHours} <br />
               <strong>{t('weekly.inPersonHours')}:</strong> {totalItem.InPersonHours} <br />
               <strong>{t('weekly.totalBeforeTax')}:</strong> ${totalItem.TotalBeforeTax} <br />

@@ -173,7 +173,7 @@ return (
         {total.map((totalItem) => (
           <li key={totalItem.id ?? `${totalItem.tutor}-${totalItem.end_date}`}>
             <strong>{t('common.date')}:</strong> {totalItem.end_date} <br />
-            <strong>{t('dashboard.tutor')}:</strong> {totalItem.tutor} <br />
+            <strong>{t('dashboard.tutor')}:</strong> {totalItem.tutor_name || totalItem.tutor} <br />
             <strong>{t('weekly.onlineHours')}:</strong> {totalItem.OnlineHours} <br />
             <strong>{t('weekly.inPersonHours')}:</strong> {totalItem.InPersonHours} <br />
             <strong>{t('weekly.totalBeforeTax')}:</strong> ${totalItem.TotalBeforeTax} <br />
