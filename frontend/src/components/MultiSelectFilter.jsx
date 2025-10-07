@@ -39,7 +39,8 @@ export default function MultiSelectFilter({ value, onChange, options, placeholde
           borderRadius: "4px",
           padding: "0 10px",
           height: "36px",
-          fontSize: "0.95rem"
+          fontSize: "0.95rem",
+          outline: "none"
         }}
       >
         {displayText} ▾

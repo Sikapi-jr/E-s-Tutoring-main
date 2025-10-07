@@ -12,6 +12,20 @@
   overflow: visible;             /* don't clip dropdowns at zoom */
 }
 
+/* Remove all outlines/focus rings from navbar elements */
+.nav * {
+  outline: none !important;
+}
+.nav *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.nav button:focus,
+.nav a:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .nav__brand {
   font-size: 1.5rem;
   font-weight: 600;
@@ -71,6 +85,8 @@
 
 /* ========== generic dropdowns ========== */
 .dd-wrapper { position: relative; }
+.dd-wrapper button { outline: none !important; }
+.dd-wrapper button:focus { outline: none !important; box-shadow: none !important; }
 
 .dd-menu {
   list-style: none;
