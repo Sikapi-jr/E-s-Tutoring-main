@@ -888,11 +888,15 @@ class UpdateEventRsvpView(APIView):
 
         # Patch event
         try:
+            # Use sendUpdates="none" for cancellations since we send custom emails
+            # Use sendUpdates="all" for acceptances so Google notifies attendees
+            send_updates = "none" if status_str == "cant_attend" else "all"
+
             updated = service.events().patch(
                 calendarId=calendar_id,
                 eventId=event_id,
                 body=event,
-                sendUpdates="all"  # notify others
+                sendUpdates=send_updates
             ).execute()
         except googleapiclient.errors.HttpError as e:
             return Response({"detail": f"Update failed: {e}"}, status=status.HTTP_400_BAD_REQUEST)
