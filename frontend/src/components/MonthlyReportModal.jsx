@@ -71,7 +71,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
     e.preventDefault();
 
     if (!hours?.eligible_for_report) {
-      alert('Insufficient hours. You need 4+ hours logged to submit a report.');
+      alert(t('monthlyReports.insufficientHoursAlert'));
       return;
     }
 
@@ -84,14 +84,14 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
 
       await api.post('/api/monthly-reports/create/', submitData);
 
-      alert('Monthly report submitted successfully!');
+      alert(t('monthlyReports.reportSubmitted'));
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
       console.error('Error submitting report:', error);
       const errorMessage = error.response?.data?.error ||
                           error.response?.data?.detail ||
-                          'Failed to submit report. Please try again.';
+                          t('monthlyReports.reportError');
       alert(errorMessage);
     } finally {
       setLoading(false);

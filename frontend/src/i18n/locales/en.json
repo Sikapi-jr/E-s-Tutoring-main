@@ -813,7 +813,8 @@
     "parentSupportPlaceholder": "Suggest specific activities, resources, or ways parents can help at home...",
     "lookingAheadLabel": "Looking Ahead",
     "lookingAheadQuestion": "What will be the main focus for the next month?",
-    "lookingAheadPlaceholder": "Outline goals, topics, and focus areas for the upcoming month..."
+    "lookingAheadPlaceholder": "Outline goals, topics, and focus areas for the upcoming month...",
+    "insufficientHoursAlert": "Insufficient hours. You need 4+ hours logged to submit a report."
   },
   "admin": {
     "adminTools": "Admin Tools",

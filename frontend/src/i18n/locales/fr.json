@@ -796,7 +796,8 @@
     "parentSupportPlaceholder": "Suggérez des activités spécifiques, des ressources ou des moyens par lesquels les parents peuvent aider à la maison...",
     "lookingAheadLabel": "Regard vers l'Avenir",
     "lookingAheadQuestion": "Quel sera le principal objectif pour le mois prochain ?",
-    "lookingAheadPlaceholder": "Décrivez les objectifs, les sujets et les domaines de concentration pour le mois à venir..."
+    "lookingAheadPlaceholder": "Décrivez les objectifs, les sujets et les domaines de concentration pour le mois à venir...",
+    "insufficientHoursAlert": "Heures insuffisantes. Vous devez avoir enregistré au moins 4 heures pour soumettre un rapport."
   },
   "admin": {
     "adminTools": "Outils d'Administration",
