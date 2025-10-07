@@ -106,6 +106,7 @@ body { background: #f8fafb; }
   gap: 0.75rem;
   flex-wrap: nowrap;              /* keep on one line */
   overflow-x: auto;               /* scroll horizontally if too narrow */
+  overflow-y: visible;            /* allow dropdowns to overflow vertically */
   -webkit-overflow-scrolling: touch;
   padding-bottom: 0.25rem;        /* space for scrollbar */
 }
