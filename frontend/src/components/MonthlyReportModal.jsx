@@ -118,9 +118,9 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
         backgroundColor: 'white',
         borderRadius: '8px',
         padding: '2rem',
-        maxWidth: '700px',
-        width: '100%',
-        maxHeight: '90vh',
+        maxWidth: '1200px',
+        width: '95%',
+        maxHeight: '95vh',
         overflowY: 'auto'
       }}>
         <div style={{
@@ -130,7 +130,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
           marginBottom: '1.5rem'
         }}>
           <h2 style={{ margin: 0 }}>
-            Monthly Report
+            {t('monthlyReports.title')}
           </h2>
           <button
             onClick={onClose}
@@ -148,15 +148,15 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
         {student && (
           <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
             <h4 style={{ margin: '0 0 0.5rem 0' }}>
-              Report for: {student.firstName} {student.lastName}
+              {t('monthlyReports.reportFor', { student: `${student.firstName} ${student.lastName}` })}
             </h4>
             <div style={{ fontSize: '0.9rem', color: '#666' }}>
-              <strong>Month:</strong> {new Date(formData.year, formData.month - 1).toLocaleDateString('en', { month: 'long', year: 'numeric' })}
+              <strong>{t('monthlyReports.month')}:</strong> {new Date(formData.year, formData.month - 1).toLocaleDateString('en', { month: 'long', year: 'numeric' })}
             </div>
             {hours && (
               <div style={{ fontSize: '0.9rem', color: hours.eligible_for_report ? '#28a745' : '#dc3545', marginTop: '0.5rem' }}>
-                <strong>Hours logged:</strong> {hours.total_hours} hours
-                {!hours.eligible_for_report && ' - Need 4+ hours to submit report'}
+                <strong>{t('monthlyReports.hoursLogged')}:</strong> {hours.total_hours} {t('common.hours')}
+                {!hours.eligible_for_report && ` - ${t('monthlyReports.need4Hours')}`}
               </div>
             )}
           </div>
@@ -166,10 +166,10 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
           {/* Overall Progress */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              1. Overall Progress *
+              1. {t('monthlyReports.overallProgressLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              How would you describe the child's progress this month?
+              {t('monthlyReports.overallProgressQuestion')}
             </p>
             <textarea
               name="overall_progress"
@@ -185,17 +185,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Describe the student's overall progress, improvements, and development this month..."
+              placeholder={t('monthlyReports.overallProgressPlaceholder')}
             />
           </div>
 
           {/* Strengths */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              2. Strengths *
+              2. {t('monthlyReports.strengths')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              What subject areas or skills has the child improved in or shown strong ability?
+              {t('monthlyReports.strengthsQuestion')}
             </p>
             <textarea
               name="strengths"
@@ -211,17 +211,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="List specific subjects, skills, or areas where the student excels..."
+              placeholder={t('monthlyReports.strengthsPlaceholder')}
             />
           </div>
 
           {/* Challenges */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              3. Challenges *
+              3. {t('monthlyReports.challengesLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              What areas still need extra support or practice?
+              {t('monthlyReports.challengesQuestion')}
             </p>
             <textarea
               name="challenges"
@@ -237,17 +237,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Identify areas that need more attention or practice..."
+              placeholder={t('monthlyReports.challengesPlaceholder')}
             />
           </div>
 
           {/* Work Habits & Effort */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              4. Work Habits & Effort *
+              4. {t('monthlyReports.workHabitsLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              How is the child's focus, participation, and effort during tutoring sessions?
+              {t('monthlyReports.workHabitsQuestion')}
             </p>
             <textarea
               name="work_habits"
@@ -263,17 +263,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Describe the student's focus, engagement, and work ethic during sessions..."
+              placeholder={t('monthlyReports.workHabitsPlaceholder')}
             />
           </div>
 
           {/* Confidence & Attitude */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              5. Confidence & Attitude *
+              5. {t('monthlyReports.confidenceLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              Do you notice any changes in the child's confidence or attitude toward learning?
+              {t('monthlyReports.confidenceQuestion')}
             </p>
             <textarea
               name="confidence_attitude"
@@ -289,17 +289,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Note any changes in confidence, attitude, or mindset toward learning..."
+              placeholder={t('monthlyReports.confidencePlaceholder')}
             />
           </div>
 
           {/* Homework & Practice */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              6. Homework & Practice *
+              6. {t('monthlyReports.homeworkLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              How consistent has the child been with completing assignments or practicing skills outside of tutoring?
+              {t('monthlyReports.homeworkQuestion')}
             </p>
             <textarea
               name="homework_practice"
@@ -315,17 +315,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Describe homework completion, practice consistency, and independent work..."
+              placeholder={t('monthlyReports.homeworkPlaceholder')}
             />
           </div>
 
           {/* Parent Support */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              7. Parent Support *
+              7. {t('monthlyReports.parentSupportLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              Is there anything parents can do at home to reinforce learning?
+              {t('monthlyReports.parentSupportQuestion')}
             </p>
             <textarea
               name="parent_support"
@@ -341,17 +341,17 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Suggest specific activities, resources, or ways parents can help at home..."
+              placeholder={t('monthlyReports.parentSupportPlaceholder')}
             />
           </div>
 
           {/* Looking Ahead */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              8. Looking Ahead *
+              8. {t('monthlyReports.lookingAheadLabel')} *
             </label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
-              What will be the main focus for the next month?
+              {t('monthlyReports.lookingAheadQuestion')}
             </p>
             <textarea
               name="looking_ahead"
@@ -367,7 +367,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 resize: 'vertical',
                 fontSize: '0.95rem'
               }}
-              placeholder="Outline goals, topics, and focus areas for the upcoming month..."
+              placeholder={t('monthlyReports.lookingAheadPlaceholder')}
             />
           </div>
 
@@ -384,7 +384,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 fontSize: '1rem'
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -400,7 +400,7 @@ const MonthlyReportModal = ({ isOpen, onClose, student, onSuccess }) => {
                 fontWeight: 'bold'
               }}
             >
-              {loading ? 'Submitting...' : 'Submit Report'}
+              {loading ? t('monthlyReports.submitting') : t('monthlyReports.submitReport')}
             </button>
           </div>
         </form>
