@@ -7,6 +7,7 @@ import DisputeModal from "../components/DisputeModal";
 import EditHoursModal from "../components/EditHoursModal";
 import EditHistoryModal from "../components/EditHistoryModal";
 import TutorReplyModal from "../components/TutorReplyModal";
+import LogHoursModal from "../components/LogHoursModal";
 import "../styles/HoursPage.css";
 
 export default function LoggedHoursPage() {
@@ -28,6 +29,7 @@ export default function LoggedHoursPage() {
   const [selectedHourForEdit, setSelectedHourForEdit] = useState(null);
   const [editHistoryModalOpen, setEditHistoryModalOpen] = useState(false);
   const [selectedHourForHistory, setSelectedHourForHistory] = useState(null);
+  const [logHoursModalOpen, setLogHoursModalOpen] = useState(false);
 
   const handleDisputeClick = useCallback((hour) => {
     setSelectedHourForDispute(hour);
@@ -265,8 +267,31 @@ export default function LoggedHoursPage() {
       <div className="hours-grid">
         {/* Left column: logged hours */}
         <div className="logged-hours">
-          <h2 className="hrs-title">{t("loggedHours.title")}</h2>
-          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 className="hrs-title" style={{ margin: 0 }}>{t("myHours.title")}</h2>
+            {user.roles === 'tutor' && (
+              <button
+                className="add-hours-button"
+                onClick={() => setLogHoursModalOpen(true)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#192A88',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#0d1654'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#192A88'}
+              >
+                + {t('myHours.addHours')}
+              </button>
+            )}
+          </div>
+
           {/* Mobile filters - above table */}
           <div className="mobile-filters">
             <div className="mobile-filter-item">
@@ -541,6 +566,13 @@ export default function LoggedHoursPage() {
           onSubmitSuccess={handleEditSuccess}
         />
       )}
+
+      {/* Log Hours Modal */}
+      <LogHoursModal
+        isOpen={logHoursModalOpen}
+        onClose={() => setLogHoursModalOpen(false)}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }

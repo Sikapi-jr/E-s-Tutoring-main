@@ -7,7 +7,7 @@ import "../styles/EventsFilters.css";
 /**
  * Small multiselect dropdown for statuses
  */
-function StatusMulti({ value, onChange }) {
+function StatusMulti({ value, onChange, t }) {
   const [open, setOpen] = useState(false);
 
   const toggle = (name) => {
@@ -25,7 +25,7 @@ function StatusMulti({ value, onChange }) {
         className="msel__btn"
         onClick={() => setOpen((o) => !o)}
       >
-        {value.length ? value.join(", ") : "All statuses"} ▾
+        {value.length ? value.join(", ") : t('calendar.allStatuses')} ▾
       </button>
 
       {open && (
@@ -36,7 +36,7 @@ function StatusMulti({ value, onChange }) {
               checked={value.includes("default")}
               onChange={() => toggle("default")}
             />
-            Default
+            {t('status.default')}
           </label>
           <label className="msel__row">
             <input
@@ -44,7 +44,7 @@ function StatusMulti({ value, onChange }) {
               checked={value.includes("declined")}
               onChange={() => toggle("declined")}
             />
-            Declined
+            {t('status.declined')}
           </label>
         </div>
       )}
@@ -83,7 +83,7 @@ export default function EventsPage() {
         setAllEvents(items);
       } catch (e) {
         console.error(e);
-        setErr("Failed to load events");
+        setErr(t('errors.failedToLoadEvents'));
       } finally {
         setLoading(false);
       }
@@ -162,7 +162,7 @@ export default function EventsPage() {
       );
     } catch (e) {
       console.error(e);
-      alert("Could not update RSVP.");
+      alert(t('calendar.couldNotUpdateRSVP'));
     }
   };
 
@@ -170,7 +170,7 @@ export default function EventsPage() {
     return (
       <div className="ev-spinner-wrap">
         <div className="ev-spinner" />
-        <p>Loading…</p>
+        <p>{t('common.loadingEllipsis')}</p>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function EventsPage() {
 
   return (
     <div className="events-page">
-      <h2 className="ev-title">Scheduled EGS Tutoring Events</h2>
+      <h2 className="ev-title">{t('calendar.scheduledEventsTitle')}</h2>
 
       {/* FILTER BAR */}
       <form
@@ -188,7 +188,7 @@ export default function EventsPage() {
         <input
           className="ev-input"
           type="text"
-          placeholder="Search title/description…"
+          placeholder={t('calendar.searchPlaceholder')}
           value={filters.q}
           onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
         />
@@ -196,6 +196,7 @@ export default function EventsPage() {
         <StatusMulti
           value={filters.statuses}
           onChange={(statuses) => setFilters((f) => ({ ...f, statuses }))}
+          t={t}
         />
 
         <label className="inline-check">
@@ -206,7 +207,7 @@ export default function EventsPage() {
               setFilters((f) => ({ ...f, cantAttendOnly: e.target.checked }))
             }
           />
-          Can’t attend only
+          {t('calendar.cantAttendOnly')}
         </label>
 
         <input
@@ -229,12 +230,12 @@ export default function EventsPage() {
           <table className="events-table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Date</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Description</th>
-                <th title="Can't attend">❌</th>
+                <th>{t('calendar.titleHeader')}</th>
+                <th>{t('calendar.dateHeader')}</th>
+                <th>{t('calendar.startHeader')}</th>
+                <th>{t('calendar.endHeader')}</th>
+                <th>{t('calendar.descriptionHeader')}</th>
+                <th title={t('events.cantAttend')}>❌</th>
               </tr>
             </thead>
             <tbody>
@@ -243,7 +244,7 @@ export default function EventsPage() {
                 const e = new Date(ev.end?.dateTime || ev.end?.date);
                 return (
                   <tr key={ev.id}>
-                    <td>{ev.summary || "No Title"}</td>
+                    <td>{ev.summary || t('calendar.noTitle')}</td>
                     <td>{s.toLocaleDateString()}</td>
                     <td>{s.toLocaleTimeString()}</td>
                     <td>{e.toLocaleTimeString()}</td>
@@ -253,7 +254,7 @@ export default function EventsPage() {
                         onClick={() => markCantAttend(ev.id)}
                         className="cant-btn"
                         style={{ fontSize: "1.2rem" }}
-                        title="Can't attend"
+                        title={t('events.cantAttend')}
                       >
                         ❌
                       </button>
@@ -265,7 +266,7 @@ export default function EventsPage() {
           </table>
         ) : (
           <p style={{ textAlign: "center", color: "#888" }}>
-            No events match your filters.
+            {t('calendar.noEventsMatch')}
           </p>
         )}
       </div>

@@ -362,12 +362,12 @@ const AdminRequestDetail = () => {
                     fontSize: '1.3rem',
                     padding: '0.75rem 1.5rem',
                     borderRadius: '25px',
-                    backgroundColor: request.is_accepted ? '#d4edda' : '#fff3cd',
-                    color: request.is_accepted ? '#155724' : '#856404',
-                    border: `2px solid ${request.is_accepted ? '#c3e6cb' : '#ffeaa7'}`,
+                    backgroundColor: request.is_accepted === 'Accepted' ? '#d4edda' : '#fff3cd',
+                    color: request.is_accepted === 'Accepted' ? '#155724' : '#856404',
+                    border: `2px solid ${request.is_accepted === 'Accepted' ? '#c3e6cb' : '#ffeaa7'}`,
                     fontWeight: 'bold'
                   }}>
-                    {request.is_accepted ? '✅ Accepted' : '⏳ Pending'}
+                    {request.is_accepted === 'Accepted' ? '✅ Accepted' : '⏳ Pending'}
                   </span>
                 </div>
               </div>
@@ -390,6 +390,53 @@ const AdminRequestDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Accepted Tutor Information */}
+          {request.is_accepted === 'Accepted' && request.accepted_tutor_name && (
+            <div style={{ marginTop: '3rem' }}>
+              <h3 style={{
+                color: '#192A88',
+                fontSize: '1.8rem',
+                marginBottom: '1.5rem',
+                borderBottom: '2px solid #e9ecef',
+                paddingBottom: '0.5rem'
+              }}>
+                👨‍🏫 Accepted Tutor
+              </h3>
+              <div style={{
+                backgroundColor: '#d4edda',
+                padding: '2rem',
+                borderRadius: '8px',
+                border: '2px solid #c3e6cb'
+              }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <strong style={{ color: '#155724', fontSize: '1.3rem' }}>Tutor Name:</strong>
+                  <div style={{ fontSize: '1.8rem', marginTop: '0.5rem', fontWeight: 'bold', color: '#155724' }}>
+                    {request.accepted_tutor_name}
+                  </div>
+                </div>
+
+                {request.accepted_tutor_message && (
+                  <div>
+                    <strong style={{ color: '#155724', fontSize: '1.3rem' }}>Message:</strong>
+                    <div style={{
+                      fontSize: '1.2rem',
+                      marginTop: '0.5rem',
+                      backgroundColor: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      border: '1px solid #c3e6cb',
+                      lineHeight: '1.8',
+                      fontStyle: 'italic',
+                      color: '#333'
+                    }}>
+                      "{request.accepted_tutor_message}"
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

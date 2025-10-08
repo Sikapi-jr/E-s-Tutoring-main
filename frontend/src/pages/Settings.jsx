@@ -161,7 +161,7 @@ export default function Settings() {
   };
 
   const handleDocumentDelete = async (documentId, documentName) => {
-    if (!window.confirm(`Are you sure you want to delete "${documentName}"?`)) {
+    if (!window.confirm(t('settings.confirmDeleteDocument', { name: documentName }))) {
       return;
     }
 
@@ -172,7 +172,7 @@ export default function Settings() {
       // Refresh the documents list
       loadDocuments();
       
-      alert('Document deleted successfully');
+      alert(t('settings.documentDeletedSuccess'));
     } catch (error) {
       console.error("Document deletion failed:", error);
       

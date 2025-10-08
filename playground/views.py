@@ -1650,12 +1650,135 @@ class RequestListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
+        # Check if a tutor_code was provided in the request
+        tutor_code = self.request.data.get('tutor_code')
+
+        if tutor_code:
+            # Handle tutor referral - automatically create accepted request
+            try:
+                # Find the tutor with this referral code
+                tutor = User.objects.get(tutor_referral_code=tutor_code.upper(), roles='tutor')
+
+                # Create an ACCEPTED TutoringRequest directly
+                tutoring_request = TutoringRequest.objects.create(
+                    parent_id=self.request.data.get('parent'),
+                    student_id=self.request.data.get('student'),
+                    subject=self.request.data.get('subject'),
+                    grade=self.request.data.get('grade'),
+                    service=self.request.data.get('service'),
+                    city=self.request.data.get('city'),
+                    description=self.request.data.get('description'),
+                    is_accepted="Accepted"
+                )
+
+                # Create automatic TutorResponse with referral message
+                tutor_name = f"{tutor.firstName} {tutor.lastName}"
+                TutorResponse.objects.create(
+                    request=tutoring_request,
+                    tutor=tutor,
+                    message=f"Referral to {tutor_name}",
+                    rejected=False
+                )
+
+                # Create AcceptedTutor relationship to pair them up
+                AcceptedTutor.objects.create(
+                    request=tutoring_request,
+                    parent_id=self.request.data.get('parent'),
+                    student_id=self.request.data.get('student'),
+                    tutor=tutor,
+                    status='Accepted'
+                )
+
+                # Send email notification to parent about successful pairing
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    parent = User.objects.get(id=self.request.data.get('parent'))
+                    student = User.objects.get(id=self.request.data.get('student'))
+
+                    if parent.email:
+                        subject = f"Great News! {tutor_name} is now paired with {student.firstName}"
+                        message = f"""
+Dear {parent.firstName} {parent.lastName},
+
+Excellent news! {tutor_name} has been successfully paired with {student.firstName} {student.lastName} for tutoring.
+
+Subject: {tutoring_request.subject}
+Grade: {tutoring_request.grade}
+Service Type: {tutoring_request.service}
+
+{tutor_name} will reach out to you shortly to schedule the first session.
+
+You can view all your tutoring details and scheduled sessions in your EGS Tutoring dashboard.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [parent.email],
+                            fail_silently=True
+                        )
+                except Exception as e:
+                    print(f"Failed to send parent notification email: {e}")
+
+                # Send email notification to tutor about new pairing
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    parent = User.objects.get(id=self.request.data.get('parent'))
+                    student = User.objects.get(id=self.request.data.get('student'))
+
+                    if tutor.email:
+                        subject = f"New Student Paired: {student.firstName} {student.lastName}"
+                        message = f"""
+Dear {tutor.firstName},
+
+A parent has requested you as their tutor using your referral code!
+
+Parent: {parent.firstName} {parent.lastName}
+Student: {student.firstName} {student.lastName}
+Subject: {tutoring_request.subject}
+Grade: {tutoring_request.grade}
+Service Type: {tutoring_request.service}
+City: {tutoring_request.city}
+
+Description: {tutoring_request.description}
+
+You are now paired with this student. Please reach out to the parent at {parent.email} or {parent.phone_number or 'N/A'} to schedule your first session.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [tutor.email],
+                            fail_silently=True
+                        )
+                except Exception as e:
+                    print(f"Failed to send tutor notification email: {e}")
+
+                # Don't create the normal request, just return
+                return
+
+            except User.DoesNotExist:
+                # Invalid tutor code, proceed with normal request creation
+                print(f"Invalid tutor code: {tutor_code}")
+                pass
+
+        # Normal request creation (no tutor code or invalid code)
         request_obj = serializer.save()
-        
+
         # Send email notifications to tutors about new requests
         try:
             from playground.tasks import send_new_request_notification_async
-            
+
             # Get all tutors who have email notifications enabled
             tutors_with_notifications = User.objects.filter(
                 roles='tutor',
@@ -1663,12 +1786,12 @@ class RequestListCreateView(generics.ListCreateAPIView):
                 email_new_requests=True,
                 email__isnull=False
             ).exclude(email='')
-            
+
             if tutors_with_notifications.exists():
                 tutor_emails = list(tutors_with_notifications.values_list('email', flat=True))
                 parent_name = f"{request_obj.parent.firstName} {request_obj.parent.lastName}"
                 student_name = f"{request_obj.student.firstName} {request_obj.student.lastName}"
-                
+
                 send_new_request_notification_async.delay(
                     tutor_emails,
                     parent_name,
@@ -3973,10 +4096,73 @@ class AdminUserHoursView(APIView):
             'as_tutor': as_tutor
         }
 
+        # Get relationships based on role
+        relationships = {
+            'students': [],
+            'tutors': [],
+            'children': []
+        }
+
+        # If user is a tutor, get their students
+        if user.roles == 'tutor':
+            accepted_tutors = AcceptedTutor.objects.filter(tutor=user).select_related('student')
+            relationships['students'] = [
+                {
+                    'id': at.student.id,
+                    'name': f"{at.student.firstName} {at.student.lastName}",
+                    'email': at.student.email,
+                    'accepted_at': at.created_at
+                }
+                for at in accepted_tutors
+            ]
+
+        # If user is a student, get their tutors
+        if user.roles == 'student':
+            accepted_tutors = AcceptedTutor.objects.filter(student=user).select_related('tutor')
+            relationships['tutors'] = [
+                {
+                    'id': at.tutor.id,
+                    'name': f"{at.tutor.firstName} {at.tutor.lastName}",
+                    'email': at.tutor.email,
+                    'accepted_at': at.created_at
+                }
+                for at in accepted_tutors
+            ]
+
+        # If user is a parent, get their children
+        if user.roles == 'parent':
+            # Get all students where this user is the parent
+            children = User.objects.filter(parent_account=user, roles='student')
+            relationships['children'] = [
+                {
+                    'id': child.id,
+                    'name': f"{child.firstName} {child.lastName}",
+                    'email': child.email,
+                    'created_at': child.date_joined
+                }
+                for child in children
+            ]
+
+        # Get user documents
+        documents = UserDocument.objects.filter(user=user).order_by('-uploaded_at')
+        user_documents = [
+            {
+                'id': doc.id,
+                'title': doc.title,
+                'document_type': doc.document_type,
+                'file_url': doc.document.url if doc.document else None,
+                'uploaded_at': doc.uploaded_at,
+                'file_name': doc.document.name.split('/')[-1] if doc.document else None
+            }
+            for doc in documents
+        ]
+
         return Response({
             'user_info': user_info,
             'stats': stats,
-            'hours': serializer.data
+            'hours': serializer.data,
+            'relationships': relationships,
+            'documents': user_documents
         }, status=200)
 
 

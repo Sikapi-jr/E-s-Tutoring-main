@@ -31,11 +31,11 @@ function LoginForm() {
     setLoading(true);
     try {
       await api.post("/api/resendVerification/", { email: resendEmail });
-      alert("Verification email sent! Please check your inbox.");
+      alert(t('auth.verificationEmailSent'));
       setShowResendVerification(false);
       setResendEmail("");
     } catch (err) {
-      alert("Error sending verification email. Please try again.");
+      alert(t('auth.verificationEmailError'));
     } finally {
       setLoading(false);
     }

@@ -17,6 +17,8 @@ export default function AdminUserSearch() {
   const [userInfo, setUserInfo] = useState(null);
   const [userHours, setUserHours] = useState([]);
   const [userStats, setUserStats] = useState(null);
+  const [relationships, setRelationships] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -62,6 +64,8 @@ export default function AdminUserSearch() {
       setUserInfo(response.data.user_info);
       setUserStats(response.data.stats);
       setUserHours(response.data.hours);
+      setRelationships(response.data.relationships || null);
+      setDocuments(response.data.documents || []);
       setSearchResults([]); // Hide dropdown
     } catch (err) {
       console.error("Error fetching user hours:", err);
@@ -78,6 +82,8 @@ export default function AdminUserSearch() {
     setUserInfo(null);
     setUserHours([]);
     setUserStats(null);
+    setRelationships(null);
+    setDocuments([]);
     setError("");
   };
 
@@ -237,6 +243,99 @@ export default function AdminUserSearch() {
                   <div className="stat-number">{userStats.as_tutor}</div>
                   <div className="stat-label">{t('admin.asTutor')}</div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Relationships Section */}
+          {relationships && (
+            <div className="relationships-section">
+              {/* Students (for tutors) */}
+              {relationships.students && relationships.students.length > 0 && (
+                <div className="relationship-card">
+                  <h3>👨‍🎓 {t('admin.currentStudents')} ({relationships.students.length})</h3>
+                  <div className="relationship-list">
+                    {relationships.students.map((student) => (
+                      <div key={student.id} className="relationship-item">
+                        <div className="relationship-name">{student.name}</div>
+                        <div className="relationship-email">{student.email}</div>
+                        <div className="relationship-date">
+                          {t('admin.since')}: {new Date(student.accepted_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tutors (for students) */}
+              {relationships.tutors && relationships.tutors.length > 0 && (
+                <div className="relationship-card">
+                  <h3>👨‍🏫 {t('admin.currentTutors')} ({relationships.tutors.length})</h3>
+                  <div className="relationship-list">
+                    {relationships.tutors.map((tutor) => (
+                      <div key={tutor.id} className="relationship-item">
+                        <div className="relationship-name">{tutor.name}</div>
+                        <div className="relationship-email">{tutor.email}</div>
+                        <div className="relationship-date">
+                          {t('admin.since')}: {new Date(tutor.accepted_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Children (for parents) */}
+              {relationships.children && relationships.children.length > 0 && (
+                <div className="relationship-card">
+                  <h3>👶 {t('admin.children')} ({relationships.children.length})</h3>
+                  <div className="relationship-list">
+                    {relationships.children.map((child) => (
+                      <div key={child.id} className="relationship-item">
+                        <div className="relationship-name">{child.name}</div>
+                        <div className="relationship-email">{child.email}</div>
+                        <div className="relationship-date">
+                          {t('admin.joinedOn')}: {new Date(child.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Documents Section */}
+          {documents && documents.length > 0 && (
+            <div className="documents-section">
+              <h3>📄 {t('admin.uploadedDocuments')} ({documents.length})</h3>
+              <div className="documents-list">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="document-item">
+                    <div className="document-icon">📎</div>
+                    <div className="document-details">
+                      <div className="document-title">{doc.title}</div>
+                      <div className="document-meta">
+                        <span className="document-type">{doc.document_type}</span>
+                        <span className="document-date">
+                          {new Date(doc.uploaded_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="document-filename">{doc.file_name}</div>
+                    </div>
+                    {doc.file_url && (
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="document-download"
+                      >
+                        {t('admin.download')} ⬇
+                      </a>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

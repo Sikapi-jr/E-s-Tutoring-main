@@ -6,6 +6,22 @@
     "whyPortal": "Pourquoi utiliser le portail EGS?",
     "goToPortal": "Accéder au portail",
     "footerText": "Accédez à votre tableau de bord de tutorat et gérez tout depuis un emplacement centralisé.",
+    "gettingStarted": "Démarrer en tant que Parent",
+    "stepsSubtitle": "Suivez ces étapes simples pour connecter votre enfant avec le tuteur parfait :",
+    "steps": {
+      "step1": {
+        "title": "Créer des Comptes",
+        "description": "Inscrivez un compte pour vous-même, puis créez des comptes étudiants pour vos enfants via votre tableau de bord parent."
+      },
+      "step2": {
+        "title": "Demander un Tuteur",
+        "description": "Soumettez une demande de tutorat en spécifiant le niveau scolaire de votre enfant, les besoins en matière et le format d'apprentissage préféré (en ligne ou en personne)."
+      },
+      "step3": {
+        "title": "Examiner les Réponses",
+        "description": "Consultez la page Demandes Actuelles pour voir les réponses des tuteurs, comparer les qualifications et accepter la meilleure option pour votre enfant."
+      }
+    },
     "features": {
       "scheduling": {
         "title": "Planification des séances",
@@ -77,7 +93,12 @@
     "city": "Ville",
     "phone": "Téléphone",
     "phoneNumber": "Numéro de téléphone",
-    "notProvided": "Non fourni"
+    "notProvided": "Non fourni",
+    "submitting": "Soumission en cours...",
+    "loadingPage": "Chargement de la page...",
+    "loadingEllipsis": "Chargement…",
+    "ctrlEnterTip": "Astuce : Appuyez sur Ctrl+Entrée pour soumettre rapidement",
+    "sending": "Envoi en cours..."
   },
   "navigation": {
     "home": "Accueil",
@@ -144,7 +165,7 @@
     "parent": "Parent",
     "tutor": "Tuteur",
     "student": "Étudiant",
-    "admin": "Administrateur", 
+    "admin": "Administrateur",
     "phoneNumber": "Numéro de Téléphone",
     "parentEmail": "Courriel du parent",
     "parentUsername": "Nom d'utilisateur du parent",
@@ -157,7 +178,26 @@
     "registerAs": "S'inscrire en tant que {{role}}",
     "noUserLoggedIn": "Aucun utilisateur n'est connecté.",
     "verificationFailed": "Échec de la vérification.",
-    "verifyingEmail": "Vérification de votre courriel..."
+    "verifyingEmail": "Vérification de votre courriel...",
+    "verificationEmailSent": "Courriel de vérification envoyé ! Veuillez vérifier votre boîte de réception.",
+    "verificationEmailError": "Erreur lors de l'envoi du courriel de vérification. Veuillez réessayer.",
+    "passwordResetSuccess": "Réinitialisation du mot de passe réussie !",
+    "usernamePlaceholder": "Nom d'utilisateur",
+    "newPasswordPlaceholder": "Nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Retapez le nouveau mot de passe",
+    "emailPlaceholder": "Adresse courriel",
+    "passwordKeyboardCharsOnly": "Le mot de passe ne peut contenir que des caractères du clavier",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+    "passwordNotNumeric": "Le mot de passe ne peut pas être entièrement numérique",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "tokenInvalidOrUsed": "Jeton déjà utilisé ou invalide. Demandez un autre courriel de réinitialisation de mot de passe.",
+    "enterNewPassword": "Entrez un nouveau mot de passe",
+    "retypePassword": "Retapez le mot de passe",
+    "resetButton": "Réinitialiser",
+    "passwordResetEmailSent": "Courriel de réinitialisation de mot de passe envoyé ! Veuillez vérifier votre boîte de réception.",
+    "passwordResetEmailError": "Erreur lors de l'envoi du courriel de réinitialisation de mot de passe. Veuillez réessayer.",
+    "resendVerificationTitle": "Renvoyer le courriel de vérification",
+    "resendVerificationButton": "Renvoyer le courriel de vérification"
   },
   "home": {
     "adminTools": "Outils d'administration",
@@ -211,7 +251,7 @@
     "hoursThisWeek": "heures cette semaine !",
     "invoicesSummary": "{{total}} au total, {{paid}} payées",
     "recentParentRequests": "Demandes Récentes de Parents",
-    "myRequests": "Mes Demandes", 
+    "myRequests": "Mes Demandes",
     "recentRequests": "Demandes Récentes",
     "noRecentRequests": "Aucune demande récente",
     "noTutoringRequests": "Aucune demande de tutorat pour le moment",
@@ -229,7 +269,12 @@
     "stripeNotSetup": "Compte de Paiement Non Configuré",
     "stripeSetupRequired": "Vous devez configurer votre compte Stripe pour recevoir les paiements des sessions de tutorat.",
     "checkEmailStripe": "Veuillez vérifier votre courriel pour les instructions d'intégration Stripe.",
-    "setupStripeAccount": "Configurer le Compte de Paiement"
+    "setupStripeAccount": "Configurer le Compte de Paiement",
+    "parentNotifiedCannotAttend": "Le parent a été informé que vous ne pouvez pas assister à cet événement.",
+    "failedToNotifyParent": "Échec de la notification du parent. Veuillez le contacter directement.",
+    "failedToLoadTutors": "Échec du chargement des tuteurs",
+    "noTutorsAssigned": "Aucun tuteur assigné pour le moment",
+    "myTutors": "Mes Tuteurs"
   },
   "dashboard": {
     "parentDashboard": "Tableau de bord parent",
@@ -277,9 +322,16 @@
     "errorSubmitting": "Erreur lors de la soumission de la réponse",
     "yourReply": "Votre réponse",
     "typeReply": "Tapez votre réponse ici...",
-    "submitReply": "Soumettre la réponse"
+    "submitReply": "Soumettre la réponse",
+    "acceptedTutor": "Tuteur accepté",
+    "tutorMessage": "Message du tuteur"
   },
   "logHours": {
+    "title": "Enregistrer les Heures",
+    "cannotLogFuture": "Impossible d'enregistrer des heures pour des dates ou heures futures. Veuillez sélectionner une date et heure passées.",
+    "endTimeCannotBeFuture": "L'heure de fin de la session ne peut pas être dans le futur. Veuillez vérifier votre date et heure de fin.",
+    "duplicateEntry": "Vous avez déjà enregistré des heures pour cet étudiant à cette date et heure exactes. Veuillez vérifier vos entrées existantes ou sélectionner une heure différente.",
+    "failedToLog": "Échec de l'enregistrement des heures. Veuillez vérifier tous les champs et réessayer.",
     "title": "Enregistrer les heures de tutorat",
     "selectStudent": "Sélectionner un étudiant",
     "startTime": "Heure de début",
@@ -313,6 +365,10 @@
     "duplicateHours": "Vous avez déjà enregistré des heures pour cet étudiant à cette date et heure exactes.",
     "allFieldsRequired": "Veuillez remplir tous les champs obligatoires.",
     "hoursAddedSuccess": "{{hours}} heures ajoutées avec {{student}}"
+  },
+  "myHours": {
+    "title": "Mes Heures",
+    "addHours": "Ajouter des Heures"
   },
   "loggedHours": {
     "title": "Mes Heures Enregistrées",
@@ -388,7 +444,26 @@
     "for6Weeks": "pour 6 semaines",
     "for6Sessions": "pour 6 sessions",
     "weeklyHelp": "Créera 6 sessions hebdomadaires",
-    "biweeklyHelp": "Créera 6 sessions toutes les 2 semaines (12 semaines au total)"
+    "biweeklyHelp": "Créera 6 sessions toutes les 2 semaines (12 semaines au total)",
+    "couldNotUpdateRSVP": "Impossible de mettre à jour la RSVP.",
+    "scheduledEventsTitle": "Événements EGS Tutoring Planifiés",
+    "searchPlaceholder": "Rechercher titre/description…",
+    "titleHeader": "Titre",
+    "dateHeader": "Date",
+    "startHeader": "Début",
+    "endHeader": "Fin",
+    "descriptionHeader": "Description",
+    "noTitle": "Aucun Titre",
+    "allStatuses": "Tous les statuts",
+    "statusDefault": "Par défaut",
+    "statusDeclined": "Refusé",
+    "cantAttendOnly": "Indisponibles seulement",
+    "noEventsMatch": "Aucun événement ne correspond à vos filtres.",
+    "pleaseSelectStudent": "Veuillez sélectionner un étudiant",
+    "noTutorAssigned": "Aucun tuteur assigné à cet étudiant pour le moment. Veuillez d'abord assigner un tuteur.",
+    "couldNotFindTutorInfo": "Impossible de trouver les informations du tuteur pour cet étudiant. Veuillez aller à Tutorat → Demander un Tuteur pour assigner d'abord un tuteur.",
+    "planningOptionalNote": "💡 La planification des sessions est optionnelle ! Cet outil vous aide à organiser votre emploi du temps de tutorat pour une meilleure gestion du temps. Vous pouvez enregistrer les heures des sessions qu'elles aient été planifiées à l'avance ou non.",
+    "planSession": "Planifier une Session"
   },
   "requests": {
     "requestTutor": "Demander un tuteur",
@@ -431,7 +506,23 @@
     "city": "Ville",
     "noStudentsMessage": "Vous n'avez aucun étudiant inscrit. Inscrire un étudiant maintenant ?",
     "registerStudent": "Inscrire un Étudiant",
-    "hasAccepted": "a accepté"
+    "hasAccepted": "a accepté",
+    "alreadyKnowTutor": "Vous connaissez déjà l'un de nos tuteurs? Entrez leur code unique de tuteur",
+    "enterTutorCode": "Entrez le code à 6 chiffres du tuteur",
+    "tutorCodeOptional": "Optionnel - Ignorez ceci si vous n'avez pas de code"
+  },
+  "referral": {
+    "tutorReferralRequest": "Demande de Référence de Tuteur",
+    "parentInformation": "Informations du Parent",
+    "requestDetails": "Détails de la Demande",
+    "confirmAccept": "Êtes-vous sûr de vouloir accepter cette demande de tutorat?",
+    "confirmDecline": "Êtes-vous sûr de vouloir refuser cette demande de tutorat?",
+    "acceptedSuccess": "Vous avez accepté cette demande de tutorat avec succès!",
+    "declinedSuccess": "Vous avez refusé cette demande de tutorat.",
+    "invalidLink": "Lien de Référence Invalide",
+    "alreadyResponded": "Déjà Répondu",
+    "alreadyRespondedMessage": "Vous avez déjà répondu à cette demande de référence.",
+    "redirecting": "Redirection vers l'accueil..."
   },
   "invoices": {
     "title": "Factures",
@@ -484,7 +575,10 @@
     "stripeAccountConnected": "Le compte de paiement est connecté et prêt !",
     "passwordReset": "Réinitialisation du mot de passe",
     "passwordResetDescription": "Besoin de changer votre mot de passe ? Cliquez sur le bouton ci-dessous pour le réinitialiser en toute sécurité.",
-    "resetPassword": "Réinitialiser le mot de passe"
+    "resetPassword": "Réinitialiser le mot de passe",
+    "confirmDeleteDocument": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ?",
+    "documentDeletedSuccess": "Document supprimé avec succès",
+    "editProfile": "Modifier le Profil"
   },
   "announcements": {
     "title": "Annonces",
@@ -503,7 +597,14 @@
     "announcementDeleted": "Annonce supprimée avec succès !",
     "noAnnouncements": "Aucune annonce disponible.",
     "whatsNew": "Quoi de neuf ?",
-    "announcement": "Annonce"
+    "announcement": "Annonce",
+    "name": "Nom",
+    "everyone": "Tout le monde",
+    "selected": "Sélectionné",
+    "image": "Image",
+    "linkOptional": "Lien (optionnel)",
+    "imageOptional": "Image (optionnel)",
+    "audienceSelectOneOrMore": "Audience (sélectionner un ou plusieurs)"
   },
   "chat": {
     "title": "Discussion",
@@ -588,7 +689,8 @@
     "leavingStudentFailed": "Impossible d'arrêter le tutorat de cet étudiant. Veuillez réessayer.",
     "acceptReplyFailed": "Impossible d'accepter la réponse. Veuillez réessayer.",
     "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
-    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
+    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer.",
+    "accessDenied": "Accès refusé"
   },
   "footer": {
     "company": "Entreprise",
@@ -600,7 +702,9 @@
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
     "reportIssue": "⚠ Signaler un problème",
-    "screenshotTip": "Utilisez Windows + Shift + S pour faire une capture d'écran"
+    "screenshotTip": "Utilisez Windows + Shift + S pour faire une capture d'écran",
+    "ticketSubmitted": "Ticket soumis !",
+    "errorSubmittingTicket": "Erreur lors de la soumission du ticket"
   },
   "stripe": {
     "setupPayment": "Configurer le paiement",
@@ -632,7 +736,25 @@
     "disputeRejected": "Litige rejeté.",
     "cancelDispute": "Annuler le litige",
     "disputeSession": "Contester cette session",
-    "cancelFailed": "Échec de l'annulation du litige. Veuillez réessayer."
+    "cancelFailed": "Échec de l'annulation du litige. Veuillez réessayer.",
+    "modalTitle": "Quelque chose ne va pas ?",
+    "sessionDetailsTitle": "Détails de la session :",
+    "describeIssueLabel": "Décrivez le problème :",
+    "explainIssuePlaceholder": "Veuillez expliquer ce qui semble incorrect à propos de cette session... (Ctrl+Entrée pour soumettre)",
+    "pleaseDescribeIssue": "Veuillez décrire le problème avec cette session.",
+    "alreadyDisputed": "Vous avez déjà contesté cette session.",
+    "failedToSubmit": "Échec de la soumission du litige. Veuillez réessayer.",
+    "issueDescriptionTitle": "Description du problème :"
+  },
+  "complaints": {
+    "reportConcernTitle": "Signaler une préoccupation",
+    "aboutLabel": "À propos de :",
+    "describeConcernLabel": "Veuillez décrire votre préoccupation :",
+    "concernDetailsPlaceholder": "Veuillez fournir des détails sur votre préoccupation. Cela sera examiné par l'administration.",
+    "pleaseEnterMessage": "Veuillez entrer un message",
+    "failedToSubmit": "Échec de la soumission de votre préoccupation. Veuillez réessayer.",
+    "concernSubmittedSuccess": "Votre préoccupation a été soumise avec succès. L'administration l'examinera sous peu.",
+    "submitConcern": "Soumettre la préoccupation 📝"
   },
   "replies": {
     "message": "Message",
@@ -660,7 +782,12 @@
   },
   "status": {
     "default": "Par défaut",
-    "declined": "Refusé"
+    "declined": "Refusé",
+    "pending": "En attente",
+    "submitted": "Soumis",
+    "reviewed": "Examiné",
+    "resolved": "Résolu",
+    "accepted": "Accepté"
   },
   "monthly": {
     "monthlyHoursCreated": "Heures mensuelles créées !"
@@ -797,7 +924,25 @@
     "lookingAheadLabel": "Regard vers l'Avenir",
     "lookingAheadQuestion": "Quel sera le principal objectif pour le mois prochain ?",
     "lookingAheadPlaceholder": "Décrivez les objectifs, les sujets et les domaines de concentration pour le mois à venir...",
-    "insufficientHoursAlert": "Heures insuffisantes. Vous devez avoir enregistré au moins 4 heures pour soumettre un rapport."
+    "insufficientHoursAlert": "Heures insuffisantes. Vous devez avoir enregistré au moins 4 heures pour soumettre un rapport.",
+    "failedToLoadStudentsStatus": "Échec du chargement du statut des rapports des étudiants",
+    "reportsForMonth": "Rapports pour {{month}}",
+    "instructions": "Les rapports mensuels sont dus pour les étudiants avec 4+ heures travaillées en {{month}}. Cliquez sur un étudiant pour remplir son rapport.",
+    "pendingReportsTitle": "⚠️ Rapports en Attente ({{count}})",
+    "pendingReportsDescription": "Ces étudiants ont besoin de rapports mensuels soumis. Les rapports sont dus le 1er de chaque mois pour le mois précédent.",
+    "fillOutReport": "📝 Remplir le Rapport",
+    "submittedReportsTitle": "✅ Rapports Soumis ({{count}})",
+    "notRequiredTitle": "ℹ️ Étudiants Sans Rapports Requis ({{count}})",
+    "notRequiredDescription": "Ces étudiants avaient moins de 4 heures enregistrées en {{month}}, donc les rapports ne sont pas requis.",
+    "noStudentsFound": "📊 Aucun étudiant trouvé",
+    "noStudentsAssigned": "Vous n'avez pas encore d'étudiants assignés.",
+    "parentViewDescription": "Consultez les rapports de progrès mensuels de vos enfants. Les tuteurs soumettent des rapports lorsqu'ils ont travaillé 4+ heures avec un étudiant dans le mois.",
+    "filterByStudent": "Filtrer par Étudiant :",
+    "allStudents": "Tous les Étudiants",
+    "filterByYear": "Filtrer par Année :",
+    "allYears": "Toutes les Années",
+    "noReportsYet": "Aucun rapport n'a encore été soumis. Les tuteurs soumettent des rapports lorsqu'ils ont travaillé 4+ heures avec votre enfant dans le mois.",
+    "reportSubmittedTitle": "Rapport Soumis"
   },
   "admin": {
     "adminTools": "Outils d'Administration",
@@ -885,7 +1030,53 @@
     "testEmailRequired": "Tous les champs sont obligatoires",
     "testEmailSent": "Emails de test envoyés avec succès !",
     "testEmailFailed": "Échec de l'envoi de l'email de test",
-    "adminAccessRequired": "Accès administrateur requis pour voir cette page."
+    "adminAccessRequired": "Accès administrateur requis pour voir cette page.",
+    "hoursReminderSent": "Rappel d'heures envoyé avec succès à tous les tuteurs !",
+    "hoursReminderFailed": "Échec de l'envoi du rappel d'heures. Veuillez réessayer.",
+    "announcementCreatedSuccess": "Annonce créée avec succès !",
+    "announcementCreatedFailed": "Échec de la création de l'annonce.",
+    "adminResponsePlaceholder": "Réponse de l'administrateur...",
+    "disputeResponsePlaceholder": "Entrez votre réponse à ce différend...",
+    "loadingComplaints": "Chargement des plaintes...",
+    "complaintsManagementTitle": "Gestion des Plaintes Contre les Tuteurs",
+    "complaintsManagementDescription": "Gérer les plaintes des étudiants concernant les tuteurs",
+    "allStatus": "Tous les Statuts",
+    "showingComplaints": "Affichage de {{count}} sur {{total}} plaintes",
+    "statusLabel": "Statut :",
+    "noComplaintsFound": "Aucune plainte trouvée",
+    "noFilteredComplaintsFound": "Aucune plainte {{filter}} trouvée",
+    "dateColumn": "Date",
+    "messageColumn": "Message",
+    "actionsColumn": "Actions",
+    "loadingDisputes": "Chargement des différends...",
+    "noDisputesFound": "Aucun différend {{filter}} trouvé",
+    "disputeNumber": "Différend #{{id}}",
+    "disputeManagementTitle": "Gestion des Différends",
+    "reportedBy": "Signalé par",
+    "submitted": "Soumis",
+    "sessionDetailsTitle": "Détails de la Session :",
+    "student": "Étudiant",
+    "tutor": "Tuteur",
+    "date": "Date",
+    "duration": "Durée",
+    "location": "Lieu",
+    "subject": "Matière",
+    "issueDescriptionTitle": "Description du Problème :",
+    "adminResponseTitle": "Réponse de l'Administrateur :",
+    "resolvedBy": "Résolu par",
+    "markAsResolved": "Marquer comme Résolu",
+    "markAsDismissed": "Marquer comme Rejeté",
+    "processing": "Traitement en cours...",
+    "respond": "Répondre",
+    "cancel": "Annuler",
+    "takeAction": "Prendre une Action",
+    "currentStudents": "Étudiants Actuels",
+    "currentTutors": "Tuteurs Actuels",
+    "children": "Enfants",
+    "since": "Depuis",
+    "joinedOn": "Inscrit le",
+    "uploadedDocuments": "Documents Téléchargés",
+    "download": "Télécharger"
   },
   "students": {
     "title": "Mes Étudiants",

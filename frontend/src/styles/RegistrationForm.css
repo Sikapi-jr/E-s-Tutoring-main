@@ -56,6 +56,8 @@
 .form-input,
 select {
   width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
   margin: 1rem 0;
   padding: 0.8rem;
   border: 1px solid #ccc;
@@ -63,6 +65,9 @@ select {
   font-size: 1rem;
   box-sizing: border-box;
   color: var(--color-text);
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
 }
 
 .form-button {
@@ -155,39 +160,11 @@ button.form-button {
   font-size: 0.9rem;
 }
 
-/* 1. keyframes */
-@keyframes fadeInBg {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes fadeInContent {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* Removed animations that were causing sizing issues */
+/* All buttons maintain consistent size without animation delays */
 
-/* 2. fade in container */
-.form-container {
-  opacity: 0;
-  animation: fadeInBg 0.3s ease-out forwards;
-}
-
-/* 3. fade in the main content blocks at the same time */
-.form-container .role-buttons,
-.form-container .form-section,
-.form-container .login-prompt,
-.form-container .form-button {
-  opacity: 0;
-  animation: fadeInContent 0.3s ease-out 0.2s forwards;
-}
-
-/* Ensure all buttons maintain their size during animation */
-.form-container .form-button {
-  min-height: 48px !important;
-  height: 48px !important;
-  max-height: 48px !important;
-}
-
-/* Extra specificity for login form buttons to ensure absolute consistency */
+/* Force consistent button sizing across all states */
+.form-container .form-button,
 .form-container form .form-button,
 .form-container > .form-button {
   width: 100% !important;
@@ -208,6 +185,7 @@ button.form-button {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  flex-shrink: 0 !important;
 }
 
 body,
@@ -231,5 +209,29 @@ h1, h2, h3 {
   color: #155724;
   font-size: 0.95rem;
   text-align: center;
-  animation: fadeInContent 0.3s ease-out forwards;
+}
+
+/* Resend verification section */
+.resend-verification-section {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.resend-verification-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--color-primary);
+  font-size: 1.2rem;
+}
+
+/* Ensure secondary button has consistent styling */
+.form-button.secondary {
+  background-color: #6c757d !important;
+  color: white !important;
+}
+
+.form-button.secondary:hover {
+  background-color: #5a6268 !important;
 }

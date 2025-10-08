@@ -143,7 +143,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
       // First, we need to find the tutor for the selected student
       const selectedStudent = students.find(s => s.id.toString() === formData.selectedStudentId);
       if (!selectedStudent) {
-        alert('Please select a student');
+        alert(t('calendar.pleaseSelectStudent'));
         return;
       }
 
@@ -152,7 +152,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
         const tutorRes = await api.get(`/api/student-tutors/${selectedStudent.id}/`);
         const tutors = tutorRes.data || [];
         if (tutors.length === 0) {
-          alert('No tutor assigned to this student yet. Please assign a tutor first.');
+          alert(t('calendar.noTutorAssigned'));
           return;
         }
 
@@ -162,7 +162,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
         attendeeEmail = user.email; // Parent becomes attendee
       } catch (err) {
         console.error('Error fetching tutor info:', err);
-        alert('Could not find tutor information for this student. Please go to Tutoring → Request a Tutor to assign a tutor first.');
+        alert(t('calendar.couldNotFindTutorInfo'));
         return;
       }
     }
@@ -222,7 +222,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
               color: '#495057',
               lineHeight: '1.5'
             }}>
-              <strong>💡 Planning sessions is optional!</strong> This tool helps you organize your tutoring schedule for better time management. You can log hours for sessions whether they were planned in advance or not.
+              {t('calendar.planningOptionalNote')}
             </p>
           </div>
 
@@ -387,7 +387,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                 flex: "0 0 100px"
               }}
             >
-              Plan Session
+              {t('calendar.planSession')}
             </button>
           </div>
         )}

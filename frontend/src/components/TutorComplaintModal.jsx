@@ -36,7 +36,7 @@ const TutorComplaintModal = ({ isOpen, onClose, tutorData, onSubmitSuccess }) =>
       }
 
       // Show success message
-      alert('Your concern has been submitted successfully. The administration will review it shortly.');
+      alert(t('complaints.concernSubmittedSuccess'));
       
     } catch (error) {
       console.error('Error submitting complaint:', error);

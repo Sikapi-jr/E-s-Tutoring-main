@@ -44,7 +44,7 @@ const MonthlyReports = () => {
       setMonthName(response.data.month_name);
     } catch (error) {
       console.error('Error fetching students status:', error);
-      alert('Failed to load students report status');
+      alert(t('monthlyReports.failedToLoadStudentsStatus'));
     } finally {
       setLoading(false);
     }

@@ -91,7 +91,7 @@ function PasswordResetConfirm() {
         
         try{
             const response = await api.post('/api/password_reset/confirm/', payload);
-            alert("Password reset successful!");
+            alert(t('auth.passwordResetSuccess'));
             navigate("/login");
         }
         catch(error) {

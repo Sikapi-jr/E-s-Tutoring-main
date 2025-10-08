@@ -290,6 +290,7 @@ class MonthlyReportSerializer(serializers.ModelSerializer):
     
 class RequestSerializer(serializers.ModelSerializer):
     accepted_tutor_name = serializers.SerializerMethodField()
+    accepted_tutor_message = serializers.SerializerMethodField()
     student_details = serializers.SerializerMethodField()
     parent_email = serializers.CharField(source='parent.email', read_only=True)
     parent_firstName = serializers.CharField(source='parent.firstName', read_only=True)
@@ -306,6 +307,20 @@ class RequestSerializer(serializers.ModelSerializer):
         except AcceptedTutor.DoesNotExist:
             return None
 
+    def get_accepted_tutor_message(self, obj):
+        """Get the message from the accepted tutor"""
+        try:
+            accepted_tutor = AcceptedTutor.objects.get(request=obj)
+            # Get the tutor's response for this request
+            tutor_response = TutorResponse.objects.filter(
+                request=obj,
+                tutor=accepted_tutor.tutor,
+                rejected=False
+            ).first()
+            return tutor_response.message if tutor_response else None
+        except AcceptedTutor.DoesNotExist:
+            return None
+
     def get_student_details(self, obj):
         """Get the student details with firstName and lastName"""
         if obj.student:
@@ -316,10 +331,10 @@ class RequestSerializer(serializers.ModelSerializer):
                 'email': obj.student.email
             }
         return None
-    
+
     class Meta:
         model = TutoringRequest
-        fields = ['id', 'parent', 'student', 'student_details', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_name', 'parent_email', 'parent_firstName', 'parent_lastName', 'parent_phone_number', 'student_firstName', 'student_lastName']
+        fields = ['id', 'parent', 'student', 'student_details', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_name', 'accepted_tutor_message', 'parent_email', 'parent_firstName', 'parent_lastName', 'parent_phone_number', 'student_firstName', 'student_lastName']
         extra_kwargs = {
             "parent": {"required": True},
             "subject": {"required": True},

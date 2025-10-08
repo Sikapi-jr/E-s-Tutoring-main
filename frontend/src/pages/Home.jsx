@@ -653,10 +653,10 @@ export default function Home() {
         event_description: eventData.description,
         tutor_name: tutorName
       });
-      alert("Parent has been notified that you cannot attend this event.");
+      alert(t('home.parentNotifiedCannotAttend'));
     } catch (err) {
       console.error("Error sending student can't attend notification:", err);
-      alert("Failed to notify parent. Please contact them directly.");
+      alert(t('home.failedToNotifyParent'));
     }
   }, [user.first_name, user.last_name]);
 
@@ -747,10 +747,10 @@ export default function Home() {
     setSendingHoursReminder(true);
     try {
       await api.post('/api/admin/send-hours-reminder/', {});
-      alert('Hours reminder sent successfully to all tutors!');
+      alert(t('admin.hoursReminderSent'));
     } catch (error) {
       console.error('Error sending hours reminder:', error);
-      alert('Failed to send hours reminder. Please try again.');
+      alert(t('admin.hoursReminderFailed'));
     } finally {
       setSendingHoursReminder(false);
     }

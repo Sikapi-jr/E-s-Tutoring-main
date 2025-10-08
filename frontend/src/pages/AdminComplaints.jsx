@@ -92,19 +92,19 @@ const AdminComplaints = () => {
   };
 
   if (!user?.is_superuser) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Access denied</div>;
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>{t('errors.accessDenied')}</div>;
   }
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading complaints...</div>;
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>{t('admin.loadingComplaints')}</div>;
   }
 
   return (
     <div style={{ padding: '1rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ color: '#192A88', marginBottom: '0.5rem' }}>Tutor Complaints Management</h1>
+        <h1 style={{ color: '#192A88', marginBottom: '0.5rem' }}>{t('admin.complaintsManagementTitle')}</h1>
         <p style={{ color: '#666', margin: 0 }}>
-          Manage student complaints about tutors
+          {t('admin.complaintsManagementDescription')}
         </p>
       </div>
 
@@ -117,7 +117,7 @@ const AdminComplaints = () => {
         alignItems: 'center'
       }}>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <label style={{ fontWeight: 'bold', minWidth: 'max-content' }}>Status:</label>
+          <label style={{ fontWeight: 'bold', minWidth: 'max-content' }}>{t('admin.statusLabel')}</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -128,15 +128,15 @@ const AdminComplaints = () => {
               fontSize: '0.9rem'
             }}
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="resolved">Resolved</option>
+            <option value="all">{t('admin.allStatus')}</option>
+            <option value="pending">{t('status.pending')}</option>
+            <option value="reviewed">{t('status.reviewed')}</option>
+            <option value="resolved">{t('status.resolved')}</option>
           </select>
         </div>
 
         <div style={{ fontSize: '0.9rem', color: '#666' }}>
-          Showing {filteredComplaints.length} of {complaints.length} complaints
+          {t('admin.showingComplaints', { count: filteredComplaints.length, total: complaints.length })}
         </div>
       </div>
 
@@ -157,19 +157,19 @@ const AdminComplaints = () => {
         <table className="hours-table" style={{ width: '100%', minWidth: '900px' }}>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Student</th>
-              <th>Tutor</th>
-              <th>Status</th>
-              <th>Message</th>
-              <th>Actions</th>
+              <th>{t('admin.dateColumn')}</th>
+              <th>{t('common.unknownStudent')}</th>
+              <th>{t('admin.tutor')}</th>
+              <th>{t('common.status')}</th>
+              <th>{t('admin.messageColumn')}</th>
+              <th>{t('admin.actionsColumn')}</th>
             </tr>
           </thead>
           <tbody>
             {filteredComplaints.length === 0 ? (
               <tr>
                 <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                  {statusFilter === 'all' ? 'No complaints found' : `No ${statusFilter} complaints found`}
+                  {statusFilter === 'all' ? t('admin.noComplaintsFound') : t('admin.noFilteredComplaintsFound', { filter: statusFilter })}
                 </td>
               </tr>
             ) : (

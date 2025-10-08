@@ -39,10 +39,10 @@ export default function Footer() {
       setShowModal(false);
       setMessage("");
       setFile(null);
-      alert("Ticket submitted!");
+      alert(t('footer.ticketSubmitted'));
     } catch (err) {
       console.error("Ticket submission failed:", err);
-      alert("Error submitting ticket");
+      alert(t('footer.errorSubmittingTicket'));
     } finally {
       setSubmitting(false);
     }

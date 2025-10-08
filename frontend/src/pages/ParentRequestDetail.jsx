@@ -218,13 +218,46 @@ const ParentRequestDetail = () => {
                 marginLeft: '1rem',
                 padding: '0.5rem 1rem',
                 borderRadius: '20px',
-                backgroundColor: request.is_accepted ? '#d4edda' : '#fff3cd',
-                color: request.is_accepted ? '#155724' : '#856404',
-                border: `1px solid ${request.is_accepted ? '#c3e6cb' : '#ffeaa7'}`
+                backgroundColor: request.is_accepted === 'Accepted' ? '#d4edda' : '#fff3cd',
+                color: request.is_accepted === 'Accepted' ? '#155724' : '#856404',
+                border: `1px solid ${request.is_accepted === 'Accepted' ? '#c3e6cb' : '#ffeaa7'}`
               }}>
-                {request.is_accepted ? t('dashboard.accepted', 'Accepted') : t('dashboard.pending', 'Pending')}
+                {request.is_accepted === 'Accepted' ? t('dashboard.accepted', 'Accepted') : t('dashboard.pending', 'Pending')}
               </span>
             </div>
+
+            {request.is_accepted === 'Accepted' && request.accepted_tutor_name && (
+              <>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <strong style={{ color: '#192A88', fontSize: '1.2rem' }}>
+                    {t('dashboard.acceptedTutor', 'Accepted Tutor')}:
+                  </strong>
+                  <span style={{ fontSize: '1.4rem', marginLeft: '1rem', fontWeight: 'bold', color: '#28a745' }}>
+                    {request.accepted_tutor_name}
+                  </span>
+                </div>
+
+                {request.accepted_tutor_message && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <strong style={{ color: '#192A88', fontSize: '1.2rem' }}>
+                      {t('dashboard.tutorMessage', "Tutor's Message")}:
+                    </strong>
+                    <div style={{
+                      fontSize: '1.2rem',
+                      marginTop: '0.5rem',
+                      backgroundColor: 'white',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      border: '1px solid #dee2e6',
+                      lineHeight: '1.6',
+                      fontStyle: 'italic'
+                    }}>
+                      "{request.accepted_tutor_message}"
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           <div style={{ marginTop: '2rem', borderTop: '2px solid #dee2e6', paddingTop: '2rem' }}>

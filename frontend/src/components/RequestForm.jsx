@@ -19,6 +19,7 @@
         const [service, setService] = useState("");
         const [city, setCity] = useState("");
         const [description, setDescription] = useState("");
+        const [tutorCode, setTutorCode] = useState("");
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState("");
         const [users, setUsers] = useState([]); // Store user list
@@ -50,12 +51,13 @@
             try {
                 const payload = {
                     parent,
-                    student, 
+                    student,
                     subject,
                     grade,
                     service,
                     city,
                     description,
+                    tutor_code: tutorCode || null,  // Include tutor code if provided
                 };
                 const res = await api.post("/api/requests/create/", payload);
                 
@@ -169,6 +171,51 @@
                     <button className="form-button" type="submit" disabled={loading}>
                         {t('requests.readyToFindTutor')}
                     </button>
+
+                    {/* Tutor Referral Code Input at Bottom (Optional) */}
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '1.25rem',
+                        backgroundColor: '#f0f4ff',
+                        borderRadius: '8px',
+                        border: '2px dashed #192A88',
+                        textAlign: 'center'
+                    }}>
+                        <p style={{
+                            fontSize: '0.95rem',
+                            color: '#192A88',
+                            marginBottom: '1rem',
+                            fontWeight: '500'
+                        }}>
+                            {t('requests.alreadyKnowTutor', 'Already know one of our tutors? Enter their unique tutor code')}
+                        </p>
+                        <input
+                            className="form-input"
+                            type="text"
+                            value={tutorCode}
+                            onChange={(e) => setTutorCode(e.target.value.toUpperCase())}
+                            placeholder={t('requests.enterTutorCode', 'Enter 6-digit tutor code')}
+                            maxLength={6}
+                            style={{
+                                margin: '0 auto',
+                                maxWidth: '300px',
+                                textAlign: 'center',
+                                textTransform: 'uppercase',
+                                letterSpacing: '3px',
+                                fontWeight: '700',
+                                fontSize: '1.1rem',
+                                border: '2px solid #192A88'
+                            }}
+                        />
+                        <p style={{
+                            marginTop: '0.75rem',
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            fontStyle: 'italic'
+                        }}>
+                            {t('requests.tutorCodeOptional', 'Optional - Skip this if you don\'t have a code')}
+                        </p>
+                    </div>
                 </form>
 
                 {/* Error Message */}

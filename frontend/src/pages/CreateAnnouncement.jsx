@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 
 function CreateAnnouncement() {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -66,7 +68,7 @@ function CreateAnnouncement() {
             const res = await api.post('/api/announcements/create/', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Announcement created successfully!');
+            alert(t('admin.announcementCreatedSuccess'));
             setFormData({
                 name: '',
                 description: '',
@@ -80,34 +82,34 @@ function CreateAnnouncement() {
             setSelectedRoles(['all']);
         } catch (err) {
             console.error(err);
-            alert('Failed to create announcement.');
+            alert(t('admin.announcementCreatedFailed'));
         }
     };
 
     return (
         <div style={{ maxWidth: '600px', margin: '2rem auto', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-            <h2>Create Announcement</h2>
+            <h2>{t('announcements.createAnnouncement')}</h2>
             <form onSubmit={handleSubmit}>
 
-                <label>Name</label><br />
+                <label>{t('announcements.name')}</label><br />
                 <input type="text" name="name" value={formData.name} onChange={handleChange} /><br /><br />
 
-                <label>Description</label><br />
+                <label>{t('common.description')}</label><br />
                 <textarea name="description" value={formData.description} onChange={handleChange} rows={4} /><br /><br />
 
-                <label>Address</label><br />
+                <label>{t('common.address')}</label><br />
                 <input type="text" name="address" value={formData.address} onChange={handleChange} /><br /><br />
 
-                <label>Start Time</label><br />
+                <label>{t('logHours.startTime')}</label><br />
                 <input type="datetime-local" name="start_time" value={formData.start_time} onChange={handleChange} /><br /><br />
 
-                <label>End Time</label><br />
+                <label>{t('logHours.endTime')}</label><br />
                 <input type="datetime-local" name="end_time" value={formData.end_time} onChange={handleChange} /><br /><br />
 
-                <label>Link (optional)</label><br />
+                <label>{t('announcements.linkOptional')}</label><br />
                 <input type="url" name="link" value={formData.link} onChange={handleChange} /><br /><br />
 
-                <label>Audience (select one or more)</label><br />
+                <label>{t('announcements.audienceSelectOneOrMore')}</label><br />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '0.5rem 0' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
@@ -115,7 +117,7 @@ function CreateAnnouncement() {
                             checked={selectedRoles.includes('all')}
                             onChange={() => handleRoleChange('all')}
                         />
-                        Everyone
+                        {t('announcements.everyone')}
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
@@ -123,7 +125,7 @@ function CreateAnnouncement() {
                             checked={selectedRoles.includes('parent')}
                             onChange={() => handleRoleChange('parent')}
                         />
-                        Parents
+                        {t('announcements.parents')}
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
@@ -131,7 +133,7 @@ function CreateAnnouncement() {
                             checked={selectedRoles.includes('student')}
                             onChange={() => handleRoleChange('student')}
                         />
-                        Students
+                        {t('announcements.students')}
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
@@ -139,17 +141,17 @@ function CreateAnnouncement() {
                             checked={selectedRoles.includes('tutor')}
                             onChange={() => handleRoleChange('tutor')}
                         />
-                        Tutors
+                        {t('announcements.tutors')}
                     </label>
                 </div>
                 <p style={{ fontSize: '0.9rem', color: '#666', margin: '0.5rem 0' }}>
-                    Selected: {selectedRoles.includes('all') ? 'Everyone' : selectedRoles.join(', ')}
+                    {t('announcements.selected')}: {selectedRoles.includes('all') ? t('announcements.everyone') : selectedRoles.join(', ')}
                 </p><br />
 
-                <label>Image (optional)</label><br />
+                <label>{t('announcements.imageOptional')}</label><br />
                 <input type="file" name="image" accept="image/*" onChange={handleImageChange} /><br /><br />
 
-                <button type="submit">Submit</button>
+                <button type="submit">{t('common.submit')}</button>
             </form>
         </div>
     );

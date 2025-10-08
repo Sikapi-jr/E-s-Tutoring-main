@@ -93,7 +93,12 @@
     "city": "City",
     "phone": "Phone",
     "phoneNumber": "Phone Number",
-    "notProvided": "Not provided"
+    "notProvided": "Not provided",
+    "submitting": "Submitting...",
+    "loadingPage": "Loading page...",
+    "loadingEllipsis": "Loading…",
+    "ctrlEnterTip": "Tip: Press Ctrl+Enter to submit quickly",
+    "sending": "Sending..."
   },
   "navigation": {
     "home": "Home",
@@ -173,7 +178,26 @@
     "registerAs": "Register as {{role}}",
     "noUserLoggedIn": "No user is logged in.",
     "verificationFailed": "Verification failed.",
-    "verifyingEmail": "Verifying your email..."
+    "verifyingEmail": "Verifying your email...",
+    "verificationEmailSent": "Verification email sent! Please check your inbox.",
+    "verificationEmailError": "Error sending verification email. Please try again.",
+    "passwordResetSuccess": "Password reset successful!",
+    "usernamePlaceholder": "Username",
+    "newPasswordPlaceholder": "New password",
+    "confirmPasswordPlaceholder": "Re-type new password",
+    "emailPlaceholder": "Email address",
+    "passwordKeyboardCharsOnly": "Password can only contain keyboard characters",
+    "passwordMinLength": "Password must be at least 8 characters long",
+    "passwordNotNumeric": "Password cannot be entirely numeric",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "tokenInvalidOrUsed": "Token already used or invalid. Request another password reset email.",
+    "enterNewPassword": "Enter new password",
+    "retypePassword": "Re-type password",
+    "resetButton": "Reset",
+    "passwordResetEmailSent": "Password reset email sent! Please check your inbox.",
+    "passwordResetEmailError": "Error sending password reset email. Please try again.",
+    "resendVerificationTitle": "Resend Verification Email",
+    "resendVerificationButton": "Resend Verification Email"
   },
   "home": {
     "adminTools": "Admin Tools",
@@ -246,7 +270,11 @@
     "stripeNotSetup": "Payment Account Not Set Up",
     "stripeSetupRequired": "You need to set up your Stripe account to receive payments from tutoring sessions.",
     "checkEmailStripe": "Please check your email for Stripe onboarding instructions.",
-    "setupStripeAccount": "Set Up Payment Account"
+    "setupStripeAccount": "Set Up Payment Account",
+    "parentNotifiedCannotAttend": "Parent has been notified that you cannot attend this event.",
+    "failedToNotifyParent": "Failed to notify parent. Please contact them directly.",
+    "failedToLoadTutors": "Failed to load tutors",
+    "noTutorsAssigned": "No tutors assigned yet"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",
@@ -294,9 +322,16 @@
     "errorSubmitting": "Error submitting reply",
     "yourReply": "Your Reply",
     "typeReply": "Type your reply here...",
-    "submitReply": "Submit Reply"
+    "submitReply": "Submit Reply",
+    "acceptedTutor": "Accepted Tutor",
+    "tutorMessage": "Tutor's Message"
   },
   "logHours": {
+    "title": "Log Hours",
+    "cannotLogFuture": "Cannot log hours for future dates or times. Please select a past date and time.",
+    "endTimeCannotBeFuture": "The session end time cannot be in the future. Please check your date and end time.",
+    "duplicateEntry": "You have already logged hours for this student at this exact date and time. Please check your existing entries or select a different time.",
+    "failedToLog": "Failed to log hours. Please check all fields and try again.",
     "title": "Log Tutoring Hours",
     "selectStudent": "Select Student",
     "startTime": "Start Time",
@@ -330,6 +365,10 @@
     "duplicateHours": "You have already logged hours for this student at this exact date and time.",
     "allFieldsRequired": "Please fill in all required fields.",
     "hoursAddedSuccess": "{{hours}} hours added with {{student}}"
+  },
+  "myHours": {
+    "title": "My Hours",
+    "addHours": "Add Hours"
   },
   "loggedHours": {
     "title": "My Logged Hours",
@@ -405,7 +444,26 @@
     "for6Weeks": "for 6 weeks",
     "for6Sessions": "for 6 sessions",
     "weeklyHelp": "Will create 6 weekly sessions",
-    "biweeklyHelp": "Will create 6 sessions every 2 weeks (12 weeks total)"
+    "biweeklyHelp": "Will create 6 sessions every 2 weeks (12 weeks total)",
+    "couldNotUpdateRSVP": "Could not update RSVP.",
+    "scheduledEventsTitle": "Scheduled EGS Tutoring Events",
+    "searchPlaceholder": "Search title/description…",
+    "titleHeader": "Title",
+    "dateHeader": "Date",
+    "startHeader": "Start",
+    "endHeader": "End",
+    "descriptionHeader": "Description",
+    "noTitle": "No Title",
+    "allStatuses": "All statuses",
+    "statusDefault": "Default",
+    "statusDeclined": "Declined",
+    "cantAttendOnly": "Can't attend only",
+    "noEventsMatch": "No events match your filters.",
+    "pleaseSelectStudent": "Please select a student",
+    "noTutorAssigned": "No tutor assigned to this student yet. Please assign a tutor first.",
+    "couldNotFindTutorInfo": "Could not find tutor information for this student. Please go to Tutoring → Request a Tutor to assign a tutor first.",
+    "planningOptionalNote": "💡 Planning sessions is optional! This tool helps you organize your tutoring schedule for better time management. You can log hours for sessions whether they were planned in advance or not.",
+    "planSession": "Plan Session"
   },
   "requests": {
     "requestTutor": "Request a Tutor",
@@ -448,7 +506,23 @@
     "city": "City",
     "noStudentsMessage": "You don't have any students registered. Register a student now?",
     "registerStudent": "Register Student",
-    "hasAccepted": "has accepted!"
+    "hasAccepted": "has accepted!",
+    "alreadyKnowTutor": "Already know one of our tutors? Enter their unique tutor code",
+    "enterTutorCode": "Enter 6-digit tutor code",
+    "tutorCodeOptional": "Optional - Skip this if you don't have a code"
+  },
+  "referral": {
+    "tutorReferralRequest": "Tutor Referral Request",
+    "parentInformation": "Parent Information",
+    "requestDetails": "Request Details",
+    "confirmAccept": "Are you sure you want to accept this tutoring request?",
+    "confirmDecline": "Are you sure you want to decline this tutoring request?",
+    "acceptedSuccess": "You have successfully accepted this tutoring request!",
+    "declinedSuccess": "You have declined this tutoring request.",
+    "invalidLink": "Invalid Referral Link",
+    "alreadyResponded": "Already Responded",
+    "alreadyRespondedMessage": "You have already responded to this referral request.",
+    "redirecting": "Redirecting to home..."
   },
   "invoices": {
     "title": "Invoices",
@@ -490,7 +564,7 @@
     "errorSaving": "Error saving changes. Please try again.",
     "currentRates": "Current Rates",
     "onlineRate": "Online Rate",
-    "inPersonRate": "In-Person Rate", 
+    "inPersonRate": "In-Person Rate",
     "referralCredits": "Referral Credits",
     "creditAvailable": "credit available",
     "paymentAccount": "Payment Account",
@@ -501,7 +575,10 @@
     "stripeAccountConnected": "Payment account is connected and ready!",
     "passwordReset": "Password Reset",
     "passwordResetDescription": "Need to change your password? Click the button below to reset it securely.",
-    "resetPassword": "Reset Password"
+    "resetPassword": "Reset Password",
+    "confirmDeleteDocument": "Are you sure you want to delete \"{{name}}\"?",
+    "documentDeletedSuccess": "Document deleted successfully",
+    "editProfile": "Edit Profile"
   },
   "announcements": {
     "title": "Announcements",
@@ -520,7 +597,14 @@
     "announcementDeleted": "Announcement deleted successfully!",
     "noAnnouncements": "No announcements available.",
     "whatsNew": "What's New?",
-    "announcement": "Announcement"
+    "announcement": "Announcement",
+    "name": "Name",
+    "everyone": "Everyone",
+    "selected": "Selected",
+    "image": "Image",
+    "linkOptional": "Link (optional)",
+    "imageOptional": "Image (optional)",
+    "audienceSelectOneOrMore": "Audience (select one or more)"
   },
   "chat": {
     "title": "Chat",
@@ -605,7 +689,8 @@
     "leavingStudentFailed": "Failed to leave student. Please try again.",
     "acceptReplyFailed": "Failed to accept reply. Please try again.",
     "studentUpdateFailed": "Failed to update student. Please try again.",
-    "deleteRequestFailed": "Failed to delete request. Please try again."
+    "deleteRequestFailed": "Failed to delete request. Please try again.",
+    "accessDenied": "Access denied"
   },
   "footer": {
     "company": "Company",
@@ -617,7 +702,9 @@
     "terms": "Terms of Use",
     "privacy": "Privacy Policy",
     "reportIssue": "⚠ Report an Issue",
-    "screenshotTip": "Use Windows + Shift + S to screenshot"
+    "screenshotTip": "Use Windows + Shift + S to screenshot",
+    "ticketSubmitted": "Ticket submitted!",
+    "errorSubmittingTicket": "Error submitting ticket"
   },
   "stripe": {
     "setupPayment": "Setup Payment",
@@ -649,7 +736,25 @@
     "disputeRejected": "Dispute rejected.",
     "cancelDispute": "Cancel dispute",
     "disputeSession": "Dispute this session",
-    "cancelFailed": "Failed to cancel dispute. Please try again."
+    "cancelFailed": "Failed to cancel dispute. Please try again.",
+    "modalTitle": "Doesn't Look Right?",
+    "sessionDetailsTitle": "Session Details:",
+    "describeIssueLabel": "Describe the issue:",
+    "explainIssuePlaceholder": "Please explain what seems incorrect about this session... (Ctrl+Enter to submit)",
+    "pleaseDescribeIssue": "Please describe the issue with this session.",
+    "alreadyDisputed": "You have already disputed this session.",
+    "failedToSubmit": "Failed to submit dispute. Please try again.",
+    "issueDescriptionTitle": "Issue Description:"
+  },
+  "complaints": {
+    "reportConcernTitle": "Report a Concern",
+    "aboutLabel": "About:",
+    "describeConcernLabel": "Please describe your concern:",
+    "concernDetailsPlaceholder": "Please provide details about your concern. This will be reviewed by the administration.",
+    "pleaseEnterMessage": "Please enter a message",
+    "failedToSubmit": "Failed to submit your concern. Please try again.",
+    "concernSubmittedSuccess": "Your concern has been submitted successfully. The administration will review it shortly.",
+    "submitConcern": "Submit Concern 📝"
   },
   "replies": {
     "message": "Message",
@@ -677,7 +782,12 @@
   },
   "status": {
     "default": "Default",
-    "declined": "Declined"
+    "declined": "Declined",
+    "pending": "Pending",
+    "submitted": "Submitted",
+    "reviewed": "Reviewed",
+    "resolved": "Resolved",
+    "accepted": "Accepted"
   },
   "monthly": {
     "monthlyHoursCreated": "Monthly hours created!"
@@ -814,7 +924,25 @@
     "lookingAheadLabel": "Looking Ahead",
     "lookingAheadQuestion": "What will be the main focus for the next month?",
     "lookingAheadPlaceholder": "Outline goals, topics, and focus areas for the upcoming month...",
-    "insufficientHoursAlert": "Insufficient hours. You need 4+ hours logged to submit a report."
+    "insufficientHoursAlert": "Insufficient hours. You need 4+ hours logged to submit a report.",
+    "failedToLoadStudentsStatus": "Failed to load students report status",
+    "reportsForMonth": "Reports for {{month}}",
+    "instructions": "Monthly reports are due for students with 4+ hours worked in {{month}}. Click on a student to fill out their report.",
+    "pendingReportsTitle": "⚠️ Pending Reports ({{count}})",
+    "pendingReportsDescription": "These students need monthly reports submitted. Reports are due on the 1st of each month for the previous month.",
+    "fillOutReport": "📝 Fill Out Report",
+    "submittedReportsTitle": "✅ Submitted Reports ({{count}})",
+    "notRequiredTitle": "ℹ️ Students Without Required Reports ({{count}})",
+    "notRequiredDescription": "These students had less than 4 hours logged in {{month}}, so reports are not required.",
+    "noStudentsFound": "📊 No students found",
+    "noStudentsAssigned": "You don't have any students assigned yet.",
+    "parentViewDescription": "View monthly progress reports for your children. Tutors submit reports when they've worked 4+ hours with a student in a month.",
+    "filterByStudent": "Filter by Student:",
+    "allStudents": "All Students",
+    "filterByYear": "Filter by Year:",
+    "allYears": "All Years",
+    "noReportsYet": "No reports have been submitted yet. Tutors submit reports when they've worked 4+ hours with your child in a month.",
+    "reportSubmittedTitle": "Report Submitted"
   },
   "admin": {
     "adminTools": "Admin Tools",
@@ -903,7 +1031,53 @@
     "testEmailRequired": "All fields are required",
     "testEmailSent": "Test emails sent successfully!",
     "testEmailFailed": "Failed to send test email",
-    "adminAccessRequired": "Admin access required to view this page."
+    "adminAccessRequired": "Admin access required to view this page.",
+    "hoursReminderSent": "Hours reminder sent successfully to all tutors!",
+    "hoursReminderFailed": "Failed to send hours reminder. Please try again.",
+    "announcementCreatedSuccess": "Announcement created successfully!",
+    "announcementCreatedFailed": "Failed to create announcement.",
+    "adminResponsePlaceholder": "Admin response...",
+    "disputeResponsePlaceholder": "Enter your response to this dispute...",
+    "loadingComplaints": "Loading complaints...",
+    "complaintsManagementTitle": "Tutor Complaints Management",
+    "complaintsManagementDescription": "Manage student complaints about tutors",
+    "allStatus": "All Status",
+    "showingComplaints": "Showing {{count}} of {{total}} complaints",
+    "statusLabel": "Status:",
+    "noComplaintsFound": "No complaints found",
+    "noFilteredComplaintsFound": "No {{filter}} complaints found",
+    "dateColumn": "Date",
+    "messageColumn": "Message",
+    "actionsColumn": "Actions",
+    "loadingDisputes": "Loading disputes...",
+    "noDisputesFound": "No {{filter}} disputes found",
+    "disputeNumber": "Dispute #{{id}}",
+    "disputeManagementTitle": "Dispute Management",
+    "reportedBy": "Reported by",
+    "submitted": "Submitted",
+    "sessionDetailsTitle": "Session Details:",
+    "student": "Student",
+    "tutor": "Tutor",
+    "date": "Date",
+    "duration": "Duration",
+    "location": "Location",
+    "subject": "Subject",
+    "issueDescriptionTitle": "Issue Description:",
+    "adminResponseTitle": "Admin Response:",
+    "resolvedBy": "Resolved by",
+    "markAsResolved": "Mark as Resolved",
+    "markAsDismissed": "Mark as Dismissed",
+    "processing": "Processing...",
+    "respond": "Respond",
+    "cancel": "Cancel",
+    "takeAction": "Take Action",
+    "currentStudents": "Current Students",
+    "currentTutors": "Current Tutors",
+    "children": "Children",
+    "since": "Since",
+    "joinedOn": "Joined on",
+    "uploadedDocuments": "Uploaded Documents",
+    "download": "Download"
   },
   "students": {
     "title": "My Students",

@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.forms.models import model_to_dict
 from cryptography.fernet import Fernet
+import secrets
 
 
 class User(AbstractUser):
@@ -111,6 +112,9 @@ class User(AbstractUser):
     email_monthly_hours = models.BooleanField(default=True, help_text="Email when monthly hours are available")
     email_monthly_reports = models.BooleanField(default=True, help_text="Email when monthly reports are submitted")
 
+    # Tutor referral code (6-digit code for direct referrals)
+    tutor_referral_code = models.CharField(max_length=6, blank=True, null=True, unique=True, help_text="6-digit referral code for tutors")
+
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
@@ -167,6 +171,25 @@ class User(AbstractUser):
         referrals = self.referrals_made.filter(reward_applied=True)
         total_credit = sum(ref.credit_amount - ref.used_amount for ref in referrals)
         return max(total_credit, 0.00)  # Never negative
+
+    def generate_tutor_referral_code(self):
+        """Generate a unique 6-digit referral code for tutors"""
+        import random
+        import string
+
+        while True:
+            # Generate a 6-character alphanumeric code (uppercase letters and digits)
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            # Check if this code already exists
+            if not User.objects.filter(tutor_referral_code=code).exists():
+                self.tutor_referral_code = code
+                return code
+
+    def save(self, *args, **kwargs):
+        # Auto-generate referral code for tutors if not set
+        if self.roles == 'tutor' and not self.tutor_referral_code:
+            self.generate_tutor_referral_code()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
@@ -940,3 +963,4 @@ class TutorChangeRequest(models.Model):
     
     def __str__(self):
         return f"Change request for {self.student.firstName} {self.student.lastName} - {self.subject} from {self.current_tutor.firstName} {self.current_tutor.lastName}"
+

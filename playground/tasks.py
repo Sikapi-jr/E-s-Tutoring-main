@@ -1557,4 +1557,5 @@ EGS Tutoring Team
 
     except Exception as e:
         logger.error(f"Error sending weekly tutor hour reminders: {str(e)}")
-        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+
