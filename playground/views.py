@@ -1941,14 +1941,24 @@ class ReplyListView(APIView):
     def get(self, request):
         parent_id = request.query_params.get('parent', None)
         tutoring_request_id = request.query_params.get('selectedRequestID')
-        if not parent_id:
+
+        # Allow admins to view replies for any request without parent check
+        is_admin = request.user.is_authenticated and (request.user.is_superuser or request.user.roles == 'admin')
+
+        if not is_admin and not parent_id:
             return Response({"error": "Missing 'parent' query parameter."}, status=400)
 
-        replies = TutorResponse.objects.filter(
-            request__id=tutoring_request_id,
-            request__parent=parent_id,
-            rejected=False
-        )
+        # Build the filter query
+        filter_kwargs = {
+            'request__id': tutoring_request_id,
+            'rejected': False
+        }
+
+        # Only filter by parent if not admin
+        if not is_admin:
+            filter_kwargs['request__parent'] = parent_id
+
+        replies = TutorResponse.objects.filter(**filter_kwargs)
         serializer = RequestReplySerializer(replies, many=True)
         return Response(serializer.data)
 

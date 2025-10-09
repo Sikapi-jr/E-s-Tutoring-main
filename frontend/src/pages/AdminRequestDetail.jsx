@@ -12,6 +12,7 @@ const AdminRequestDetail = () => {
   const { user } = useUser();
 
   const [request, setRequest] = useState(null);
+  const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,6 +33,16 @@ const AdminRequestDetail = () => {
       }
 
       setRequest(foundRequest);
+
+      // Fetch all replies for this request
+      try {
+        const repliesResponse = await api.get(`/api/requests/ViewReply/?selectedRequestID=${requestId}`);
+        setReplies(repliesResponse.data || []);
+      } catch (repliesError) {
+        console.error('Error fetching replies:', repliesError);
+        // Don't set error state - just log it
+        setReplies([]);
+      }
     } catch (error) {
       console.error('Error fetching request:', error);
       setError(t('admin.errorLoading', 'Error loading request'));
@@ -391,52 +402,104 @@ const AdminRequestDetail = () => {
             </div>
           </div>
 
-          {/* Accepted Tutor Information */}
-          {request.is_accepted === 'Accepted' && request.accepted_tutor_name && (
-            <div style={{ marginTop: '3rem' }}>
-              <h3 style={{
-                color: '#192A88',
-                fontSize: '1.8rem',
-                marginBottom: '1.5rem',
-                borderBottom: '2px solid #e9ecef',
-                paddingBottom: '0.5rem'
-              }}>
-                👨‍🏫 Accepted Tutor
-              </h3>
+          {/* All Tutor Replies Section */}
+          <div style={{ marginTop: '3rem' }}>
+            <h3 style={{
+              color: '#192A88',
+              fontSize: '1.8rem',
+              marginBottom: '1.5rem',
+              borderBottom: '2px solid #e9ecef',
+              paddingBottom: '0.5rem'
+            }}>
+              💬 Tutor Replies ({replies.length})
+            </h3>
+
+            {replies.length === 0 ? (
               <div style={{
-                backgroundColor: '#d4edda',
+                backgroundColor: '#f8f9fa',
                 padding: '2rem',
                 borderRadius: '8px',
-                border: '2px solid #c3e6cb'
+                border: '1px solid #dee2e6',
+                textAlign: 'center',
+                fontSize: '1.2rem',
+                color: '#6c757d',
+                fontStyle: 'italic'
               }}>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <strong style={{ color: '#155724', fontSize: '1.3rem' }}>Tutor Name:</strong>
-                  <div style={{ fontSize: '1.8rem', marginTop: '0.5rem', fontWeight: 'bold', color: '#155724' }}>
-                    {request.accepted_tutor_name}
-                  </div>
-                </div>
-
-                {request.accepted_tutor_message && (
-                  <div>
-                    <strong style={{ color: '#155724', fontSize: '1.3rem' }}>Message:</strong>
+                No replies yet
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.5rem'
+              }}>
+                {replies.map((reply) => (
+                  <div key={reply.id} style={{
+                    backgroundColor: request.accepted_tutor_name === `${reply.tutor_firstName} ${reply.tutor_lastName}` ? '#d4edda' : '#f8f9fa',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    border: request.accepted_tutor_name === `${reply.tutor_firstName} ${reply.tutor_lastName}` ? '2px solid #28a745' : '1px solid #dee2e6'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '1rem',
+                      flexWrap: 'wrap',
+                      gap: '1rem'
+                    }}>
+                      <div>
+                        <div style={{
+                          fontSize: '1.4rem',
+                          fontWeight: 'bold',
+                          color: '#192A88',
+                          marginBottom: '0.25rem'
+                        }}>
+                          👨‍🏫 {reply.tutor_firstName} {reply.tutor_lastName}
+                          {request.accepted_tutor_name === `${reply.tutor_firstName} ${reply.tutor_lastName}` && (
+                            <span style={{
+                              marginLeft: '0.75rem',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '12px',
+                              fontSize: '0.9rem',
+                              fontWeight: 'normal'
+                            }}>
+                              ✅ Accepted
+                            </span>
+                          )}
+                        </div>
+                        <div style={{
+                          fontSize: '1rem',
+                          color: '#6c757d'
+                        }}>
+                          📧 {reply.tutor_email}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: '1rem',
+                        color: '#6c757d'
+                      }}>
+                        {formatDate(reply.created_at)}
+                      </div>
+                    </div>
                     <div style={{
                       fontSize: '1.2rem',
-                      marginTop: '0.5rem',
+                      lineHeight: '1.6',
+                      color: '#333',
                       backgroundColor: 'white',
-                      padding: '1.5rem',
-                      borderRadius: '8px',
-                      border: '1px solid #c3e6cb',
-                      lineHeight: '1.8',
-                      fontStyle: 'italic',
-                      color: '#333'
+                      padding: '1rem',
+                      borderRadius: '6px',
+                      border: '1px solid #dee2e6'
                     }}>
-                      "{request.accepted_tutor_message}"
+                      {reply.message}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

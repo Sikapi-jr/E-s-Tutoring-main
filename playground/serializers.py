@@ -350,6 +350,9 @@ class RequestReplySerializer(serializers.ModelSerializer):
     # Client posts IDs; DRF resolves them to instances.
     request = serializers.PrimaryKeyRelatedField(queryset=TutoringRequest.objects.all())
     tutor = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    tutor_firstName = serializers.CharField(source='tutor.firstName', read_only=True)
+    tutor_lastName = serializers.CharField(source='tutor.lastName', read_only=True)
+    tutor_email = serializers.CharField(source='tutor.email', read_only=True)
 
     class Meta:
         model = TutorResponse
@@ -357,6 +360,9 @@ class RequestReplySerializer(serializers.ModelSerializer):
             "id",
             "request",
             "tutor",
+            "tutor_firstName",
+            "tutor_lastName",
+            "tutor_email",
             "message",
             "created_at",
         ]
