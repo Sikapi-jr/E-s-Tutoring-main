@@ -9,8 +9,8 @@ const LanguageSwitcher = memo(({ className = "" }) => {
   };
 
   const languages = [
-    { code: 'en', label: '🇬🇧' },
-    { code: 'fr', label: '🇫🇷' }
+    { code: 'en', label: 'EN' },
+    { code: 'fr', label: 'FR' }
   ];
 
   return (

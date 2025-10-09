@@ -11,7 +11,6 @@
 }
 
 button:focus,
-select:focus,
 input:focus,
 textarea:focus {
   outline: none !important;
@@ -20,11 +19,21 @@ textarea:focus {
 }
 
 button:active,
-select:active,
 input:active,
 textarea:active {
   background-color: #192A88 !important;
   border-color: #192A88 !important;
+}
+
+/* Remove click effects from filter selects */
+.filters-bar select:focus,
+.filters-bar select:active,
+.mobile-filter-item select:focus,
+.mobile-filter-item select:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #d1d5db !important;
+  background-color: white !important;
 }
 
 /* ───────────────────────── page wrapper ───────────────────────── */
@@ -157,9 +166,10 @@ textarea:active {
   border-radius: 6px;
   background: white;
   font-size: 0.875rem;
-  min-width: 80px;
+  min-width: 100px;
+  width: 100px;
   flex: 0 0 auto;
-  max-width: 120px;
+  max-width: 100px;
   margin-right: 0.5rem;
 }
 
