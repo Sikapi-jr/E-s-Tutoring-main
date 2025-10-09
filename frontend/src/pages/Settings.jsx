@@ -307,6 +307,33 @@ export default function Settings() {
           </div>
         )}
 
+        {/* ===== Tutor Referral Code (Tutors Only) ===== */}
+        {user.roles === "tutor" && user.tutor_referral_code && (
+          <div className="tutor-referral-code-display">
+            <h4 style={{ margin: "0 0 0.5rem 0", color: "#333" }}>{t('settings.yourTutorCode')}</h4>
+            <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "0.75rem" }}>
+              {t('settings.tutorCodeDescription')}
+            </p>
+            <div style={{
+              backgroundColor: "#f0f4ff",
+              border: "2px solid #192A88",
+              borderRadius: "8px",
+              padding: "1rem",
+              textAlign: "center"
+            }}>
+              <div style={{
+                fontSize: "2rem",
+                fontWeight: "700",
+                letterSpacing: "5px",
+                color: "#192A88",
+                fontFamily: "monospace"
+              }}>
+                {user.tutor_referral_code}
+              </div>
+            </div>
+          </div>
+        )}
+
         <button className="edit-btn" onClick={() => setShowEdit(true)}>
           EDIT PROFILE
         </button>

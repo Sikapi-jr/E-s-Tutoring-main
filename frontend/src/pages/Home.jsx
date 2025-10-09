@@ -1261,6 +1261,43 @@ export default function Home() {
                 )}
               </div>
 
+              {/* Tutor Referral Code Display */}
+              {user.tutor_referral_code && (
+                <div
+                  style={{
+                    background: "#fff",
+                    border: "3px solid #E1E1E1",
+                    borderRadius: 12,
+                    padding: "1rem",
+                    height: 175,
+                    maxHeight: 175,
+                    minHeight: 175,
+                  }}
+                >
+                  <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "0.5rem" }}>{t('settings.yourTutorCode')}</h4>
+                  <p style={{ fontSize: "0.75rem", color: "#666", textAlign: "center", marginBottom: "1rem" }}>
+                    {t('settings.tutorCodeDescription')}
+                  </p>
+                  <div style={{
+                    backgroundColor: "#f0f4ff",
+                    border: "2px solid #192A88",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                    textAlign: "center"
+                  }}>
+                    <div style={{
+                      fontSize: "2rem",
+                      fontWeight: "700",
+                      letterSpacing: "5px",
+                      color: "#192A88",
+                      fontFamily: "monospace"
+                    }}>
+                      {user.tutor_referral_code}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Tutor Documents */}
               <div
                 style={{

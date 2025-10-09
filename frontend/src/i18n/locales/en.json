@@ -578,7 +578,9 @@
     "resetPassword": "Reset Password",
     "confirmDeleteDocument": "Are you sure you want to delete \"{{name}}\"?",
     "documentDeletedSuccess": "Document deleted successfully",
-    "editProfile": "Edit Profile"
+    "editProfile": "Edit Profile",
+    "yourTutorCode": "Your Tutor Code",
+    "tutorCodeDescription": "A parent wants you to tutor them specifically? Give them your tutor code and ask them to request a tutor using your code."
   },
   "announcements": {
     "title": "Announcements",

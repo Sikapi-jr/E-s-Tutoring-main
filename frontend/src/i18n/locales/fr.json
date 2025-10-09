@@ -578,7 +578,9 @@
     "resetPassword": "Réinitialiser le mot de passe",
     "confirmDeleteDocument": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ?",
     "documentDeletedSuccess": "Document supprimé avec succès",
-    "editProfile": "Modifier le Profil"
+    "editProfile": "Modifier le Profil",
+    "yourTutorCode": "Votre Code de Tuteur",
+    "tutorCodeDescription": "Un parent veut que vous les tutoriez spécifiquement? Donnez-leur votre code de tuteur et demandez-leur de demander un tuteur en utilisant votre code."
   },
   "announcements": {
     "title": "Annonces",
