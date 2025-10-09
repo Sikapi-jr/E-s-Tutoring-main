@@ -116,6 +116,7 @@ class UserSerializer(serializers.ModelSerializer):
             "stripe_account_id", "is_active", "is_superuser",
             "documents",
             "profile_picture",
+            "tutor_referral_code",
         ]
         extra_kwargs = {
             "password": {"write_only": True, "min_length": 8},
