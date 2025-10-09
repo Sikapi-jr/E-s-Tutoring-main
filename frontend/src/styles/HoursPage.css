@@ -156,8 +156,9 @@ textarea:active {
   border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .filters-bar select {
@@ -168,18 +169,18 @@ textarea:active {
   font-size: 0.875rem;
   min-width: 100px;
   width: 100px;
-  flex: 0 0 auto;
+  flex: 0 0 100px;
   max-width: 100px;
-  margin-right: 0.5rem;
 }
 
 .period-filter {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 0 0 auto;
   min-width: 0;
+  margin-left: auto;
 }
 
 .period-filter label {
