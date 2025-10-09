@@ -178,9 +178,8 @@ textarea:active {
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
-  margin-left: auto;
 }
 
 .period-filter label {
