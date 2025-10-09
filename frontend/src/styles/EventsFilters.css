@@ -25,7 +25,7 @@
 .ev-filter-bar{
   display:flex;
   flex-wrap:wrap;
-  gap:0.75rem;
+  gap:1.5rem;
   align-items:center;
   margin-bottom:1rem;
 }
