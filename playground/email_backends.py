@@ -187,3 +187,55 @@ def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, s
     """
     
     return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content)
+
+
+def send_admin_referral_notification(admin_email, sender_name, sender_email, receiver_email):
+    """
+    Send notification to admin when a new referral is created
+    """
+    from_email = "support@egstutoring-portal.ca"
+    subject = "📧 New Referral Created - EGS Tutoring"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #192A88; margin-bottom: 10px;">📧 New Referral</h1>
+            <h2 style="color: #333; font-weight: normal;">A new referral has been sent</h2>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #192A88; margin-top: 0;">Referral Details</h3>
+
+            <div style="margin-bottom: 15px;">
+                <strong>From:</strong><br>
+                {sender_name} ({sender_email})
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>To:</strong><br>
+                {receiver_email}
+            </div>
+        </div>
+
+        <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="color: #0c5aa6; margin: 0;">This is an automated notification that a referral has been sent through the EGS Tutoring platform.</p>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+            <p>EGS Tutoring Admin Notifications</p>
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+    New Referral Created - EGS Tutoring
+
+    A new referral has been sent through the platform.
+
+    From: {sender_name} ({sender_email})
+    To: {receiver_email}
+
+    This is an automated notification from the EGS Tutoring platform.
+    """
+
+    return send_mailgun_email(from_email, admin_email, subject, html_content, text_content)

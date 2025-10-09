@@ -17,6 +17,7 @@ const ParentRequestDetail = () => {
   const [error, setError] = useState("");
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [message, setMessage] = useState("");
+  const [allReplies, setAllReplies] = useState([]);
 
   useEffect(() => {
     fetchRequestDetail();
@@ -58,6 +59,17 @@ const ParentRequestDetail = () => {
       }
 
       setRequest(foundRequest);
+
+      // If superadmin, fetch all replies for this request
+      const isSuperuser = user?.is_superuser === true || user?.is_superuser === 1;
+      if (isSuperuser) {
+        try {
+          const repliesResponse = await api.get(`/api/requests/reply/?request=${requestId}`);
+          setAllReplies(Array.isArray(repliesResponse.data) ? repliesResponse.data : []);
+        } catch (err) {
+          console.error('Error fetching replies:', err);
+        }
+      }
     } catch (error) {
       console.error('Error fetching request:', error);
       setError(t('dashboard.errorLoading', 'Error loading request'));
@@ -226,7 +238,7 @@ const ParentRequestDetail = () => {
               </span>
             </div>
 
-            {request.is_accepted === 'Accepted' && request.accepted_tutor_name && (
+            {user?.is_superuser && request.is_accepted === 'Accepted' && request.accepted_tutor_name && (
               <>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <strong style={{ color: '#192A88', fontSize: '1.2rem' }}>
@@ -259,6 +271,36 @@ const ParentRequestDetail = () => {
               </>
             )}
           </div>
+
+          {/* Show all replies for superadmin */}
+          {user?.is_superuser && allReplies.length > 0 && (
+            <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px solid #dee2e6' }}>
+              <h3 style={{ color: '#192A88', marginBottom: '1rem' }}>
+                {t('dashboard.allReplies', 'All Tutor Replies')} ({allReplies.length})
+              </h3>
+              {allReplies.map((reply) => (
+                <div key={reply.id} style={{
+                  backgroundColor: 'white',
+                  padding: '1.5rem',
+                  borderRadius: '8px',
+                  border: '1px solid #dee2e6',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <strong style={{ color: '#192A88' }}>
+                      {reply.tutor_firstName} {reply.tutor_lastName}
+                    </strong>
+                    <span style={{ color: '#666', fontSize: '0.9rem', marginLeft: '1rem' }}>
+                      {new Date(reply.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                    {reply.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ marginTop: '2rem', borderTop: '2px solid #dee2e6', paddingTop: '2rem' }}>
             <button

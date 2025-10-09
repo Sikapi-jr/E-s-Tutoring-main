@@ -14,6 +14,7 @@ urlpatterns = [
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
     path('referral/create/', views.ReferralCreateView.as_view(), name='referral-create'),
     path('referral/list/', views.ReferralListView.as_view(), name='referral-list'),
+    path('referral/admin/all/', views.AdminReferralListView.as_view(), name='admin-referral-list'),
     path("requests/create/", views.RequestListCreateView.as_view(), name="referral-create"),
     path("requests/list/", views.RequestListView.as_view(), name="request-list"),
     path('requests/RejectReply/', views.RejectUpdateView.as_view(), name='request-RejectReply'),

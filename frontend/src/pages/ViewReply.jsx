@@ -195,7 +195,7 @@ const ViewReply = () => {
     <div className="view-reply-wrapper">
       <div className="reply-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h1 style={{ margin: 0 }}>{t('dashboard.viewReplies')}</h1>
+          <h1 style={{ margin: 0 }}>{t('requests.viewRequests', 'View Requests')}</h1>
           <button
             onClick={() => setShowRequestModal(true)}
             style={{
@@ -237,16 +237,17 @@ const ViewReply = () => {
                       {request.accepted_tutor_name} {t('requests.hasAccepted')}
                     </strong>
                   </div>
-                ) : (
-                  <div className="request-actions">
-                    <button
-                      className="toggle-btn"
-                      onClick={() => handleRequestSelection(request)}
-                    >
-                      {selectedRequestID === request.id && showReplies
-                        ? t('common.cancel')
-                        : t('dashboard.viewReplies')}
-                    </button>
+                ) : null}
+
+                <div className="request-actions">
+                  <button
+                    className="toggle-btn"
+                    onClick={() => navigate(`/parent-request/${request.id}`)}
+                    style={{ marginRight: '0.5rem' }}
+                  >
+                    {t('dashboard.viewReplies', 'View Replies')}
+                  </button>
+                  {!isAccepted && (
                     <button
                       className="delete-request-btn"
                       onClick={() => setShowDeleteConfirm(request.id)}
@@ -254,77 +255,8 @@ const ViewReply = () => {
                     >
                       🗑️
                     </button>
-                  </div>
-                )}
-
-                {selectedRequestID === request.id && showReplies && !isAccepted && (
-                  <ul className="replies-list">
-                    {replies.length === 0 ? (
-                      <li className="no-replies-message">
-                        <p style={{ fontStyle: 'italic', color: '#666', textAlign: 'center', padding: '1rem' }}>
-                          {t('replies.noRepliesYet')}
-                        </p>
-                      </li>
-                    ) : (
-                      replies.map(reply => (
-                      <li key={reply.id} className="reply-item">
-                        <strong>{t('replies.message')}:</strong> {reply.message.startsWith('replies.') || reply.message.startsWith('reply.') ? t(reply.message, reply.message) : reply.message} <br />
-                        <strong>{t('replies.sentAt')}:</strong>{" "}
-                        {new Date(reply.created_at).toLocaleString()} <br />
-                        
-                        {/* Display tutor documents */}
-                        <div className="tutor-documents-section">
-                          <strong>{t('replies.tutorDocuments')}:</strong>
-                          {(
-                            tutorDocuments[reply.tutor] && tutorDocuments[reply.tutor].length > 0 ? (
-                              <div className="tutor-documents">
-                                <ul className="documents-list">
-                                  {tutorDocuments[reply.tutor].map((doc) => (
-                                    <li key={doc.id} className="document-item">
-                                      <a 
-                                        href={`${API_BASE_URL}${doc.file}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="document-link"
-                                      >
-                                        📄 {doc.file.split('/').pop()}
-                                      </a>
-                                      <span className="document-date">
-                                        ({new Date(doc.uploaded_at).toLocaleDateString()})
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : (
-                              <div className="no-documents">
-                                <span style={{ color: '#666', fontStyle: 'italic' }}>
-                                  {t('replies.noDocuments')}
-                                </span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                        
-                        <div className="reply-actions">
-                          <button
-                            className="accept-btn"
-                            onClick={() => handleAcceptedReply(request, reply)}
-                          >
-                            {t('replies.accept')}
-                          </button>
-                          <button
-                            className="decline-btn"
-                            onClick={() => handleDeniedReply(request, reply)}
-                          >
-                            {t('replies.decline')}
-                          </button>
-                        </div>
-                      </li>
-                      ))
-                    )}
-                  </ul>
-                )}
+                  )}
+                </div>
               </li>
               );
             })}

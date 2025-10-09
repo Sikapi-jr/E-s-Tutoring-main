@@ -1616,14 +1616,28 @@ class ReferralCreateView(APIView):
 
             invite_link = f"{settings.BACKEND_URL}/api/register?ref={ref.code}"
             serializer = ReferralSerializer(ref)
-            
-            # Send referral email asynchronously
+
+            # Send referral email asynchronously to receiver
             from playground.tasks import send_referral_email_async
             send_referral_email_async.delay(
-                sender_user.firstName, 
-                sender_user.email, 
+                sender_user.firstName,
+                sender_user.email,
                 receiver_email
             )
+
+            # Send notification to admin
+            from playground.email_backends import send_admin_referral_notification
+            try:
+                admin_email = settings.ADMIN_EMAIL if hasattr(settings, 'ADMIN_EMAIL') else 'egstutor@gmail.com'
+                send_admin_referral_notification(
+                    admin_email,
+                    f"{sender_user.firstName} {sender_user.lastName}",
+                    sender_user.email,
+                    receiver_email
+                )
+            except Exception as e:
+                logger.error(f"Failed to send admin notification for referral: {e}")
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         except Exception as e:
@@ -1643,7 +1657,39 @@ class ReferralListView(APIView):
             serializer = ReferralSerializer(referrals, many=True)
             return Response(serializer.data, status=200)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)     
+            return Response({"error": "User not found"}, status=404)
+
+
+class AdminReferralListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # Check if user is superadmin
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            return Response({"error": "Unauthorized - Admin access only"}, status=403)
+
+        try:
+            # Get all referrals with additional info
+            referrals = Referral.objects.all().order_by('-created_at')
+
+            referral_data = []
+            for ref in referrals:
+                data = {
+                    'id': ref.id,
+                    'referrer_name': f"{ref.referrer.firstName} {ref.referrer.lastName}" if ref.referrer else None,
+                    'referrer_email': ref.referrer.email if ref.referrer else None,
+                    'referred_name': f"{ref.referred.firstName} {ref.referred.lastName}" if ref.referred else None,
+                    'referred_email': ref.referred.email if ref.referred else None,
+                    'prospective_email': ref.prospective_email,
+                    'created_at': ref.created_at,
+                    'reward_applied': ref.reward_applied,
+                }
+                referral_data.append(data)
+
+            return Response(referral_data, status=200)
+        except Exception as e:
+            logger.error(f"Error fetching all referrals: {e}")
+            return Response({"error": str(e)}, status=500)     
 
 class RequestListCreateView(generics.ListCreateAPIView):
     serializer_class = RequestSerializer

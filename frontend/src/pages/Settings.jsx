@@ -216,10 +216,26 @@ export default function Settings() {
                 width: "80px",
                 height: "80px",
                 borderRadius: "50%",
-                backgroundColor: "#ffffff",
-                border: "2px solid #000000",
+                backgroundColor: "#f0f0f0",
+                border: "2px solid #ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-            />
+            >
+              <svg
+                viewBox="0 0 24 24"
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  fill: "#666"
+                }}
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+              </svg>
+            </div>
           )}
 
           <div>
