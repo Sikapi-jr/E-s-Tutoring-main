@@ -168,9 +168,9 @@ textarea:active {
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
-  flex: 2;
-  min-width: 300px;
-  margin-left: 2rem; /* Push to the right */
+  flex: 1;
+  min-width: 0;
+  margin-left: auto;
 }
 
 .period-filter label {
@@ -736,27 +736,7 @@ textarea:active {
   width: auto;
 }
 
-/* ─────────────── filters bar ─────────────── */
-.filters-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  overflow-x: hidden;
-  padding: 0.5rem 0;
-}
-
-.filters-bar select,
-.filters-bar input {
-  flex: 0 0 auto;          /* prevent items from shrinking */
-}
-
-.filters-bar::-webkit-scrollbar {
-  height: 6px;
-}
-.filters-bar::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
+/* Removed duplicate filters-bar declaration - already defined above */
 
 /* Highlighting for edited hours */
 .edited-row {
