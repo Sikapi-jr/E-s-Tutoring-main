@@ -1,5 +1,5 @@
 // src/components/LoginForm.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
@@ -18,8 +18,17 @@ function LoginForm() {
   const [clickedReset, setClickedReset] = useState(false);
   const [showResendVerification, setShowResendVerification] = useState(false);
   const [resendEmail, setResendEmail] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { setUser } = useUser();
   const navigate = useNavigate();
+
+  // Add delay on initial load to ensure CSS renders properly
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleReset = () => {
     setClickedReset(true);
@@ -63,8 +72,6 @@ function LoginForm() {
         setResendEmail(userRes.data.email || "");
       } else {
         setUser(userRes.data);
-        // Add delay to ensure CSS properly sets before navigation
-        await new Promise(resolve => setTimeout(resolve, 600));
         navigate("/home");
       }
     } catch (err) {
@@ -73,6 +80,14 @@ function LoginForm() {
       setLoading(false); 
     }
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="form-container" style={{ textAlign: 'center', padding: '4rem' }}>
+        <p>{t("common.loading")}...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="form-container">
