@@ -284,11 +284,11 @@
 
   /* Make language dropdown smaller and more compact on mobile */
   .nav__language select {
-    padding: 0.3rem 0.25rem !important;
+    padding: 0.1rem 0.25rem !important;
     font-size: 0.85rem !important;
     min-width: 48px !important; /* 40% of original 120px */
     max-width: 48px !important; /* Prevent expansion */
-    height: 32px !important;
+    height: 28px !important;
     background-color: #fff !important;
     border: 1px solid #ccc !important;
     border-radius: 4px !important;

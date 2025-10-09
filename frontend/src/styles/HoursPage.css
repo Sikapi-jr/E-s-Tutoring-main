@@ -739,9 +739,9 @@ textarea:active {
 /* ─────────────── filters bar ─────────────── */
 .filters-bar {
   display: flex;
-  flex-wrap: nowrap;       /* keep all filters on one line */
+  flex-wrap: wrap;
   gap: 1rem;
-  overflow-x: auto;        /* allow horizontal scroll if too many */
+  overflow-x: hidden;
   padding: 0.5rem 0;
 }
 
