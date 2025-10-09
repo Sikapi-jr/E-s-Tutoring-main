@@ -61,7 +61,6 @@ const ParentRequestDetail = () => {
       setRequest(foundRequest);
 
       // If superadmin, fetch all replies for this request
-      const isSuperuser = user?.is_superuser === true || user?.is_superuser === 1;
       if (isSuperuser) {
         try {
           const repliesResponse = await api.get(`/api/requests/reply/?request=${requestId}`);
