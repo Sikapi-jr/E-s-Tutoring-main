@@ -1,17 +1,16 @@
-// src/components/LogHoursModal.jsx
-import { useState, useEffect, useCallback } from "react";
+// src/components/TemporaryTutoringModal.jsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useUser } from './UserProvider';
-import TemporaryTutoringModal from './TemporaryTutoringModal';
 import "../styles/Form.css";
 
-export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
+export default function TemporaryTutoringModal({ isOpen, onClose, onSuccess, onBack }) {
     const { t } = useTranslation();
     const { user } = useUser();
 
     const tutor_id = user?.account_id;
-    const [student, setStudent] = useState("");
+    const [studentUsername, setStudentUsername] = useState("");
     const [subject, setSubject] = useState("");
     const [date, setDate] = useState(() => {
         const today = new Date();
@@ -21,26 +20,9 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
     const [endTime, setEndTime] = useState("");
     const [location, setLocation] = useState("");
     const [notes, setNotes] = useState("");
-    const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
-    const [showTemporaryModal, setShowTemporaryModal] = useState(false);
-
-    useEffect(() => {
-        const fetchStudents = async () => {
-            try {
-                const response = await api.get(`/api/TutorStudents/?tutor=${tutor_id}`);
-                setStudents(response.data);
-            } catch (error) {
-                console.error("Error fetching students:", error);
-            }
-        };
-
-        if (tutor_id && isOpen) {
-            fetchStudents();
-        }
-    }, [tutor_id, isOpen]);
 
     const getTotalTime = useCallback((startTime, endTime) => {
         if (!startTime || !endTime || typeof startTime !== 'string' || typeof endTime !== 'string') return 0;
@@ -72,7 +54,7 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
     }, []);
 
     const validateForm = () => {
-        if (!student) return t('logHours.selectStudentRequired');
+        if (!studentUsername.trim()) return "Student username is required";
         if (!subject.trim()) return t('logHours.subjectRequired');
         if (!location) return t('logHours.locationRequired');
         if (!date) return t('logHours.dateRequired');
@@ -129,7 +111,7 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
         try {
             const decimalHours = getTotalTime(startTime, endTime);
             const payload = {
-                student_id: student,
+                student_username: studentUsername.trim(),
                 tutor: tutor_id,
                 date,
                 start_time: startTime,
@@ -139,14 +121,12 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
                 subject,
                 notes,
             };
-            await api.post("/api/log/", payload);
+            await api.post("/api/log-temporary/", payload);
 
-            const selectedStudent = students.find(stud => stud.student == student);
-            const studentName = selectedStudent ? `${selectedStudent.student_firstName} ${selectedStudent.student_lastName}` : "student";
-            setSuccessMessage(t('logHours.hoursAddedSuccess', { hours: decimalHours, student: studentName }));
+            setSuccessMessage(t('logHours.hoursAddedSuccess', { hours: decimalHours, student: studentUsername }));
 
             // Clear form
-            setStudent("");
+            setStudentUsername("");
             setSubject("");
             setDate(new Date().toISOString().split('T')[0]);
             setStartTime("");
@@ -164,13 +144,15 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
             }
 
         } catch (error) {
-            console.error('Error logging hours:', error);
+            console.error('Error logging temporary tutoring hours:', error);
 
             if (error.response?.data) {
                 const errorMessage = error.response.data.detail || error.response.data.message;
 
                 if (typeof errorMessage === 'string') {
-                    if (errorMessage.includes('Cannot log hours for future dates/times')) {
+                    if (errorMessage.includes('Student with username') && errorMessage.includes('not found')) {
+                        setError('Student with username "' + studentUsername + '" not found. Please check the username and try again.');
+                    } else if (errorMessage.includes('Cannot log hours for future dates/times')) {
                         setError(t('logHours.cannotLogFuture'));
                     } else if (errorMessage.includes('Cannot log hours that end in the future')) {
                         setError(t('logHours.endTimeCannotBeFuture'));
@@ -198,50 +180,25 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
         onClose();
     };
 
-    const handleTemporaryTutoring = () => {
-        setShowTemporaryModal(true);
-    };
-
-    const handleTemporaryModalClose = () => {
-        setShowTemporaryModal(false);
-    };
-
     if (!isOpen) return null;
-
-    // Show temporary tutoring modal instead
-    if (showTemporaryModal) {
-        return (
-            <TemporaryTutoringModal
-                isOpen={showTemporaryModal}
-                onClose={handleTemporaryModalClose}
-                onSuccess={onSuccess}
-                onBack={() => setShowTemporaryModal(false)}
-            />
-        );
-    }
 
     return (
         <div className="modal-overlay" onClick={handleClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
                 <div className="modal-header">
-                    <h2>{t('logHours.title')}</h2>
+                    <h2>Log Temporary Tutoring Hours</h2>
                     <button className="modal-close" onClick={handleClose}>×</button>
                 </div>
 
                 <div className="modal-body">
                     <form onSubmit={handleSubmit}>
-                        <select
+                        <input
                             className="form-input"
-                            value={student}
-                            onChange={(e) => setStudent(e.target.value)}
-                        >
-                            <option value="">{t('logHours.selectStudent')}</option>
-                            {students && students.map((stud) => (
-                                <option key={stud.id} value={stud.student}>
-                                    {stud.student_firstName} {stud.student_lastName}
-                                </option>
-                            ))}
-                        </select>
+                            type="text"
+                            value={studentUsername}
+                            onChange={(e) => setStudentUsername(e.target.value)}
+                            placeholder="Student Username (exact match required)"
+                        />
 
                         <div className="form-row">
                             <input
@@ -307,14 +264,14 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
                         <button
                             type="button"
                             className="form-button"
-                            onClick={handleTemporaryTutoring}
+                            onClick={onBack}
                             style={{
                                 marginTop: '0.5rem',
                                 backgroundColor: '#6c757d',
                                 border: 'none'
                             }}
                         >
-                            Temporary Tutoring
+                            ← Back to Regular Hours
                         </button>
                     </form>
 

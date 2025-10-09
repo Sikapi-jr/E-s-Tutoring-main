@@ -243,6 +243,9 @@ export default function Settings() {
               {user.firstName} {user.lastName}
             </h2>
             <p className="profile-email">{user.email}</p>
+            <p className="profile-username" style={{ color: "#666", fontSize: "0.9rem", margin: "0.25rem 0" }}>
+              Username: {user.username}
+            </p>
             <span className="role-badge">{user.roles}</span>
           </div>
         </div>

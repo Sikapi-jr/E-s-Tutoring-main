@@ -1576,8 +1576,8 @@ export default function Home() {
                 </div>
                 {students.length > 0 ? (
                   students.map((s, index) => {
-                    const tutorName = s.has_tutor 
-                      ? `${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
+                    const tutorName = s.has_tutor
+                      ? `T: ${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
                       : t('common.noTutor');
                     return (
                     <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "center" }}>

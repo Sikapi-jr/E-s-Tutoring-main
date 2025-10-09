@@ -169,6 +169,7 @@ const MyStudents = () => {
                       {studentRelation.student_firstName || 'Unknown'} {studentRelation.student_lastName || ''}
                     </h2>
                     <div className="student-details">
+                      <p><strong>Username:</strong> {studentRelation.student_username || 'N/A'}</p>
                       <p><strong>{t('common.subject')}:</strong> {studentRelation.subject || 'N/A'}</p>
                       <p><strong>{t('myStudents.parentName')}:</strong> {studentRelation.parent_firstName || 'Unknown'} {studentRelation.parent_lastName || ''}</p>
                       <p><strong>{t('common.email')}:</strong> {studentRelation.parent_email || 'N/A'}</p>
