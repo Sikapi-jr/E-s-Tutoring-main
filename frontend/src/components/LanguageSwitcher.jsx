@@ -19,14 +19,14 @@ const LanguageSwitcher = memo(({ className = "" }) => {
         value={i18n.language}
         onChange={(e) => handleLanguageChange(e.target.value)}
         style={{
-          padding: '0.25rem 0.25rem',
+          padding: '0.2rem 0.3rem',
           borderRadius: '4px',
           border: '1px solid #ccc',
           backgroundColor: '#fff',
-          fontSize: '1rem',
+          fontSize: '1.2rem',
           cursor: 'pointer',
-          minWidth: '40px',
-          height: '32px',
+          minWidth: '50px',
+          height: '24px',
           appearance: 'none',
           WebkitAppearance: 'none',
           MozAppearance: 'none'
