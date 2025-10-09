@@ -4157,12 +4157,84 @@ class AdminUserHoursView(APIView):
             for doc in documents
         ]
 
+        # Get current tutoring requests based on role
+        current_requests = []
+
+        # For parents: get their tutoring requests
+        if user.roles == 'parent':
+            parent_requests = TutoringRequest.objects.filter(parent=user).order_by('-created_at')
+            for request in parent_requests:
+                # Count replies for this request
+                reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                current_requests.append({
+                    'id': request.id,
+                    'student_name': f"{request.student.firstName} {request.student.lastName}",
+                    'subject': request.subject,
+                    'grade': request.grade,
+                    'service': request.service,
+                    'city': request.city,
+                    'status': request.is_accepted,
+                    'reply_count': reply_count,
+                    'created_at': request.created_at,
+                    'description': request.description
+                })
+
+        # For tutors: get requests they've responded to or can respond to
+        elif user.roles == 'tutor':
+            # Get requests the tutor has responded to
+            tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
+            responded_request_ids = set()
+
+            for response in tutor_responses:
+                if response.request.id not in responded_request_ids:
+                    responded_request_ids.add(response.request.id)
+                    request = response.request
+                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    current_requests.append({
+                        'id': request.id,
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': request.is_accepted,
+                        'reply_count': reply_count,
+                        'created_at': request.created_at,
+                        'description': request.description,
+                        'tutor_response': response.message,
+                        'response_date': response.created_at,
+                        'response_rejected': response.rejected
+                    })
+
+        # For students: get requests made for them
+        elif user.roles == 'student':
+            student_requests = TutoringRequest.objects.filter(student=user).order_by('-created_at')
+            for request in student_requests:
+                reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                current_requests.append({
+                    'id': request.id,
+                    'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                    'subject': request.subject,
+                    'grade': request.grade,
+                    'service': request.service,
+                    'city': request.city,
+                    'status': request.is_accepted,
+                    'reply_count': reply_count,
+                    'created_at': request.created_at,
+                    'description': request.description
+                })
+
         return Response({
             'user_info': user_info,
             'stats': stats,
             'hours': serializer.data,
             'relationships': relationships,
-            'documents': user_documents
+            'documents': user_documents,
+            'current_requests': current_requests
         }, status=200)
 
 

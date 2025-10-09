@@ -443,6 +443,139 @@
   color: #999;
 }
 
+/* Requests Section */
+.requests-section {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.requests-section h3 {
+  margin: 0 0 1rem 0;
+  color: #192A88;
+  border-bottom: 2px solid #192A88;
+  padding-bottom: 0.5rem;
+}
+
+.requests-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.request-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.request-item:hover {
+  background-color: #e9ecef;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.request-subject {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #192A88;
+}
+
+.request-status {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.request-status.accepted {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.request-status.not-accepted {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.request-status.renew {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.request-details {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.request-detail {
+  font-size: 0.9rem;
+  color: #495057;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.request-detail strong {
+  color: #343a40;
+  min-width: 100px;
+}
+
+.request-description {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border-left: 3px solid #192A88;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.request-description strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #343a40;
+}
+
+.request-tutor-response {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #e7f3ff;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
+
+.request-tutor-response strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #0056b3;
+}
+
+.tutor-response-text {
+  font-size: 0.9rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.response-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
 /* Documents Section */
 .documents-section {
   background: white;

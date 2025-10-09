@@ -19,6 +19,7 @@ export default function AdminUserSearch() {
   const [userStats, setUserStats] = useState(null);
   const [relationships, setRelationships] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [currentRequests, setCurrentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -66,6 +67,7 @@ export default function AdminUserSearch() {
       setUserHours(response.data.hours);
       setRelationships(response.data.relationships || null);
       setDocuments(response.data.documents || []);
+      setCurrentRequests(response.data.current_requests || []);
       setSearchResults([]); // Hide dropdown
     } catch (err) {
       console.error("Error fetching user hours:", err);
@@ -84,6 +86,7 @@ export default function AdminUserSearch() {
     setUserStats(null);
     setRelationships(null);
     setDocuments([]);
+    setCurrentRequests([]);
     setError("");
   };
 
@@ -303,6 +306,66 @@ export default function AdminUserSearch() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Current Requests Section */}
+          {currentRequests && currentRequests.length > 0 && (
+            <div className="requests-section">
+              <h3>📋 {t('requests.currentRequests', 'Current Tutoring Requests')} ({currentRequests.length})</h3>
+              <div className="requests-list">
+                {currentRequests.map((req) => (
+                  <div key={req.id} className="request-item">
+                    <div className="request-header">
+                      <div className="request-subject">{req.subject}</div>
+                      <div className={`request-status ${req.status.toLowerCase().replace(' ', '-')}`}>
+                        {req.status}
+                      </div>
+                    </div>
+                    <div className="request-details">
+                      {req.student_name && (
+                        <div className="request-detail">
+                          <strong>{t('dashboard.student')}:</strong> {req.student_name}
+                        </div>
+                      )}
+                      {req.parent_name && (
+                        <div className="request-detail">
+                          <strong>{t('auth.parent')}:</strong> {req.parent_name}
+                        </div>
+                      )}
+                      <div className="request-detail">
+                        <strong>{t('requests.gradeLevel')}:</strong> {req.grade}
+                      </div>
+                      <div className="request-detail">
+                        <strong>{t('common.service')}:</strong> {req.service}
+                      </div>
+                      <div className="request-detail">
+                        <strong>{t('common.city')}:</strong> {req.city}
+                      </div>
+                      <div className="request-detail">
+                        <strong>{t('dashboard.createdAt')}:</strong> {new Date(req.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="request-detail">
+                        <strong>{t('dashboard.viewReplies')}:</strong> {req.reply_count} {req.reply_count === 1 ? 'reply' : 'replies'}
+                      </div>
+                      {req.description && (
+                        <div className="request-description">
+                          <strong>{t('common.description')}:</strong> {req.description}
+                        </div>
+                      )}
+                      {req.tutor_response && (
+                        <div className="request-tutor-response">
+                          <strong>{t('dashboard.tutorMessage')}:</strong>
+                          <div className="tutor-response-text">{req.tutor_response}</div>
+                          <div className="response-date">
+                            {t('replies.sentAt')}: {new Date(req.response_date).toLocaleDateString()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
