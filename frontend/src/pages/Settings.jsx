@@ -198,7 +198,7 @@ export default function Settings() {
             gap: "1rem",
           }}
         >
-          {user.profile_picture ? (
+          {user.profile_picture && !user.profile_picture.includes('default-profile-picture.jpeg') ? (
             <img
               src={user.profile_picture}
               alt="Profile"
