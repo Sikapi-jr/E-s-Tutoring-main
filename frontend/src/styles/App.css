@@ -22,29 +22,6 @@ body {
 }
 
 /* ═══════════ REMOVE ALL LIGHT BLUE COLORS - ONLY USE DARK BLUE #192A88 ═══════════ */
-*:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 2px #192A88 !important;
-}
-
-*:focus-visible {
-  outline: 2px solid #192A88 !important;
-  outline-offset: 2px !important;
-}
-
-button:focus,
-button:active,
-select:focus,
-select:active,
-input:focus,
-input:active,
-textarea:focus,
-textarea:active {
-  border-color: #192A88 !important;
-  box-shadow: 0 0 0 2px #192A88 !important;
-  outline: none !important;
-}
-
 /* Override any blue colors with our dark blue */
 *[style*="blue"]:not([style*="#192A88"]) {
   color: #192A88 !important;

@@ -63,6 +63,8 @@ function LoginForm() {
         setResendEmail(userRes.data.email || "");
       } else {
         setUser(userRes.data);
+        // Add delay to ensure CSS properly sets before navigation
+        await new Promise(resolve => setTimeout(resolve, 600));
         navigate("/home");
       }
     } catch (err) {
