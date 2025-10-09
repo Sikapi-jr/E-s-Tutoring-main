@@ -33,7 +33,7 @@ const getRoutes = (t) => ({
   Home:    { to: "/home",              label: t('navigation.home') },
   Students:{ to: "/students",          label: t('navigation.students') },
   MyStudents:{ to: "/my-students",     label: t('navigation.myStudents') },
-  Request: { to: "/request",           label: "Tutor Request" },
+  Request: { to: "/request-reply",     label: "Tutor Request" },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
   Hours:   { to: "/hours",             label: t('myHours.title') },
   Weekly:  { to: "/WeeklyHours",       label: t('navigation.weeklyHours') },
