@@ -245,7 +245,7 @@ export default function LoggedHoursPage() {
         <select
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          style={{ maxWidth: '150px' }}
+          style={{ maxWidth: '120px', width: '120px' }}
         >
           <option value="">{t("loggedHours.allStatuses")}</option>
           <option value="Accepted">{t("loggedHours.statusAccepted")}</option>

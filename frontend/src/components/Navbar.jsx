@@ -33,7 +33,7 @@ const getRoutes = (t) => ({
   Home:    { to: "/home",              label: t('navigation.home') },
   Students:{ to: "/students",          label: t('navigation.students') },
   MyStudents:{ to: "/my-students",     label: t('navigation.myStudents') },
-  Request: { to: "/request",           label: t('navigation.request') },
+  Request: { to: "/request",           label: "Tutor Request" },
   Replies: { to: "/request-reply",     label: t('navigation.replies') },
   Hours:   { to: "/hours",             label: t('myHours.title') },
   Weekly:  { to: "/WeeklyHours",       label: t('navigation.weeklyHours') },
@@ -57,22 +57,22 @@ const getRoutes = (t) => ({
 // Role config now uses route keys instead of BASE objects
 const getRoleConfig = (BASE) => ({
   superuser: {
-    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events],
-    tutor:  [BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events, BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    tutor:  [],
     sessions: [],
     cal:    [],
     single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.TestEmail],
   },
   parent: {
-    main:   [BASE.Home, BASE.Hours, BASE.Events],
-    tutor:  [BASE.Students, BASE.Replies],
+    main:   [BASE.Home, BASE.Hours, BASE.Events, BASE.Students, BASE.Replies],
+    tutor:  [],
     sessions: [],
     cal:    [],
     single: [BASE.Inv, BASE.Reports],
   },
   tutor: {
-    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events],
-    tutor:  [BASE.MyStudents],
+    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events, BASE.MyStudents],
+    tutor:  [],
     sessions: [],
     cal:    [],
     single: [BASE.Reports],
@@ -323,8 +323,6 @@ function NavbarContent() {
             {label}
           </NavLink>
         ))}
-
-        {tutorLinks.length > 0 && <Dropdown dropdownId="tutoring" label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
 
         {calLinks.length > 1 ? (
           <Dropdown dropdownId="calendar" label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />

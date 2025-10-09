@@ -122,20 +122,8 @@ function LoginForm() {
       </div>
 
       <button
-        className={`form-button${clickedReset ? " clicked" : ""}`}
+        className="form-button"
         onClick={handleReset}
-        style={{
-          width: '100%',
-          maxWidth: '100%',
-          minWidth: '100%',
-          height: '48px',
-          minHeight: '48px',
-          maxHeight: '48px',
-          boxSizing: 'border-box',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }}
       >
         {t("auth.forgotPassword")}
       </button>

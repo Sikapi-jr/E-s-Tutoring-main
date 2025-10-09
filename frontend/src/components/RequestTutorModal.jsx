@@ -64,15 +64,9 @@ function RequestTutorModal({ isOpen, onClose, onSuccess }) {
             setTutorCode("");
             setError("");
 
-            // Show success alert
-            alert(t('requests.requestSubmittedSuccess', 'Request submitted successfully!'));
-
             // Close modal and refresh parent component
             onSuccess && onSuccess();
             onClose();
-
-            // Refresh the page
-            window.location.reload();
         } catch (error) {
             if (error.response) {
                 setError(t('errors.serverError'));
