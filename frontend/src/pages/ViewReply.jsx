@@ -3,6 +3,7 @@ import api from "../api";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
+import RequestTutorModal from "../components/RequestTutorModal";
 import "../styles/ViewReply.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -36,6 +37,7 @@ const ViewReply = () => {
   const [error, setError] = useState("");
   const [tutorDocuments, setTutorDocuments] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   /* fetch requests for parent */
   useEffect(() => {
@@ -157,23 +159,34 @@ const ViewReply = () => {
       await api.delete(
         `/api/requests/PersonalList/?request_id=${requestId}&parent_id=${parent}`
       );
-      
+
       // Remove the deleted request from the state
       setRequests(prevRequests => prevRequests.filter(req => req.id !== requestId));
-      
+
       // Close confirmation dialog
       setShowDeleteConfirm(null);
-      
+
       // Reset selected request if it was deleted
       if (selectedRequestID === requestId) {
         setSelectedRequestID(null);
         setShowReplies(false);
         setReplies([]);
       }
-      
+
     } catch (err) {
       console.error("Error deleting request:", err);
       alert(t('errors.deleteRequestFailed') || 'Failed to delete request. Please try again.');
+    }
+  };
+
+  /* handle successful request creation */
+  const handleRequestSuccess = async () => {
+    // Refresh the requests list
+    try {
+      const res = await api.get(`/api/requests/PersonalList/?id=${parent}`);
+      setRequests(res.data);
+    } catch (err) {
+      console.error("Error fetching user requests:", err);
     }
   };
 
@@ -181,7 +194,27 @@ const ViewReply = () => {
   return (
     <div className="view-reply-wrapper">
       <div className="reply-card">
-        <h1>{t('dashboard.viewReplies')}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h1 style={{ margin: 0 }}>{t('dashboard.viewReplies')}</h1>
+          <button
+            onClick={() => setShowRequestModal(true)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#192A88',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#0d1654'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#192A88'}
+          >
+            + {t('requests.requestTutor')}
+          </button>
+        </div>
 
         {requests.length === 0 ? (
           <p>{t('requests.noRequestsMade')}</p>
@@ -323,6 +356,13 @@ const ViewReply = () => {
             </div>
           </div>
         )}
+
+        {/* Request Tutor Modal */}
+        <RequestTutorModal
+          isOpen={showRequestModal}
+          onClose={() => setShowRequestModal(false)}
+          onSuccess={handleRequestSuccess}
+        />
       </div>
     </div>
   );

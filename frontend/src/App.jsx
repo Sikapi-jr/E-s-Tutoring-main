@@ -129,7 +129,8 @@ function AppRoutes() {
             {/* Protected home page (moved from /) */}
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/parent-dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
-            <Route path="/request" element={<ProtectedRoute><Request /></ProtectedRoute>} />
+            {/* Request route removed - now using modal in ViewReply */}
+            {/* <Route path="/request" element={<ProtectedRoute><Request /></ProtectedRoute>} /> */}
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/create-announcement" element={<ProtectedRoute><Announcement /></ProtectedRoute>} />
             <Route path="/request-reply" element={<ProtectedRoute><ViewReply /></ProtectedRoute>} />

@@ -57,30 +57,30 @@ const getRoutes = (t) => ({
 // Role config now uses route keys instead of BASE objects
 const getRoleConfig = (BASE) => ({
   superuser: {
-    main:   [BASE.Home, BASE.Dash, BASE.Hours],
-    tutor:  [BASE.Students, BASE.Request, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
-    sessions: [BASE.Events],
+    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events],
+    tutor:  [BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    sessions: [],
     cal:    [],
     single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.TestEmail],
   },
   parent: {
-    main:   [BASE.Home, BASE.Hours],
-    tutor:  [BASE.Students, BASE.Request, BASE.Replies],
-    sessions: [BASE.Events],
+    main:   [BASE.Home, BASE.Hours, BASE.Events],
+    tutor:  [BASE.Students, BASE.Replies],
+    sessions: [],
     cal:    [],
     single: [BASE.Inv, BASE.Reports],
   },
   tutor: {
-    main:   [BASE.Home, BASE.Dash, BASE.Hours],
+    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events],
     tutor:  [BASE.MyStudents],
-    sessions: [BASE.Events],
+    sessions: [],
     cal:    [],
     single: [BASE.Reports],
   },
   student: {
-    main:   [BASE.Home, BASE.Hours],
+    main:   [BASE.Home, BASE.Hours, BASE.Events],
     tutor:  [],
-    sessions: [BASE.Events],
+    sessions: [],
     cal:    [],
     single: [],
   },
@@ -325,8 +325,6 @@ function NavbarContent() {
         ))}
 
         {tutorLinks.length > 0 && <Dropdown dropdownId="tutoring" label={t('navbar.tutoring')} items={tutorLinks} onItemClick={() => setMob(false)} />}
-
-        {sessionsLinks.length > 0 && <Dropdown dropdownId="sessions" label={t('navbar.sessions')} items={sessionsLinks} onItemClick={() => setMob(false)} />}
 
         {calLinks.length > 1 ? (
           <Dropdown dropdownId="calendar" label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />

@@ -19,13 +19,14 @@ const LanguageSwitcher = memo(({ className = "" }) => {
         value={i18n.language}
         onChange={(e) => handleLanguageChange(e.target.value)}
         style={{
-          padding: '0.3rem 0.25rem',
+          padding: '0.25rem 0.25rem',
           borderRadius: '4px',
           border: '1px solid #ccc',
           backgroundColor: '#fff',
-          fontSize: '0.85rem',
+          fontSize: '1rem',
           cursor: 'pointer',
-          minWidth: '48px',
+          minWidth: '40px',
+          height: '32px',
           appearance: 'none',
           WebkitAppearance: 'none',
           MozAppearance: 'none'
@@ -34,7 +35,7 @@ const LanguageSwitcher = memo(({ className = "" }) => {
       >
         {languages.map((lang) => (
           <option key={lang.code} value={lang.code}>
-            {lang.flag} {lang.name}
+            {lang.flag}
           </option>
         ))}
       </select>
