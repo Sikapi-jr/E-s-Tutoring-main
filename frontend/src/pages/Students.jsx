@@ -307,7 +307,7 @@ const Students = () => {
                   ) : (
                     <div className="no-tutors">
                       <p>{t('students.noTutorsAssigned')}</p>
-                      <a href="/request" className="request-tutor-link">
+                      <a href="/request-reply" className="request-tutor-link">
                         {t('students.requestTutor')}
                       </a>
                     </div>

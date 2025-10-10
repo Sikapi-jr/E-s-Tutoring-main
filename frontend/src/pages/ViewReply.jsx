@@ -237,17 +237,15 @@ const ViewReply = () => {
                       {request.accepted_tutor_name} {t('requests.hasAccepted')}
                     </strong>
                   </div>
-                ) : null}
-
-                <div className="request-actions">
-                  <button
-                    className="toggle-btn"
-                    onClick={() => navigate(`/parent-request/${request.id}`)}
-                    style={{ marginRight: '0.5rem' }}
-                  >
-                    {t('dashboard.viewReplies', 'View Replies')}
-                  </button>
-                  {!isAccepted && (
+                ) : (
+                  <div className="request-actions">
+                    <button
+                      className="toggle-btn"
+                      onClick={() => navigate(`/parent-request/${request.id}`)}
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      {t('dashboard.viewReplies', 'View Replies')}
+                    </button>
                     <button
                       className="delete-request-btn"
                       onClick={() => setShowDeleteConfirm(request.id)}
@@ -255,8 +253,8 @@ const ViewReply = () => {
                     >
                       🗑️
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </li>
               );
             })}
