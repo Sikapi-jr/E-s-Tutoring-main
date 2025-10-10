@@ -214,6 +214,28 @@ export default function LoggedHoursPage() {
     <div className="hours-page">
       {/* Filters */}
       <div className="filters-bar">
+        <div className="status-location-group">
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          >
+            <option value="">{t("loggedHours.allStatuses")}</option>
+            <option value="Accepted">{t("loggedHours.statusAccepted")}</option>
+            <option value="Disputed">{t("loggedHours.statusDisputed")}</option>
+            <option value="Resolved">{t("loggedHours.statusResolved")}</option>
+            <option value="Void">{t("loggedHours.statusVoid")}</option>
+          </select>
+
+          <select
+            value={filters.location}
+            onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+          >
+            <option value="">{t("loggedHours.allLocations")}</option>
+            <option value="Online">{t("logHours.online")}</option>
+            <option value="In-Person">{t("logHours.inPerson")}</option>
+          </select>
+        </div>
+
         <div className="period-filter">
           <label>{t("loggedHours.timePeriod")}:</label>
           <button
@@ -241,26 +263,6 @@ export default function LoggedHoursPage() {
             {t("loggedHours.thisYear")}
           </button>
         </div>
-
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-        >
-          <option value="">{t("loggedHours.allStatuses")}</option>
-          <option value="Accepted">{t("loggedHours.statusAccepted")}</option>
-          <option value="Disputed">{t("loggedHours.statusDisputed")}</option>
-          <option value="Resolved">{t("loggedHours.statusResolved")}</option>
-          <option value="Void">{t("loggedHours.statusVoid")}</option>
-        </select>
-
-        <select
-          value={filters.location}
-          onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-        >
-          <option value="">{t("loggedHours.allLocations")}</option>
-          <option value="Online">{t("logHours.online")}</option>
-          <option value="In-Person">{t("logHours.inPerson")}</option>
-        </select>
       </div>
 
       {/* Main Grid */}
