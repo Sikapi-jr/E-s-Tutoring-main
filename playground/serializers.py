@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -529,16 +529,42 @@ class TutorComplaintSerializer(serializers.ModelSerializer):
     tutor_name = serializers.CharField(source='tutor.firstName', read_only=True)
     tutor_lastname = serializers.CharField(source='tutor.lastName', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.firstName', read_only=True)
-    
+
     class Meta:
         model = TutorComplaint
         fields = [
-            'id', 'student', 'tutor', 'student_name', 'student_lastname', 
-            'tutor_name', 'tutor_lastname', 'message', 'status', 'admin_reply', 
+            'id', 'student', 'tutor', 'student_name', 'student_lastname',
+            'tutor_name', 'tutor_lastname', 'message', 'status', 'admin_reply',
             'reviewed_by', 'reviewed_by_name', 'created_at', 'reviewed_at'
         ]
         extra_kwargs = {
             'student': {'read_only': True},
             'reviewed_by': {'read_only': True},
             'reviewed_at': {'read_only': True},
+        }
+
+
+class TutorReferralRequestSerializer(serializers.ModelSerializer):
+    parent_name = serializers.CharField(source='parent.firstName', read_only=True)
+    parent_lastname = serializers.CharField(source='parent.lastName', read_only=True)
+    parent_email = serializers.CharField(source='parent.email', read_only=True)
+    student_name = serializers.CharField(source='student.firstName', read_only=True)
+    student_lastname = serializers.CharField(source='student.lastName', read_only=True)
+    tutor_name = serializers.CharField(source='tutor.firstName', read_only=True)
+    tutor_lastname = serializers.CharField(source='tutor.lastName', read_only=True)
+
+    class Meta:
+        model = TutorReferralRequest
+        fields = [
+            'id', 'parent', 'parent_name', 'parent_lastname', 'parent_email',
+            'student', 'student_name', 'student_lastname',
+            'tutor', 'tutor_name', 'tutor_lastname',
+            'subject', 'grade', 'service', 'city', 'description',
+            'referral_code_used', 'status', 'token', 'tutoring_request',
+            'created_at', 'responded_at'
+        ]
+        extra_kwargs = {
+            'token': {'read_only': True},
+            'tutoring_request': {'read_only': True},
+            'responded_at': {'read_only': True},
         }

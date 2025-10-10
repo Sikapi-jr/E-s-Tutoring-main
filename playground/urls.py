@@ -86,7 +86,10 @@ urlpatterns = [
     
     # Tutor leave student endpoint
     path('tutor-leave-student/', views.TutorLeaveStudentView.as_view(), name='tutor-leave-student'),
-    
+
+    # Tutor referral approval endpoint
+    path('tutor-referral-approval/<str:token>/', views.TutorReferralApprovalView.as_view(), name='tutor-referral-approval'),
+
     # Student can't attend endpoint
     path('student-cant-attend/', views.student_cant_attend, name='student-cant-attend'),
     

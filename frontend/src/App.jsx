@@ -51,6 +51,7 @@ const ParentRequestDetail = lazy(() => import("./pages/ParentRequestDetail"));
 const AdminTestEmail = lazy(() => import("./pages/AdminTestEmail"));
 const AdminRequestDetail = lazy(() => import("./pages/AdminRequestDetail"));
 const AdminUserSearch = lazy(() => import("./pages/AdminUserSearch"));
+const TutorReferralApproval = lazy(() => import("./pages/TutorReferralApproval"));
 
 // Loading component
 const LoadingSpinner = () => {
@@ -92,12 +93,13 @@ function AppRoutes() {
   // Define paths that should show UnauthNavbar (public/unauth pages)
   const unauthPaths = [
     "/",
-    "/login", 
+    "/login",
     "/register",
     "/password-reset",
     "/password-reset-confirm",
     "/verify-email",
-    "/stripe-reauth"
+    "/stripe-reauth",
+    "/tutor-referral-approval"
   ];
 
   // Check if current path should show UnauthNavbar
@@ -165,6 +167,7 @@ function AppRoutes() {
             <Route path="/password-reset-confirm/:uid/:token" element={<PasswordResetConfirm />} />
             <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
             <Route path="/stripe-reauth/:uid/:token" element={<StripeReauth />} />
+            <Route path="/tutor-referral-approval/:token" element={<TutorReferralApproval />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

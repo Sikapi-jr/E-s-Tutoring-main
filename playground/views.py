@@ -1700,78 +1700,33 @@ class RequestListCreateView(generics.ListCreateAPIView):
         tutor_code = self.request.data.get('tutor_code')
 
         if tutor_code:
-            # Handle tutor referral - automatically create accepted request
+            # Handle tutor referral - create pending referral request
             try:
                 # Find the tutor with this referral code
                 tutor = User.objects.get(tutor_referral_code=tutor_code.upper(), roles='tutor')
 
-                # Create an ACCEPTED TutoringRequest directly
-                tutoring_request = TutoringRequest.objects.create(
+                # Generate unique token for approval link
+                import secrets
+                token = secrets.token_urlsafe(32)
+
+                # Create pending TutorReferralRequest
+                from playground.models import TutorReferralRequest
+
+                referral_request = TutorReferralRequest.objects.create(
                     parent_id=self.request.data.get('parent'),
                     student_id=self.request.data.get('student'),
+                    tutor=tutor,
                     subject=self.request.data.get('subject'),
                     grade=self.request.data.get('grade'),
                     service=self.request.data.get('service'),
                     city=self.request.data.get('city'),
                     description=self.request.data.get('description'),
-                    is_accepted="Accepted"
+                    referral_code_used=tutor_code.upper(),
+                    status='pending',
+                    token=token
                 )
 
-                # Create automatic TutorResponse with referral message
-                tutor_name = f"{tutor.firstName} {tutor.lastName}"
-                TutorResponse.objects.create(
-                    request=tutoring_request,
-                    tutor=tutor,
-                    message=f"Referral to {tutor_name}",
-                    rejected=False
-                )
-
-                # Create AcceptedTutor relationship to pair them up
-                AcceptedTutor.objects.create(
-                    request=tutoring_request,
-                    parent_id=self.request.data.get('parent'),
-                    student_id=self.request.data.get('student'),
-                    tutor=tutor,
-                    status='Accepted'
-                )
-
-                # Send email notification to parent about successful pairing
-                try:
-                    from django.core.mail import send_mail
-                    from django.conf import settings
-
-                    parent = User.objects.get(id=self.request.data.get('parent'))
-                    student = User.objects.get(id=self.request.data.get('student'))
-
-                    if parent.email:
-                        subject = f"Great News! {tutor_name} is now paired with {student.firstName}"
-                        message = f"""
-Dear {parent.firstName} {parent.lastName},
-
-Excellent news! {tutor_name} has been successfully paired with {student.firstName} {student.lastName} for tutoring.
-
-Subject: {tutoring_request.subject}
-Grade: {tutoring_request.grade}
-Service Type: {tutoring_request.service}
-
-{tutor_name} will reach out to you shortly to schedule the first session.
-
-You can view all your tutoring details and scheduled sessions in your EGS Tutoring dashboard.
-
-Best regards,
-The EGS Tutoring Team
-                        """
-                        send_mail(
-                            subject,
-                            message,
-                            settings.DEFAULT_FROM_EMAIL,
-                            [parent.email],
-                            fail_silently=True
-                        )
-                except Exception as e:
-                    print(f"Failed to send parent notification email: {e}")
-
-                # Send email notification to tutor about new pairing
+                # Send email notification to tutor with approval link
                 try:
                     from django.core.mail import send_mail
                     from django.conf import settings
@@ -1780,22 +1735,29 @@ The EGS Tutoring Team
                     student = User.objects.get(id=self.request.data.get('student'))
 
                     if tutor.email:
-                        subject = f"New Student Paired: {student.firstName} {student.lastName}"
+                        # Create approval URL
+                        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+                        approval_url = f"{frontend_url}/tutor-referral-approval/{token}"
+
+                        subject = f"New Referral Request: {student.firstName} {student.lastName}"
                         message = f"""
 Dear {tutor.firstName},
 
 A parent has requested you as their tutor using your referral code!
 
-Parent: {parent.firstName} {parent.lastName}
+Parent: {parent.firstName} {parent.lastName} ({parent.email})
 Student: {student.firstName} {student.lastName}
-Subject: {tutoring_request.subject}
-Grade: {tutoring_request.grade}
-Service Type: {tutoring_request.service}
-City: {tutoring_request.city}
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+City: {referral_request.city}
 
-Description: {tutoring_request.description}
+Description: {referral_request.description}
 
-You are now paired with this student. Please reach out to the parent at {parent.email} or {parent.phone_number or 'N/A'} to schedule your first session.
+Please review this request and respond:
+{approval_url}
+
+You can either accept or decline this request. If you accept, you will be paired with this student. If you decline, the request will be made available to other tutors.
 
 Best regards,
 The EGS Tutoring Team
@@ -1809,6 +1771,43 @@ The EGS Tutoring Team
                         )
                 except Exception as e:
                     print(f"Failed to send tutor notification email: {e}")
+
+                # Send confirmation email to parent
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    parent = User.objects.get(id=self.request.data.get('parent'))
+                    student = User.objects.get(id=self.request.data.get('student'))
+                    tutor_name = f"{tutor.firstName} {tutor.lastName}"
+
+                    if parent.email:
+                        subject = f"Referral Request Sent to {tutor_name}"
+                        message = f"""
+Dear {parent.firstName} {parent.lastName},
+
+Your tutoring request for {student.firstName} {student.lastName} has been sent to {tutor_name}.
+
+We've notified {tutor_name} about your request. They will review it and respond shortly. You'll receive an email notification once they respond.
+
+If {tutor_name} declines, your request will automatically be made available to all our tutors.
+
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+Best regards,
+The EGS Tutoring Team
+                        """
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [parent.email],
+                            fail_silently=True
+                        )
+                except Exception as e:
+                    print(f"Failed to send parent confirmation email: {e}")
 
                 # Don't create the normal request, just return
                 return
@@ -4495,5 +4494,222 @@ EGS Tutoring Team
             logger.error(f"Error sending hours reminder: {e}")
             return Response({
                 'detail': f'Error sending hours reminder: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TutorReferralApprovalView(APIView):
+    """
+    View for tutors to approve or deny referral requests
+    GET: Retrieve referral request details by token
+    POST: Accept or decline referral request
+    """
+    permission_classes = [AllowAny]  # Token-based access, not user auth
+
+    def get(self, request, token):
+        """Get referral request details"""
+        try:
+            from playground.models import TutorReferralRequest
+
+            referral_request = TutorReferralRequest.objects.select_related(
+                'parent', 'student', 'tutor'
+            ).get(token=token, status='pending')
+
+            from playground.serializers import TutorReferralRequestSerializer
+            serializer = TutorReferralRequestSerializer(referral_request)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except TutorReferralRequest.DoesNotExist:
+            return Response({
+                'error': 'Referral request not found or already processed'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error retrieving referral request: {e}")
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request, token):
+        """Accept or decline referral request"""
+        try:
+            from playground.models import TutorReferralRequest
+            from django.core.mail import send_mail
+            from django.conf import settings
+            from django.utils import timezone
+
+            action = request.data.get('action')  # 'accept' or 'decline'
+
+            if action not in ['accept', 'decline']:
+                return Response({
+                    'error': 'Invalid action. Must be "accept" or "decline"'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            referral_request = TutorReferralRequest.objects.select_related(
+                'parent', 'student', 'tutor'
+            ).get(token=token, status='pending')
+
+            if action == 'accept':
+                # Create accepted TutoringRequest
+                tutoring_request = TutoringRequest.objects.create(
+                    parent=referral_request.parent,
+                    student=referral_request.student,
+                    subject=referral_request.subject,
+                    grade=referral_request.grade,
+                    service=referral_request.service,
+                    city=referral_request.city,
+                    description=referral_request.description,
+                    is_accepted="Accepted"
+                )
+
+                # Create TutorResponse
+                tutor_name = f"{referral_request.tutor.firstName} {referral_request.tutor.lastName}"
+                TutorResponse.objects.create(
+                    request=tutoring_request,
+                    tutor=referral_request.tutor,
+                    message=f"Accepted referral request for {referral_request.student.firstName} {referral_request.student.lastName}",
+                    rejected=False
+                )
+
+                # Create AcceptedTutor relationship
+                AcceptedTutor.objects.create(
+                    request=tutoring_request,
+                    parent=referral_request.parent,
+                    student=referral_request.student,
+                    tutor=referral_request.tutor,
+                    status='Accepted'
+                )
+
+                # Update referral request
+                referral_request.status = 'accepted'
+                referral_request.tutoring_request = tutoring_request
+                referral_request.responded_at = timezone.now()
+                referral_request.save()
+
+                # Send email to parent
+                try:
+                    if referral_request.parent.email:
+                        subject = f"Great News! {tutor_name} Accepted Your Request"
+                        message = f"""
+Dear {referral_request.parent.firstName} {referral_request.parent.lastName},
+
+Excellent news! {tutor_name} has accepted your tutoring request for {referral_request.student.firstName} {referral_request.student.lastName}.
+
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+{tutor_name} will reach out to you shortly to schedule the first session.
+
+You can view all your tutoring details and scheduled sessions in your EGS Tutoring dashboard.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [referral_request.parent.email],
+                            fail_silently=True
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to send parent acceptance email: {e}")
+
+                return Response({
+                    'message': 'Referral request accepted successfully',
+                    'tutoring_request_id': tutoring_request.id
+                }, status=status.HTTP_200_OK)
+
+            else:  # action == 'decline'
+                # Create regular TutoringRequest available to all tutors
+                tutoring_request = TutoringRequest.objects.create(
+                    parent=referral_request.parent,
+                    student=referral_request.student,
+                    subject=referral_request.subject,
+                    grade=referral_request.grade,
+                    service=referral_request.service,
+                    city=referral_request.city,
+                    description=referral_request.description,
+                    is_accepted="Not Accepted"
+                )
+
+                # Update referral request
+                referral_request.status = 'declined'
+                referral_request.tutoring_request = tutoring_request
+                referral_request.responded_at = timezone.now()
+                referral_request.save()
+
+                # Send email to parent
+                try:
+                    tutor_name = f"{referral_request.tutor.firstName} {referral_request.tutor.lastName}"
+                    if referral_request.parent.email:
+                        subject = f"Update on Your Tutoring Request"
+                        message = f"""
+Dear {referral_request.parent.firstName} {referral_request.parent.lastName},
+
+Thank you for your tutoring request for {referral_request.student.firstName} {referral_request.student.lastName}.
+
+Unfortunately, {tutor_name} is unable to accept this request at this time. However, your request has been automatically posted to our tutoring dashboard and is now visible to all our qualified tutors.
+
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+You'll receive email notifications as tutors respond to your request. You can also view and manage responses in your EGS Tutoring dashboard.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+                        send_mail(
+                            subject,
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [referral_request.parent.email],
+                            fail_silently=True
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to send parent decline email: {e}")
+
+                # Notify other tutors about new request
+                try:
+                    from playground.tasks import send_new_request_notification_async
+
+                    tutors_with_notifications = User.objects.filter(
+                        roles='tutor',
+                        email_notifications_enabled=True,
+                        email_new_requests=True,
+                        email__isnull=False
+                    ).exclude(email='')
+
+                    if tutors_with_notifications.exists():
+                        tutor_emails = list(tutors_with_notifications.values_list('email', flat=True))
+                        parent_name = f"{referral_request.parent.firstName} {referral_request.parent.lastName}"
+                        student_name = f"{referral_request.student.firstName} {referral_request.student.lastName}"
+
+                        send_new_request_notification_async.delay(
+                            tutor_emails,
+                            parent_name,
+                            student_name,
+                            referral_request.subject,
+                            referral_request.grade,
+                            referral_request.service,
+                            tutoring_request.id
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to notify tutors about declined referral: {e}")
+
+                return Response({
+                    'message': 'Referral request declined. Request posted to dashboard for all tutors.',
+                    'tutoring_request_id': tutoring_request.id
+                }, status=status.HTTP_200_OK)
+
+        except TutorReferralRequest.DoesNotExist:
+            return Response({
+                'error': 'Referral request not found or already processed'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Error processing referral request: {e}")
+            return Response({
+                'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
