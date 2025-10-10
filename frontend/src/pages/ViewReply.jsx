@@ -241,10 +241,10 @@ const ViewReply = () => {
                   <div className="request-actions">
                     <button
                       className="toggle-btn"
-                      onClick={() => navigate(`/parent-request/${request.id}`)}
+                      onClick={() => handleRequestSelection(request)}
                       style={{ marginRight: '0.5rem' }}
                     >
-                      {t('dashboard.viewReplies', 'View Replies')}
+                      {selectedRequestID === request.id && showReplies ? t('common.close', 'Close') : t('dashboard.viewReplies', 'View Replies')}
                     </button>
                     <button
                       className="delete-request-btn"
@@ -253,6 +253,106 @@ const ViewReply = () => {
                     >
                       🗑️
                     </button>
+                  </div>
+                )}
+
+                {/* Show replies inline when selected */}
+                {selectedRequestID === request.id && showReplies && !isAccepted && (
+                  <div className="replies-section" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #e9ecef' }}>
+                    <h3 style={{ color: '#192A88', marginBottom: '1rem' }}>{t('replies.title', 'Tutor Replies')}</h3>
+                    {replies.length === 0 ? (
+                      <p style={{ fontStyle: 'italic', color: '#6c757d' }}>{t('replies.noRepliesYet', 'No replies yet. Tutors will respond soon to your request.')}</p>
+                    ) : (
+                      <ul className="replies-list" style={{ listStyle: 'none', padding: 0 }}>
+                        {replies.map(reply => (
+                          <li key={reply.id} className="reply-box" style={{
+                            backgroundColor: '#f8f9fa',
+                            padding: '1.5rem',
+                            marginBottom: '1rem',
+                            borderRadius: '8px',
+                            border: '1px solid #dee2e6'
+                          }}>
+                            <div style={{ marginBottom: '1rem' }}>
+                              <strong style={{ fontSize: '1.2rem', color: '#192A88' }}>
+                                {reply.tutor_firstName} {reply.tutor_lastName}
+                              </strong>
+                              <div style={{ fontSize: '0.9rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                                📧 {reply.tutor_email}
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                                {t('replies.sentAt', 'Sent at')}: {new Date(reply.created_at).toLocaleString()}
+                              </div>
+                            </div>
+
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '1rem',
+                              borderRadius: '6px',
+                              marginBottom: '1rem',
+                              border: '1px solid #dee2e6'
+                            }}>
+                              <strong>{t('replies.message', 'Message')}:</strong>
+                              <p style={{ marginTop: '0.5rem', lineHeight: '1.6' }}>{reply.message}</p>
+                            </div>
+
+                            {/* Tutor Documents */}
+                            {tutorDocuments[reply.tutor] && tutorDocuments[reply.tutor].length > 0 && (
+                              <div style={{ marginBottom: '1rem' }}>
+                                <strong>{t('replies.tutorDocuments', 'Tutor Documents')}:</strong>
+                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+                                  {tutorDocuments[reply.tutor].map(doc => (
+                                    <li key={doc.id}>
+                                      <a
+                                        href={`${API_BASE_URL}${doc.file}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: '#192A88', textDecoration: 'underline' }}
+                                      >
+                                        {doc.name}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                              <button
+                                className="toggle-btn"
+                                onClick={() => handleAcceptedReply(request, reply)}
+                                style={{
+                                  backgroundColor: '#28a745',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                {t('replies.accept', 'Accept')}
+                              </button>
+                              <button
+                                className="toggle-btn"
+                                onClick={() => handleDeniedReply(request, reply)}
+                                style={{
+                                  backgroundColor: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                {t('replies.decline', 'Decline')}
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
               </li>
