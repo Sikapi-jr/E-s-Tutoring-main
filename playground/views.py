@@ -1695,9 +1695,9 @@ class RequestListCreateView(generics.ListCreateAPIView):
     serializer_class = RequestSerializer
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
         # Check if a tutor_code was provided in the request
-        tutor_code = self.request.data.get('tutor_code')
+        tutor_code = request.data.get('tutor_code')
 
         if tutor_code:
             # Handle tutor referral - create pending referral request
@@ -1713,14 +1713,14 @@ class RequestListCreateView(generics.ListCreateAPIView):
                 from playground.models import TutorReferralRequest
 
                 referral_request = TutorReferralRequest.objects.create(
-                    parent_id=self.request.data.get('parent'),
-                    student_id=self.request.data.get('student'),
+                    parent_id=request.data.get('parent'),
+                    student_id=request.data.get('student'),
                     tutor=tutor,
-                    subject=self.request.data.get('subject'),
-                    grade=self.request.data.get('grade'),
-                    service=self.request.data.get('service'),
-                    city=self.request.data.get('city'),
-                    description=self.request.data.get('description'),
+                    subject=request.data.get('subject'),
+                    grade=request.data.get('grade'),
+                    service=request.data.get('service'),
+                    city=request.data.get('city'),
+                    description=request.data.get('description'),
                     referral_code_used=tutor_code.upper(),
                     status='pending',
                     token=token
@@ -1731,8 +1731,8 @@ class RequestListCreateView(generics.ListCreateAPIView):
                     from django.core.mail import send_mail
                     from django.conf import settings
 
-                    parent = User.objects.get(id=self.request.data.get('parent'))
-                    student = User.objects.get(id=self.request.data.get('student'))
+                    parent = User.objects.get(id=request.data.get('parent'))
+                    student = User.objects.get(id=request.data.get('student'))
 
                     if tutor.email:
                         # Create approval URL
@@ -1777,8 +1777,8 @@ The EGS Tutoring Team
                     from django.core.mail import send_mail
                     from django.conf import settings
 
-                    parent = User.objects.get(id=self.request.data.get('parent'))
-                    student = User.objects.get(id=self.request.data.get('student'))
+                    parent = User.objects.get(id=request.data.get('parent'))
+                    student = User.objects.get(id=request.data.get('student'))
                     tutor_name = f"{tutor.firstName} {tutor.lastName}"
 
                     if parent.email:
@@ -1809,8 +1809,10 @@ The EGS Tutoring Team
                 except Exception as e:
                     print(f"Failed to send parent confirmation email: {e}")
 
-                # Don't create the normal request, just return
-                return
+                # Return success response
+                from playground.serializers import TutorReferralRequestSerializer
+                serializer = TutorReferralRequestSerializer(referral_request)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
 
             except User.DoesNotExist:
                 # Invalid tutor code, proceed with normal request creation
@@ -1818,6 +1820,10 @@ The EGS Tutoring Team
                 pass
 
         # Normal request creation (no tutor code or invalid code)
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        # Normal request creation
         request_obj = serializer.save()
 
         # Send email notifications to tutors about new requests
