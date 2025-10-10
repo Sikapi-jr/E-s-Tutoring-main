@@ -75,8 +75,12 @@ function RequestTutorModal({ isOpen, onClose, onSuccess }) {
             setTutorCode("");
             setError("");
 
-            // Close modal and refresh parent component
-            onSuccess && onSuccess();
+            // Refresh parent component data before closing
+            if (onSuccess) {
+                await onSuccess();
+            }
+
+            // Close modal
             onClose();
         } catch (error) {
             if (error.response) {
