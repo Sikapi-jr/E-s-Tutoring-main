@@ -510,7 +510,8 @@
     "hasAccepted": "has accepted!",
     "alreadyKnowTutor": "Already know one of our tutors? Enter their unique tutor code",
     "enterTutorCode": "Enter 6-digit tutor code",
-    "tutorCodeOptional": "Optional - Skip this if you don't have a code"
+    "tutorCodeOptional": "Optional - Skip this if you don't have a code",
+    "referralRequestSent": "Your request has been sent to the tutor! They will receive an email to review and respond. You will be notified once they respond."
   },
   "referral": {
     "tutorReferralRequest": "Tutor Referral Request",
