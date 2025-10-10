@@ -13,11 +13,12 @@ console.log('API Configuration:', {
 
 // Paths that should NOT send a bearer token or trigger token refresh
 const PUBLIC_PATHS = [
-  /\/login\/?$/i, 
+  /\/login\/?$/i,
   /\/register\/?$/i,
   /\/api\/token\/?$/i,
   /\/api\/token\/refresh\/?$/i,
-  /\/api\/user\/register\/?$/i
+  /\/api\/user\/register\/?$/i,
+  /\/api\/tutor-referral-approval\//i
 ];
 
 const api = axios.create({
