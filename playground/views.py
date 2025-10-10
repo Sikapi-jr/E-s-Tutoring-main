@@ -4643,6 +4643,7 @@ class TutorReferralApprovalView(APIView):
     GET: Retrieve referral request details by token
     POST: Accept or decline referral request
     """
+    authentication_classes = []  # No authentication required
     permission_classes = [AllowAny]  # Token-based access, not user auth
 
     def get(self, request, token):
