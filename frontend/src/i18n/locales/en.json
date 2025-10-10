@@ -477,6 +477,7 @@
     "requestSubmitted": "Request submitted successfully!",
     "requestError": "Error submitting request. Please try again.",
     "viewRequest": "View Request",
+    "viewRequests": "View Requests",
     "editRequest": "Edit Request",
     "deleteRequest": "Delete Request",
     "requestDetails": "Request Details",

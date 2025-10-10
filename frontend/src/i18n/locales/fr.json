@@ -477,6 +477,7 @@
     "requestSubmitted": "Demande soumise avec succès !",
     "requestError": "Erreur lors de la soumission de la demande. Veuillez réessayer.",
     "viewRequest": "Voir la demande",
+    "viewRequests": "Voir les demandes",
     "editRequest": "Modifier la demande",
     "deleteRequest": "Supprimer la demande",
     "requestDetails": "Détails de la demande",
