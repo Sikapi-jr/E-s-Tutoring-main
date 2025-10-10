@@ -54,6 +54,17 @@ function RequestTutorModal({ isOpen, onClose, onSuccess }) {
             };
             const res = await api.post("/api/requests/create/", payload);
 
+            // Show success message
+            if (tutorCode) {
+                // Referral request - show specific message
+                alert(t('requests.referralRequestSent',
+                    'Your request has been sent to the tutor! They will receive an email to review and respond. You will be notified once they respond.'));
+            } else {
+                // Normal request
+                alert(t('requests.requestCreated',
+                    'Your tutoring request has been created successfully! Tutors will be notified and you will receive replies shortly.'));
+            }
+
             // Reset form
             setStudent("");
             setSubject("");
