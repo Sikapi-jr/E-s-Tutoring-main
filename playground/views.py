@@ -1814,9 +1814,40 @@ class RequestListCreateView(generics.ListCreateAPIView):
 </html>
                         """
 
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
+Dear {tutor.firstName},
+
+Great news! A parent has requested you as their tutor using your referral code!
+
+Parent Information:
+Name: {parent.firstName} {parent.lastName}
+Email: {parent.email}
+
+Student Information:
+Name: {student.firstName} {student.lastName}
+Grade: {referral_request.grade}
+
+Tutoring Details:
+Subject: {referral_request.subject}
+Service Type: {referral_request.service}
+City: {referral_request.city}
+{f'Additional Details: {referral_request.description}' if referral_request.description else ''}
+
+Please review this request and respond:
+{approval_url}
+
+You can either accept or decline this request. If you accept, you will be paired with this student.
+If you decline, the request will be made available to other tutors.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+
                         send_mailgun_email(
-                            to_email=tutor.email,
+                            to_emails=[tutor.email],
                             subject=subject,
+                            text_content=text_message.strip(),
                             html_content=html_message
                         )
                         print(f"Sent referral notification email to tutor: {tutor.email}")
@@ -1877,9 +1908,31 @@ class RequestListCreateView(generics.ListCreateAPIView):
 </html>
                         """
 
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
+Dear {parent.firstName} {parent.lastName},
+
+Your tutoring request for {student.firstName} {student.lastName} has been sent to {tutor_name}.
+
+What Happens Next?
+We've notified {tutor_name} about your request. They will review it and respond shortly.
+You'll receive an email notification once they respond.
+
+If {tutor_name} declines, your request will automatically be made available to all our tutors.
+
+Request Summary:
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+Best regards,
+The EGS Tutoring Team
+                        """
+
                         send_mailgun_email(
-                            to_email=parent.email,
+                            to_emails=[parent.email],
                             subject=subject,
+                            text_content=text_message.strip(),
                             html_content=html_message
                         )
                         print(f"Sent confirmation email to parent: {parent.email}")
@@ -4717,9 +4770,30 @@ class TutorReferralApprovalView(APIView):
 </body>
 </html>
                         """
+
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
+Dear {referral_request.parent.firstName} {referral_request.parent.lastName},
+
+Excellent news! {tutor_name} has accepted your tutoring request for {referral_request.student.firstName} {referral_request.student.lastName}.
+
+Request Details:
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+What Happens Next?
+{tutor_name} will reach out to you shortly to schedule the first session.
+You can view all your tutoring details and scheduled sessions in your EGS Tutoring dashboard.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+
                         send_mailgun_email(
-                            to_email=referral_request.parent.email,
+                            to_emails=[referral_request.parent.email],
                             subject=subject,
+                            text_content=text_message.strip(),
                             html_content=html_message
                         )
                         print(f"Sent acceptance email to parent: {referral_request.parent.email}")
@@ -4792,9 +4866,34 @@ class TutorReferralApprovalView(APIView):
 </body>
 </html>
                         """
+
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
+Dear {referral_request.parent.firstName} {referral_request.parent.lastName},
+
+Thank you for your tutoring request for {referral_request.student.firstName} {referral_request.student.lastName}.
+
+Unfortunately, {tutor_name} is unable to accept this request at this time.
+
+However, your request has been automatically posted to our tutoring dashboard and is now visible to all our qualified tutors.
+
+Request Details:
+Subject: {referral_request.subject}
+Grade: {referral_request.grade}
+Service Type: {referral_request.service}
+
+What Happens Next?
+You'll receive email notifications as tutors respond to your request.
+You can also view and manage responses in your EGS Tutoring dashboard.
+
+Best regards,
+The EGS Tutoring Team
+                        """
+
                         send_mailgun_email(
-                            to_email=referral_request.parent.email,
+                            to_emails=[referral_request.parent.email],
                             subject=subject,
+                            text_content=text_message.strip(),
                             html_content=html_message
                         )
                         print(f"Sent decline email to parent: {referral_request.parent.email}")
