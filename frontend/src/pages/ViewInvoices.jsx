@@ -62,14 +62,17 @@ const ViewInvoices = () => {
     return "";
   };
 
-  /* format date to human readable */
+  /* format date and time to human readable */
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
     const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
