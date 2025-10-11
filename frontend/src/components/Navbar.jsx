@@ -250,6 +250,7 @@ function NavbarContent() {
   const { user } = useUser();
   const { t } = useTranslation();
   const { closeAllDropdowns } = useDropdown();
+  const navRef = useRef(null);
 
   // If no user, don't render the authenticated navbar
   if (!user) return null;
@@ -266,6 +267,20 @@ function NavbarContent() {
     closeAllDropdowns(); // Close any open dropdowns when hamburger is toggled
     setMob(!mob);
   };
+
+  // Global click handler to close all dropdowns when clicking outside navbar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        closeAllDropdowns();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [closeAllDropdowns]);
 
   // Build "Admin Tools" for superuser = links not present in any other role
   const adminTools = useMemo(() => {
@@ -302,7 +317,7 @@ function NavbarContent() {
   const singleLinks = roleKey === "superuser" ? filt(cfg.single) : cfg.single;
 
   return (
-    <header className="nav">
+    <header className="nav" ref={navRef}>
       <NavLink to="/" className="nav__brand">
         <EGSLogo className="nav__logo" />
       </NavLink>
