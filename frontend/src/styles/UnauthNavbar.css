@@ -162,15 +162,14 @@ html, body {
 
   .nav-burger {
     display: flex;
-    margin-right: auto; /* Push hamburger to the left */
-    margin-left: 0.5rem; /* Add some spacing from language switcher */
   }
   
   .nav-links {
     display: none;
     position: absolute;
     top: 100%;
-    left: 0.5rem;                /* Position from left edge */
+    left: 50%;
+    transform: translateX(-50%);
     width: 200px;                /* centered with fixed width */
     background-color: #292929;
     flex-direction: row;         /* side by side layout */
