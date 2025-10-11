@@ -301,6 +301,11 @@
     align-items: center;
     justify-content: center;
     text-align: center;
+    text-align-last: center;
+  }
+
+  .nav__language select option {
+    text-align: center;
   }
   
   /* Profile dropdown positioned below navbar on mobile */

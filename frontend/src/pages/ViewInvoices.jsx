@@ -37,7 +37,15 @@ const ViewInvoices = () => {
   useEffect(() => {
     api
       .get(`/api/invoiceList/?email=${email}`)
-      .then(res => setInvoices(res.data))
+      .then(res => {
+        // Filter out draft invoices and invoices with $0
+        const filtered = res.data.filter(inv => {
+          const status = String(inv.status).toLowerCase();
+          const amount = inv.amount / 100;
+          return (status === 'open' || status === 'paid') && amount > 0;
+        });
+        setInvoices(filtered);
+      })
       .catch(() => setError(t('errors.couldNotLoadInvoices')));
   }, [email]);
 
@@ -52,6 +60,17 @@ const ViewInvoices = () => {
     if (s === "open") return "inv-open";
     if (s === "paid") return "inv-paid";
     return "";
+  };
+
+  /* format date to human readable */
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   /* create referral */
@@ -125,10 +144,9 @@ const ViewInvoices = () => {
                 key={inv.id}
                 className={`inv-box ${rowClass(inv.status)}`}
               >
-                <strong>{t('invoices.invoiceNumber')}</strong> {inv.id} <br />
-                <strong>{t('invoices.createdDate')}:</strong> {inv.date} <br />
-                <strong>{t('invoices.amount')}:</strong> {inv.amount/100}$ <br />
-                <strong>{t('invoices.dueDate')}:</strong> {inv.due_date} <br />
+                <strong>{t('invoices.createdDate')}:</strong> {formatDate(inv.date)} <br />
+                <strong>{t('invoices.amount')}:</strong> ${(inv.amount/100).toFixed(2)} <br />
+                <strong>{t('invoices.dueDate')}:</strong> {formatDate(inv.due_date)} <br />
                 <strong>{t('common.status')}:</strong> {inv.status} <br />
                 <button
                   className="open-btn"

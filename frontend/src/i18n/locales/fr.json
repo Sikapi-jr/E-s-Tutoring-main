@@ -511,7 +511,9 @@
     "alreadyKnowTutor": "Vous connaissez déjà l'un de nos tuteurs? Entrez leur code unique de tuteur",
     "enterTutorCode": "Entrez le code à 6 chiffres du tuteur",
     "tutorCodeOptional": "Optionnel - Ignorez ceci si vous n'avez pas de code",
-    "referralRequestSent": "Votre demande a été envoyée au tuteur! Il recevra un courriel pour l'examiner et y répondre. Vous serez notifié une fois qu'il aura répondu."
+    "referralRequestSent": "Votre demande a été envoyée au tuteur! Il recevra un courriel pour l'examiner et y répondre. Vous serez notifié une fois qu'il aura répondu.",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette demande?",
+    "deleteWarning": "Cette action ne peut pas être annulée. Toutes les réponses à cette demande seront également supprimées."
   },
   "referral": {
     "tutorReferralRequest": "Demande de Référence de Tuteur",
@@ -541,7 +543,9 @@
     "totalPaid": "Total payé",
     "totalUnpaid": "Total impayé",
     "noInvoices": "Aucune facture trouvée.",
-    "createdDate": "Créée"
+    "createdDate": "Créée",
+    "referralPromo": "Parrainez un ami et économisez 65$ sur votre prochaine facture!",
+    "referralDescription": "Partagez EGS Tutorat avec vos amis et votre famille. Lorsqu'ils s'inscrivent et complètent 4 heures, vous économisez tous les deux!"
   },
   "settings": {
     "title": "Paramètres",

@@ -511,7 +511,9 @@
     "alreadyKnowTutor": "Already know one of our tutors? Enter their unique tutor code",
     "enterTutorCode": "Enter 6-digit tutor code",
     "tutorCodeOptional": "Optional - Skip this if you don't have a code",
-    "referralRequestSent": "Your request has been sent to the tutor! They will receive an email to review and respond. You will be notified once they respond."
+    "referralRequestSent": "Your request has been sent to the tutor! They will receive an email to review and respond. You will be notified once they respond.",
+    "confirmDelete": "Are you sure you want to delete this request?",
+    "deleteWarning": "This action cannot be undone. All replies to this request will also be deleted."
   },
   "referral": {
     "tutorReferralRequest": "Tutor Referral Request",
@@ -541,7 +543,9 @@
     "totalPaid": "Total Paid",
     "totalUnpaid": "Total Unpaid",
     "noInvoices": "No invoices found.",
-    "createdDate": "Created"
+    "createdDate": "Created",
+    "referralPromo": "Refer a friend and earn $65 off your next invoice!",
+    "referralDescription": "Share EGS Tutoring with friends and family. When they sign up and complete 4 hours, you both save!"
   },
   "settings": {
     "title": "Settings",
