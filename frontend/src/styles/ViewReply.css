@@ -241,3 +241,28 @@ body { background: #f8fafb; }   /* super‑light grey */
 .cancel-delete-btn:hover {
   background: #5a6268;
 }
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+  .reply-card {
+    padding: 1.5rem 1rem;
+  }
+
+  /* Fix header layout on mobile - prevent button overlap */
+  .reply-card > div[style*="display: flex"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .reply-card h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0 !important;
+  }
+
+  /* Ensure button takes full width on mobile */
+  .reply-card > div[style*="display: flex"] > button {
+    width: 100%;
+    padding: 0.75rem 1.5rem !important;
+  }
+}

@@ -284,11 +284,12 @@
 
   /* Make language dropdown smaller and more compact on mobile */
   .nav__language select {
-    padding: 0.1rem 0.25rem !important;
+    padding: 0.25rem 0.35rem !important;
     font-size: 0.85rem !important;
     min-width: 48px !important; /* 40% of original 120px */
     max-width: 48px !important; /* Prevent expansion */
-    height: 28px !important;
+    height: 32px !important;
+    line-height: 1.2 !important;
     background-color: #fff !important;
     border: 1px solid #ccc !important;
     border-radius: 4px !important;
@@ -296,6 +297,10 @@
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
   
   /* Profile dropdown positioned below navbar on mobile */

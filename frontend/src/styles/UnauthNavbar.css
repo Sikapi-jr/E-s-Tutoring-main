@@ -21,6 +21,11 @@ html, body {
   z-index: 1000;
 }
 
+/* Slight logo adjustment */
+.unauth-nav .nav-logo {
+  margin-left: 0.25rem;
+}
+
 /* left side with brand and language */
 .nav-left {
   display: flex;
@@ -144,15 +149,15 @@ html, body {
     position: relative;
   }
 
-  /* Small adjustment: slightly smaller and slightly more left */
+  /* Small adjustment: slightly smaller and slightly more right */
   .unauth-nav .nav-logo {
     height: 32px !important;
-    margin-left: -0.25rem !important;
+    margin-left: 0.5rem !important;
   }
-  
+
   .nav-left {
     flex: 1;
-    gap: 1.5rem;
+    gap: 1.2rem; /* Reduced gap by 20% (from 1.5rem) */
   }
 
   .nav-burger {
