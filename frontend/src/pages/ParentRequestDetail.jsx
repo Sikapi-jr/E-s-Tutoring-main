@@ -123,7 +123,7 @@ const ParentRequestDetail = () => {
           <h1>{t('common.error', 'Error')}</h1>
           <p>{error}</p>
           <button onClick={() => navigate('/parent-dashboard')} className="reply-btn">
-            {t('common.back', 'Back to Dashboard')}
+            {t('navigation.dashboard', 'Dashboard')}
           </button>
         </div>
       </div>
@@ -136,7 +136,7 @@ const ParentRequestDetail = () => {
         <div className="dash-card">
           <h1>{t('dashboard.requestNotFound', 'Request Not Found')}</h1>
           <button onClick={() => navigate('/parent-dashboard')} className="reply-btn">
-            {t('common.back', 'Back to Dashboard')}
+            {t('navigation.dashboard', 'Dashboard')}
           </button>
         </div>
       </div>
@@ -155,7 +155,7 @@ const ParentRequestDetail = () => {
             className="reply-btn"
             style={{ backgroundColor: '#6c757d' }}
           >
-            ← {t('common.back', 'Back to Dashboard')}
+            ← {t('navigation.dashboard', 'Dashboard')}
           </button>
         </div>
 
@@ -221,17 +221,17 @@ const ParentRequestDetail = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <strong style={{ color: '#192A88', fontSize: '1.2rem' }}>
-                {t('dashboard.status')}:
+              <strong style={{ color: '#192A88', fontSize: '1.2rem', display: 'block', marginBottom: '0.5rem' }}>
+                {t('common.status')}:
               </strong>
               <span style={{
                 fontSize: '1.2rem',
-                marginLeft: '1rem',
                 padding: '0.5rem 1rem',
                 borderRadius: '20px',
                 backgroundColor: request.is_accepted === 'Accepted' ? '#d4edda' : '#fff3cd',
                 color: request.is_accepted === 'Accepted' ? '#155724' : '#856404',
-                border: `1px solid ${request.is_accepted === 'Accepted' ? '#c3e6cb' : '#ffeaa7'}`
+                border: `1px solid ${request.is_accepted === 'Accepted' ? '#c3e6cb' : '#ffeaa7'}`,
+                display: 'inline-block'
               }}>
                 {request.is_accepted === 'Accepted' ? t('dashboard.accepted', 'Accepted') : t('dashboard.pending', 'Pending')}
               </span>

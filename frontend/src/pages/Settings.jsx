@@ -138,6 +138,12 @@ export default function Settings() {
   };
 
   const createReferral = async () => {
+    // Validate email contains @
+    if (!refEmail.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     try {
       await api.post("/api/referral/create/", {
         receiver_email: refEmail,
@@ -146,8 +152,10 @@ export default function Settings() {
       setShowRefModal(false);
       setRefEmail("");
       loadReferrals();
+      alert(t('settings.referralSent', 'Referral sent successfully!'));
     } catch (err) {
       console.error("Referral creation failed", err);
+      alert(t('settings.referralFailed', 'Failed to send referral'));
     }
   };
 

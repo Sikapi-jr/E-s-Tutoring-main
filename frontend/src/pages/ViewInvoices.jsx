@@ -78,6 +78,12 @@ const ViewInvoices = () => {
 
   /* create referral */
   const createReferral = async () => {
+    // Validate email contains @
+    if (!refEmail.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     try {
       await api.post("/api/referral/create/", {
         receiver_email: refEmail,
