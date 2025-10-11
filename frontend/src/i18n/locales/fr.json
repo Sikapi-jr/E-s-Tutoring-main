@@ -589,7 +589,9 @@
     "yourTutorCode": "Votre Code de Tuteur",
     "tutorCodeDescription": "Un parent veut que vous les tutoriez spécifiquement? Donnez-leur votre code de tuteur et demandez-leur de demander un tuteur en utilisant votre code.",
     "sendReferral": "Envoyer un Parrainage",
-    "receiverEmail": "Courriel du destinataire"
+    "receiverEmail": "Courriel du destinataire",
+    "referralSent": "Parrainage envoyé avec succès!",
+    "referralFailed": "Échec de l'envoi du parrainage"
   },
   "announcements": {
     "title": "Annonces",

@@ -589,7 +589,9 @@
     "yourTutorCode": "Your Tutor Code",
     "tutorCodeDescription": "A parent wants you to tutor them specifically? Give them your tutor code and ask them to request a tutor using your code.",
     "sendReferral": "Send Referral",
-    "receiverEmail": "Receiver Email"
+    "receiverEmail": "Receiver Email",
+    "referralSent": "Referral sent successfully!",
+    "referralFailed": "Failed to send referral"
   },
   "announcements": {
     "title": "Announcements",
