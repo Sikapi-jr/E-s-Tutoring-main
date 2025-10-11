@@ -64,6 +64,7 @@
     "submit": "Soumettre",
     "cancel": "Annuler",
     "save": "Enregistrer",
+    "send": "Envoyer",
     "delete": "Supprimer",
     "edit": "Modifier",
     "close": "Fermer",
@@ -586,7 +587,9 @@
     "documentDeletedSuccess": "Document supprimé avec succès",
     "editProfile": "Modifier le Profil",
     "yourTutorCode": "Votre Code de Tuteur",
-    "tutorCodeDescription": "Un parent veut que vous les tutoriez spécifiquement? Donnez-leur votre code de tuteur et demandez-leur de demander un tuteur en utilisant votre code."
+    "tutorCodeDescription": "Un parent veut que vous les tutoriez spécifiquement? Donnez-leur votre code de tuteur et demandez-leur de demander un tuteur en utilisant votre code.",
+    "sendReferral": "Envoyer un Parrainage",
+    "receiverEmail": "Courriel du destinataire"
   },
   "announcements": {
     "title": "Annonces",

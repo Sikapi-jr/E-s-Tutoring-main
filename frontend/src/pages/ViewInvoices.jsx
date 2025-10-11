@@ -106,10 +106,10 @@ const ViewInvoices = () => {
           padding: '1rem',
           marginBottom: '1.5rem',
           display: 'flex',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           alignItems: 'center'
         }}>
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <strong style={{ color: '#856404', fontSize: '1.1rem' }}>
               💰 {t('invoices.referralPromo', 'Refer a friend and earn $65 off your next invoice!')}
             </strong>
@@ -128,8 +128,7 @@ const ViewInvoices = () => {
               fontSize: '1rem',
               fontWeight: 'bold',
               cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              marginLeft: '1rem'
+              marginTop: '1rem'
             }}
             onMouseOver={(e) => e.target.style.backgroundColor = '#0d1654'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#192A88'}

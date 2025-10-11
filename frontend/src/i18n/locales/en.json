@@ -64,6 +64,7 @@
     "submit": "Submit",
     "cancel": "Cancel",
     "save": "Save",
+    "send": "Send",
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
@@ -586,7 +587,9 @@
     "documentDeletedSuccess": "Document deleted successfully",
     "editProfile": "Edit Profile",
     "yourTutorCode": "Your Tutor Code",
-    "tutorCodeDescription": "A parent wants you to tutor them specifically? Give them your tutor code and ask them to request a tutor using your code."
+    "tutorCodeDescription": "A parent wants you to tutor them specifically? Give them your tutor code and ask them to request a tutor using your code.",
+    "sendReferral": "Send Referral",
+    "receiverEmail": "Receiver Email"
   },
   "announcements": {
     "title": "Announcements",
