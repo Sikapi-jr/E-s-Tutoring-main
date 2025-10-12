@@ -31,11 +31,16 @@ def send_mailgun_email(from_email, to_emails, subject, html_content, text_conten
             'to': to_emails if isinstance(to_emails, list) else [to_emails],
             'subject': subject,
             'html': html_content,
+            # Add headers to improve deliverability, especially for Yahoo
+            'h:Reply-To': 'support@egstutoring-portal.ca',
+            'h:X-Mailgun-Track': 'yes',
+            'h:X-Mailgun-Track-Clicks': 'yes',
+            'h:X-Mailgun-Track-Opens': 'yes',
         }
-        
+
         if text_content:
             data['text'] = text_content
-            
+
         response = requests.post(
             settings.MAILGUN_API_URL,
             auth=('api', settings.MAILGUN_API_KEY),

@@ -26,9 +26,14 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
         "from": from_email,
         "to": to_emails,
         "subject": subject,
-        "text": text_content
+        "text": text_content,
+        # Add headers to improve deliverability, especially for Yahoo
+        "h:Reply-To": "support@egstutoring-portal.ca",
+        "h:X-Mailgun-Track": "yes",
+        "h:X-Mailgun-Track-Clicks": "yes",
+        "h:X-Mailgun-Track-Opens": "yes",
     }
-    
+
     if html_content:
         data["html"] = html_content
     
