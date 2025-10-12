@@ -8,8 +8,9 @@ function HomeTour({ userRole }) {
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    // Only show tour if user hasn't seen it and user data is loaded
-    if (user && user.has_seen_tour === false) {
+    // Always show tour for testing user "Parent"
+    // Otherwise, only show tour if user hasn't seen it
+    if (user && (user.username === 'Parent' || user.has_seen_tour === false)) {
       // Small delay to ensure DOM elements are rendered
       setTimeout(() => setRunTour(true), 500);
     }
@@ -21,6 +22,11 @@ function HomeTour({ userRole }) {
 
     if (finishedStatuses.includes(status)) {
       setRunTour(false);
+
+      // Don't save tour state for testing user "Parent"
+      if (user?.username === 'Parent') {
+        return;
+      }
 
       // Mark tour as complete in backend
       try {
