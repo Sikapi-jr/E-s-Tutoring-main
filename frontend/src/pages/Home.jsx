@@ -1069,7 +1069,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "14.05rem" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "13.75rem" }} className="home-middle-column">
           <div
             className="table-wrapper mobile-section scheduled-events-section"
             style={{
@@ -1077,9 +1077,9 @@ export default function Home() {
               border: "3px solid #E1E1E1",
               borderRadius: 12,
               overflow: "auto",
-              height: 355,
-              minHeight: 355,
-              maxHeight: 355,
+              height: 320,
+              minHeight: 320,
+              maxHeight: 320,
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "1rem 0", padding: "0 1rem" }}>
