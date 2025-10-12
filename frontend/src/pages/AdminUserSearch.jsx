@@ -1,5 +1,5 @@
 // src/pages/AdminUserSearch.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,12 @@ export default function AdminUserSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Recent users state
+  const [recentTutors, setRecentTutors] = useState([]);
+  const [recentParents, setRecentParents] = useState([]);
+  const [recentStudents, setRecentStudents] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+
   // Early return if user is not loaded yet
   if (!user) {
     return (
@@ -37,6 +43,32 @@ export default function AdminUserSearch() {
     navigate("/");
     return null;
   }
+
+  // Fetch recent users on mount
+  useEffect(() => {
+    const fetchRecentUsers = async () => {
+      setLoadingRecent(true);
+      try {
+        // Fetch recent tutors
+        const tutorsRes = await api.get('/api/admin/recent-users/?role=tutor&limit=10');
+        setRecentTutors(tutorsRes.data || []);
+
+        // Fetch recent parents
+        const parentsRes = await api.get('/api/admin/recent-users/?role=parent&limit=10');
+        setRecentParents(parentsRes.data || []);
+
+        // Fetch recent students
+        const studentsRes = await api.get('/api/admin/recent-users/?role=student&limit=10');
+        setRecentStudents(studentsRes.data || []);
+      } catch (err) {
+        console.error("Error fetching recent users:", err);
+      } finally {
+        setLoadingRecent(false);
+      }
+    };
+
+    fetchRecentUsers();
+  }, []);
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
@@ -96,6 +128,132 @@ export default function AdminUserSearch() {
         <h1>{t('admin.userSearch')}</h1>
         <p>{t('admin.userSearchDescription')}</p>
       </div>
+
+      {/* Recent Users Tables */}
+      {loadingRecent ? (
+        <div className="loading-message">
+          <p>{t('common.loading')}...</p>
+        </div>
+      ) : (
+        <div className="recent-users-section">
+          {/* Recent Tutors */}
+          <div className="recent-users-table-container">
+            <h3>👨‍🏫 {t('admin.recentTutors', 'Recent Tutors')} ({recentTutors.length})</h3>
+            <div className="table-wrapper">
+              <table className="recent-users-table">
+                <thead>
+                  <tr>
+                    <th>{t('common.name')}</th>
+                    <th>{t('auth.email')}</th>
+                    <th>{t('auth.phone')}</th>
+                    <th>{t('admin.students', 'Students')}</th>
+                    <th>{t('admin.memberSince')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTutors.length > 0 ? (
+                    recentTutors.map((tutor) => (
+                      <tr key={tutor.id} onClick={() => handleUserSelect(tutor)} style={{ cursor: 'pointer' }}>
+                        <td>{tutor.firstName} {tutor.lastName}</td>
+                        <td>{tutor.email}</td>
+                        <td>{tutor.phone_number || 'N/A'}</td>
+                        <td>{tutor.student_count || 0}</td>
+                        <td>{new Date(tutor.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', color: '#666' }}>
+                        {t('admin.noTutorsFound', 'No tutors found')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Parents */}
+          <div className="recent-users-table-container">
+            <h3>👨‍👩‍👧‍👦 {t('admin.recentParents', 'Recent Parents')} ({recentParents.length})</h3>
+            <div className="table-wrapper">
+              <table className="recent-users-table">
+                <thead>
+                  <tr>
+                    <th>{t('common.name')}</th>
+                    <th>{t('auth.email')}</th>
+                    <th>{t('auth.phone')}</th>
+                    <th>{t('admin.children')}</th>
+                    <th>{t('admin.memberSince')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentParents.length > 0 ? (
+                    recentParents.map((parent) => (
+                      <tr key={parent.id} onClick={() => handleUserSelect(parent)} style={{ cursor: 'pointer' }}>
+                        <td>{parent.firstName} {parent.lastName}</td>
+                        <td>{parent.email}</td>
+                        <td>{parent.phone_number || 'N/A'}</td>
+                        <td>{parent.children_count || 0}</td>
+                        <td>{new Date(parent.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', color: '#666' }}>
+                        {t('admin.noParentsFound', 'No parents found')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Students */}
+          <div className="recent-users-table-container">
+            <h3>👨‍🎓 {t('admin.recentStudents', 'Recent Students')} ({recentStudents.length})</h3>
+            <div className="table-wrapper">
+              <table className="recent-users-table">
+                <thead>
+                  <tr>
+                    <th>{t('common.name')}</th>
+                    <th>{t('auth.email')}</th>
+                    <th>{t('auth.parent')}</th>
+                    <th>{t('admin.hasTutor', 'Has Tutor?')}</th>
+                    <th>{t('admin.memberSince')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentStudents.length > 0 ? (
+                    recentStudents.map((student) => (
+                      <tr key={student.id} onClick={() => handleUserSelect(student)} style={{ cursor: 'pointer' }}>
+                        <td>{student.firstName} {student.lastName}</td>
+                        <td>{student.email}</td>
+                        <td>{student.parent_name || 'N/A'}</td>
+                        <td>
+                          {student.has_tutor ? (
+                            <span style={{ color: '#28a745' }}>✅ Yes</span>
+                          ) : (
+                            <span style={{ color: '#dc3545' }}>❌ No</span>
+                          )}
+                        </td>
+                        <td>{new Date(student.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', color: '#666' }}>
+                        {t('admin.noStudentsFound', 'No students found')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search Section */}
       <div className="search-section">

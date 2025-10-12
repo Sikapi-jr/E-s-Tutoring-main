@@ -20,6 +20,72 @@
   font-size: 1rem;
 }
 
+/* Recent Users Section */
+.recent-users-section {
+  margin-bottom: 3rem;
+}
+
+.recent-users-table-container {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.recent-users-table-container h3 {
+  margin: 0 0 1rem 0;
+  color: #192A88;
+  border-bottom: 2px solid #192A88;
+  padding-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recent-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.recent-users-table thead th {
+  background-color: #f8f9fa;
+  color: #192A88;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid #dee2e6;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.recent-users-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.recent-users-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.recent-users-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.recent-users-table tbody td {
+  padding: 0.75rem;
+  color: #495057;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
 /* Search Section */
 .search-section {
   position: relative;
@@ -677,6 +743,24 @@
 @media (max-width: 768px) {
   .admin-user-search {
     padding: 1rem 0.5rem;
+  }
+
+  .recent-users-table-container {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .recent-users-table {
+    font-size: 0.8rem;
+  }
+
+  .recent-users-table thead th,
+  .recent-users-table tbody td {
+    padding: 0.5rem;
+  }
+
+  .table-wrapper {
+    max-width: 100%;
   }
 
   .user-status-section {
