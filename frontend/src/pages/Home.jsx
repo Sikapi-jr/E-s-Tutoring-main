@@ -893,6 +893,49 @@ export default function Home() {
         })()}
       </div>
 
+      {/* Tutor Referral Code - Below Hours Message */}
+      {user?.roles === 'tutor' && user?.tutor_referral_code && (
+        <div
+          style={{
+            position: "absolute",
+            top: "12.5rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            pointerEvents: "auto",
+            zIndex: 1,
+          }}
+          className="home-tutor-code"
+        >
+          <div style={{
+            backgroundColor: "#f0f4ff",
+            border: "2px solid #192A88",
+            borderRadius: "12px",
+            padding: "0.75rem 1.5rem",
+            boxShadow: "0 2px 8px rgba(25, 42, 136, 0.15)",
+            display: "inline-block"
+          }}>
+            <div style={{
+              fontSize: "0.85rem",
+              color: "#666",
+              marginBottom: "0.25rem",
+              textAlign: "center"
+            }}>
+              {t('settings.yourTutorCode')}
+            </div>
+            <div style={{
+              fontSize: "1.5rem",
+              fontWeight: "700",
+              letterSpacing: "3px",
+              color: "#192A88",
+              fontFamily: "monospace",
+              textAlign: "center"
+            }}>
+              {user.tutor_referral_code}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* three‑column layout */}
       <div
         style={{
@@ -1264,43 +1307,6 @@ export default function Home() {
                   <p style={{ fontSize: "0.9rem", color: "#666" }}>{t('home.noStudentsAssigned')}</p>
                 )}
               </div>
-
-              {/* Tutor Referral Code Display */}
-              {user.tutor_referral_code && (
-                <div
-                  style={{
-                    background: "#fff",
-                    border: "3px solid #E1E1E1",
-                    borderRadius: 12,
-                    padding: "0.75rem",
-                    height: 130,
-                    maxHeight: 130,
-                    minHeight: 130,
-                  }}
-                >
-                  <h4 style={{ textAlign: "center", marginTop: 0, marginBottom: "0.25rem", fontSize: "0.95rem" }}>{t('settings.yourTutorCode')}</h4>
-                  <p style={{ fontSize: "0.7rem", color: "#666", textAlign: "center", marginBottom: "0.5rem" }}>
-                    {t('settings.tutorCodeDescription')}
-                  </p>
-                  <div style={{
-                    backgroundColor: "#f0f4ff",
-                    border: "2px solid #192A88",
-                    borderRadius: "8px",
-                    padding: "0.75rem",
-                    textAlign: "center"
-                  }}>
-                    <div style={{
-                      fontSize: "1.75rem",
-                      fontWeight: "700",
-                      letterSpacing: "4px",
-                      color: "#192A88",
-                      fontFamily: "monospace"
-                    }}>
-                      {user.tutor_referral_code}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Tutor Documents */}
               <div
