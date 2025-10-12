@@ -840,16 +840,16 @@ export default function Home() {
               const now = new Date();
               const currentMonth = now.getMonth();
               const currentYear = now.getFullYear();
-              
+
               if (hourDate.getMonth() === currentMonth && hourDate.getFullYear() === currentYear) {
                 return total + parseFloat(hour.totalTime || 0);
               }
               return total;
             }, 0);
-            
+
             const translatedText = t('home.tutorMonthlyHours', { hours: monthlyHours, month: t('home.thisMonth') });
             const parts = translatedText.split(monthlyHours.toString());
-            
+
             return (
               <>
                 {parts[0]}
@@ -865,19 +865,19 @@ export default function Home() {
               const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
               const weekEnd = new Date(weekStart);
               weekEnd.setDate(weekStart.getDate() + 6);
-              
+
               if (hourDate >= weekStart && hourDate <= weekEnd) {
                 return total + parseFloat(hour.totalTime || 0);
               }
               return total;
             }, 0);
-            
+
             // Different text for parents vs students
-            const translatedText = user?.roles === 'student' 
+            const translatedText = user?.roles === 'student'
               ? t('home.studentWorkedHours', { hours: weeklyHours })
               : t('home.childrenWorkedHours', { hours: weeklyHours });
             const parts = translatedText.split(weeklyHours.toString());
-            
+
             return (
               <>
                 {parts[0]}
@@ -888,6 +888,49 @@ export default function Home() {
           }
         })()}
       </div>
+
+      {/* Tutor Referral Code - Below Hours Message */}
+      {user?.roles === 'tutor' && user?.tutor_referral_code && (
+        <div
+          style={{
+            position: "absolute",
+            top: "12.5rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            pointerEvents: "auto",
+            zIndex: 1,
+          }}
+          className="home-tutor-code"
+        >
+          <div style={{
+            backgroundColor: "#f0f4ff",
+            border: "2px solid #192A88",
+            borderRadius: "12px",
+            padding: "0.75rem 1.5rem",
+            boxShadow: "0 2px 8px rgba(25, 42, 136, 0.15)",
+            display: "inline-block"
+          }}>
+            <div style={{
+              fontSize: "0.85rem",
+              color: "#666",
+              marginBottom: "0.25rem",
+              textAlign: "center"
+            }}>
+              {t('settings.yourTutorCode')}
+            </div>
+            <div style={{
+              fontSize: "1.5rem",
+              fontWeight: "700",
+              letterSpacing: "3px",
+              color: "#192A88",
+              fontFamily: "monospace",
+              textAlign: "center"
+            }}>
+              {user.tutor_referral_code}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* three‑column layout */}
       <div

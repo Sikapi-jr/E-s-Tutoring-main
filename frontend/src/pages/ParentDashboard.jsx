@@ -163,6 +163,45 @@ const ParentDashboard = () => {
       <div className="dash-card">
         <h1>{t('dashboard.parentDashboard')}</h1>
 
+        {/* Tutor Referral Code Display */}
+        {user?.roles === 'tutor' && user?.tutor_referral_code && (
+          <div style={{
+            backgroundColor: "#f0f4ff",
+            border: "2px solid #192A88",
+            borderRadius: "12px",
+            padding: "1rem",
+            marginBottom: "1.5rem",
+            textAlign: "center",
+            boxShadow: "0 2px 8px rgba(25, 42, 136, 0.15)"
+          }}>
+            <div style={{
+              fontSize: "0.9rem",
+              color: "#666",
+              marginBottom: "0.5rem",
+              fontWeight: "500"
+            }}>
+              {t('settings.yourTutorCode')}
+            </div>
+            <div style={{
+              fontSize: "2rem",
+              fontWeight: "700",
+              letterSpacing: "5px",
+              color: "#192A88",
+              fontFamily: "monospace"
+            }}>
+              {user.tutor_referral_code}
+            </div>
+            <div style={{
+              fontSize: "0.8rem",
+              color: "#666",
+              marginTop: "0.5rem",
+              lineHeight: "1.4"
+            }}>
+              {t('settings.tutorCodeDescription')}
+            </div>
+          </div>
+        )}
+
         {/* Document Reminder for Tutors without Documents */}
         {user?.roles === 'tutor' && tutorDocuments.length === 0 && (
           <div style={{

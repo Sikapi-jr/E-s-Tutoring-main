@@ -56,10 +56,37 @@
     position: relative !important;
     top: auto !important;
     margin-top: 1rem !important;
-    margin-bottom: 2rem !important;
+    margin-bottom: 1rem !important;
     font-size: 1.2rem !important;
     padding: 0 1rem !important;
     word-break: break-word !important;
+  }
+
+  /* Tutor referral code below hours message - mobile */
+  .home-tutor-code {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 0 auto 1.5rem auto !important;
+    padding: 0 1rem !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .home-tutor-code > div {
+    padding: 0.5rem 1rem !important;
+    width: auto !important;
+    max-width: 90% !important;
+  }
+
+  .home-tutor-code > div > div:first-child {
+    font-size: 0.75rem !important;
+  }
+
+  .home-tutor-code > div > div:last-child {
+    font-size: 1.2rem !important;
+    letter-spacing: 2px !important;
   }
 
   /* FINAL SOLUTION: CSS Grid Mobile Layout with Individual Section Control */
