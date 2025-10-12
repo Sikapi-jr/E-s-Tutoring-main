@@ -108,7 +108,8 @@ def current_user_view(request):
                 request.build_absolute_uri(request.user.profile_picture.url)
                 if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
                 else None
-            )
+            ),
+            "tutor_referral_code": request.user.tutor_referral_code
         }
 
         # Add parent if not None
@@ -4431,6 +4432,62 @@ class AdminUserHoursView(APIView):
             'documents': user_documents,
             'current_requests': current_requests
         }, status=200)
+
+
+class AdminRecentUsersView(APIView):
+    """Admin endpoint to get recent users by role"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        role = request.GET.get('role', '').lower()
+        limit = int(request.GET.get('limit', 10))
+
+        if role not in ['tutor', 'parent', 'student']:
+            return Response({'error': 'Invalid role. Must be tutor, parent, or student.'}, status=400)
+
+        # Get recent users by role
+        users = User.objects.filter(roles=role).order_by('-date_joined')[:limit]
+
+        user_list = []
+        for user in users:
+            user_data = {
+                'id': user.id,
+                'firstName': user.firstName,
+                'lastName': user.lastName,
+                'email': user.email,
+                'phone_number': user.phone_number,
+                'created_at': user.date_joined
+            }
+
+            # Add role-specific data
+            if role == 'tutor':
+                # Count students for this tutor
+                student_count = AcceptedTutor.objects.filter(tutor=user).count()
+                user_data['student_count'] = student_count
+
+            elif role == 'parent':
+                # Count children for this parent
+                children_count = User.objects.filter(parent=user, roles='student').count()
+                user_data['children_count'] = children_count
+
+            elif role == 'student':
+                # Check if student has a tutor and get parent name
+                has_tutor = AcceptedTutor.objects.filter(student=user).exists()
+                user_data['has_tutor'] = has_tutor
+
+                # Get parent name
+                if user.parent:
+                    user_data['parent_name'] = f"{user.parent.firstName} {user.parent.lastName}"
+                else:
+                    user_data['parent_name'] = 'N/A'
+
+            user_list.append(user_data)
+
+        return Response(user_list, status=200)
 
 
 @api_view(['POST'])
