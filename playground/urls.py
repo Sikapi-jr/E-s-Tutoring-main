@@ -8,6 +8,7 @@ from playground.views import create_chat_session, chat_session, stripe_reauth_to
 urlpatterns = [
     path('tutor/upload-document/', views.upload_tutor_document, name='tutor-upload-document'),
     path('user/', views.current_user_view, name='current-user'),
+    path('user/mark-tour-complete/', views.mark_tour_complete, name='mark-tour-complete'),
     path('profile/<int:pk>/', change_settings_parent, name='change-settings-parent'),
     path('homeParent/', views.ParentHomeCreateView.as_view(), name='parent-home'),
     path('students/', views.StudentsListView.as_view(), name='students-list'),

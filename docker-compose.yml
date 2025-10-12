@@ -1,3 +1,5 @@
+name: egstutoring
+
 services:
   frontend:
     build:
@@ -33,17 +35,29 @@ services:
       - .:/app #Mount entire project root to not lose db data after every build
     ports:
       - "8000:8000"
+    depends_on:
+      mq:
+        condition: service_healthy
 
-  mq: 
+  mq:
     image: rabbitmq:3.13.7-alpine
+    container_name: rabbitmq
     environment:
       - RABBITMQ_DEFAULT_USER=mquser
       - RABBITMQ_DEFAULT_PASS=aaasss12
+    ports:
+      - "5672:5672"  # Expose RabbitMQ port
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    container_name: celery-worker
     command: sh -c "celery -A egstutorting worker -l INFO"
     environment:
       - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672// #advance message queue protocol.
@@ -52,5 +66,5 @@ services:
     volumes:
       - .:/app #Mount entire project root to not lose db data after every build
     depends_on:
-      - backend
-      - mq
+      mq:
+        condition: service_healthy

@@ -109,7 +109,8 @@ def current_user_view(request):
                 if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
                 else None
             ),
-            "tutor_referral_code": request.user.tutor_referral_code
+            "tutor_referral_code": request.user.tutor_referral_code,
+            "has_seen_tour": request.user.has_seen_tour
         }
 
         # Add parent if not None
@@ -119,6 +120,17 @@ def current_user_view(request):
         request.user.last_login = now()
         return Response(user_data)
 
+    return Response({"error": "User is not authenticated"}, status=401)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_tour_complete(request):
+    """Mark the onboarding tour as complete for the current user"""
+    if request.user and request.user.is_authenticated:
+        request.user.has_seen_tour = True
+        request.user.save(update_fields=['has_seen_tour'])
+        return Response({"success": True, "message": "Tour marked as complete"})
     return Response({"error": "User is not authenticated"}, status=401)
 
 

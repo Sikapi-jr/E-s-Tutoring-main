@@ -115,6 +115,9 @@ class User(AbstractUser):
     # Tutor referral code (6-digit code for direct referrals)
     tutor_referral_code = models.CharField(max_length=6, blank=True, null=True, unique=True, help_text="6-digit referral code for tutors")
 
+    # Onboarding tour tracking
+    has_seen_tour = models.BooleanField(default=False, help_text="Whether user has completed the onboarding tour")
+
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)

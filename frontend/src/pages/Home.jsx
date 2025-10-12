@@ -14,6 +14,7 @@ import AdminNotificationTool from "../components/AdminNotificationTool";
 import ResendVerificationTool from "../components/ResendVerificationTool";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
+import HomeTour from "../components/HomeTour";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -2235,6 +2236,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Onboarding Tour */}
+      <HomeTour userRole={user?.roles} />
 
     </div>
   );
