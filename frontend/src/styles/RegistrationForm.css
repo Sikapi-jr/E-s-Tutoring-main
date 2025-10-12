@@ -49,6 +49,13 @@
   color: var(--color-bg);
 }
 
+.role-buttons button.role-button-selected {
+  background-color: var(--color-primary);
+  color: var(--color-bg);
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+
 .form-section {
   margin-top: 1rem;
 }

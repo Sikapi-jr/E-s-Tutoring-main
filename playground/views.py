@@ -4146,8 +4146,8 @@ class UsernamePasswordResetView(APIView):
             return Response({"error": "Username is required"}, status=400)
         
         try:
-            # Find user by username
-            user = User.objects.get(username=username, is_active=True)
+            # Find user by username (regardless of activation status)
+            user = User.objects.get(username=username)
         except User.DoesNotExist:
             # Don't reveal if username exists or not for security
             return Response({"message": "If a user with that username exists, a password reset email will be sent."}, status=200)

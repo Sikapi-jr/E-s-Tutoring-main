@@ -153,11 +153,25 @@ function RegisterForm() {
 
   return (
     <div className="form-container">
-      <h1>{t('auth.registerTitle')}</h1>
+      <h1>
+        {!roles && t('auth.registerTitle')}
+        {roles === 'parent' && t('auth.registerAsParent', 'Register as Parent')}
+        {roles === 'student' && t('auth.registerAsStudent', 'Register as Student')}
+      </h1>
 
       <div className="role-buttons">
-        <button onClick={() => handleRoleSelection("student")}>{t('auth.student')}</button>
-        <button onClick={() => handleRoleSelection("parent")}>{t('auth.parent')}</button>
+        <button
+          onClick={() => handleRoleSelection("student")}
+          className={roles === "student" ? "role-button-selected" : ""}
+        >
+          {t('auth.student')}
+        </button>
+        <button
+          onClick={() => handleRoleSelection("parent")}
+          className={roles === "parent" ? "role-button-selected" : ""}
+        >
+          {t('auth.parent')}
+        </button>
       </div>
 
       {roles === "parent" && (
@@ -257,13 +271,26 @@ function RegisterForm() {
 
       {roles === "student" && (
         <div className="form-section">
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '2px solid #ffc107',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center'
+          }}>
+            <p style={{ color: '#856404', margin: 0, fontSize: '0.95rem', lineHeight: '1.4' }}>
+              <strong>⚠️ {t('auth.studentRegistrationTip', 'Important:')}</strong><br />
+              {t('auth.studentRegistrationNote', 'You are creating an account for your child. You must have a parent account first before registering a student account.')}
+            </p>
+          </div>
           <form onSubmit={handleSubmit}>
             <input
               className="form-input"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('auth.username')}
+              placeholder={t('auth.studentUsername', 'Student Username')}
               required
             />
             <input
@@ -271,7 +298,7 @@ function RegisterForm() {
               type="password"
               value={password}
               onChange={handlePasswordChange}
-              placeholder={t('common.password')}
+              placeholder={t('auth.studentPassword', 'Student Password')}
               required
             />
             {passwordError && <p className="password-error">{passwordError}</p>}
@@ -280,7 +307,7 @@ function RegisterForm() {
               type="password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
-              placeholder={t('auth.confirmPassword')}
+              placeholder={t('auth.confirmStudentPassword', 'Confirm Student Password')}
               required
             />
             {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
