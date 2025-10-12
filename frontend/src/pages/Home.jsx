@@ -898,7 +898,7 @@ export default function Home() {
         <div
           style={{
             position: "absolute",
-            top: "12.5rem",
+            top: "12rem",
             left: "50%",
             transform: "translateX(-50%)",
             pointerEvents: "auto",
@@ -910,20 +910,20 @@ export default function Home() {
             backgroundColor: "#f0f4ff",
             border: "2px solid #192A88",
             borderRadius: "12px",
-            padding: "0.75rem 1.5rem",
+            padding: "0.5rem 1.5rem",
             boxShadow: "0 2px 8px rgba(25, 42, 136, 0.15)",
             display: "inline-block"
           }}>
             <div style={{
-              fontSize: "0.85rem",
+              fontSize: "0.8rem",
               color: "#666",
-              marginBottom: "0.25rem",
+              marginBottom: "0.15rem",
               textAlign: "center"
             }}>
               {t('settings.yourTutorCode')}
             </div>
             <div style={{
-              fontSize: "1.5rem",
+              fontSize: "1.4rem",
               fontWeight: "700",
               letterSpacing: "3px",
               color: "#192A88",
@@ -1069,7 +1069,7 @@ export default function Home() {
         </div>
 
         {/* MIDDLE COL */}
-        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "13.75rem" }} className="home-middle-column">
+        <div style={{ width: "55%", padding: "1rem 0", paddingTop: "14.05rem" }} className="home-middle-column">
           <div
             className="table-wrapper mobile-section scheduled-events-section"
             style={{
@@ -1077,9 +1077,9 @@ export default function Home() {
               border: "3px solid #E1E1E1",
               borderRadius: 12,
               overflow: "auto",
-              height: 320,
-              minHeight: 320,
-              maxHeight: 320,
+              height: 355,
+              minHeight: 355,
+              maxHeight: 355,
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "1rem 0", padding: "0 1rem" }}>
