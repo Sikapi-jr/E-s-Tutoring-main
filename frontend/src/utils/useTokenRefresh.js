@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
 import api from '../api';
 
@@ -50,23 +49,34 @@ const refreshToken = async () => {
 };
 
 /**
- * Hook to automatically refresh access token on page navigation
+ * Hook to automatically refresh access token periodically
  * if it's close to expiry (within 1 hour)
  */
 export const useTokenRefresh = () => {
-  const location = useLocation();
+  const isRefreshing = useRef(false);
 
   useEffect(() => {
     const checkAndRefresh = async () => {
+      // Prevent multiple simultaneous refresh attempts
+      if (isRefreshing.current) return;
+
       const accessToken = localStorage.getItem(ACCESS_TOKEN);
 
       if (accessToken && isTokenExpiringSoon(accessToken)) {
+        isRefreshing.current = true;
         await refreshToken();
+        isRefreshing.current = false;
       }
     };
 
+    // Check immediately on mount
     checkAndRefresh();
-  }, [location.pathname]); // Run on every navigation
+
+    // Then check every 5 minutes
+    const interval = setInterval(checkAndRefresh, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 };
 
 export default useTokenRefresh;
