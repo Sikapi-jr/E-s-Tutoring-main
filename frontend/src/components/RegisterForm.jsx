@@ -155,8 +155,8 @@ function RegisterForm() {
     <div className="form-container">
       <h1>
         {!roles && t('auth.registerTitle')}
-        {roles === 'parent' && t('auth.registerAsParent', 'Register as Parent')}
-        {roles === 'student' && t('auth.registerAsStudent', 'Register as Student')}
+        {roles === 'parent' && t('auth.registerAsParent')}
+        {roles === 'student' && t('auth.registerAsStudent')}
       </h1>
 
       <div className="role-buttons">
@@ -280,8 +280,8 @@ function RegisterForm() {
             textAlign: 'center'
           }}>
             <p style={{ color: '#856404', margin: 0, fontSize: '0.95rem', lineHeight: '1.4' }}>
-              <strong>⚠️ {t('auth.studentRegistrationTip', 'Important:')}</strong><br />
-              {t('auth.studentRegistrationNote', 'You are creating an account for your child. You must have a parent account first before registering a student account.')}
+              <strong>⚠️ {t('auth.studentRegistrationTip')}</strong><br />
+              {t('auth.studentRegistrationNote')}
             </p>
           </div>
           <form onSubmit={handleSubmit}>
@@ -290,7 +290,7 @@ function RegisterForm() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('auth.studentUsername', 'Student Username')}
+              placeholder={t('auth.studentUsername')}
               required
             />
             <input
@@ -298,7 +298,7 @@ function RegisterForm() {
               type="password"
               value={password}
               onChange={handlePasswordChange}
-              placeholder={t('auth.studentPassword', 'Student Password')}
+              placeholder={t('auth.studentPassword')}
               required
             />
             {passwordError && <p className="password-error">{passwordError}</p>}
@@ -307,7 +307,7 @@ function RegisterForm() {
               type="password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
-              placeholder={t('auth.confirmStudentPassword', 'Confirm Student Password')}
+              placeholder={t('auth.confirmStudentPassword')}
               required
             />
             {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
@@ -397,7 +397,7 @@ function RegisterForm() {
                 }}
                 onClick={() => navigate("/register")}
               >
-                Click here to register your child's account!
+                {t('auth.registerChildAccount')}
               </span>
             </p>
           )}
