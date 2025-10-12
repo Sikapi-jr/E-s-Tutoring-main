@@ -28,6 +28,7 @@ export default function AdminUserSearch() {
   const [recentParents, setRecentParents] = useState([]);
   const [recentStudents, setRecentStudents] = useState([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
+  const [recentUsersError, setRecentUsersError] = useState("");
 
   // Early return if user is not loaded yet
   if (!user) {
@@ -48,20 +49,26 @@ export default function AdminUserSearch() {
   useEffect(() => {
     const fetchRecentUsers = async () => {
       setLoadingRecent(true);
+      setRecentUsersError("");
       try {
         // Fetch recent tutors
         const tutorsRes = await api.get('/api/admin/recent-users/?role=tutor&limit=10');
-        setRecentTutors(tutorsRes.data || []);
+        console.log('Tutors response:', tutorsRes.data);
+        setRecentTutors(Array.isArray(tutorsRes.data) ? tutorsRes.data : []);
 
         // Fetch recent parents
         const parentsRes = await api.get('/api/admin/recent-users/?role=parent&limit=10');
-        setRecentParents(parentsRes.data || []);
+        console.log('Parents response:', parentsRes.data);
+        setRecentParents(Array.isArray(parentsRes.data) ? parentsRes.data : []);
 
         // Fetch recent students
         const studentsRes = await api.get('/api/admin/recent-users/?role=student&limit=10');
-        setRecentStudents(studentsRes.data || []);
+        console.log('Students response:', studentsRes.data);
+        setRecentStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
       } catch (err) {
         console.error("Error fetching recent users:", err);
+        const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to fetch recent users";
+        setRecentUsersError(errorMessage);
       } finally {
         setLoadingRecent(false);
       }
@@ -130,6 +137,19 @@ export default function AdminUserSearch() {
       </div>
 
       {/* Recent Users Tables */}
+      {recentUsersError && (
+        <div className="error-message" style={{
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          padding: '1rem',
+          borderRadius: '4px',
+          marginBottom: '1rem',
+          border: '1px solid #f5c6cb'
+        }}>
+          <strong>Error loading recent users:</strong> {recentUsersError}
+        </div>
+      )}
+
       {loadingRecent ? (
         <div className="loading-message">
           <p>{t('common.loading')}...</p>

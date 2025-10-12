@@ -13,6 +13,7 @@ import TutorRegistrationForm from "../components/TutorRegistrationForm";
 import AdminNotificationTool from "../components/AdminNotificationTool";
 import ResendVerificationTool from "../components/ResendVerificationTool";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
+import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -22,7 +23,7 @@ const getInvoiceAgeColor = (ts) => {
 };
 
 export default function Home() {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const { t } = useTranslation();
 
   const [hours, setHours] = useState([]);
@@ -70,7 +71,10 @@ export default function Home() {
   /* ───────── data fetch ───────── */
   useEffect(() => {
     if (!user) return;
-    
+
+    // Refresh user data if needed (e.g., missing tutor_referral_code)
+    refreshUserDataIfNeeded(user, setUser);
+
     const fetchData = async () => {
       try {
         

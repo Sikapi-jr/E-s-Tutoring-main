@@ -7,6 +7,7 @@ import { ACCESS_TOKEN } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import NotificationSettings from "../components/NotificationSettings";
+import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
 // Using standard media URLs served by Django
 import "../styles/Settings.css";
 
@@ -42,6 +43,11 @@ export default function Settings() {
 
   const [showRefModal, setShowRefModal] = useState(false);
   const [refEmail, setRefEmail] = useState("");
+
+  // Refresh user data if needed (e.g., missing tutor_referral_code for tutors)
+  useEffect(() => {
+    refreshUserDataIfNeeded(user, setUser);
+  }, [user, setUser]);
 
   useEffect(() => {
     const token = localStorage.getItem(ACCESS_TOKEN);

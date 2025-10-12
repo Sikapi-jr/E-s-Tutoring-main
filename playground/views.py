@@ -4449,8 +4449,10 @@ class AdminRecentUsersView(APIView):
         if role not in ['tutor', 'parent', 'student']:
             return Response({'error': 'Invalid role. Must be tutor, parent, or student.'}, status=400)
 
-        # Get recent users by role
-        users = User.objects.filter(roles=role).order_by('-date_joined')[:limit]
+        # Get recent users by role - check both lowercase and as-is
+        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')[:limit]
+
+        print(f"Searching for role: {role}, found {users.count()} users")
 
         user_list = []
         for user in users:
