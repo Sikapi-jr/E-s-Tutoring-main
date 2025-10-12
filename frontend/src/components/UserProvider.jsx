@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { ACCESS_TOKEN } from "../constants";
+import { useTokenRefresh } from "../utils/useTokenRefresh";
 
 const UserContext = createContext(null);
 
@@ -10,6 +11,9 @@ export const UserProvider = ({ children }) => {
         // Only restore user if we have both user data and a valid token
         return (savedUser && accessToken) ? JSON.parse(savedUser) : null;
     });
+
+    // Auto-refresh token on page navigation
+    useTokenRefresh();
 
     useEffect(() => {
         if (user) {
