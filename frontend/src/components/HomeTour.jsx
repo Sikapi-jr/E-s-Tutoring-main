@@ -65,77 +65,77 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.home-tutor-code',
       content: t('tour.tutorCode'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.home-notifications-column',
       content: t('tour.notifications'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.recent-requests-section',
       content: t('tour.recentRequests'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.home-payments-column',
       content: t('tour.paymentTransfers'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/my-students"]',
       content: t('tour.myStudents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
       content: t('tour.tutoringRequests'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/hours"]',
       content: t('tour.myHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.upcomingSessions'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.invoices'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
       content: t('tour.monthlyReports'),
-      placement: 'bottom',
+      placement: 'auto',
     },
   ];
 
@@ -149,72 +149,72 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.students-section',
       content: t('tour.students'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.payment-progress-section',
       content: t('tour.paymentProgress'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.paid-invoices-section',
       content: t('tour.paidInvoices'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.unpaid-invoices-section',
       content: t('tour.unpaidInvoices'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/students"]',
       content: t('tour.students'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
       content: t('tour.parentTutoringRequests'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/hours"]',
       content: t('tour.myHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.upcomingSessions'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.viewInvoices'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
       content: t('tour.reportsParent'),
-      placement: 'bottom',
+      placement: 'auto',
     },
   ];
 
@@ -228,32 +228,32 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.studentScheduledEvents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.studentEvents'),
-      placement: 'bottom',
+      placement: 'auto',
     },
   ];
 

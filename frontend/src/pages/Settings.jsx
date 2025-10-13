@@ -818,7 +818,8 @@ export default function Settings() {
                   color: 'white',
                   cursor: 'pointer',
                   fontSize: '1rem',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  minWidth: '150px'
                 }}
               >
                 {t('common.cancel')}
@@ -830,11 +831,12 @@ export default function Settings() {
                   padding: '0.75rem 1.5rem',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: '#28a745',
+                  backgroundColor: '#192A88',
                   color: 'white',
                   cursor: 'pointer',
                   fontSize: '1rem',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  minWidth: '150px'
                 }}
               >
                 {t('students.addStudent')}

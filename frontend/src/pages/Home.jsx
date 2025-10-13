@@ -1059,8 +1059,8 @@ export default function Home() {
                 );
               })
             ) : (
-              <Link 
-                to={user?.roles === 'tutor' ? '/log' : '/request'} 
+              <Link
+                to={user?.roles === 'tutor' ? '/log' : '/request-reply'}
                 style={{ color: "#192A88", textAlign: "center", display: "block" }}
               >
                 {t('home.noHoursYet')} {user?.roles === 'tutor' ? t('home.startLoggingHours') : t('home.requestTutorText')}
@@ -2250,6 +2250,7 @@ export default function Home() {
       {/* Help Button - Manual Tour Restart */}
       <button
         onClick={() => setShowTourManually(true)}
+        className="tour-help-button"
         style={{
           position: 'fixed',
           bottom: '2rem',
@@ -2279,6 +2280,14 @@ export default function Home() {
       >
         ?
       </button>
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .tour-help-button {
+            left: 1rem !important;
+            bottom: 1rem !important;
+          }
+        }
+      `}</style>
 
     </div>
   );

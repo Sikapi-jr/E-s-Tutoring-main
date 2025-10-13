@@ -47,8 +47,17 @@ export default function UnauthNavbar() {
 
       <ul className={`nav-links ${mobileMenuOpen ? "is-open" : ""}`}>
         <li>
-          <NavLink 
-            to="/login" 
+          <NavLink
+            to="/contact"
+            className="nav-link"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {t('footer.contact')}
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/login"
             className="nav-link"
             onClick={() => setMobileMenuOpen(false)}
           >
