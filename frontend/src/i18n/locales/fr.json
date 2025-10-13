@@ -1119,5 +1119,33 @@
     "termsOfUse": "Conditions d'Utilisation",
     "backToHome": "Retour à l'Accueil",
     "lastUpdated": "Dernière mise à jour : {{date}}"
+  },
+  "tour": {
+    "welcome": "Bienvenue sur votre tableau de bord EGS Tutoring ! Faisons un rapide tour des fonctionnalités clés.",
+    "weeklyHours": "Ici, vous pouvez voir vos heures enregistrées pour la semaine en cours.",
+    "tutorCode": "Ceci est votre code de référence personnel. Partagez-le avec de nouveaux étudiants pour vous connecter directement !",
+    "loggedHours": "Consultez toutes vos sessions de tutorat enregistrées ici. Cliquez sur 'Voir Plus' pour voir tous les détails dans la page Mes Heures, où vous pouvez contester les heures si nécessaire.",
+    "announcements": "Restez informé des annonces importantes d'EGS Tutoring.",
+    "scheduledEvents": "Consultez vos sessions de tutorat à venir ici. Cliquez sur 'Voir Plus' pour voir toutes les sessions dans la page Sessions à Venir.",
+    "myStudents": "Accédez à votre liste d'étudiants depuis le menu 'Mes Étudiants' pour voir des informations détaillées.",
+    "tutoringRequests": "Consultez et répondez aux nouvelles demandes de tutorat des parents dans la page Demandes de Tutorat.",
+    "myHours": "Enregistrez vos heures de tutorat dans la section 'Mes Heures'.",
+    "upcomingSessions": "Consultez et gérez toutes vos sessions de tutorat à venir dans la page Sessions à Venir.",
+    "invoices": "Consultez et gérez vos factures dans la page Factures.",
+    "monthlyReports": "Soumettez les rapports de progression mensuels pour vos étudiants dans la page Rapports Mensuels.",
+    "students": "Gérez les comptes de vos enfants et consultez leurs tuteurs. Cliquez sur 'Voir Plus' pour voir tous les détails dans la page Mes Étudiants.",
+    "parentTutoringRequests": "Demandez un tuteur ou consultez les réponses des tuteurs dans la page Demandes de Tutorat.",
+    "viewInvoices": "Consultez et gérez vos factures et paiements dans la page Factures.",
+    "reportsParent": "Lisez les rapports de progression mensuels des tuteurs de vos enfants dans la page Rapports Mensuels.",
+    "studentScheduledEvents": "Consultez vos sessions de tutorat à venir ici.",
+    "studentEvents": "Consultez toutes vos sessions planifiées dans la page Événements.",
+    "notifications": "Consultez les mises à jour importantes, les rappels de sessions et les notifications de paiement.",
+    "recentRequests": "Consultez les dernières demandes de tutorat et répondez-y. Cliquez sur 'Voir Plus' pour voir toutes les demandes.",
+    "paymentTransfers": "Suivez votre historique de paiements et les transferts à venir ici.",
+    "tutorDocuments": "Téléchargez et gérez des documents importants comme les certifications et les plans de cours.",
+    "tutorStudents": "Consultez des informations détaillées sur vos étudiants actuels. Cliquez sur le nom d'un étudiant pour voir son profil.",
+    "paymentProgress": "Suivez votre progression de paiement ici. La barre verte montre combien de vos factures ont été payées. Cliquez pour voir toutes les factures dans la page Factures.",
+    "paidInvoices": "Consultez vos factures payées ici. Cliquez sur une facture pour télécharger le PDF. Cliquez sur 'Voir Plus' pour voir toutes les factures dans la page Factures.",
+    "unpaidInvoices": "Consultez les factures impayées ici. Cliquez sur une facture pour la payer en ligne. Cliquez sur 'Voir Plus' pour voir toutes les factures dans la page Factures."
   }
 }

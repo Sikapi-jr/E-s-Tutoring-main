@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Joyride, { STATUS } from 'react-joyride';
+import { useTranslation } from 'react-i18next';
 import { useUser } from './UserProvider';
 import api from '../api';
 
 function HomeTour({ userRole }) {
   const { user, setUser } = useUser();
+  const { t } = useTranslation();
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
@@ -45,43 +47,83 @@ function HomeTour({ userRole }) {
   const getTutorSteps = () => [
     {
       target: 'body',
-      content: 'Welcome to your EGS Tutoring dashboard! Let\'s take a quick tour of the key features.',
+      content: t('tour.welcome'),
       placement: 'center',
       disableBeacon: true,
     },
     {
-      target: '.hours-message',
-      content: 'Here you can see your logged hours for the current week.',
+      target: '.home-weekly-hours',
+      content: t('tour.weeklyHours'),
       placement: 'bottom',
     },
     {
-      target: 'div[style*="Your Tutor Code"]',
-      content: 'This is your personal tutor referral code. Share it with new students to connect directly!',
+      target: '.home-tutor-code',
+      content: t('tour.tutorCode'),
       placement: 'bottom',
+    },
+    {
+      target: '.logged-hours-section',
+      content: t('tour.loggedHours'),
+      placement: 'right',
+    },
+    {
+      target: '.announcements-section',
+      content: t('tour.announcements'),
+      placement: 'right',
     },
     {
       target: '.scheduled-events-section',
-      content: 'View your upcoming scheduled tutoring sessions here.',
+      content: t('tour.scheduledEvents'),
+      placement: 'left',
+    },
+    {
+      target: '.students-section',
+      content: t('tour.tutorStudents'),
+      placement: 'left',
+    },
+    {
+      target: '.home-notifications-column',
+      content: t('tour.notifications'),
+      placement: 'right',
+    },
+    {
+      target: '.recent-requests-section',
+      content: t('tour.recentRequests'),
       placement: 'top',
     },
     {
+      target: '.home-payments-column',
+      content: t('tour.paymentTransfers'),
+      placement: 'left',
+    },
+    {
       target: 'nav.nav a[href="/my-students"]',
-      content: 'Access your list of students from the "My Students" menu.',
+      content: t('tour.myStudents'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
-      content: 'View and respond to new tutoring requests here.',
+      content: t('tour.tutoringRequests'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/hours"]',
-      content: 'Log your tutoring hours in the "My Hours" section.',
+      content: t('tour.myHours'),
+      placement: 'bottom',
+    },
+    {
+      target: 'nav.nav a[href="/events"]',
+      content: t('tour.upcomingSessions'),
+      placement: 'bottom',
+    },
+    {
+      target: 'nav.nav a[href="/ViewInvoices"]',
+      content: t('tour.invoices'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
-      content: 'Submit monthly progress reports for your students here.',
+      content: t('tour.monthlyReports'),
       placement: 'bottom',
     },
   ];
@@ -89,38 +131,78 @@ function HomeTour({ userRole }) {
   const getParentSteps = () => [
     {
       target: 'body',
-      content: 'Welcome to your EGS Tutoring dashboard! Let\'s show you around.',
+      content: t('tour.welcome'),
       placement: 'center',
       disableBeacon: true,
     },
     {
-      target: '.hours-message',
-      content: 'Track your child\'s tutoring hours for the current week here.',
+      target: '.home-weekly-hours',
+      content: t('tour.weeklyHours'),
       placement: 'bottom',
     },
     {
+      target: '.logged-hours-section',
+      content: t('tour.loggedHours'),
+      placement: 'right',
+    },
+    {
+      target: '.announcements-section',
+      content: t('tour.announcements'),
+      placement: 'right',
+    },
+    {
       target: '.scheduled-events-section',
-      content: 'See all upcoming tutoring sessions for your children.',
-      placement: 'top',
+      content: t('tour.scheduledEvents'),
+      placement: 'left',
+    },
+    {
+      target: '.students-section',
+      content: t('tour.students'),
+      placement: 'left',
+    },
+    {
+      target: '.payment-progress-section',
+      content: t('tour.paymentProgress'),
+      placement: 'left',
+    },
+    {
+      target: '.paid-invoices-section',
+      content: t('tour.paidInvoices'),
+      placement: 'left',
+    },
+    {
+      target: '.unpaid-invoices-section',
+      content: t('tour.unpaidInvoices'),
+      placement: 'left',
     },
     {
       target: 'nav.nav a[href="/students"]',
-      content: 'Manage your children\'s accounts and view their tutors.',
+      content: t('tour.students'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
-      content: 'Request a tutor or view responses from tutors here.',
+      content: t('tour.parentTutoringRequests'),
+      placement: 'bottom',
+    },
+    {
+      target: 'nav.nav a[href="/hours"]',
+      content: t('tour.myHours'),
+      placement: 'bottom',
+    },
+    {
+      target: 'nav.nav a[href="/events"]',
+      content: t('tour.upcomingSessions'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
-      content: 'View and manage your invoices and payments.',
+      content: t('tour.viewInvoices'),
       placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
-      content: 'Read monthly progress reports from your children\'s tutors.',
+      content: t('tour.reportsParent'),
       placement: 'bottom',
     },
   ];
@@ -128,23 +210,38 @@ function HomeTour({ userRole }) {
   const getStudentSteps = () => [
     {
       target: 'body',
-      content: 'Welcome! Here\'s a quick overview of your dashboard.',
+      content: t('tour.welcome'),
       placement: 'center',
       disableBeacon: true,
     },
     {
-      target: '.hours-message',
-      content: 'See your tutoring hours for the week here.',
+      target: '.home-weekly-hours',
+      content: t('tour.weeklyHours'),
       placement: 'bottom',
     },
     {
+      target: '.logged-hours-section',
+      content: t('tour.loggedHours'),
+      placement: 'right',
+    },
+    {
+      target: '.announcements-section',
+      content: t('tour.announcements'),
+      placement: 'right',
+    },
+    {
       target: '.scheduled-events-section',
-      content: 'Check your upcoming tutoring sessions.',
-      placement: 'top',
+      content: t('tour.studentScheduledEvents'),
+      placement: 'left',
+    },
+    {
+      target: '.students-section',
+      content: t('tour.tutorStudents'),
+      placement: 'left',
     },
     {
       target: 'nav.nav a[href="/events"]',
-      content: 'View all your scheduled sessions in the Events page.',
+      content: t('tour.studentEvents'),
       placement: 'bottom',
     },
   ];

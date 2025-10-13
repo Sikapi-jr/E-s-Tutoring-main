@@ -1127,5 +1127,33 @@
     "termsOfUse": "Terms of Use",
     "backToHome": "Back to Home",
     "lastUpdated": "Last updated: {{date}}"
+  },
+  "tour": {
+    "welcome": "Welcome to your EGS Tutoring dashboard! Let's take a quick tour of the key features.",
+    "weeklyHours": "Here you can see your logged hours for the current week.",
+    "tutorCode": "This is your personal tutor referral code. Share it with new students to connect directly!",
+    "loggedHours": "View all your logged tutoring sessions here. Click 'View More' to see full details in My Hours page, where you can dispute hours if needed.",
+    "announcements": "Stay updated with important announcements from EGS Tutoring.",
+    "scheduledEvents": "View your upcoming tutoring sessions here. Click 'View More' to see all sessions in the Upcoming Sessions page.",
+    "myStudents": "Access your list of students from the 'My Students' menu to view detailed information.",
+    "tutoringRequests": "View and respond to new tutoring requests from parents in the Tutoring Requests page.",
+    "myHours": "Log your tutoring hours in the 'My Hours' section.",
+    "upcomingSessions": "View and manage all your upcoming tutoring sessions in the Upcoming Sessions page.",
+    "invoices": "View and manage your invoices in the Invoices page.",
+    "monthlyReports": "Submit monthly progress reports for your students in the Monthly Reports page.",
+    "students": "Manage your children's accounts and view their tutors. Click 'View More' to see full details in the My Students page.",
+    "parentTutoringRequests": "Request a tutor or view responses from tutors in the Tutoring Requests page.",
+    "viewInvoices": "View and manage your invoices and payments in the Invoices page.",
+    "reportsParent": "Read monthly progress reports from your children's tutors in the Monthly Reports page.",
+    "studentScheduledEvents": "Check your upcoming tutoring sessions here.",
+    "studentEvents": "View all your scheduled sessions in the Events page.",
+    "notifications": "View important updates, session reminders, and payment notifications.",
+    "recentRequests": "See the latest tutoring requests and respond to them. Click 'View More' to see all requests.",
+    "paymentTransfers": "Track your payment history and upcoming transfers here.",
+    "tutorDocuments": "Upload and manage important documents like certifications and lesson plans.",
+    "tutorStudents": "View detailed information about your current students. Click a student name to see their profile.",
+    "paymentProgress": "Track your payment progress here. The green bar shows how much of your invoices have been paid. Click to see all invoices in the Invoices page.",
+    "paidInvoices": "View your paid invoices here. Click on an invoice to download the PDF. Click 'View More' to see all invoices in the Invoices page.",
+    "unpaidInvoices": "View unpaid invoices here. Click on an invoice to pay it online. Click 'View More' to see all invoices in the Invoices page."
   }
 }

@@ -64,11 +64,11 @@ const getRoleConfig = (BASE) => ({
     single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.TestEmail],
   },
   parent: {
-    main:   [BASE.Home, BASE.Hours, BASE.Events, BASE.Students, BASE.Replies],
+    main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Events, BASE.Inv, BASE.Reports],
     tutor:  [],
     sessions: [],
     cal:    [],
-    single: [BASE.Inv, BASE.Reports],
+    single: [],
   },
   tutor: {
     main:   [BASE.Home, BASE.MyStudents, BASE.Replies, BASE.Hours, BASE.Events, BASE.Inv, BASE.Reports],
