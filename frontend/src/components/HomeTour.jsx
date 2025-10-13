@@ -65,77 +65,77 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.home-tutor-code',
       content: t('tour.tutorCode'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.home-notifications-column',
       content: t('tour.notifications'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.recent-requests-section',
       content: t('tour.recentRequests'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.home-payments-column',
       content: t('tour.paymentTransfers'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/my-students"]',
       content: t('tour.myStudents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
       content: t('tour.tutoringRequests'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/hours"]',
       content: t('tour.myHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.upcomingSessions'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.invoices'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
       content: t('tour.monthlyReports'),
-      placement: 'auto',
+      placement: 'bottom',
     },
   ];
 
@@ -149,72 +149,72 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.students'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.payment-progress-section',
       content: t('tour.paymentProgress'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.paid-invoices-section',
       content: t('tour.paidInvoices'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.unpaid-invoices-section',
       content: t('tour.unpaidInvoices'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/students"]',
       content: t('tour.students'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/request-reply"]',
       content: t('tour.parentTutoringRequests'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/hours"]',
       content: t('tour.myHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.upcomingSessions'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.viewInvoices'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/monthly-reports"]',
       content: t('tour.reportsParent'),
-      placement: 'auto',
+      placement: 'bottom',
     },
   ];
 
@@ -228,32 +228,32 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.home-weekly-hours',
       content: t('tour.weeklyHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.studentScheduledEvents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/events"]',
       content: t('tour.studentEvents'),
-      placement: 'auto',
+      placement: 'bottom',
     },
   ];
 
@@ -281,11 +281,34 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       showProgress
       showSkipButton
       callback={handleTourCallback}
+      disableScrolling={false}
+      scrollToFirstStep
+      scrollOffset={100}
+      floaterProps={{
+        disableAnimation: false,
+        styles: {
+          floater: {
+            filter: 'none',
+          },
+        },
+      }}
       styles={{
         options: {
           primaryColor: '#192A88',
           textColor: '#333',
           zIndex: 10000,
+          width: '100%',
+        },
+        tooltip: {
+          maxWidth: '90vw',
+          width: '400px',
+        },
+        tooltipContainer: {
+          textAlign: 'left',
+        },
+        tooltipContent: {
+          padding: '20px',
+          fontSize: '14px',
         },
         buttonNext: {
           backgroundColor: '#192A88',
