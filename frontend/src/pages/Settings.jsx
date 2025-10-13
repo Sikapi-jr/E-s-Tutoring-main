@@ -44,6 +44,17 @@ export default function Settings() {
   const [showRefModal, setShowRefModal] = useState(false);
   const [refEmail, setRefEmail] = useState("");
 
+  // Add student modal state
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [addStudentForm, setAddStudentForm] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
+
   // Refresh user data if needed (e.g., missing tutor_referral_code for tutors)
   useEffect(() => {
     refreshUserDataIfNeeded(user, setUser);
@@ -180,20 +191,73 @@ export default function Settings() {
     }
 
     try {
-      
+
       await api.delete(`/api/tutor/documents/${documentId}/`);
-      
+
       // Refresh the documents list
       loadDocuments();
-      
+
       alert(t('settings.documentDeletedSuccess'));
     } catch (error) {
       console.error("Document deletion failed:", error);
-      
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
+
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.message ||
                           'Failed to delete document';
-      
+
+      alert(errorMessage);
+    }
+  };
+
+  const handleAddStudent = async () => {
+    // Validation
+    if (!addStudentForm.firstName.trim() || !addStudentForm.lastName.trim()) {
+      alert(t('students.pleaseProvideNames') || 'Please provide first and last name.');
+      return;
+    }
+
+    if (!addStudentForm.username.trim() || addStudentForm.username.length < 3) {
+      alert(t('students.usernameRequired') || 'Username must be at least 3 characters.');
+      return;
+    }
+
+    if (!addStudentForm.password.trim() || addStudentForm.password.length < 6) {
+      alert(t('students.passwordMinLength') || 'Password must be at least 6 characters.');
+      return;
+    }
+
+    if (addStudentForm.password !== addStudentForm.confirmPassword) {
+      alert(t('students.passwordsMustMatch') || 'Passwords do not match.');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("firstName", addStudentForm.firstName.trim());
+      formData.append("lastName", addStudentForm.lastName.trim());
+      formData.append("username", addStudentForm.username.trim());
+      formData.append("password", addStudentForm.password);
+
+      if (addStudentProfilePicture) {
+        formData.append("profile_picture", addStudentProfilePicture);
+      }
+
+      await api.post(`/api/students/create/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Refresh the page to show the new student
+      window.location.reload();
+
+      alert(t('students.studentAddedSuccessfully') || 'Student added successfully!');
+
+    } catch (error) {
+      console.error("Error adding student:", error);
+      const errorMessage = error.response?.data?.error ||
+                           error.response?.data?.message ||
+                           t('errors.studentAddFailed') || 'Failed to add student. Please try again.';
       alert(errorMessage);
     }
   };
@@ -452,9 +516,12 @@ export default function Settings() {
         <>
           <div className="children-header">
             <h3>CHILDREN</h3>
-            <Link to="/register?role=student" className="add-child-btn">
+            <button
+              onClick={() => setShowAddStudentModal(true)}
+              className="add-child-btn"
+            >
               + Add Child
-            </Link>
+            </button>
           </div>
 
           {children.length === 0 ? (
@@ -570,6 +637,207 @@ export default function Settings() {
               </button>
               <button className="save" onClick={createReferral}>
                 Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== add-student modal ===== */}
+      {showAddStudentModal && (
+        <div className="modal-backdrop" onClick={() => setShowAddStudentModal(false)}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              maxWidth: '600px'
+            }}
+          >
+            <h2>{t('students.addNewStudent')}</h2>
+            <p style={{ color: "#666", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+              {t('students.addStudentDescription')}
+            </p>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('common.firstName')} *
+              </label>
+              <input
+                type="text"
+                value={addStudentForm.firstName}
+                onChange={(e) => setAddStudentForm({...addStudentForm, firstName: e.target.value})}
+                placeholder={t('students.enterFirstName')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('common.lastName')} *
+              </label>
+              <input
+                type="text"
+                value={addStudentForm.lastName}
+                onChange={(e) => setAddStudentForm({...addStudentForm, lastName: e.target.value})}
+                placeholder={t('students.enterLastName')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('common.username')} *
+              </label>
+              <input
+                type="text"
+                value={addStudentForm.username}
+                onChange={(e) => setAddStudentForm({...addStudentForm, username: e.target.value})}
+                placeholder={t('students.enterUsername')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+              <small style={{ color: "#666", fontSize: "0.8rem", display: 'block', marginTop: '0.25rem' }}>
+                {t('students.usernameHelp')}
+              </small>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('common.password')} *
+              </label>
+              <input
+                type="password"
+                value={addStudentForm.password}
+                onChange={(e) => setAddStudentForm({...addStudentForm, password: e.target.value})}
+                placeholder={t('students.enterPassword')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+              <small style={{ color: "#666", fontSize: "0.8rem", display: 'block', marginTop: '0.25rem' }}>
+                {t('students.passwordHelp')}
+              </small>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('students.confirmPassword')} *
+              </label>
+              <input
+                type="password"
+                value={addStudentForm.confirmPassword}
+                onChange={(e) => setAddStudentForm({...addStudentForm, confirmPassword: e.target.value})}
+                placeholder={t('students.confirmPasswordPlaceholder')}
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                {t('students.profilePicture')} ({t('common.optional')})
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setAddStudentProfilePicture(e.target.files[0])}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+
+            <div style={{
+              backgroundColor: "#f0f4ff",
+              padding: "1rem",
+              borderRadius: "6px",
+              marginBottom: "1rem",
+              border: "1px solid #192A88"
+            }}>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "#192A88" }}>
+                <strong>{t('students.autoFillNotice')}</strong><br/>
+                {t('students.autoFillDescription')}
+              </p>
+            </div>
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                className="cancel"
+                onClick={() => {
+                  setShowAddStudentModal(false);
+                  setAddStudentForm({
+                    firstName: "",
+                    lastName: "",
+                    username: "",
+                    password: "",
+                    confirmPassword: ""
+                  });
+                  setAddStudentProfilePicture(null);
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="save"
+                onClick={handleAddStudent}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                {t('students.addStudent')}
               </button>
             </div>
           </div>

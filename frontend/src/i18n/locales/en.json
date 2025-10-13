@@ -99,7 +99,9 @@
     "loadingPage": "Loading page...",
     "loadingEllipsis": "Loading…",
     "ctrlEnterTip": "Tip: Press Ctrl+Enter to submit quickly",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "username": "Username",
+    "optional": "Optional"
   },
   "navigation": {
     "home": "Home",
@@ -1138,7 +1140,8 @@
     "usernameRequired": "Username must be at least 3 characters.",
     "passwordMinLength": "Password must be at least 6 characters.",
     "passwordsMustMatch": "Passwords do not match.",
-    "studentAddedSuccessfully": "Student added successfully!"
+    "studentAddedSuccessfully": "Student added successfully!",
+    "totalHours": "Total Hours"
   },
   "legal": {
     "privacyPolicy": "Privacy Policy",

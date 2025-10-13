@@ -27,7 +27,7 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [roles, setRole] = useState("");
+  const [roles, setRole] = useState("parent"); // Always set to parent
   const [firstName, setFname] = useState("");
   const [lastName, setLname] = useState("");
   const [address, setAddress] = useState("");
@@ -154,27 +154,10 @@ function RegisterForm() {
   return (
     <div className="form-container">
       <h1>
-        {!roles && t('auth.registerTitle')}
-        {roles === 'parent' && t('auth.registerAsParent')}
-        {roles === 'student' && t('auth.registerAsStudent')}
+        {t('auth.registerAsParent')}
       </h1>
 
-      <div className="role-buttons">
-        <button
-          onClick={() => handleRoleSelection("student")}
-          className={roles === "student" ? "role-button-selected" : ""}
-        >
-          {t('auth.student')}
-        </button>
-        <button
-          onClick={() => handleRoleSelection("parent")}
-          className={roles === "parent" ? "role-button-selected" : ""}
-        >
-          {t('auth.parent')}
-        </button>
-      </div>
-
-      {roles === "parent" && (
+      {(
         <div className="form-section">
           <form onSubmit={handleSubmit}>
             <input
@@ -221,113 +204,6 @@ function RegisterForm() {
             />
 
             <h2 style={{ textAlign: 'center' }}>{t('auth.privateInformation')}</h2>
-
-            <input
-              className="form-input"
-              type="text"
-              value={firstName}
-              onChange={(e) => setFname(e.target.value)}
-              placeholder={t('common.firstName')}
-              required
-            />
-            <input
-              className="form-input"
-              type="text"
-              value={lastName}
-              onChange={(e) => setLname(e.target.value)}
-              placeholder={t('common.lastName')}
-              required
-            />
-            <input
-              className="form-input"
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder={t('auth.homeAddress')}
-              required
-            />
-            <select
-              className="form-input"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              required
-            >
-              <option value="" disabled>{t('auth.selectCity')}</option>
-              {CITY_CHOICES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-
-            <button
-              className={`form-button${clicked ? " clicked" : ""}`}
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? t('common.loading') : t('auth.registerAs', { role: roles.charAt(0).toUpperCase() + roles.slice(1) })}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {roles === "student" && (
-        <div className="form-section">
-          <div style={{
-            backgroundColor: '#fff3cd',
-            border: '2px solid #ffc107',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
-          }}>
-            <p style={{ color: '#856404', margin: 0, fontSize: '0.95rem', lineHeight: '1.4' }}>
-              <strong>⚠️ {t('auth.studentRegistrationTip')}</strong><br />
-              {t('auth.studentRegistrationNote')}
-            </p>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <input
-              className="form-input"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('auth.studentUsername')}
-              required
-            />
-            <input
-              className="form-input"
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              placeholder={t('auth.studentPassword')}
-              required
-            />
-            {passwordError && <p className="password-error">{passwordError}</p>}
-            <input
-              className="form-input"
-              type="password"
-              value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
-              placeholder={t('auth.confirmStudentPassword')}
-              required
-            />
-            {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
-            <input
-              className="form-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('auth.parentEmail')}
-              required
-            />
-            <input
-              className="form-input"
-              type="text"
-              value={parent}
-              onChange={(e) => setParent(e.target.value)}
-              placeholder={t('auth.parentUsername')}
-              required
-            />
-            <h2 style={{ textAlign: 'center' }}>{t('auth.studentPrivateInformation')}</h2>
 
             <input
               className="form-input"
