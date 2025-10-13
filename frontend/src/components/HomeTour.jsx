@@ -64,37 +64,37 @@ function HomeTour({ userRole }) {
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.home-notifications-column',
       content: t('tour.notifications'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.recent-requests-section',
       content: t('tour.recentRequests'),
-      placement: 'top',
+      placement: 'bottom',
     },
     {
       target: '.home-payments-column',
       content: t('tour.paymentTransfers'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/my-students"]',
@@ -143,37 +143,37 @@ function HomeTour({ userRole }) {
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.scheduledEvents'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.students'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.payment-progress-section',
       content: t('tour.paymentProgress'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.paid-invoices-section',
       content: t('tour.paidInvoices'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.unpaid-invoices-section',
       content: t('tour.unpaidInvoices'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/students"]',
@@ -222,22 +222,22 @@ function HomeTour({ userRole }) {
     {
       target: '.logged-hours-section',
       content: t('tour.loggedHours'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'right',
+      placement: 'bottom',
     },
     {
       target: '.scheduled-events-section',
       content: t('tour.studentScheduledEvents'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'left',
+      placement: 'bottom',
     },
     {
       target: 'nav.nav a[href="/events"]',
@@ -291,11 +291,11 @@ function HomeTour({ userRole }) {
         },
       }}
       locale={{
-        back: 'Back',
-        close: 'Close',
-        last: 'Finish',
-        next: 'Next',
-        skip: 'Skip Tour',
+        back: t('tour.back'),
+        close: t('tour.close'),
+        last: t('tour.finish'),
+        next: t('tour.next'),
+        skip: t('tour.skip'),
       }}
     />
   );

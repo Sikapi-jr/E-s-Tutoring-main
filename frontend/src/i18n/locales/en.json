@@ -1129,6 +1129,11 @@
     "lastUpdated": "Last updated: {{date}}"
   },
   "tour": {
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip Tour",
+    "close": "Close",
+    "finish": "Finish",
     "welcome": "Welcome to your EGS Tutoring dashboard! Let's take a quick tour of the key features.",
     "weeklyHours": "Here you can see your logged hours for the current week.",
     "tutorCode": "This is your personal tutor referral code. Share it with new students to connect directly!",

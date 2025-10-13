@@ -1121,6 +1121,11 @@
     "lastUpdated": "Dernière mise à jour : {{date}}"
   },
   "tour": {
+    "back": "Retour",
+    "next": "Suivant",
+    "skip": "Ignorer le Tour",
+    "close": "Fermer",
+    "finish": "Terminer",
     "welcome": "Bienvenue sur votre tableau de bord EGS Tutoring ! Faisons un rapide tour des fonctionnalités clés.",
     "weeklyHours": "Ici, vous pouvez voir vos heures enregistrées pour la semaine en cours.",
     "tutorCode": "Ceci est votre code de référence personnel. Partagez-le avec de nouveaux étudiants pour vous connecter directement !",

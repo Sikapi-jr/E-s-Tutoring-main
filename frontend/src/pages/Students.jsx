@@ -249,7 +249,7 @@ const Students = () => {
                       {student.student_firstName} {student.student_lastName}
                     </h2>
                     <div className="student-details">
-                      <p><strong>Total Hours:</strong> {student.totalHours || 0} hours</p>
+                      <p><strong>{t('students.totalHours')}:</strong> {student.totalHours || 0} {t('common.hours')}</p>
                     </div>
                   </div>
                   {user.roles === "parent" && (
