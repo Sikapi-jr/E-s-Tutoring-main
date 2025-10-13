@@ -151,6 +151,7 @@
     "loginTitle": "Login to EGS Tutoring",
     "registerTitle": "Create Your Account",
     "loginButton": "Sign In",
+    "register": "Register",
     "registerButton": "Create Account",
     "forgotPassword": "Forgot Password?",
     "dontHaveAccount": "Don't have an account?",
@@ -728,6 +729,17 @@
     "screenshotTip": "Use Windows + Shift + S to screenshot",
     "ticketSubmitted": "Ticket submitted!",
     "errorSubmittingTicket": "Error submitting ticket"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Get in touch with our support team",
+    "home": "Home",
+    "email": "Email",
+    "phone": "Phone",
+    "quickLinks": "Quick Links",
+    "faq": "FAQ",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "Privacy Policy"
   },
   "stripe": {
     "setupPayment": "Setup Payment",

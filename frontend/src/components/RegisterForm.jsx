@@ -246,7 +246,7 @@ function RegisterForm() {
               type="submit"
               disabled={loading}
             >
-              {loading ? t('common.loading') : t('auth.registerAs', { role: roles.charAt(0).toUpperCase() + roles.slice(1) })}
+              {loading ? t('common.loading') : t('auth.register')}
             </button>
           </form>
         </div>
