@@ -4,19 +4,25 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from './UserProvider';
 import api from '../api';
 
-function HomeTour({ userRole }) {
+function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
   const { user, setUser } = useUser();
   const { t } = useTranslation();
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    // Always show tour for testing user "Parent"
-    // Otherwise, only show tour if user hasn't seen it
-    if (user && (user.username === 'Parent' || user.has_seen_tour === false)) {
+    // If manually started, run the tour
+    if (manualStart) {
+      setTimeout(() => setRunTour(true), 500);
+      return;
+    }
+
+    // Otherwise, only show tour automatically if user hasn't seen it
+    // (excluding testing user "Parent" to avoid always showing)
+    if (user && user.username !== 'Parent' && user.has_seen_tour === false) {
       // Small delay to ensure DOM elements are rendered
       setTimeout(() => setRunTour(true), 500);
     }
-  }, [user]);
+  }, [user, manualStart]);
 
   const handleTourCallback = async (data) => {
     const { status } = data;
@@ -25,12 +31,17 @@ function HomeTour({ userRole }) {
     if (finishedStatuses.includes(status)) {
       setRunTour(false);
 
-      // Don't save tour state for testing user "Parent"
-      if (user?.username === 'Parent') {
+      // If this was a manual tour, notify parent component
+      if (manualStart && onManualStartComplete) {
+        onManualStartComplete();
+      }
+
+      // Don't save tour state for testing user "Parent" or manual tours
+      if (user?.username === 'Parent' || manualStart) {
         return;
       }
 
-      // Mark tour as complete in backend
+      // Mark tour as complete in backend (only for automatic first-time tours)
       try {
         await api.post('/api/user/mark-tour-complete/');
         // Update local user state

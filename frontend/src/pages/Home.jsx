@@ -68,6 +68,9 @@ export default function Home() {
   // Student's tutors state
   const [studentTutors, setStudentTutors] = useState([]);
 
+  // Tour state
+  const [showTourManually, setShowTourManually] = useState(false);
+
 
   /* ───────── data fetch ───────── */
   useEffect(() => {
@@ -2238,7 +2241,44 @@ export default function Home() {
       )}
 
       {/* Onboarding Tour */}
-      <HomeTour userRole={user?.roles} />
+      <HomeTour
+        userRole={user?.roles}
+        manualStart={showTourManually}
+        onManualStartComplete={() => setShowTourManually(false)}
+      />
+
+      {/* Help Button - Manual Tour Restart */}
+      <button
+        onClick={() => setShowTourManually(true)}
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          backgroundColor: '#192A88',
+          color: 'white',
+          border: 'none',
+          fontSize: '1.5rem',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(25, 42, 136, 0.3)',
+          zIndex: 999,
+          fontWeight: 'bold',
+          transition: 'transform 0.2s, box-shadow 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'scale(1.1)';
+          e.target.style.boxShadow = '0 6px 16px rgba(25, 42, 136, 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'scale(1)';
+          e.target.style.boxShadow = '0 4px 12px rgba(25, 42, 136, 0.3)';
+        }}
+        title="Restart Tour"
+      >
+        ?
+      </button>
 
     </div>
   );
