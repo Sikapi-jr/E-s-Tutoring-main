@@ -2125,6 +2125,20 @@ class StudentCreateView(APIView):
             student.set_default_rates_by_role()
             student.save()
 
+            # Send confirmation email to parent
+            try:
+                from playground.tasks import send_student_creation_confirmation_async
+                parent_name = f"{request.user.firstName} {request.user.lastName}"
+                student_name = f"{first_name} {last_name}"
+                send_student_creation_confirmation_async.delay(
+                    request.user.email,
+                    parent_name,
+                    student_name
+                )
+            except Exception as email_error:
+                # Log the error but don't fail the student creation
+                logger.error(f"Failed to send student creation confirmation email: {email_error}")
+
             return Response({
                 "message": "Student created successfully!",
                 "student": {

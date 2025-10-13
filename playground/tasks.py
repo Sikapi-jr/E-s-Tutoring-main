@@ -1559,3 +1559,45 @@ EGS Tutoring Team
         logger.error(f"Error sending weekly tutor hour reminders: {str(e)}")
 
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_student_creation_confirmation_async(self, parent_email, parent_name, student_name):
+    """
+    Send confirmation email to parent when a new student child account is created
+    """
+    try:
+        subject = 'Student Account Created - EGS Tutoring'
+        message = f"""
+Hello {parent_name},
+
+Great news! A new student account has been successfully created for {student_name}.
+
+The student account is now active and ready to use.
+
+NEXT STEPS:
+To get started with tutoring, please visit the tutoring request page to submit your first request:
+{settings.FRONTEND_URL}/request
+
+You can also:
+• View your dashboard: {settings.FRONTEND_URL}/home
+• Manage your students: {settings.FRONTEND_URL}/students
+• Check current requests: {settings.FRONTEND_URL}/request-reply
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+Best regards,
+EGS Tutoring Team
+        """
+
+        send_mailgun_email(
+            to_emails=[parent_email],
+            subject=subject,
+            text_content=message
+        )
+
+        logger.info(f"Student creation confirmation sent to {parent_email} for student {student_name}")
+        return {'success': True, 'email': parent_email, 'student': student_name}
+
+    except Exception as e:
+        logger.error(f"Error sending student creation confirmation to {parent_email}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
