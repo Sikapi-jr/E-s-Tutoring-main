@@ -2069,6 +2069,77 @@ class StudentsListView(APIView):
         return Response(serializer.data)
 
 
+class StudentCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        # Only parents can create students
+        if request.user.roles != 'parent':
+            return Response({"error": "Only parents can create student accounts."}, status=403)
+
+        # Extract data from request
+        first_name = request.data.get('firstName', '').strip()
+        last_name = request.data.get('lastName', '').strip()
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
+        profile_picture = request.FILES.get('profile_picture', None)
+
+        # Validation
+        if not first_name or not last_name:
+            return Response({"error": "First name and last name are required."}, status=400)
+
+        if not username or len(username) < 3:
+            return Response({"error": "Username must be at least 3 characters."}, status=400)
+
+        if not password or len(password) < 6:
+            return Response({"error": "Password must be at least 6 characters."}, status=400)
+
+        # Check username uniqueness
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already exists. Please choose another."}, status=400)
+
+        try:
+            # Create student account with parent's information auto-filled
+            student = User.objects.create_user(
+                username=username,
+                password=password,
+                firstName=first_name,
+                lastName=last_name,
+                roles='student',
+                parent=request.user,
+                # Auto-fill from parent
+                address=request.user.address,
+                city=request.user.city,
+                phone_number=request.user.phone_number,
+                email='',  # Email is not unique, so leave blank for students
+                is_active=True,  # Students created by parents are immediately active
+            )
+
+            # Handle profile picture if provided
+            if profile_picture:
+                student.profile_picture = profile_picture
+                student.save()
+
+            # Set default rates for student (should be 0)
+            student.set_default_rates_by_role()
+            student.save()
+
+            return Response({
+                "message": "Student created successfully!",
+                "student": {
+                    "id": student.id,
+                    "username": student.username,
+                    "firstName": student.firstName,
+                    "lastName": student.lastName,
+                }
+            }, status=201)
+
+        except Exception as e:
+            logger.error(f"Error creating student: {e}")
+            return Response({"error": f"Failed to create student: {str(e)}"}, status=500)
+
+
 class TutorStudentsListView(APIView):
     permission_classes = [AllowAny]
 

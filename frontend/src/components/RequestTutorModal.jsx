@@ -114,7 +114,7 @@ function RequestTutorModal({ isOpen, onClose, onSuccess }) {
                                 className="register-student-button"
                                 onClick={() => {
                                     onClose();
-                                    navigate('/register');
+                                    navigate('/students');
                                 }}
                             >
                                 {t('requests.registerStudent', 'Register Student')}

@@ -1616,7 +1616,7 @@ export default function Home() {
                     );
                   })
                 ) : (
-                  <Link to="/register" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
+                  <Link to="/students" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
                     {t('home.noStudentsYet')} {t('home.registerStudentText')}
                   </Link>
                 )}

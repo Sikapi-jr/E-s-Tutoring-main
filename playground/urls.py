@@ -12,6 +12,7 @@ urlpatterns = [
     path('profile/<int:pk>/', change_settings_parent, name='change-settings-parent'),
     path('homeParent/', views.ParentHomeCreateView.as_view(), name='parent-home'),
     path('students/', views.StudentsListView.as_view(), name='students-list'),
+    path('students/create/', views.StudentCreateView.as_view(), name='student-create'),
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
     path('referral/create/', views.ReferralCreateView.as_view(), name='referral-create'),
     path('referral/list/', views.ReferralListView.as_view(), name='referral-list'),

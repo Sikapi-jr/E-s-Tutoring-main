@@ -49,6 +49,17 @@ const Students = () => {
   });
   const [profilePicture, setProfilePicture] = useState(null);
 
+  /* add student state */
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [addStudentForm, setAddStudentForm] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
+
   /* fetch students for parent or all students for admin */
   useEffect(() => {
     if (!user) return;
@@ -166,7 +177,7 @@ const Students = () => {
       const formData = new FormData();
       formData.append("firstName", editStudentForm.firstName.trim());
       formData.append("lastName", editStudentForm.lastName.trim());
-      
+
       if (profilePicture) {
         formData.append("profile_picture", profilePicture);
       }
@@ -200,6 +211,60 @@ const Students = () => {
     }
   };
 
+  /* handle add student functionality */
+  const handleAddStudent = async () => {
+    // Validation
+    if (!addStudentForm.firstName.trim() || !addStudentForm.lastName.trim()) {
+      alert(t('students.pleaseProvideNames') || 'Please provide first and last name.');
+      return;
+    }
+
+    if (!addStudentForm.username.trim() || addStudentForm.username.length < 3) {
+      alert(t('students.usernameRequired') || 'Username must be at least 3 characters.');
+      return;
+    }
+
+    if (!addStudentForm.password.trim() || addStudentForm.password.length < 6) {
+      alert(t('students.passwordMinLength') || 'Password must be at least 6 characters.');
+      return;
+    }
+
+    if (addStudentForm.password !== addStudentForm.confirmPassword) {
+      alert(t('students.passwordsMustMatch') || 'Passwords do not match.');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("firstName", addStudentForm.firstName.trim());
+      formData.append("lastName", addStudentForm.lastName.trim());
+      formData.append("username", addStudentForm.username.trim());
+      formData.append("password", addStudentForm.password);
+
+      if (addStudentProfilePicture) {
+        formData.append("profile_picture", addStudentProfilePicture);
+      }
+
+      const response = await api.post(`/api/students/create/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Refresh students list
+      window.location.reload();
+
+      alert(t('students.studentAddedSuccessfully') || 'Student added successfully!');
+
+    } catch (error) {
+      console.error("Error adding student:", error);
+      const errorMessage = error.response?.data?.error ||
+                           error.response?.data?.message ||
+                           t('errors.studentAddFailed') || 'Failed to add student. Please try again.';
+      alert(errorMessage);
+    }
+  };
+
   if (loading) {
     return (
       <div className="students-wrapper">
@@ -214,17 +279,54 @@ const Students = () => {
   return (
     <div className="students-wrapper">
       <div className="students-card">
-        <h1>{user.is_superuser ? t('students.adminTitle') : t('students.title')}</h1>
-        <p className="students-subtitle">{user.is_superuser ? t('students.adminSubtitle') : t('students.subtitle')}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div>
+            <h1 style={{ margin: 0 }}>{user.is_superuser ? t('students.adminTitle') : t('students.title')}</h1>
+            <p className="students-subtitle" style={{ margin: "0.5rem 0 0 0" }}>
+              {user.is_superuser ? t('students.adminSubtitle') : t('students.subtitle')}
+            </p>
+          </div>
+          {user.roles === "parent" && students.length > 0 && (
+            <button
+              onClick={() => setShowAddStudentModal(true)}
+              style={{
+                backgroundColor: "#192A88",
+                color: "white",
+                border: "none",
+                padding: "0.75rem 1.5rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+                fontWeight: "500",
+                whiteSpace: "nowrap"
+              }}
+            >
+              + {t('students.addStudent')}
+            </button>
+          )}
+        </div>
 
         {error && <p className="error-message">{error}</p>}
 
         {students.length === 0 ? (
           <div className="no-students">
             <p>{t('students.noStudents')}</p>
-            <a href="/register" className="register-link">
-              {t('students.registerStudent')}
-            </a>
+            <button
+              onClick={() => setShowAddStudentModal(true)}
+              className="register-link"
+              style={{
+                backgroundColor: "#192A88",
+                color: "white",
+                border: "none",
+                padding: "0.75rem 1.5rem",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "1rem",
+                fontWeight: "500"
+              }}
+            >
+              {t('students.addStudent')}
+            </button>
           </div>
         ) : (
           <div className="students-grid">
@@ -362,7 +464,7 @@ const Students = () => {
           <div className="modal-backdrop" onClick={() => setShowEditStudentModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>{t('students.editStudentInfo')} {selectedStudentForEdit?.student_firstName}</h2>
-              
+
               <div className="edit-form">
                 <div className="form-group">
                   <label>{t('common.firstName')}</label>
@@ -372,7 +474,7 @@ const Students = () => {
                     onChange={(e) => setEditStudentForm({...editStudentForm, firstName: e.target.value})}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>{t('common.lastName')}</label>
                   <input
@@ -381,9 +483,9 @@ const Students = () => {
                     onChange={(e) => setEditStudentForm({...editStudentForm, lastName: e.target.value})}
                   />
                 </div>
-                
-                
-                
+
+
+
                 <div className="form-group">
                   <label>{t('students.profilePicture')}</label>
                   <input
@@ -393,7 +495,7 @@ const Students = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="modal-actions">
                 <button
                   className="close-modal-btn"
@@ -406,6 +508,131 @@ const Students = () => {
                   onClick={handleSaveStudentEdit}
                 >
                   {t('common.save')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Student Modal */}
+        {showAddStudentModal && (
+          <div className="modal-backdrop" onClick={() => setShowAddStudentModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>{t('students.addNewStudent')}</h2>
+              <p style={{ color: "#666", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+                {t('students.addStudentDescription')}
+              </p>
+
+              <div className="edit-form">
+                <div className="form-group">
+                  <label>{t('common.firstName')} *</label>
+                  <input
+                    type="text"
+                    value={addStudentForm.firstName}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, firstName: e.target.value})}
+                    placeholder={t('students.enterFirstName')}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('common.lastName')} *</label>
+                  <input
+                    type="text"
+                    value={addStudentForm.lastName}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, lastName: e.target.value})}
+                    placeholder={t('students.enterLastName')}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('common.username')} *</label>
+                  <input
+                    type="text"
+                    value={addStudentForm.username}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, username: e.target.value})}
+                    placeholder={t('students.enterUsername')}
+                    required
+                  />
+                  <small style={{ color: "#666", fontSize: "0.8rem" }}>
+                    {t('students.usernameHelp')}
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>{t('common.password')} *</label>
+                  <input
+                    type="password"
+                    value={addStudentForm.password}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, password: e.target.value})}
+                    placeholder={t('students.enterPassword')}
+                    required
+                  />
+                  <small style={{ color: "#666", fontSize: "0.8rem" }}>
+                    {t('students.passwordHelp')}
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>{t('students.confirmPassword')} *</label>
+                  <input
+                    type="password"
+                    value={addStudentForm.confirmPassword}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, confirmPassword: e.target.value})}
+                    placeholder={t('students.confirmPasswordPlaceholder')}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t('students.profilePicture')} ({t('common.optional')})</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setAddStudentProfilePicture(e.target.files[0])}
+                  />
+                </div>
+
+                <div style={{
+                  backgroundColor: "#f0f4ff",
+                  padding: "1rem",
+                  borderRadius: "6px",
+                  marginTop: "1rem",
+                  border: "1px solid #192A88"
+                }}>
+                  <p style={{ margin: 0, fontSize: "0.85rem", color: "#192A88" }}>
+                    <strong>{t('students.autoFillNotice')}</strong><br/>
+                    {t('students.autoFillDescription')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  className="close-modal-btn"
+                  onClick={() => {
+                    setShowAddStudentModal(false);
+                    setAddStudentForm({
+                      firstName: "",
+                      lastName: "",
+                      username: "",
+                      password: "",
+                      confirmPassword: ""
+                    });
+                    setAddStudentProfilePicture(null);
+                  }}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  className="save-student-btn"
+                  onClick={handleAddStudent}
+                  style={{
+                    backgroundColor: "#28a745"
+                  }}
+                >
+                  {t('students.addStudent')}
                 </button>
               </div>
             </div>

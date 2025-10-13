@@ -84,10 +84,10 @@
                 {students.length === 0 && (
                     <div className="no-students-message">
                         <p>{t('requests.noStudentsMessage', 'You dont have any students registered, Register a student now?')}</p>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className="register-student-button"
-                            onClick={() => navigate('/register')}
+                            onClick={() => navigate('/students')}
                         >
                             {t('requests.registerStudent', 'Register Student')}
                         </button>
