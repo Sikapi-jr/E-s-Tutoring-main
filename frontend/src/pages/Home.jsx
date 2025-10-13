@@ -2240,14 +2240,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* Onboarding Tour */}
-      <HomeTour
-        userRole={user?.roles}
-        manualStart={showTourManually}
-        onManualStartComplete={() => setShowTourManually(false)}
-      />
+      {/* Onboarding Tour - Hidden on mobile */}
+      <div className="tour-container">
+        <HomeTour
+          userRole={user?.roles}
+          manualStart={showTourManually}
+          onManualStartComplete={() => setShowTourManually(false)}
+        />
+      </div>
 
-      {/* Help Button - Manual Tour Restart */}
+      {/* Help Button - Manual Tour Restart - Hidden on mobile */}
       <button
         onClick={() => setShowTourManually(true)}
         className="tour-help-button"
@@ -2283,8 +2285,10 @@ export default function Home() {
       <style jsx>{`
         @media (max-width: 768px) {
           .tour-help-button {
-            left: 1rem !important;
-            bottom: 1rem !important;
+            display: none !important;
+          }
+          .tour-container {
+            display: none !important;
           }
         }
       `}</style>
