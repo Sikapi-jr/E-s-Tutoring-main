@@ -108,6 +108,8 @@
     "dashboard": "Dashboard",
     "request": "Request a Tutor",
     "replies": "Current Requests",
+    "tutoringRequests": "Tutoring Requests",
+    "complaints": "Student Complaints",
     "logHours": "Log Hours",
     "loggedHours": "Logged Hours",
     "weeklyHours": "Weekly Hours",

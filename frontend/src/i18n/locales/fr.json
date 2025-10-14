@@ -99,13 +99,17 @@
     "loadingPage": "Chargement de la page...",
     "loadingEllipsis": "Chargement…",
     "ctrlEnterTip": "Astuce : Appuyez sur Ctrl+Entrée pour soumettre rapidement",
-    "sending": "Envoi en cours..."
+    "sending": "Envoi en cours...",
+    "username": "Nom d'utilisateur",
+    "optional": "Optionnel"
   },
   "navigation": {
     "home": "Accueil",
     "dashboard": "Tableau de bord",
     "request": "Demander un tuteur",
     "replies": "Demandes actuelles",
+    "tutoringRequests": "Demandes de Tutorat",
+    "complaints": "Plaintes d'Étudiants",
     "logHours": "Enregistrer les heures",
     "loggedHours": "Heures enregistrées",
     "weeklyHours": "Heures hebdomadaires",
