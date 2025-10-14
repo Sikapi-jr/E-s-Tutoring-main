@@ -279,8 +279,8 @@ const Students = () => {
   return (
     <div className="students-wrapper">
       <div className="students-card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div>
+        <div className="students-header-container">
+          <div className="students-header-text">
             <h1 style={{ margin: 0 }}>{user.is_superuser ? t('students.adminTitle') : t('students.title')}</h1>
             <p className="students-subtitle" style={{ margin: "0.5rem 0 0 0" }}>
               {user.is_superuser ? t('students.adminSubtitle') : t('students.subtitle')}
@@ -289,6 +289,7 @@ const Students = () => {
           {user.roles === "parent" && students.length > 0 && (
             <button
               onClick={() => setShowAddStudentModal(true)}
+              className="add-student-header-btn"
               style={{
                 backgroundColor: "#192A88",
                 color: "white",
@@ -608,9 +609,9 @@ const Students = () => {
                 </div>
               </div>
 
-              <div className="modal-actions">
+              <div className="modal-actions" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button
-                  className="close-modal-btn"
+                  className="cancel"
                   onClick={() => {
                     setShowAddStudentModal(false);
                     setAddStudentForm({
@@ -622,14 +623,33 @@ const Students = () => {
                     });
                     setAddStudentProfilePicture(null);
                   }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    minWidth: '150px'
+                  }}
                 >
                   {t('common.cancel')}
                 </button>
                 <button
-                  className="save-student-btn"
+                  className="save"
                   onClick={handleAddStudent}
                   style={{
-                    backgroundColor: "#28a745"
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#192A88',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    minWidth: '150px'
                   }}
                 >
                   {t('students.addStudent')}
