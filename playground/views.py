@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -2284,14 +2284,36 @@ class PersonalRequestListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        parent_id = request.query_params.get('id', None)
+        # Accept both 'id' and 'parent' parameter names for compatibility
+        parent_id = request.query_params.get('id', None) or request.query_params.get('parent', None)
         if not parent_id:
-            return Response({"error": "Missing 'parent_id' query parameter."}, status=400)
+            return Response({"error": "Missing 'parent_id' or 'parent' query parameter."}, status=400)
 
+        # Get all requests for this parent
         request_qs = TutoringRequest.objects.filter(
             parent=parent_id
         ).order_by('-created_at')
-        serializer = RequestSerializer(request_qs, many=True)
+
+        # Filter out tutor-specific requests that are still pending
+        # (waiting for tutor to accept/decline via email)
+        # Only show if: no referral_request OR referral_request status is 'declined' or 'accepted'
+        filtered_requests = []
+        for tutoring_request in request_qs:
+            # Check if this request has a related tutor referral request
+            referral_request = TutorReferralRequest.objects.filter(
+                tutoring_request=tutoring_request
+            ).first()
+
+            if referral_request is None:
+                # Regular request (not tutor-specific) - always show
+                filtered_requests.append(tutoring_request)
+            elif referral_request.status != 'pending':
+                # Tutor-specific request where tutor has responded - show it
+                # (Either 'declined' so parent can see rejection, or 'accepted' meaning it's linked)
+                filtered_requests.append(tutoring_request)
+            # If status is 'pending', don't add to filtered_requests (hide from parent)
+
+        serializer = RequestSerializer(filtered_requests, many=True)
         return Response(serializer.data)
     
     def delete(self, request):

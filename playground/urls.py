@@ -24,6 +24,7 @@ urlpatterns = [
     path("requests/ViewReply/", views.ReplyListView.as_view(), name="request-ViewReply"),
     path("requests/AcceptReply/", views.AcceptReplyCreateView.as_view(), name="request-AcceptReply"),
     path("requests/PersonalList/", views.PersonalRequestListView.as_view(), name="request-PersonalList"),
+    path("parentRequests/", views.PersonalRequestListView.as_view(), name="parent-requests"),  # Alias for frontend
     path("requests/TutorChange/", views.ChangeTutor.as_view(), name="changeTutor"),
     path("log/", views.LogHoursCreateView.as_view(), name="logHours"),
     path("verifyEmail/", views.VerifyEmailView.as_view(), name="verifyEmail"),
