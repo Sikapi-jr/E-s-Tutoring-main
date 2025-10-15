@@ -624,6 +624,18 @@
     "imageOptional": "Image (optionnel)",
     "audienceSelectOneOrMore": "Audience (sélectionner un ou plusieurs)"
   },
+  "popups": {
+    "createPopup": "Créer une Fenêtre Contextuelle",
+    "title": "Titre",
+    "content": "Contenu",
+    "linkOptional": "Lien (Optionnel)",
+    "linkText": "Texte du Bouton Lien",
+    "linkTextPlaceholder": "En Savoir Plus",
+    "imageOptional": "Image (Optionnel)",
+    "isActive": "Actif (afficher immédiatement)",
+    "expiresAt": "Date d'Expiration (Optionnel)",
+    "learnMore": "En Savoir Plus"
+  },
   "chat": {
     "title": "Discussion",
     "startNewChat": "Nouvelle discussion",
@@ -1054,6 +1066,8 @@
     "hoursReminderFailed": "Échec de l'envoi du rappel d'heures. Veuillez réessayer.",
     "announcementCreatedSuccess": "Annonce créée avec succès !",
     "announcementCreatedFailed": "Échec de la création de l'annonce.",
+    "popupCreatedSuccess": "Fenêtre contextuelle créée avec succès !",
+    "popupCreatedFailed": "Échec de la création de la fenêtre contextuelle.",
     "adminResponsePlaceholder": "Réponse de l'administrateur...",
     "disputeResponsePlaceholder": "Entrez votre réponse à ce différend...",
     "loadingComplaints": "Chargement des plaintes...",

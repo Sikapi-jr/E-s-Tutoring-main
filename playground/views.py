@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -32,7 +32,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer
+from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
 from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer, HourDisputeSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
@@ -1601,6 +1601,115 @@ class AnnouncementListView(APIView):
 
         serializer = AnnouncementSerializer(visible_announcements, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PopupCreateView(APIView):
+    """Admin-only view to create popups"""
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        # Check if user is admin
+        if not request.user.is_superuser:
+            return Response(
+                {"error": "Only administrators can create popups."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = PopupSerializer(data=request.data)
+        if serializer.is_valid():
+            # Deactivate all existing active popups before creating the new one
+            # This ensures only one popup is active at a time
+            Popup.objects.filter(is_active=True).update(is_active=False)
+
+            popup = serializer.save()
+
+            # Copy popup image to frontend public directory
+            if popup.image:
+                try:
+                    # Get the full file path
+                    file_path = popup.image.path
+                    # Extract filename
+                    filename = os.path.basename(file_path)
+                    # Copy to frontend public directory
+                    copy_to_frontend_public(file_path, f"popups/{filename}")
+                except Exception as e:
+                    print(f"Failed to copy popup image to frontend: {e}")
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PopupListView(APIView):
+    """Get active popups for a user that they haven't dismissed"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_role = user.roles
+
+        # Get all active popups
+        active_popups = Popup.objects.filter(is_active=True).order_by('-created_at')
+
+        # Filter by expiration date
+        now = timezone.now()
+        active_popups = active_popups.filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+        )
+
+        # Filter by user role
+        visible_popups = []
+        for popup in active_popups:
+            if popup.is_visible_to_role(user_role):
+                # Check if user has dismissed this popup
+                has_dismissed = PopupDismissal.objects.filter(
+                    popup=popup,
+                    user=user
+                ).exists()
+
+                if not has_dismissed:
+                    visible_popups.append(popup)
+
+        serializer = PopupSerializer(visible_popups, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PopupDismissView(APIView):
+    """Mark a popup as dismissed for the current user"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        popup_id = request.data.get('popup_id')
+
+        if not popup_id:
+            return Response(
+                {"error": "popup_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            popup = Popup.objects.get(id=popup_id)
+        except Popup.DoesNotExist:
+            return Response(
+                {"error": "Popup not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Create dismissal record (unique constraint prevents duplicates)
+        dismissal, created = PopupDismissal.objects.get_or_create(
+            popup=popup,
+            user=request.user
+        )
+
+        if created:
+            serializer = PopupDismissalSerializer(dismissal)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {"message": "Popup already dismissed"},
+                status=status.HTTP_200_OK
+            )
+
 
 class ReferralCreateView(APIView):
     permission_classes = [AllowAny]

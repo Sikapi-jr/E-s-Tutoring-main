@@ -28,6 +28,7 @@ const Students = lazy(() => import("./pages/Students"));
 const MyStudents = lazy(() => import("./pages/MyStudents"));
 const Profile = lazy(() => import("./components/Profile"));
 const Announcement = lazy(() => import("./pages/CreateAnnouncement"));
+const CreatePopup = lazy(() => import("./pages/CreatePopup"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SendWeekly = lazy(() => import("./pages/SendWeekly"));
 const SendMonthly = lazy(() => import("./pages/SendMonthly"));
@@ -136,6 +137,7 @@ function AppRoutes() {
             {/* <Route path="/request" element={<ProtectedRoute><Request /></ProtectedRoute>} /> */}
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/create-announcement" element={<ProtectedRoute><Announcement /></ProtectedRoute>} />
+            <Route path="/create-popup" element={<ProtectedRoute><CreatePopup /></ProtectedRoute>} />
             <Route path="/request-reply" element={<ProtectedRoute><ViewReply /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
             <Route path="/my-students" element={<ProtectedRoute><MyStudents /></ProtectedRoute>} />

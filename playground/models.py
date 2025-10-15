@@ -1017,3 +1017,67 @@ class TutorReferralRequest(models.Model):
     def __str__(self):
         return f"Referral request for {self.tutor.firstName} {self.tutor.lastName} - {self.student.firstName} {self.student.lastName} ({self.status})"
 
+
+class Popup(models.Model):
+    """
+    Admin-created popups that display on homepage once per user
+    """
+    title = models.CharField(max_length=255, help_text="Popup title")
+    content = models.TextField(help_text="Popup content/message")
+
+    # Optional fields similar to announcements
+    image = models.ImageField(upload_to='popups/', blank=True, null=True, help_text="Optional popup image")
+    link = models.URLField(blank=True, help_text="Optional link/call-to-action URL")
+    link_text = models.CharField(max_length=100, blank=True, help_text="Text for the link button")
+
+    # Audience targeting
+    audience_choices = [
+        ('all', 'Everyone'),
+        ('parent', 'Parents'),
+        ('student', 'Students'),
+        ('tutor', 'Tutors'),
+    ]
+    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,student" or "all"')
+
+    # Activation/Deactivation
+    is_active = models.BooleanField(default=True, help_text="Whether popup is currently active")
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(blank=True, null=True, help_text="Optional expiration date")
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} (Active: {self.is_active})"
+
+    def is_visible_to_role(self, user_role):
+        """Check if popup should be visible to a specific user role"""
+        if self.audience == 'all':
+            return True
+
+        # Parse comma-separated roles
+        target_roles = [role.strip() for role in self.audience.split(',')]
+        return user_role in target_roles
+
+
+class PopupDismissal(models.Model):
+    """
+    Track which users have dismissed which popups
+    """
+    popup = models.ForeignKey(Popup, on_delete=models.CASCADE, related_name='dismissals')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='popup_dismissals'
+    )
+    dismissed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('popup', 'user')  # Each user can only dismiss a popup once
+        ordering = ['-dismissed_at']
+
+    def __str__(self):
+        return f"{self.user.username} dismissed '{self.popup.title}'"
+

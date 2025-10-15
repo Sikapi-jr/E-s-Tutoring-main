@@ -613,7 +613,7 @@
     "content": "Content",
     "audience": "Audience",
     "parents": "Parents",
-    "tutors": "Tutors", 
+    "tutors": "Tutors",
     "students": "Students",
     "publish": "Publish",
     "draft": "Draft",
@@ -631,6 +631,18 @@
     "linkOptional": "Link (optional)",
     "imageOptional": "Image (optional)",
     "audienceSelectOneOrMore": "Audience (select one or more)"
+  },
+  "popups": {
+    "createPopup": "Create Popup",
+    "title": "Title",
+    "content": "Content",
+    "linkOptional": "Link (Optional)",
+    "linkText": "Link Button Text",
+    "linkTextPlaceholder": "Learn More",
+    "imageOptional": "Image (Optional)",
+    "isActive": "Active (show immediately)",
+    "expiresAt": "Expiration Date (Optional)",
+    "learnMore": "Learn More"
   },
   "chat": {
     "title": "Chat",
@@ -1073,6 +1085,8 @@
     "hoursReminderFailed": "Failed to send hours reminder. Please try again.",
     "announcementCreatedSuccess": "Announcement created successfully!",
     "announcementCreatedFailed": "Failed to create announcement.",
+    "popupCreatedSuccess": "Popup created successfully!",
+    "popupCreatedFailed": "Failed to create popup.",
     "adminResponsePlaceholder": "Admin response...",
     "disputeResponsePlaceholder": "Enter your response to this dispute...",
     "loadingComplaints": "Loading complaints...",

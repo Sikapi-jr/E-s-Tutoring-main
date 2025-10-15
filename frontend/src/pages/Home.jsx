@@ -15,6 +15,7 @@ import ResendVerificationTool from "../components/ResendVerificationTool";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
 import HomeTour from "../components/HomeTour";
+import HomePopup from "../components/HomePopup";
 
 /* helper for invoice colours */
 const getInvoiceAgeColor = (ts) => {
@@ -803,6 +804,9 @@ export default function Home() {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }} data-role={user?.roles}>
+      {/* Home Popup - shows once per user */}
+      <HomePopup />
+
       {/* greeting overlays; positioned lower */}
       <h1
         style={{

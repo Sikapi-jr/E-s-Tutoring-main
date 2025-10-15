@@ -52,6 +52,12 @@ urlpatterns = [
     path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),
     path('announcements/create/', views.AnnouncementCreateView.as_view(), name='create-announcement'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
+
+    # Popup endpoints
+    path('popups/create/', views.PopupCreateView.as_view(), name='create-popup'),
+    path('popups/', views.PopupListView.as_view(), name='popup-list'),
+    path('popups/dismiss/', views.PopupDismissView.as_view(), name='popup-dismiss'),
+
     path('google/oauth/init', views.GoogleOAuthInitView.as_view()),
     path('google/oauth2callback', views.GoogleOAuthCallbackView.as_view()),
     path('errorTicket/', views.ErrorView.as_view()),
