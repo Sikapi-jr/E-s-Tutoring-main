@@ -2244,19 +2244,21 @@ export default function Home() {
         </div>
       )}
 
-      {/* Onboarding Tour - Hidden on mobile */}
-      <div className="tour-container">
-        <HomeTour
-          userRole={user?.roles}
-          manualStart={showTourManually}
-          onManualStartComplete={() => setShowTourManually(false)}
-        />
-      </div>
+      {/* Onboarding Tour - Hidden on mobile and disabled for tutors */}
+      {user?.roles !== 'tutor' && (
+        <>
+          <div className="tour-container">
+            <HomeTour
+              userRole={user?.roles}
+              manualStart={showTourManually}
+              onManualStartComplete={() => setShowTourManually(false)}
+            />
+          </div>
 
-      {/* Help Button - Manual Tour Restart - Hidden on mobile */}
-      <button
-        onClick={() => setShowTourManually(true)}
-        className="tour-help-button"
+          {/* Help Button - Manual Tour Restart - Hidden on mobile */}
+          <button
+            onClick={() => setShowTourManually(true)}
+            className="tour-help-button"
         style={{
           position: 'fixed',
           bottom: '2rem',
@@ -2283,9 +2285,11 @@ export default function Home() {
           e.target.style.boxShadow = '0 4px 12px rgba(25, 42, 136, 0.3)';
         }}
         title="Restart Tour"
-      >
-        ?
-      </button>
+          >
+            ?
+          </button>
+        </>
+      )}
       <style jsx>{`
         @media (max-width: 768px) {
           .tour-help-button {
