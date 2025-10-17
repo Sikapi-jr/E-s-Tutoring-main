@@ -4541,7 +4541,7 @@ class AdminUserHoursView(APIView):
                     'id': at.student.id,
                     'name': f"{at.student.firstName} {at.student.lastName}",
                     'email': at.student.email,
-                    'accepted_at': at.created_at
+                    'accepted_at': at.accepted_at
                 }
                 for at in accepted_tutors
             ]
@@ -4554,7 +4554,7 @@ class AdminUserHoursView(APIView):
                     'id': at.tutor.id,
                     'name': f"{at.tutor.firstName} {at.tutor.lastName}",
                     'email': at.tutor.email,
-                    'accepted_at': at.created_at
+                    'accepted_at': at.accepted_at
                 }
                 for at in accepted_tutors
             ]
@@ -4699,10 +4699,10 @@ class AdminUserHoursView(APIView):
                         'service': request.service,
                         'city': request.city,
                         'status': 'Accepted',
-                        'accepted_status': accepted.accepted_status,
+                        'accepted_status': accepted.status,
                         'reply_count': reply_count,
                         'created_at': request.created_at,
-                        'accepted_at': accepted.created_at,
+                        'accepted_at': accepted.accepted_at,
                         'description': request.description
                     })
 
