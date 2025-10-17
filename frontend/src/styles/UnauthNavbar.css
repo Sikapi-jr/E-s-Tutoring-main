@@ -170,7 +170,7 @@ html, body {
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    width: 200px;                /* centered with fixed width */
+    width: 280px;                /* increased width for 3 elements */
     background-color: #292929;
     flex-direction: row;         /* side by side layout */
     justify-content: center;     /* center the buttons */
