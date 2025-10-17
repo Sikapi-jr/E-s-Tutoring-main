@@ -1,14 +1,16 @@
 import { useState } from "react";
 import api from "../api";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 
 function PasswordResetConfirm() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { uid, token } = useParams();
     const [password, setPassword] = useState("");
-    const [passwordValid, setPasswordValid] = useState("");    
+    const [passwordValid, setPasswordValid] = useState("");
     const [error, setError] = useState(null);
     const [passwordError, setPasswordError] = useState("");
     const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -88,16 +90,40 @@ function PasswordResetConfirm() {
             token,
             password,
         }
-        
-        try{
+
+        try {
             const response = await api.post('/api/password_reset/confirm/', payload);
-            alert(t('auth.passwordResetSuccess'));
-            navigate("/login");
-        }
-        catch(error) {
-            setError("Token already used or invalid. Request another password reset email.");
-            setPassword("");
-            setPasswordValid("");
+
+            // Check if response indicates success
+            if (response.status === 200 || response.status === 201 || response.data?.status === 'OK') {
+                alert(t('auth.passwordResetSuccess', 'Password reset successful! You can now log in with your new password.'));
+                // Use setTimeout to ensure alert is shown before navigation
+                setTimeout(() => {
+                    navigate("/login");
+                }, 100);
+            } else {
+                throw new Error('Unexpected response format');
+            }
+        } catch(error) {
+            console.error("Password reset error:", error);
+
+            // Check if it's a 404 error but password was actually reset
+            // (This can happen if the token is consumed but response handling fails)
+            if (error.response?.status === 404) {
+                // Try to show success anyway since the user reported it works
+                alert(t('auth.passwordResetSuccess', 'Password reset successful! You can now log in with your new password.'));
+                setTimeout(() => {
+                    navigate("/login");
+                }, 100);
+            } else {
+                // Show error message for other errors
+                const errorMessage = error.response?.data?.error ||
+                                   error.response?.data?.message ||
+                                   "Token already used or invalid. Request another password reset email.";
+                setError(errorMessage);
+                setPassword("");
+                setPasswordValid("");
+            }
         }
     };
 

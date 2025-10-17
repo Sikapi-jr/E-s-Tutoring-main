@@ -70,35 +70,37 @@ def create_mapulus_pin_on_signup(sender, instance, created, **kwargs):
     """
     Automatically create a pin on Mapulus map when a new user signs up
     """
-    if created and instance.address and instance.city and instance.firstName and instance.lastName:
-        try:
-            from playground.mapulus_service import mapulus_service
-            
-            # Prepare user data for pin creation
-            user_data = {
-                'id': instance.id,
-                'firstName': instance.firstName,
-                'lastName': instance.lastName,
-                'address': instance.address,
-                'city': instance.city,
-                'roles': instance.roles,
-            }
-            
-            # Create the pin asynchronously to avoid blocking user registration
-            try:
-                from playground.tasks import create_mapulus_pin_async
-                create_mapulus_pin_async.delay(user_data)
-                logger.info(f"Queued Mapulus pin creation for user {instance.id} - {instance.firstName} {instance.lastName}")
-            except ImportError:
-                # Fallback: create pin synchronously if Celery is not available
-                success = mapulus_service.create_pin(user_data)
-                if success:
-                    logger.info(f"Created Mapulus pin for user {instance.id} - {instance.firstName} {instance.lastName}")
-                else:
-                    logger.error(f"Failed to create Mapulus pin for user {instance.id}")
-                    
-        except Exception as e:
-            logger.error(f"Error creating Mapulus pin for user {instance.id}: {e}")
+    # TODO: Re-enable when mapulus_service.py is available
+    pass
+    # if created and instance.address and instance.city and instance.firstName and instance.lastName:
+    #     try:
+    #         from playground.mapulus_service import mapulus_service
+    #
+    #         # Prepare user data for pin creation
+    #         user_data = {
+    #             'id': instance.id,
+    #             'firstName': instance.firstName,
+    #             'lastName': instance.lastName,
+    #             'address': instance.address,
+    #             'city': instance.city,
+    #             'roles': instance.roles,
+    #         }
+    #
+    #         # Create the pin asynchronously to avoid blocking user registration
+    #         try:
+    #             from playground.tasks import create_mapulus_pin_async
+    #             create_mapulus_pin_async.delay(user_data)
+    #             logger.info(f"Queued Mapulus pin creation for user {instance.id} - {instance.firstName} {instance.lastName}")
+    #         except ImportError:
+    #             # Fallback: create pin synchronously if Celery is not available
+    #             success = mapulus_service.create_pin(user_data)
+    #             if success:
+    #                 logger.info(f"Created Mapulus pin for user {instance.id} - {instance.firstName} {instance.lastName}")
+    #             else:
+    #                 logger.error(f"Failed to create Mapulus pin for user {instance.id}")
+    #
+    #     except Exception as e:
+    #         logger.error(f"Error creating Mapulus pin for user {instance.id}: {e}")
 
 
 @receiver(post_save, sender=User)
@@ -106,32 +108,34 @@ def update_mapulus_pin_on_change(sender, instance, created, **kwargs):
     """
     Update Mapulus pin when user profile is updated (not on creation)
     """
-    if not created and instance.address and instance.city and instance.firstName and instance.lastName:
-        try:
-            from playground.mapulus_service import mapulus_service
-            
-            # Prepare updated user data
-            user_data = {
-                'id': instance.id,
-                'firstName': instance.firstName,
-                'lastName': instance.lastName,
-                'address': instance.address,
-                'city': instance.city,
-                'roles': instance.roles,
-            }
-            
-            # Update the pin asynchronously
-            try:
-                from playground.tasks import update_mapulus_pin_async
-                update_mapulus_pin_async.delay(user_data)
-                logger.info(f"Queued Mapulus pin update for user {instance.id} - {instance.firstName} {instance.lastName}")
-            except ImportError:
-                # Fallback: update pin synchronously
-                success = mapulus_service.update_pin(user_data)
-                if success:
-                    logger.info(f"Updated Mapulus pin for user {instance.id} - {instance.firstName} {instance.lastName}")
-                else:
-                    logger.warning(f"Failed to update Mapulus pin for user {instance.id}")
-                    
-        except Exception as e:
-            logger.error(f"Error updating Mapulus pin for user {instance.id}: {e}")
+    # TODO: Re-enable when mapulus_service.py is available
+    pass
+    # if not created and instance.address and instance.city and instance.firstName and instance.lastName:
+    #     try:
+    #         from playground.mapulus_service import mapulus_service
+    #
+    #         # Prepare updated user data
+    #         user_data = {
+    #             'id': instance.id,
+    #             'firstName': instance.firstName,
+    #             'lastName': instance.lastName,
+    #             'address': instance.address,
+    #             'city': instance.city,
+    #             'roles': instance.roles,
+    #         }
+    #
+    #         # Update the pin asynchronously
+    #         try:
+    #             from playground.tasks import update_mapulus_pin_async
+    #             update_mapulus_pin_async.delay(user_data)
+    #             logger.info(f"Queued Mapulus pin update for user {instance.id} - {instance.firstName} {instance.lastName}")
+    #         except ImportError:
+    #             # Fallback: update pin synchronously
+    #             success = mapulus_service.update_pin(user_data)
+    #             if success:
+    #                 logger.info(f"Updated Mapulus pin for user {instance.id} - {instance.firstName} {instance.lastName}")
+    #             else:
+    #                 logger.warning(f"Failed to update Mapulus pin for user {instance.id}")
+    #
+    #     except Exception as e:
+    #         logger.error(f"Error updating Mapulus pin for user {instance.id}: {e}")
