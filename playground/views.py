@@ -4479,7 +4479,13 @@ class AdminUserHoursView(APIView):
             'city': user.city,
             'created_at': user.date_joined,
             'is_active': user.is_active,
-            'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None
+            'is_superuser': user.is_superuser,
+            'last_login': user.last_login,
+            'profile_picture': user.profile_picture.url if user.profile_picture else None,
+            'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None,
+            'tutor_referral_code': user.tutor_referral_code if user.roles == 'tutor' else None,
+            'parent_id': user.parent.id if user.parent else None,
+            'parent_name': f"{user.parent.firstName} {user.parent.lastName}" if user.parent else None,
         }
 
         # Add Google Calendar status for non-students
@@ -4583,41 +4589,64 @@ class AdminUserHoursView(APIView):
 
         # Get current tutoring requests based on role
         current_requests = []
+        seen_request_ids = set()  # Track all request IDs to avoid duplicates
 
-        # For parents: get their tutoring requests
+        # For parents: get their tutoring requests + referral requests
         if user.roles == 'parent':
+            # Regular tutoring requests
             parent_requests = TutoringRequest.objects.filter(parent=user).order_by('-created_at')
             for request in parent_requests:
-                # Count replies for this request
-                reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
-
-                current_requests.append({
-                    'id': request.id,
-                    'student_name': f"{request.student.firstName} {request.student.lastName}",
-                    'subject': request.subject,
-                    'grade': request.grade,
-                    'service': request.service,
-                    'city': request.city,
-                    'status': request.is_accepted,
-                    'reply_count': reply_count,
-                    'created_at': request.created_at,
-                    'description': request.description
-                })
-
-        # For tutors: get requests they've responded to or can respond to
-        elif user.roles == 'tutor':
-            # Get requests the tutor has responded to
-            tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
-            responded_request_ids = set()
-
-            for response in tutor_responses:
-                if response.request.id not in responded_request_ids:
-                    responded_request_ids.add(response.request.id)
-                    request = response.request
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
+                    # Count replies for this request
                     reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
 
                     current_requests.append({
                         'id': request.id,
+                        'type': 'regular',
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': request.is_accepted,
+                        'reply_count': reply_count,
+                        'created_at': request.created_at,
+                        'description': request.description
+                    })
+
+            # Referral requests sent by this parent
+            referral_requests = TutorReferralRequest.objects.filter(parent=user).select_related('tutor', 'student', 'tutoring_request').order_by('-created_at')
+            for ref_req in referral_requests:
+                current_requests.append({
+                    'id': f"ref-{ref_req.id}",
+                    'type': 'referral',
+                    'student_name': f"{ref_req.student.firstName} {ref_req.student.lastName}",
+                    'tutor_name': f"{ref_req.tutor.firstName} {ref_req.tutor.lastName}",
+                    'subject': ref_req.subject,
+                    'grade': ref_req.grade,
+                    'service': ref_req.service,
+                    'city': ref_req.city,
+                    'status': ref_req.status,
+                    'referral_code': ref_req.referral_code_used,
+                    'created_at': ref_req.created_at,
+                    'responded_at': ref_req.responded_at,
+                    'description': ref_req.description
+                })
+
+        # For tutors: get requests they've responded to, referral requests, and accepted requests
+        elif user.roles == 'tutor':
+            # 1. Get requests the tutor has responded to
+            tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
+            for response in tutor_responses:
+                request = response.request
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
+                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    current_requests.append({
+                        'id': request.id,
+                        'type': 'response',
                         'student_name': f"{request.student.firstName} {request.student.lastName}",
                         'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
                         'subject': request.subject,
@@ -4631,6 +4660,50 @@ class AdminUserHoursView(APIView):
                         'tutor_response': response.message,
                         'response_date': response.created_at,
                         'response_rejected': response.rejected
+                    })
+
+            # 2. Get referral requests received by this tutor
+            referral_requests = TutorReferralRequest.objects.filter(tutor=user).select_related('parent', 'student', 'tutoring_request').order_by('-created_at')
+            for ref_req in referral_requests:
+                current_requests.append({
+                    'id': f"ref-{ref_req.id}",
+                    'type': 'referral',
+                    'student_name': f"{ref_req.student.firstName} {ref_req.student.lastName}",
+                    'parent_name': f"{ref_req.parent.firstName} {ref_req.parent.lastName}",
+                    'subject': ref_req.subject,
+                    'grade': ref_req.grade,
+                    'service': ref_req.service,
+                    'city': ref_req.city,
+                    'status': ref_req.status,
+                    'referral_code': ref_req.referral_code_used,
+                    'created_at': ref_req.created_at,
+                    'responded_at': ref_req.responded_at,
+                    'description': ref_req.description
+                })
+
+            # 3. Get accepted tutoring relationships (requests that were accepted)
+            accepted_tutors = AcceptedTutor.objects.filter(tutor=user).select_related('request', 'student', 'parent')
+            for accepted in accepted_tutors:
+                request = accepted.request
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
+                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    current_requests.append({
+                        'id': request.id,
+                        'type': 'accepted',
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': 'Accepted',
+                        'accepted_status': accepted.accepted_status,
+                        'reply_count': reply_count,
+                        'created_at': request.created_at,
+                        'accepted_at': accepted.created_at,
+                        'description': request.description
                     })
 
         # For students: get requests made for them

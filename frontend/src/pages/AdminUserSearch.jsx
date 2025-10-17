@@ -376,8 +376,22 @@ export default function AdminUserSearch() {
                 <label>{t('auth.role')}:</label>
                 <span className={`role-badge ${userInfo.roles}`}>
                   {userInfo.roles}
+                  {userInfo.is_superuser && <span style={{ marginLeft: '0.5rem', color: '#dc3545' }}>👑 Admin</span>}
                 </span>
               </div>
+              {userInfo.roles === 'tutor' && userInfo.tutor_referral_code && (
+                <div className="info-item">
+                  <label>{t('admin.tutorReferralCode', 'Tutor Referral Code')}:</label>
+                  <span style={{
+                    fontWeight: 'bold',
+                    color: '#007bff',
+                    fontSize: '1.1rem',
+                    fontFamily: 'monospace'
+                  }}>
+                    {userInfo.tutor_referral_code}
+                  </span>
+                </div>
+              )}
               <div className="info-item">
                 <label>{t('auth.phone')}:</label>
                 <span>{userInfo.phone_number || 'N/A'}</span>
@@ -386,9 +400,19 @@ export default function AdminUserSearch() {
                 <label>{t('auth.address')}:</label>
                 <span>{userInfo.address ? `${userInfo.address}, ${userInfo.city}` : 'N/A'}</span>
               </div>
+              {userInfo.parent_name && (
+                <div className="info-item">
+                  <label>{t('auth.parent')}:</label>
+                  <span>{userInfo.parent_name}</span>
+                </div>
+              )}
               <div className="info-item">
                 <label>{t('admin.memberSince')}:</label>
                 <span>{new Date(userInfo.created_at).toLocaleDateString()}</span>
+              </div>
+              <div className="info-item">
+                <label>{t('admin.lastLogin', 'Last Login')}:</label>
+                <span>{userInfo.last_login ? new Date(userInfo.last_login).toLocaleString() : 'Never'}</span>
               </div>
               <div className="info-item">
                 <label>{t('admin.status')}:</label>
@@ -495,8 +519,36 @@ export default function AdminUserSearch() {
                 {currentRequests.map((req) => (
                   <div key={req.id} className="request-item">
                     <div className="request-header">
-                      <div className="request-subject">{req.subject}</div>
-                      <div className={`request-status ${req.status.toLowerCase().replace(' ', '-')}`}>
+                      <div className="request-subject">
+                        {req.subject}
+                        {req.type === 'referral' && (
+                          <span style={{
+                            marginLeft: '0.5rem',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#ffc107',
+                            color: '#000',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold'
+                          }}>
+                            🔗 REFERRAL
+                          </span>
+                        )}
+                        {req.type === 'accepted' && (
+                          <span style={{
+                            marginLeft: '0.5rem',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#28a745',
+                            color: '#fff',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold'
+                          }}>
+                            ✓ ACCEPTED
+                          </span>
+                        )}
+                      </div>
+                      <div className={`request-status ${String(req.status).toLowerCase().replace(' ', '-')}`}>
                         {req.status}
                       </div>
                     </div>
@@ -511,6 +563,24 @@ export default function AdminUserSearch() {
                           <strong>{t('auth.parent')}:</strong> {req.parent_name}
                         </div>
                       )}
+                      {req.tutor_name && (
+                        <div className="request-detail">
+                          <strong>{t('dashboard.tutor')}:</strong> {req.tutor_name}
+                        </div>
+                      )}
+                      {req.referral_code && (
+                        <div className="request-detail">
+                          <strong>{t('admin.referralCodeUsed', 'Referral Code Used')}:</strong>
+                          <span style={{
+                            fontWeight: 'bold',
+                            color: '#007bff',
+                            fontFamily: 'monospace',
+                            marginLeft: '0.5rem'
+                          }}>
+                            {req.referral_code}
+                          </span>
+                        </div>
+                      )}
                       <div className="request-detail">
                         <strong>{t('requests.gradeLevel')}:</strong> {req.grade}
                       </div>
@@ -523,9 +593,36 @@ export default function AdminUserSearch() {
                       <div className="request-detail">
                         <strong>{t('dashboard.createdAt')}:</strong> {new Date(req.created_at).toLocaleDateString()}
                       </div>
-                      <div className="request-detail">
-                        <strong>{t('dashboard.viewReplies')}:</strong> {req.reply_count} {req.reply_count === 1 ? 'reply' : 'replies'}
-                      </div>
+                      {req.accepted_at && (
+                        <div className="request-detail">
+                          <strong>{t('admin.acceptedAt', 'Accepted At')}:</strong> {new Date(req.accepted_at).toLocaleDateString()}
+                        </div>
+                      )}
+                      {req.responded_at && (
+                        <div className="request-detail">
+                          <strong>{t('admin.respondedAt', 'Responded At')}:</strong> {new Date(req.responded_at).toLocaleDateString()}
+                        </div>
+                      )}
+                      {req.reply_count !== undefined && (
+                        <div className="request-detail">
+                          <strong>{t('dashboard.viewReplies')}:</strong> {req.reply_count} {req.reply_count === 1 ? 'reply' : 'replies'}
+                        </div>
+                      )}
+                      {req.accepted_status && (
+                        <div className="request-detail">
+                          <strong>{t('admin.acceptedStatus', 'Relationship Status')}:</strong>
+                          <span style={{
+                            marginLeft: '0.5rem',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: req.accepted_status === 'Accepted' ? '#28a745' : '#dc3545',
+                            color: '#fff',
+                            borderRadius: '4px',
+                            fontSize: '0.85rem'
+                          }}>
+                            {req.accepted_status}
+                          </span>
+                        </div>
+                      )}
                       {req.description && (
                         <div className="request-description">
                           <strong>{t('common.description')}:</strong> {req.description}
