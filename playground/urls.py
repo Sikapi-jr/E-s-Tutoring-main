@@ -96,6 +96,9 @@ urlpatterns = [
     # Tutor leave student endpoint
     path('tutor-leave-student/', views.TutorLeaveStudentView.as_view(), name='tutor-leave-student'),
 
+    # Parent unassign tutor endpoint
+    path('parent-unassign-tutor/', views.ParentUnassignTutorView.as_view(), name='parent-unassign-tutor'),
+
     # Tutor referral approval endpoint
     path('tutor-referral-approval/<str:token>/', views.TutorReferralApprovalView.as_view(), name='tutor-referral-approval'),
 

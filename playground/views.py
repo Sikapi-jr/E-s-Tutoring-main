@@ -4227,6 +4227,111 @@ The EGS Tutoring Team
             print(f"Error in tutor leave student: {e}")
             return Response({"error": "Failed to process tutor leave request"}, status=500)
 
+
+class ParentUnassignTutorView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from playground.models import AcceptedTutor, User, TutoringRequest
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from playground.email_utils import send_mailgun_email
+
+        # Check if user is a parent
+        if request.user.roles != 'parent' and not request.user.is_superuser:
+            return Response({"error": "Only parents can unassign tutors"}, status=403)
+
+        try:
+            tutor_id = request.data.get('tutor_id')
+            student_id = request.data.get('student_id')
+            reason = request.data.get('reason')
+            delete_request = request.data.get('delete_request', False)  # Boolean to determine if request should be deleted
+
+            if not all([tutor_id, student_id, reason]):
+                return Response({"error": "Missing required fields: tutor_id, student_id, reason"}, status=400)
+
+            # Verify tutor and student exist
+            try:
+                tutor = User.objects.get(id=tutor_id, roles='tutor')
+                student = User.objects.get(id=student_id, roles='student')
+            except User.DoesNotExist as e:
+                return Response({"error": "User not found"}, status=404)
+
+            # Find the accepted tutor relationship
+            accepted_tutor = AcceptedTutor.objects.filter(
+                tutor=tutor,
+                student=student,
+                parent=request.user,
+                status='Accepted'
+            ).first()
+
+            if not accepted_tutor:
+                return Response({"error": "No active tutoring relationship found"}, status=404)
+
+            # Use database transaction to ensure all operations succeed together
+            with transaction.atomic():
+                # Store the original request for reactivation or deletion
+                original_request = accepted_tutor.request
+
+                # Remove the accepted tutor relationship
+                accepted_tutor.delete()
+
+                request_action = "deleted"
+                if original_request:
+                    if delete_request:
+                        # Delete the original request
+                        original_request.delete()
+                        request_action = "deleted"
+                    else:
+                        # Reactivate the original tutoring request
+                        original_request.is_accepted = 'Pending'
+                        original_request.accepted_tutor = None
+                        original_request.save()
+
+                        # Remove any other accepted tutors for this request
+                        AcceptedTutor.objects.filter(request=original_request).delete()
+                        request_action = "reactivated"
+
+                # Send email notification to tutor using Mailgun
+                try:
+                    subject = f"Tutoring Update: {request.user.firstName} {request.user.lastName} has unassigned you from {student.firstName}"
+
+                    message = f"""
+Dear {tutor.firstName} {tutor.lastName},
+
+We wanted to inform you that {request.user.firstName} {request.user.lastName} has decided to unassign you from tutoring {student.firstName} {student.lastName}.
+
+Reason provided: {reason}
+
+Thank you for your service as a tutor. If you have any questions or concerns, please don't hesitate to contact us.
+
+Best regards,
+The EGS Tutoring Team
+                    """.strip()
+
+                    send_mailgun_email(
+                        to_emails=[tutor.email],
+                        subject=subject,
+                        text_content=message
+                    )
+
+                    email_sent = True
+                except Exception as email_error:
+                    print(f"Failed to send email notification: {email_error}")
+                    email_sent = False
+                    # Don't fail the entire operation if email fails
+
+            return Response({
+                "message": f"Successfully unassigned tutor. Tutor has been notified and the request has been {request_action}.",
+                "email_sent": email_sent,
+                "request_action": request_action
+            }, status=200)
+
+        except Exception as e:
+            print(f"Error in parent unassign tutor: {e}")
+            return Response({"error": "Failed to process unassign request"}, status=500)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def existing_weekly_hours(request):
