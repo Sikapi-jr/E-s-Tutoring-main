@@ -4292,6 +4292,35 @@ class ParentUnassignTutorView(APIView):
                         AcceptedTutor.objects.filter(request=original_request).delete()
                         request_action = "reactivated"
 
+                        # Notify all tutors about the reactivated request
+                        try:
+                            from playground.tasks import send_new_request_notification_async
+
+                            tutors_with_notifications = User.objects.filter(
+                                roles='tutor',
+                                email_notifications_enabled=True,
+                                email_new_requests=True,
+                                email__isnull=False
+                            ).exclude(email='').exclude(id=tutor_id)  # Exclude the unassigned tutor
+
+                            if tutors_with_notifications.exists():
+                                tutor_emails = list(tutors_with_notifications.values_list('email', flat=True))
+                                parent_name = f"{original_request.parent.firstName} {original_request.parent.lastName}"
+                                student_name = f"{original_request.student.firstName} {original_request.student.lastName}"
+
+                                send_new_request_notification_async.delay(
+                                    tutor_emails,
+                                    parent_name,
+                                    student_name,
+                                    original_request.subject,
+                                    original_request.grade,
+                                    original_request.service,
+                                    original_request.city
+                                )
+                                print(f"Notified {len(tutor_emails)} tutors about reactivated request")
+                        except Exception as e:
+                            print(f"Failed to notify tutors about reactivated request: {e}")
+
                 # Send email notification to tutor using Mailgun
                 try:
                     subject = f"Tutoring Update: {request.user.firstName} {request.user.lastName} has unassigned you from {student.firstName}"
