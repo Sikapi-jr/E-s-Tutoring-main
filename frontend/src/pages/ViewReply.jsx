@@ -38,6 +38,9 @@ const ViewReply = () => {
   const [tutorDocuments, setTutorDocuments] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showUnassignPrompt, setShowUnassignPrompt] = useState(null);
+  const [unassignReason, setUnassignReason] = useState("");
+  const [showKeepDeletePrompt, setShowKeepDeletePrompt] = useState(null);
 
   /* fetch requests for parent */
   useEffect(() => {
@@ -190,6 +193,61 @@ const ViewReply = () => {
     }
   };
 
+  /* handle unassign tutor */
+  const handleUnassignClick = (request) => {
+    setShowUnassignPrompt(request);
+  };
+
+  const handleUnassignSubmit = async () => {
+    if (!unassignReason.trim()) {
+      alert(t('requests.unassignReasonRequired', 'Please provide a reason for unassigning the tutor.'));
+      return;
+    }
+
+    // Hide the reason prompt and show keep/delete prompt
+    setShowUnassignPrompt(null);
+    setShowKeepDeletePrompt(showUnassignPrompt);
+  };
+
+  const handleFinalUnassign = async (deleteRequest) => {
+    const request = showKeepDeletePrompt;
+    try {
+      const payload = {
+        tutor_id: request.accepted_tutor_id,
+        student_id: request.student,
+        reason: unassignReason,
+        delete_request: deleteRequest
+      };
+
+      await api.post("/api/parent-unassign-tutor/", payload);
+
+      alert(t('requests.unassignSuccess', 'Tutor has been successfully unassigned and notified.'));
+
+      // Reset state
+      setShowKeepDeletePrompt(null);
+      setUnassignReason("");
+
+      // Refresh the requests list
+      if (deleteRequest) {
+        setRequests(prevRequests => prevRequests.filter(req => req.id !== request.id));
+      } else {
+        // Refresh to show updated status
+        const res = await api.get(`/api/requests/PersonalList/?id=${parent}`);
+        setRequests(res.data);
+      }
+    } catch (error) {
+      console.error("Error unassigning tutor:", error);
+      alert(t('requests.unassignError', 'Error unassigning tutor. Please try again.'));
+      setShowKeepDeletePrompt(null);
+    }
+  };
+
+  const handleCancelUnassign = () => {
+    setShowUnassignPrompt(null);
+    setShowKeepDeletePrompt(null);
+    setUnassignReason("");
+  };
+
   /* render */
   return (
     <div className="view-reply-wrapper">
@@ -232,10 +290,44 @@ const ViewReply = () => {
                 <strong>{t('common.description')}:</strong> {request.description} <br />
                 <br />
                 {isAccepted ? (
-                  <div className="accepted-message">
-                    <strong style={{ color: '#28a745' }}>
-                      {request.accepted_tutor_name} {t('requests.hasAccepted')}
-                    </strong>
+                  <div>
+                    <div className="accepted-message">
+                      <strong style={{ color: '#28a745' }}>
+                        {request.accepted_tutor_name} {t('requests.hasAccepted')}
+                      </strong>
+                    </div>
+                    <div style={{ marginTop: '1rem' }}>
+                      <div style={{
+                        backgroundColor: '#fff3cd',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '6px',
+                        border: '1px solid #ffc107',
+                        marginBottom: '0.75rem',
+                        fontSize: '0.9rem',
+                        color: '#856404',
+                        lineHeight: '1.5'
+                      }}>
+                        {t('requests.unassignDescription', 'If you need to change tutors or end this tutoring relationship, you can unassign the current tutor. You will be able to choose whether to keep the request active for other tutors or delete it completely.')}
+                      </div>
+                      <button
+                        onClick={() => handleUnassignClick(request)}
+                        style={{
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.6rem 1.2rem',
+                          borderRadius: '6px',
+                          fontSize: '0.95rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+                      >
+                        {t('requests.unassignTutor', 'Unassign Tutor')}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="request-actions">
@@ -393,6 +485,152 @@ const ViewReply = () => {
           onClose={() => setShowRequestModal(false)}
           onSuccess={handleRequestSuccess}
         />
+
+        {/* Unassign reason prompt */}
+        {showUnassignPrompt && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}>
+              <h2 style={{ marginTop: 0, color: '#192A88' }}>
+                {t('requests.unassignTutorTitle', 'Unassign Tutor')}
+              </h2>
+              <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>
+                {t('requests.unassignReasonPrompt', 'Please provide a reason for unassigning the tutor. This will be shared with the tutor.')}
+              </p>
+              <textarea
+                value={unassignReason}
+                onChange={(e) => setUnassignReason(e.target.value)}
+                placeholder={t('requests.unassignReasonPlaceholder', 'Enter your reason here...')}
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  padding: '0.75rem',
+                  fontSize: '1rem',
+                  borderRadius: '8px',
+                  border: '2px solid #192A88',
+                  marginBottom: '1.5rem',
+                  resize: 'vertical'
+                }}
+              />
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={handleCancelUnassign}
+                  className="toggle-btn"
+                  style={{
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    fontSize: '1rem',
+                    padding: '0.75rem 1.5rem'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button
+                  onClick={handleUnassignSubmit}
+                  className="toggle-btn"
+                  style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    fontSize: '1rem',
+                    padding: '0.75rem 1.5rem'
+                  }}
+                >
+                  {t('common.continue', 'Continue')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Keep or delete request prompt */}
+        {showKeepDeletePrompt && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: '12px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}>
+              <h2 style={{ marginTop: 0, color: '#192A88' }}>
+                {t('requests.requestActionTitle', 'What would you like to do with the request?')}
+              </h2>
+              <p style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>
+                {t('requests.requestActionPrompt', 'You can keep the request active so other tutors can respond, or delete it completely.')}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <button
+                  onClick={() => handleFinalUnassign(false)}
+                  className="toggle-btn"
+                  style={{
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    fontSize: '1.1rem',
+                    padding: '1rem 1.5rem',
+                    width: '100%'
+                  }}
+                >
+                  {t('requests.keepRequestActive', 'Keep Request Active')}
+                </button>
+                <button
+                  onClick={() => handleFinalUnassign(true)}
+                  className="toggle-btn"
+                  style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    fontSize: '1.1rem',
+                    padding: '1rem 1.5rem',
+                    width: '100%'
+                  }}
+                >
+                  {t('requests.deleteRequest', 'Delete Request')}
+                </button>
+                <button
+                  onClick={handleCancelUnassign}
+                  className="toggle-btn"
+                  style={{
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    fontSize: '1rem',
+                    padding: '0.75rem 1.5rem',
+                    width: '100%'
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
