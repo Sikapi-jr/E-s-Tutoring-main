@@ -1574,6 +1574,22 @@ export default function Home() {
                     {t('admin.resendVerificationEmail', 'Resend Verification Email')}
                   </button>
                   <button
+                    onClick={() => window.location.href = '/create-popup'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#e83e8c",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('popups.createPopup', 'Create Popup')}
+                  </button>
+                  <button
                     onClick={handleSendHoursReminder}
                     disabled={sendingHoursReminder}
                     style={{
