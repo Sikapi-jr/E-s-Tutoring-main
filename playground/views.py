@@ -4732,8 +4732,32 @@ class AdminUserHoursView(APIView):
             for request in parent_requests:
                 if request.id not in seen_request_ids:
                     seen_request_ids.add(request.id)
-                    # Count replies for this request
-                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
+
+                    # Get accepted tutor if exists
+                    accepted_tutor_info = None
+                    try:
+                        accepted = AcceptedTutor.objects.get(request=request)
+                        accepted_tutor_info = {
+                            'id': accepted.tutor.id,
+                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                            'email': accepted.tutor.email,
+                            'accepted_at': accepted.accepted_at
+                        }
+                    except AcceptedTutor.DoesNotExist:
+                        pass
 
                     current_requests.append({
                         'id': request.id,
@@ -4744,7 +4768,9 @@ class AdminUserHoursView(APIView):
                         'service': request.service,
                         'city': request.city,
                         'status': request.is_accepted,
-                        'reply_count': reply_count,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
                         'created_at': request.created_at,
                         'description': request.description
                     })
@@ -4776,7 +4802,32 @@ class AdminUserHoursView(APIView):
                 request = response.request
                 if request.id not in seen_request_ids:
                     seen_request_ids.add(request.id)
-                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
+
+                    # Get accepted tutor if exists
+                    accepted_tutor_info = None
+                    try:
+                        accepted = AcceptedTutor.objects.get(request=request)
+                        accepted_tutor_info = {
+                            'id': accepted.tutor.id,
+                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                            'email': accepted.tutor.email,
+                            'accepted_at': accepted.accepted_at
+                        }
+                    except AcceptedTutor.DoesNotExist:
+                        pass
 
                     current_requests.append({
                         'id': request.id,
@@ -4788,7 +4839,9 @@ class AdminUserHoursView(APIView):
                         'service': request.service,
                         'city': request.city,
                         'status': request.is_accepted,
-                        'reply_count': reply_count,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
                         'created_at': request.created_at,
                         'description': request.description,
                         'tutor_response': response.message,
@@ -4821,7 +4874,27 @@ class AdminUserHoursView(APIView):
                 request = accepted.request
                 if request.id not in seen_request_ids:
                     seen_request_ids.add(request.id)
-                    reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
+
+                    # Accepted tutor info (this tutor)
+                    accepted_tutor_info = {
+                        'id': accepted.tutor.id,
+                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                        'email': accepted.tutor.email,
+                        'accepted_at': accepted.accepted_at
+                    }
 
                     current_requests.append({
                         'id': request.id,
@@ -4834,7 +4907,9 @@ class AdminUserHoursView(APIView):
                         'city': request.city,
                         'status': 'Accepted',
                         'accepted_status': accepted.status,
-                        'reply_count': reply_count,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
                         'created_at': request.created_at,
                         'accepted_at': accepted.accepted_at,
                         'description': request.description
@@ -4844,7 +4919,31 @@ class AdminUserHoursView(APIView):
         elif user.roles == 'student':
             student_requests = TutoringRequest.objects.filter(student=user).order_by('-created_at')
             for request in student_requests:
-                reply_count = TutorResponse.objects.filter(request=request, rejected=False).count()
+                # Get all replies for this specific request
+                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                replies_list = [
+                    {
+                        'id': reply.id,
+                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                        'tutor_id': reply.tutor.id,
+                        'message': reply.message,
+                        'created_at': reply.created_at
+                    }
+                    for reply in tutor_replies
+                ]
+
+                # Get accepted tutor if exists
+                accepted_tutor_info = None
+                try:
+                    accepted = AcceptedTutor.objects.get(request=request)
+                    accepted_tutor_info = {
+                        'id': accepted.tutor.id,
+                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                        'email': accepted.tutor.email,
+                        'accepted_at': accepted.accepted_at
+                    }
+                except AcceptedTutor.DoesNotExist:
+                    pass
 
                 current_requests.append({
                     'id': request.id,
@@ -4854,7 +4953,9 @@ class AdminUserHoursView(APIView):
                     'service': request.service,
                     'city': request.city,
                     'status': request.is_accepted,
-                    'reply_count': reply_count,
+                    'reply_count': len(replies_list),
+                    'replies': replies_list,
+                    'accepted_tutor': accepted_tutor_info,
                     'created_at': request.created_at,
                     'description': request.description
                 })
