@@ -4696,7 +4696,7 @@ class AdminUserHoursView(APIView):
         # If user is a parent, get their children
         if user.roles == 'parent':
             # Get all students where this user is the parent
-            children = User.objects.filter(parent_account=user, roles='student')
+            children = User.objects.filter(parent=user, roles='student')
             relationships['children'] = [
                 {
                     'id': child.id,
