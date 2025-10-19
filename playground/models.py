@@ -162,7 +162,7 @@ class User(AbstractUser):
             self.rateInPerson = 0.00
         elif self.roles == 'parent':
             self.rateOnline = 35.00
-            self.rateInPerson = 70.00
+            self.rateInPerson = 60.00
         elif self.roles == 'tutor':
             self.rateOnline = 20.00
             self.rateInPerson = 28.00
