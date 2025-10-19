@@ -144,26 +144,12 @@ If you didn't create this account, please ignore this email.
 Best regards,
 EGS Tutoring Team
             """
-        
-        # Prepare attachments for parents
-        attachments = []
-        if user.roles == 'parent':
-            import os
-            media_path = os.path.join(settings.BASE_DIR, 'public', 'uploads', 'onboarding')
-            parent_guide_path = os.path.join(media_path, 'EGS Tutoring Portal Parent Onboarding Guide.pdf')
-            
-            logger.info(f"Checking parent attachment path: {parent_guide_path}, exists: {os.path.exists(parent_guide_path)}")
-            
-            if os.path.exists(parent_guide_path):
-                attachments.append(parent_guide_path)
-                logger.info(f"Added parent onboarding guide attachment")
-        
-        # Use Mailgun API 
+
+        # Use Mailgun API
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message,
-            attachments=attachments if attachments else None
+            text_content=message
         )
         
         logger.info(f"Verification email sent to user {user_id} ({user.email})")
