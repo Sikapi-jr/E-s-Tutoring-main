@@ -92,14 +92,17 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
     const selectedOption = e.target.options[e.target.selectedIndex];
 
     if (user.roles === 'tutor') {
-      // For tutors: value is parent email, get username from dataset
+      // For tutors: value is parent email, get student name from dataset
       const email = value;
-      const username = selectedOption.dataset.username || selectedOption.text;
+      const firstName = selectedOption.dataset.firstname || '';
+      const lastName = selectedOption.dataset.lastname || '';
+      const studentName = `${firstName} ${lastName}`.trim() || selectedOption.text;
       setParentEmail(email);
       setFormData(prev => ({
         ...prev,
         parentEmail: email,
-        description: `Tutoring with ${username}`
+        description: `Tutoring session for ${studentName}`,
+        subject: `Tutoring - ${studentName}`
       }));
     } else if (user.roles === 'parent') {
       // For parents: value is student ID, fetch tutors for this student
@@ -294,8 +297,10 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                         key={stud.id}
                         value={stud.parent_email}           /* hidden payload */
                         data-username={stud.student_username}
+                        data-firstname={stud.student_firstName}
+                        data-lastname={stud.student_lastName}
                       >
-                        {stud.student_username}            {/* visible label */}
+                        {stud.student_firstName} {stud.student_lastName}
                       </option>
                     );
                   } else {
