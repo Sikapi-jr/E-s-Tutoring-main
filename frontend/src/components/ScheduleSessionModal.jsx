@@ -20,6 +20,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
 
   /* ─────────────────────────  local state ───────────────────────── */
   const [students, setStudents] = useState([]);
+  const [availableTutors, setAvailableTutors] = useState([]); // For parents: tutors of selected student
   const [tutorInfo, setTutorInfo] = useState(null); // Store tutor info when parent creates event
   const [parentEmail, setParentEmail] = useState("");       // hidden option value
   const [isConnected, setIsConnected] = useState(false);
@@ -32,7 +33,8 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
     endTime: "",
     recurrence: "none",
     parentEmail: "",
-    selectedStudentId: ""  // for parent role
+    selectedStudentId: "",  // for parent role
+    selectedTutorId: ""     // for parent role
   });
 
   const token = localStorage.getItem(ACCESS_TOKEN);
@@ -85,7 +87,7 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
   };
 
   // grab both hidden email and visible username
-  const handleStudentSelect = e => {
+  const handleStudentSelect = async e => {
     const value = e.target.value;
     const selectedOption = e.target.options[e.target.selectedIndex];
 
@@ -100,18 +102,47 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
         description: `Tutoring with ${username}`
       }));
     } else if (user.roles === 'parent') {
-      // For parents: value is student ID, need to find tutor info
+      // For parents: value is student ID, fetch tutors for this student
       const studentId = value;
       const student = students.find(s => s.id.toString() === studentId);
       if (student) {
-        // We need to get the tutor info for this student
-        // For now, we'll store the student info and fetch tutor details when creating event
         setFormData(prev => ({
           ...prev,
           selectedStudentId: studentId,
-          description: `Tutoring with ${student.student_firstName} ${student.student_lastName}`
+          selectedTutorId: "", // Reset tutor selection
+          description: `Tutoring session for ${student.student_firstName} ${student.student_lastName}`
         }));
+
+        // Fetch tutors for this student
+        try {
+          const tutorRes = await api.get(`/api/student-tutors/${studentId}/`);
+          const tutors = tutorRes.data || [];
+          setAvailableTutors(tutors);
+
+          if (tutors.length === 0) {
+            alert(t('calendar.noTutorAssigned'));
+          }
+        } catch (err) {
+          console.error('Error fetching tutors for student:', err);
+          setAvailableTutors([]);
+        }
       }
+    }
+  };
+
+  // For parents: handle tutor selection
+  const handleTutorSelect = e => {
+    const tutorId = e.target.value;
+    const selectedTutor = availableTutors.find(t => t.tutor_id.toString() === tutorId);
+
+    if (selectedTutor) {
+      const student = students.find(s => s.id.toString() === formData.selectedStudentId);
+      setFormData(prev => ({
+        ...prev,
+        selectedTutorId: tutorId,
+        subject: `Tutoring - ${student.student_firstName} ${student.student_lastName}`,
+        description: `Tutoring session for ${student.student_firstName} ${student.student_lastName}`
+      }));
     }
   };
 
@@ -124,9 +155,11 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
       endTime: "",
       recurrence: "none",
       parentEmail: "",
-      selectedStudentId: ""
+      selectedStudentId: "",
+      selectedTutorId: ""
     });
     setParentEmail("");
+    setAvailableTutors([]);
   };
 
   const handleSubmit = async e => {
@@ -139,32 +172,27 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
       eventCreatorId = user.account_id;
       attendeeEmail = parentEmail;
     } else if (user.roles === 'parent') {
-      // Parent creates event, but tutor should be organizer
-      // First, we need to find the tutor for the selected student
+      // Parent creates event, tutor is organizer and attendee
       const selectedStudent = students.find(s => s.id.toString() === formData.selectedStudentId);
       if (!selectedStudent) {
         alert(t('calendar.pleaseSelectStudent'));
         return;
       }
 
-      // For parents: we need to get the student's tutor info
-      try {
-        const tutorRes = await api.get(`/api/student-tutors/${selectedStudent.id}/`);
-        const tutors = tutorRes.data || [];
-        if (tutors.length === 0) {
-          alert(t('calendar.noTutorAssigned'));
-          return;
-        }
+      if (!formData.selectedTutorId) {
+        alert(t('calendar.pleaseSelectTutor', 'Please select a tutor'));
+        return;
+      }
 
-        // Use the first tutor (assuming one tutor per student for now)
-        const tutor = tutors[0];
-        eventCreatorId = tutor.tutor_id;
-        attendeeEmail = user.email; // Parent becomes attendee
-      } catch (err) {
-        console.error('Error fetching tutor info:', err);
+      const selectedTutor = availableTutors.find(t => t.tutor_id.toString() === formData.selectedTutorId);
+      if (!selectedTutor) {
         alert(t('calendar.couldNotFindTutorInfo'));
         return;
       }
+
+      // Tutor is the organizer, and also becomes the attendee
+      eventCreatorId = selectedTutor.tutor_id;
+      attendeeEmail = selectedTutor.tutor_email;
     }
 
     const payload = {
@@ -283,6 +311,26 @@ export default function ScheduleSessionModal({ isOpen, onClose, onSuccess }) {
                   }
                 })}
               </select>
+
+              {/* tutor selector - only for parents after student is selected */}
+              {user.roles === 'parent' && formData.selectedStudentId && (
+                <select
+                  className="form-input"
+                  value={formData.selectedTutorId}
+                  onChange={handleTutorSelect}
+                  required
+                >
+                  <option value="">{t('calendar.selectTutor', 'Select Tutor')}</option>
+                  {availableTutors.map(tutor => (
+                    <option
+                      key={tutor.tutor_id}
+                      value={tutor.tutor_id}
+                    >
+                      {tutor.tutor_firstName} {tutor.tutor_lastName}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <div className="form-field-group">
                 <label className="form-label">{t('common.date')}</label>
