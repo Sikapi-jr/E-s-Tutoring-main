@@ -120,6 +120,9 @@ urlpatterns = [
     # Admin hours reminder
     path('admin/send-hours-reminder/', views.AdminSendHoursReminderView.as_view(), name='admin-send-hours-reminder'),
 
+    # Admin batch add hours
+    path('admin/batch-add-hours/', views.AdminBatchAddHoursView.as_view(), name='admin-batch-add-hours'),
+
 ]
 
 if settings.DEBUG:

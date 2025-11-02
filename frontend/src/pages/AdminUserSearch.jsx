@@ -712,6 +712,20 @@ export default function AdminUserSearch() {
                     <div className="session-detail">
                       <strong>{t('requests.location')}:</strong> {hour.location}
                     </div>
+                    <div className="session-detail">
+                      <strong>{t('admin.recordCreatedAt', 'Record Created')}:</strong>{' '}
+                      <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                        {new Date(hour.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    {hour.edited_at && (
+                      <div className="session-detail">
+                        <strong>{t('admin.recordEditedAt', 'Last Edited')}:</strong>{' '}
+                        <span style={{ color: '#f0ad4e', fontSize: '0.9rem' }}>
+                          {new Date(hour.edited_at).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
                     {hour.notes && (
                       <div className="session-detail">
                         <strong>{t('logHours.notes')}:</strong> {hour.notes}

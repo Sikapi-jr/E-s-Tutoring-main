@@ -2800,16 +2800,21 @@ class WeeklyHoursListView(APIView):
     def get(self, request):
         start_date_raw = request.query_params.get("start")
         end_date_raw = request.query_params.get("end")
-        
+
         if not start_date_raw or not end_date_raw:
             return Response({"error": "start and end parameters are required"}, status=400)
-        
+
         start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
         end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
         start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
+        # Only fetch hours that haven't been invoiced yet to prevent double billing
+        weekly_hours = Hours.objects.filter(
+            date__range=(start_date, end_date),
+            eligible='Eligible',
+            invoice_status='pending'
+        ).order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -2913,11 +2918,12 @@ class WeeklyHoursListView(APIView):
                 week_start = date_obj - timedelta(days=date_obj.weekday())
                 week_end = week_start + timedelta(days=6)
 
-                # Fetch detailed hours for this parent within the week
+                # Fetch detailed hours for this parent within the week (only pending, not yet invoiced)
                 hours_details = Hours.objects.filter(
                     parent=parent,
                     date__range=[week_start, week_end],
-                    eligible='Eligible'
+                    eligible='Eligible',
+                    invoice_status='pending'
                 ).order_by('date', 'startTime')
 
                 # Build email content
@@ -3039,17 +3045,22 @@ class calculateTotal(APIView):
     def get(self, request):
         start_date_raw = request.query_params.get("start")
         end_date_raw = request.query_params.get("end")
-        
+
         if not start_date_raw or not end_date_raw:
             return Response({"error": "start and end parameters are required"}, status=400)
-        
+
         start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
         end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
         start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         result_date = end_date.date()
 
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible')
+        # Only fetch hours that haven't been invoiced yet to prevent double billing
+        weekly_hours = Hours.objects.filter(
+            date__range=(start_date, end_date),
+            eligible='Eligible',
+            invoice_status='pending'
+        )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson')
@@ -5230,6 +5241,196 @@ EGS Tutoring Team
             return Response({
                 'detail': f'Error sending hours reminder: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminBatchAddHoursView(APIView):
+    """Admin endpoint to batch add hours for tutors, bypassing current week restriction"""
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        # Only allow superusers/admins to use this endpoint
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        hours_entries = request.data.get('hours', [])
+
+        if not hours_entries or not isinstance(hours_entries, list):
+            return Response({
+                'error': 'Invalid request. Expected "hours" array in request body'
+            }, status=400)
+
+        results = {
+            'successful': [],
+            'failed': [],
+            'total_submitted': len(hours_entries)
+        }
+
+        for idx, entry in enumerate(hours_entries):
+            try:
+                # Validate required fields
+                tutor_id = entry.get('tutor_id')
+                student_id = entry.get('student_id')
+                date_str = entry.get('date')
+                start_time_str = entry.get('start_time')
+                end_time_str = entry.get('end_time')
+                total_time = entry.get('total_time')
+                location = entry.get('location')
+                subject = entry.get('subject', '')
+                notes = entry.get('notes', '')
+
+                # Check for required fields
+                if not all([tutor_id, student_id, date_str, start_time_str, end_time_str, total_time, location]):
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': 'Missing required fields (tutor_id, student_id, date, start_time, end_time, total_time, location)'
+                    })
+                    continue
+
+                # Validate users exist
+                try:
+                    tutor = User.objects.get(pk=tutor_id)
+                    if tutor.roles != 'tutor':
+                        results['failed'].append({
+                            'index': idx,
+                            'entry': entry,
+                            'error': f'User {tutor_id} is not a tutor'
+                        })
+                        continue
+                except User.DoesNotExist:
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': f'Tutor with id {tutor_id} not found'
+                    })
+                    continue
+
+                try:
+                    student = User.objects.get(pk=student_id)
+                    parent = student.parent
+                    if not parent:
+                        results['failed'].append({
+                            'index': idx,
+                            'entry': entry,
+                            'error': f'Student {student_id} has no parent associated'
+                        })
+                        continue
+                except User.DoesNotExist:
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': f'Student with id {student_id} not found'
+                    })
+                    continue
+
+                # Parse and validate date/time
+                try:
+                    from datetime import datetime
+                    session_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    start_time = datetime.strptime(start_time_str, "%H:%M").time()
+                    end_time = datetime.strptime(end_time_str, "%H:%M").time()
+                except ValueError as e:
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': f'Invalid date/time format: {str(e)}'
+                    })
+                    continue
+
+                # Validate total_time
+                try:
+                    total_time_decimal = Decimal(str(total_time))
+                    if total_time_decimal <= 0 or total_time_decimal > 8:
+                        results['failed'].append({
+                            'index': idx,
+                            'entry': entry,
+                            'error': 'Total time must be between 0 and 8 hours'
+                        })
+                        continue
+                except (ValueError, InvalidOperation):
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': 'Invalid total_time value'
+                    })
+                    continue
+
+                # Validate location
+                if location not in ['Online', 'In-Person']:
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': 'Location must be "Online" or "In-Person"'
+                    })
+                    continue
+
+                # Check for duplicate hours
+                existing_hours = Hours.objects.filter(
+                    tutor=tutor,
+                    student=student,
+                    date=session_date,
+                    startTime=start_time,
+                    endTime=end_time
+                )
+
+                if existing_hours.exists():
+                    results['failed'].append({
+                        'index': idx,
+                        'entry': entry,
+                        'error': 'Hours already logged for this tutor, student, date, and time slot'
+                    })
+                    continue
+
+                # Admin bypass: Set eligibility based on whether it's past or not
+                # Admin can add hours for any date, but we still mark them appropriately
+                now_local = now().astimezone(TZ)
+                current_date = now_local.date()
+                cur_ws = week_start(current_date)
+                cur_we = cur_ws + timedelta(days=6)
+
+                # If within current week, mark as Eligible, otherwise as Late
+                is_within_current_week = cur_ws <= session_date <= cur_we
+                eligible_status = "Eligible" if is_within_current_week else "Late"
+
+                # Create the hours entry
+                hours_obj = Hours.objects.create(
+                    tutor=tutor,
+                    student=student,
+                    parent=parent,
+                    date=session_date,
+                    startTime=start_time,
+                    endTime=end_time,
+                    totalTime=total_time_decimal,
+                    location=location,
+                    subject=subject,
+                    notes=notes,
+                    status='Accepted',  # Admin-added hours are auto-accepted
+                    eligible=eligible_status
+                )
+
+                results['successful'].append({
+                    'index': idx,
+                    'hour_id': hours_obj.id,
+                    'tutor': f"{tutor.firstName} {tutor.lastName}",
+                    'student': f"{student.firstName} {student.lastName}",
+                    'date': date_str,
+                    'total_time': str(total_time_decimal),
+                    'eligible': eligible_status
+                })
+
+            except Exception as e:
+                results['failed'].append({
+                    'index': idx,
+                    'entry': entry,
+                    'error': f'Unexpected error: {str(e)}'
+                })
+                logger.error(f"Error adding hours for entry {idx}: {e}")
+
+        return Response({
+            'detail': f'Batch processing complete. {len(results["successful"])} successful, {len(results["failed"])} failed',
+            'results': results
+        }, status=status.HTTP_200_OK if results['successful'] else status.HTTP_400_BAD_REQUEST)
 
 
 class TutorReferralApprovalView(APIView):
