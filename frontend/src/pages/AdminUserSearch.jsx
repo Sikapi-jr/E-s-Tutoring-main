@@ -684,6 +684,9 @@ export default function AdminUserSearch() {
       {userHours.length > 0 && (
         <div className="hours-section">
           <h3>{t('admin.allSessions')} ({userHours.length})</h3>
+          <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            Showing all sessions involving this user as student, parent, or tutor
+          </p>
           <div className="hours-list">
             {userHours.map((hour) => (
               <div key={hour.id} className="hour-card">

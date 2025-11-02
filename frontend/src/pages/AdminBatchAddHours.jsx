@@ -171,6 +171,16 @@ export default function AdminBatchAddHours() {
         <p className="admin-batch-hours-subtitle">
           {t('admin.batchAddHours.subtitle', 'Add hours for tutors for any date (bypasses current week restriction)')}
         </p>
+        <div style={{
+          marginTop: '1rem',
+          padding: '0.75rem',
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '4px',
+          fontSize: '0.9rem'
+        }}>
+          <strong>Note:</strong> Hours added here will be marked as "Eligible" if within current week, or "Late" if outside current week. All hours are auto-accepted.
+        </div>
       </div>
 
       {error && (
