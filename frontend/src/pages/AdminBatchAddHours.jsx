@@ -195,7 +195,7 @@ export default function AdminBatchAddHours() {
         <div className="admin-batch-hours-results">
           <div className="results-header">
             <h2>Batch Processing Results</h2>
-            <button onClick={clearResults} className="btn-close-results">Close</button>
+            <button onClick={clearResults} className="btn-close-results">✕ Close</button>
           </div>
 
           <div className="results-summary">
@@ -391,14 +391,34 @@ export default function AdminBatchAddHours() {
         </div>
 
         <div className="form-actions">
-          <button
-            type="button"
-            onClick={addHourRow}
-            className="btn-add-row"
-            disabled={submitting}
-          >
-            + Add Another Row
-          </button>
+          <div className="form-actions-left">
+            <button
+              type="button"
+              onClick={addHourRow}
+              className="btn-add-row"
+              disabled={submitting}
+            >
+              + Add Another Row
+            </button>
+            <button
+              type="button"
+              onClick={() => setHours([{
+                tutor_id: "",
+                student_id: "",
+                date: "",
+                start_time: "",
+                end_time: "",
+                total_time: "",
+                location: "Online",
+                subject: "",
+                notes: ""
+              }])}
+              className="btn-clear-all"
+              disabled={submitting || hours.length === 1}
+            >
+              Clear All
+            </button>
+          </div>
 
           <div className="form-actions-right">
             <button
