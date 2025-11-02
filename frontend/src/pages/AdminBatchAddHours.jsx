@@ -68,15 +68,17 @@ export default function AdminBatchAddHours() {
   }, []);
 
   const addHourRow = () => {
+    // Copy the last row's data to make it easier to add multiple hours for same tutor/student
+    const lastRow = hours[hours.length - 1];
     setHours([...hours, {
-      tutor_id: "",
-      student_id: "",
-      date: "",
+      tutor_id: lastRow.tutor_id || "",
+      student_id: lastRow.student_id || "",
+      date: lastRow.date || "",
       start_time: "",
       end_time: "",
       total_time: "",
-      location: "Online",
-      subject: "",
+      location: lastRow.location || "Online",
+      subject: lastRow.subject || "",
       notes: ""
     }]);
   };

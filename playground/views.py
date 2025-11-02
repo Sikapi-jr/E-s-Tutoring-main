@@ -2809,10 +2809,11 @@ class WeeklyHoursListView(APIView):
         start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        # Only fetch hours that haven't been invoiced yet to prevent double billing
+        # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
+        # Late hours can only be created by admins via batch add
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
-            eligible='Eligible',
+            eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
         ).order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
@@ -2919,10 +2920,11 @@ class WeeklyHoursListView(APIView):
                 week_end = week_start + timedelta(days=6)
 
                 # Fetch detailed hours for this parent within the week (only pending, not yet invoiced)
+                # Include both Eligible and Late hours (Late hours are admin-added via batch add)
                 hours_details = Hours.objects.filter(
                     parent=parent,
                     date__range=[week_start, week_end],
-                    eligible='Eligible',
+                    eligible__in=['Eligible', 'Late'],
                     invoice_status='pending'
                 ).order_by('date', 'startTime')
 
@@ -3055,10 +3057,11 @@ class calculateTotal(APIView):
         end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         result_date = end_date.date()
 
-        # Only fetch hours that haven't been invoiced yet to prevent double billing
+        # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
+        # Late hours can only be created by admins via batch add
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
-            eligible='Eligible',
+            eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
         )
         parents = set(weekly_hours.values_list('parent', flat=True))
@@ -3134,8 +3137,13 @@ class CreateInvoiceView(APIView):
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
         # Calculate totals from actual hours data (same logic as calculateTotal view)
+        # Include both Eligible and Late hours (Late hours are admin-added via batch add)
         # Only include hours that haven't been invoiced yet to prevent duplicates
-        weekly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible', invoice_status='pending')
+        weekly_hours = Hours.objects.filter(
+            date__range=(start_date, end_date),
+            eligible__in=['Eligible', 'Late'],
+            invoice_status='pending'
+        )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
