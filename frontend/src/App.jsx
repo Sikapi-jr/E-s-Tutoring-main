@@ -53,6 +53,7 @@ const AdminTestEmail = lazy(() => import("./pages/AdminTestEmail"));
 const AdminRequestDetail = lazy(() => import("./pages/AdminRequestDetail"));
 const AdminUserSearch = lazy(() => import("./pages/AdminUserSearch"));
 const AdminBatchAddHours = lazy(() => import("./pages/AdminBatchAddHours"));
+const AdminHoursOverview = lazy(() => import("./pages/AdminHoursOverview"));
 const TutorReferralApproval = lazy(() => import("./pages/TutorReferralApproval"));
 
 // Loading component
@@ -156,6 +157,7 @@ function AppRoutes() {
             <Route path="/admin-referrals" element={<ProtectedRoute><AdminReferrals /></ProtectedRoute>} />
             <Route path="/admin-user-search" element={<ProtectedRoute><AdminUserSearch /></ProtectedRoute>} />
             <Route path="/admin-batch-add-hours" element={<ProtectedRoute><AdminBatchAddHours /></ProtectedRoute>} />
+            <Route path="/admin-hours-overview" element={<ProtectedRoute><AdminHoursOverview /></ProtectedRoute>} />
             <Route path="/admin-test-email" element={<ProtectedRoute><AdminTestEmail /></ProtectedRoute>} />
             <Route path="/parent-request/:requestId" element={<ProtectedRoute><ParentRequestDetail /></ProtectedRoute>} />
             <Route path="/admin-request-detail/:requestId" element={<ProtectedRoute><AdminRequestDetail /></ProtectedRoute>} />

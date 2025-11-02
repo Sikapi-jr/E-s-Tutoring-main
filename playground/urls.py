@@ -123,6 +123,9 @@ urlpatterns = [
     # Admin batch add hours
     path('admin/batch-add-hours/', views.AdminBatchAddHoursView.as_view(), name='admin-batch-add-hours'),
 
+    # Admin all hours overview
+    path('admin/all-hours/', views.AdminAllHoursView.as_view(), name='admin-all-hours'),
+
 ]
 
 if settings.DEBUG:

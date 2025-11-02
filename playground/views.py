@@ -3272,7 +3272,12 @@ class MonthlyHoursListView(APIView):
         start_date = datetime.strptime(start_date_raw, "%Y-%m-%d")
         end_date = last_date.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), eligible='Eligible').order_by('date')
+        # Include both Eligible and Late hours for tutor payouts
+        # Late hours can only be created by admins via batch add
+        monthly_hours = Hours.objects.filter(
+            date__range=(start_date, end_date),
+            eligible__in=['Eligible', 'Late']
+        ).order_by('date')
         print(f"MonthlyHoursListView found {monthly_hours.count()} hours")
         serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
         print(f"MonthlyHoursListView serialized {len(serializer.data)} hours")
@@ -3519,7 +3524,13 @@ class calculateMonthlyTotal(APIView):
             print(f"calculateMonthlyTotal date parsing error: {e}")
             return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
-        monthly_hours = Hours.objects.filter(date__range=(start_date, end_date), status__in=['Accepted', 'Resolved'], eligible='Eligible').order_by('date')
+        # Include both Eligible and Late hours for tutor payouts
+        # Late hours can only be created by admins via batch add
+        monthly_hours = Hours.objects.filter(
+            date__range=(start_date, end_date),
+            status__in=['Accepted', 'Resolved'],
+            eligible__in=['Eligible', 'Late']
+        ).order_by('date')
         tutors = set(monthly_hours.values_list('tutor', flat=True))
 
         results = []
@@ -5439,6 +5450,58 @@ class AdminBatchAddHoursView(APIView):
             'detail': f'Batch processing complete. {len(results["successful"])} successful, {len(results["failed"])} failed',
             'results': results
         }, status=status.HTTP_200_OK if results['successful'] else status.HTTP_400_BAD_REQUEST)
+
+
+class AdminAllHoursView(APIView):
+    """Admin endpoint to view all hours with filtering options"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        # Get date range parameters (optional)
+        start_date_raw = request.query_params.get("start")
+        end_date_raw = request.query_params.get("end")
+
+        # Start with all hours
+        hours_query = Hours.objects.all()
+
+        # Apply date filter if provided
+        if start_date_raw and end_date_raw:
+            try:
+                start_date = make_aware(datetime.strptime(start_date_raw, "%Y-%m-%d"))
+                end_date = make_aware(datetime.strptime(end_date_raw, "%Y-%m-%d"))
+                start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                hours_query = hours_query.filter(date__range=(start_date, end_date))
+            except ValueError:
+                return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
+
+        # Order by most recent first
+        hours = hours_query.order_by('-date', '-created_at')
+
+        # Serialize the hours
+        serializer = HoursSerializer(hours, many=True, context={'request': request})
+
+        # Calculate statistics
+        total_hours = hours.count()
+        eligible_hours = hours.filter(eligible='Eligible').count()
+        late_hours = hours.filter(eligible='Late').count()
+        pending_hours = hours.filter(invoice_status='pending').count()
+        invoiced_hours = hours.filter(invoice_status='invoiced').count()
+
+        return Response({
+            'hours': serializer.data,
+            'stats': {
+                'total': total_hours,
+                'eligible': eligible_hours,
+                'late': late_hours,
+                'pending': pending_hours,
+                'invoiced': invoiced_hours
+            }
+        })
 
 
 class TutorReferralApprovalView(APIView):
