@@ -118,6 +118,11 @@ class User(AbstractUser):
     # Onboarding tour tracking
     has_seen_tour = models.BooleanField(default=False, help_text="Whether user has completed the onboarding tour")
 
+    # Mapulus geocoded coordinates
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geocoded latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geocoded longitude")
+    geocoded_address = models.CharField(max_length=255, blank=True, null=True, help_text="Full geocoded address from Mapulus")
+
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)

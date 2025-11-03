@@ -75,6 +75,9 @@ if SECRET_KEY == 'django-insecure-build-key-only-for-collectstatic' and not os.g
 # Environment variables for sensitive data
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
+# Mapulus API Configuration
+MAPULUS_API_KEY = os.getenv('MAPULUS_API_KEY')
+
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 # Use RPC backend for results (compatible with RabbitMQ)
