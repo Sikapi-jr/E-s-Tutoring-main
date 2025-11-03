@@ -144,9 +144,9 @@ return (
         {hours.map((hour) => (
           <li key={hour.id}>
             <strong>{t('common.id')}:</strong> {hour.id} <br />
-            <strong>{t('dashboard.student')}:</strong> {hour.student} <br />
-            <strong>{t('auth.parent')}:</strong> {hour.parent} <br />
-            <strong>{t('dashboard.tutor')}:</strong> {hour.tutor} <br />
+            <strong>{t('dashboard.student')}:</strong> {hour.student_firstName} {hour.student_lastName} <br />
+            <strong>{t('auth.parent')}:</strong> {hour.parent_firstName} {hour.parent_lastName} <br />
+            <strong>{t('dashboard.tutor')}:</strong> {hour.tutor_firstName} {hour.tutor_lastName} <br />
             <strong>{t('common.date')}:</strong> {hour.date} <br />
             <strong>{t('logHours.startTime')}:</strong> {hour.startTime} <br />
             <strong>{t('logHours.endTime')}:</strong> {hour.endTime} <br />
