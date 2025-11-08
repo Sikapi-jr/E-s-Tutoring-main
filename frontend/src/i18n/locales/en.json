@@ -1158,6 +1158,24 @@
     "respondedAt": "Responded At",
     "acceptedStatus": "Relationship Status"
   },
+  "discount": {
+    "title": "Receive Permanent 10% Discount",
+    "email": "Email",
+    "phone": "Phone",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "emailAddress": "Email Address",
+    "phoneNumber": "Phone Number",
+    "firstNamePlaceholder": "Enter first name",
+    "lastNamePlaceholder": "Enter last name",
+    "emailPlaceholder": "Enter email address",
+    "phonePlaceholder": "Enter phone number",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "allFieldsRequired": "All fields are required",
+    "saveFailed": "Failed to save registration"
+  },
   "students": {
     "title": "My Students",
     "subtitle": "View detailed information about your students and their tutors",

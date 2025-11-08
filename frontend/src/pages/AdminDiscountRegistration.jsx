@@ -1,11 +1,13 @@
 // src/pages/AdminDiscountRegistration.jsx
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import "../styles/AdminDiscountRegistration.css";
 
 export default function AdminDiscountRegistration() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -22,7 +24,7 @@ export default function AdminDiscountRegistration() {
   if (!user) {
     return (
       <div style={{ padding: "2rem", textAlign: "center" }}>
-        <p>Loading...</p>
+        <p>{t('common.loading')}</p>
       </div>
     );
   }
@@ -53,7 +55,7 @@ export default function AdminDiscountRegistration() {
   const handleSubmit = async () => {
     // Validate inputs
     if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.contactValue.trim()) {
-      setError("All fields are required");
+      setError(t('discount.allFieldsRequired'));
       return;
     }
 
@@ -72,7 +74,7 @@ export default function AdminDiscountRegistration() {
       resetPage();
     } catch (err) {
       console.error("Error saving discount registration:", err);
-      setError(err.response?.data?.error || "Failed to save registration");
+      setError(err.response?.data?.error || t('discount.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export default function AdminDiscountRegistration() {
 
   return (
     <div className="discount-registration-page">
-      <h1 className="discount-title">Receive Permanent 10% Discount</h1>
+      <h1 className="discount-title">{t('discount.title')}</h1>
 
       {!selectedType ? (
         <div className="button-container">
@@ -98,47 +100,47 @@ export default function AdminDiscountRegistration() {
             className="type-button email-button"
             onClick={() => handleTypeSelect("email")}
           >
-            Email
+            {t('discount.email')}
           </button>
           <button
             className="type-button phone-button"
             onClick={() => handleTypeSelect("phone")}
           >
-            Phone
+            {t('discount.phone')}
           </button>
         </div>
       ) : (
         <div className="form-container">
           <div className="form-group">
-            <label>First Name</label>
+            <label>{t('discount.firstName')}</label>
             <input
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleInputChange}
-              placeholder="Enter first name"
+              placeholder={t('discount.firstNamePlaceholder')}
             />
           </div>
 
           <div className="form-group">
-            <label>Last Name</label>
+            <label>{t('discount.lastName')}</label>
             <input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleInputChange}
-              placeholder="Enter last name"
+              placeholder={t('discount.lastNamePlaceholder')}
             />
           </div>
 
           <div className="form-group">
-            <label>{selectedType === "email" ? "Email Address" : "Phone Number"}</label>
+            <label>{selectedType === "email" ? t('discount.emailAddress') : t('discount.phoneNumber')}</label>
             <input
               type={selectedType === "email" ? "email" : "tel"}
               name="contactValue"
               value={formData.contactValue}
               onChange={handleInputChange}
-              placeholder={selectedType === "email" ? "Enter email address" : "Enter phone number"}
+              placeholder={selectedType === "email" ? t('discount.emailPlaceholder') : t('discount.phonePlaceholder')}
             />
           </div>
 
@@ -150,14 +152,14 @@ export default function AdminDiscountRegistration() {
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading ? "Saving..." : "OK"}
+              {loading ? t('discount.saving') : t('discount.ok')}
             </button>
             <button
               className="cancel-button"
               onClick={resetPage}
               disabled={loading}
             >
-              Cancel
+              {t('discount.cancel')}
             </button>
           </div>
         </div>

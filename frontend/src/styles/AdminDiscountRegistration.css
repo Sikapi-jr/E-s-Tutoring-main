@@ -13,7 +13,7 @@
 .discount-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #4ECDC4;
+  color: #667eea;
   margin-bottom: 3rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -48,13 +48,13 @@
 }
 
 .phone-button {
-  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
 .phone-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .form-container {
@@ -91,7 +91,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #4ECDC4;
+  border-color: #667eea;
 }
 
 .error-message {
@@ -124,13 +124,13 @@
 }
 
 .submit-button {
-  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
 .submit-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .submit-button:disabled {

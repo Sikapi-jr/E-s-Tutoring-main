@@ -1139,6 +1139,24 @@
     "respondedAt": "Répondu Le",
     "acceptedStatus": "Statut de la Relation"
   },
+  "discount": {
+    "title": "Recevez un Rabais Permanent de 10%",
+    "email": "Courriel",
+    "phone": "Téléphone",
+    "firstName": "Prénom",
+    "lastName": "Nom de Famille",
+    "emailAddress": "Adresse Courriel",
+    "phoneNumber": "Numéro de Téléphone",
+    "firstNamePlaceholder": "Entrez le prénom",
+    "lastNamePlaceholder": "Entrez le nom de famille",
+    "emailPlaceholder": "Entrez l'adresse courriel",
+    "phonePlaceholder": "Entrez le numéro de téléphone",
+    "ok": "OK",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "allFieldsRequired": "Tous les champs sont requis",
+    "saveFailed": "Échec de l'enregistrement"
+  },
   "students": {
     "title": "Mes Étudiants",
     "subtitle": "Voir des informations détaillées sur vos étudiants et leurs tuteurs",
