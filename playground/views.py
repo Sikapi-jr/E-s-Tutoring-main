@@ -5812,3 +5812,34 @@ The EGS Tutoring Team
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class DiscountRegistrationView(APIView):
+    """
+    View for handling discount registrations.
+    Admin-only access.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({
+                'error': 'Admin access required'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Import the serializer
+        from playground.serializers import DiscountRegistrationSerializer
+
+        serializer = DiscountRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Discount registration saved successfully',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            'error': 'Invalid data',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+

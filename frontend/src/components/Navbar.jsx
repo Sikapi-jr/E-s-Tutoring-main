@@ -45,6 +45,7 @@ const getRoutes = (t) => ({
   BatchAddHours: { to: "/admin-batch-add-hours", label: t('admin.batchAddHours.menuLabel', 'Batch Add Hours') },
   HoursOverview: { to: "/admin-hours-overview", label: t('admin.hoursOverview.menuLabel', 'Hours Overview') },
   TestEmail: { to: "/admin-test-email", label: t('admin.testEmail') },
+  DiscountReg: { to: "/admin-discount-registration", label: t('admin.discountRegistration', '10% Discount') },
   Cal:     { to: "/calendar",          label: t('navigation.calendar') },
   Events:  { to: "/events",            label: t('navigation.events') },
   CalCon:  { to: "/events",   label: t('navigation.scheduleSession') },
@@ -63,7 +64,7 @@ const getRoleConfig = (BASE) => ({
     tutor:  [],
     sessions: [],
     cal:    [],
-    single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail],
+    single: [BASE.Inv, BASE.Reports, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg],
   },
   parent: {
     main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Events, BASE.Inv, BASE.Reports],

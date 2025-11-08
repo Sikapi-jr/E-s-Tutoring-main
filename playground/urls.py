@@ -126,6 +126,9 @@ urlpatterns = [
     # Admin all hours overview
     path('admin/all-hours/', views.AdminAllHoursView.as_view(), name='admin-all-hours'),
 
+    # Admin discount registration
+    path('admin/discount-registration/', views.DiscountRegistrationView.as_view(), name='admin-discount-registration'),
+
 ]
 
 if settings.DEBUG:

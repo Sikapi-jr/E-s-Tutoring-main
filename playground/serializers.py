@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest, Popup, PopupDismissal
+from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest, Popup, PopupDismissal, DiscountRegistration
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -594,4 +594,14 @@ class PopupDismissalSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'user': {'read_only': True},
             'dismissed_at': {'read_only': True},
+        }
+
+
+class DiscountRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for DiscountRegistration model"""
+    class Meta:
+        model = DiscountRegistration
+        fields = ['id', 'first_name', 'last_name', 'contact_type', 'contact_value', 'created_at']
+        extra_kwargs = {
+            'created_at': {'read_only': True},
         }
