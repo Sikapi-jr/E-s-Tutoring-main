@@ -103,7 +103,8 @@ function AppRoutes() {
     "/password-reset-confirm",
     "/verify-email",
     "/stripe-reauth",
-    "/tutor-referral-approval"
+    "/tutor-referral-approval",
+    "/admin-discount-registration"
   ];
 
   // Check if current path should show UnauthNavbar
