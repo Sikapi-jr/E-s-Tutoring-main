@@ -55,6 +55,14 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
         return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
     }, []);
 
+    // Format date as yyyy-mm-dd
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const getCurrentWeekRange = useCallback(() => {
         const today = new Date();
         const startOfWeek = new Date(today);
@@ -105,7 +113,7 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
 
         if (selectedDate < startOfWeek || selectedDate > endOfWeek) {
             return t('logHours.currentWeekOnly') + ' (' +
-                   startOfWeek.toLocaleDateString() + ' - ' + endOfWeek.toLocaleDateString() + ')';
+                   formatDate(startOfWeek) + ' - ' + formatDate(endOfWeek) + ')';
         }
 
         // Create session end datetime in local timezone

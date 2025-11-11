@@ -37,6 +37,14 @@ export default function TemporaryTutoringModal({ isOpen, onClose, onSuccess, onB
         return diffMinutes < 0 ? 0 : (diffMinutes / 60).toFixed(2);
     }, []);
 
+    // Format date as yyyy-mm-dd
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const getCurrentWeekRange = useCallback(() => {
         const today = new Date();
         const startOfWeek = new Date(today);
@@ -66,7 +74,9 @@ export default function TemporaryTutoringModal({ isOpen, onClose, onSuccess, onB
         if (totalHours <= 0) return t('logHours.invalidTimeRange');
         if (totalHours > 8) return t('logHours.sessionTooLong');
 
-        const selectedDate = new Date(date);
+        // Parse date in local timezone, not UTC
+        const [year, month, day] = date.split('-').map(Number);
+        const selectedDate = new Date(year, month - 1, day); // month is 0-indexed
         const today = new Date();
         today.setHours(23, 59, 59, 999);
 
@@ -85,10 +95,13 @@ export default function TemporaryTutoringModal({ isOpen, onClose, onSuccess, onB
 
         if (selectedDate < startOfWeek || selectedDate > endOfWeek) {
             return t('logHours.currentWeekOnly') + ' (' +
-                   startOfWeek.toLocaleDateString() + ' - ' + endOfWeek.toLocaleDateString() + ')';
+                   formatDate(startOfWeek) + ' - ' + formatDate(endOfWeek) + ')';
         }
 
-        const sessionDateTime = new Date(date + 'T' + endTime);
+        // Create session end datetime in local timezone
+        const sessionDateTime = new Date(year, month - 1, day);
+        const [endHours, endMinutes] = endTime.split(':').map(Number);
+        sessionDateTime.setHours(endHours, endMinutes, 0, 0);
         const now = new Date();
         if (sessionDateTime > now) return t('logHours.futureEndTime');
 
