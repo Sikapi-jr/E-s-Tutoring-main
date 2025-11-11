@@ -84,7 +84,9 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
         if (totalHours <= 0) return t('logHours.invalidTimeRange');
         if (totalHours > 8) return t('logHours.sessionTooLong');
 
-        const selectedDate = new Date(date);
+        // Parse date in local timezone, not UTC
+        const [year, month, day] = date.split('-').map(Number);
+        const selectedDate = new Date(year, month - 1, day); // month is 0-indexed
         const today = new Date();
         today.setHours(23, 59, 59, 999);
 
@@ -106,7 +108,10 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
                    startOfWeek.toLocaleDateString() + ' - ' + endOfWeek.toLocaleDateString() + ')';
         }
 
-        const sessionDateTime = new Date(date + 'T' + endTime);
+        // Create session end datetime in local timezone
+        const sessionDateTime = new Date(year, month - 1, day);
+        const [endHours, endMinutes] = endTime.split(':').map(Number);
+        sessionDateTime.setHours(endHours, endMinutes, 0, 0);
         const now = new Date();
         if (sessionDateTime > now) return t('logHours.futureEndTime');
 
