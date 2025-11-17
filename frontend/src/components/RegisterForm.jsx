@@ -45,14 +45,14 @@ function RegisterForm() {
   const validatePassword = (password) => {
     // Only allow keyboard characters: ASCII printable characters (32-126)
     const keyboardCharsRegex = /^[ -~]*$/;
-    
+
     if (!keyboardCharsRegex.test(password)) {
-      setPasswordError("Password can only contain keyboard characters");
+      setPasswordError(t('auth.passwordKeyboardCharsOnly'));
       return false;
     }
-    
+
     if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long");
+      setPasswordError(t('auth.passwordMinLength'));
       return false;
     }
 
@@ -60,17 +60,17 @@ function RegisterForm() {
     const numericOnlyRegex = /^\d+$/;
     if (numericOnlyRegex.test(password)) {
       console.log("Password is entirely numeric:", password); // Debug log
-      setPasswordError("Password cannot be entirely numeric");
+      setPasswordError(t('auth.passwordNotNumeric'));
       return false;
     }
-    
+
     setPasswordError("");
     return true;
   };
 
   const validatePasswordMatch = (password, confirmPassword) => {
     if (confirmPassword && password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match");
+      setConfirmPasswordError(t('auth.passwordsDoNotMatch'));
       return false;
     }
     setConfirmPasswordError("");

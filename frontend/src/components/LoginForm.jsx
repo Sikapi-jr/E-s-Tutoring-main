@@ -139,14 +139,14 @@ function LoginForm() {
       
       {showResendVerification && (
         <div className="resend-verification-section">
-          <h3>Resend Verification Email</h3>
+          <h3>{t("auth.resendVerificationTitle")}</h3>
           <form onSubmit={handleResendVerification}>
             <input
               className="form-input"
               type="email"
               value={resendEmail}
               onChange={(e) => setResendEmail(e.target.value)}
-              placeholder="Email address"
+              placeholder={t("common.email")}
               required
             />
             <button
@@ -154,14 +154,14 @@ function LoginForm() {
               type="submit"
               disabled={loading}
             >
-              {loading ? t("common.loading") : "Resend Verification Email"}
+              {loading ? t("common.loading") : t("auth.resendVerificationButton")}
             </button>
           </form>
           <button
             className="form-button secondary"
             onClick={() => setShowResendVerification(false)}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       )}

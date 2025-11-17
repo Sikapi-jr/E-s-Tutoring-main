@@ -18,28 +18,28 @@ function PasswordResetConfirm() {
     const validatePassword = (password) => {
         // Only allow keyboard characters: ASCII printable characters (32-126)
         const keyboardCharsRegex = /^[ -~]*$/;
-        
+
         if (!keyboardCharsRegex.test(password)) {
-            return "Password can only contain keyboard characters";
+            return t('auth.passwordKeyboardCharsOnly');
         }
-        
+
         if (password.length < 8) {
-            return "Password must be at least 8 characters long";
+            return t('auth.passwordMinLength');
         }
 
         // Check if password is entirely numeric (Django's NumericPasswordValidator)
         const numericOnlyRegex = /^\d+$/;
         if (numericOnlyRegex.test(password)) {
             console.log("Password is entirely numeric:", password); // Debug log
-            return "Password cannot be entirely numeric";
+            return t('auth.passwordNotNumeric');
         }
-        
+
         return "";
     };
 
     const validatePasswordMatch = (password, confirmPassword) => {
         if (confirmPassword && password !== confirmPassword) {
-            return "Passwords do not match";
+            return t('auth.passwordsDoNotMatch');
         }
         return "";
     };
@@ -119,7 +119,7 @@ function PasswordResetConfirm() {
                 // Show error message for other errors
                 const errorMessage = error.response?.data?.error ||
                                    error.response?.data?.message ||
-                                   "Token already used or invalid. Request another password reset email.";
+                                   t('auth.tokenInvalidOrUsed');
                 setError(errorMessage);
                 setPassword("");
                 setPasswordValid("");
@@ -129,28 +129,28 @@ function PasswordResetConfirm() {
 
     return (
             <div className="form-container">
-                <h1>Reset Password</h1>
+                <h1>{t('auth.resetPassword')}</h1>
                     <form onSubmit={handleReset}>
-                        <h2>Enter new password</h2>
+                        <h2>{t('auth.enterNewPassword')}</h2>
                         <input
                             className="form-input"
                             type="password"
                             value={password}
                             onChange={handlePasswordChange}
-                            placeholder="New password"
+                            placeholder={t('auth.newPasswordPlaceholder')}
                         />
                         {passwordError && <p className="password-error">{passwordError}</p>}
-                        <h2>Re-type password</h2>
+                        <h2>{t('auth.retypePassword')}</h2>
                         <input
                             className="form-input"
                             type="password"
                             value={passwordValid}
                             onChange={handleConfirmPasswordChange}
-                            placeholder="Re-type new password"
+                            placeholder={t('auth.confirmPasswordPlaceholder')}
                         />
                         {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
                         <button className="form-button" type="submit">
-                            Reset
+                            {t('auth.resetButton')}
                         </button>
                         {error && <p className="error-message">{error}</p>}
                     </form>

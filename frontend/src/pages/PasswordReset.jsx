@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
 import { useUser } from '../components/UserProvider';
 
 function PasswordReset() {
+    const { t } = useTranslation();
     const [username, setUsername] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
@@ -18,9 +20,9 @@ function PasswordReset() {
         
         try {
             await api.post('/api/password-reset-username/', { username });
-            setMessage("Password reset email sent! Please check your inbox.");
+            setMessage(t('auth.passwordResetEmailSent'));
         } catch (err) {
-            setError("Error sending password reset email. Please try again.");
+            setError(t('auth.passwordResetEmailError'));
         } finally {
             setLoading(false);
         }
@@ -28,17 +30,17 @@ function PasswordReset() {
 
     return (
             <div className="form-container">
-                <h1>Reset Password</h1>
+                <h1>{t('auth.resetPassword')}</h1>
                     <form onSubmit={handleReset}>
                         <input
                             className="form-input"
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Username"
+                            placeholder={t('auth.usernamePlaceholder')}
                         />
                         <button className="form-button" type="submit" disabled={loading}>
-                            {loading ? "Sending..." : "Reset"}
+                            {loading ? t('common.sending') : t('auth.resetButton')}
                         </button>
                     </form>
                     {message && <p className="success-message">{message}</p>}
