@@ -5139,53 +5139,12 @@ def admin_test_email(request):
             attachments=attachments if attachments else None
         )
 
-        # Send copy to admin email with metadata
-        admin_subject = f"[ADMIN COPY] Test Email Sent to {recipient_email}"
-        admin_text = f"""
-This is a copy of the test email you sent.
-
-Original Recipient: {recipient_email}
-Subject: {subject}
-Sent by: {request.user.firstName} {request.user.lastName} ({request.user.email})
-Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
-Attachments: {len(attachments)} file(s)
-
-Message:
-{message}
-        """
-
-        admin_html = f"""
-<!doctype html>
-<html>
-<body style="margin:0; padding:0; background:#f4f4f4;">
-  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
-    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
-      <tr>
-        <td style="font-size:15px; line-height:1.5; color:#333333;">
-          <h2 style="color:#0b63d6; margin-top:0;">Admin Copy - Test Email</h2>
-          <p><strong>Original Recipient:</strong> {recipient_email}</p>
-          <p><strong>Subject:</strong> {subject}</p>
-          <p><strong>Sent by:</strong> {request.user.firstName} {request.user.lastName} ({request.user.email})</p>
-          <p><strong>Timestamp:</strong> {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-          <p><strong>Attachments:</strong> {len(attachments)} file(s)</p>
-          <hr style="border:none; border-top:1px solid #ddd; margin:20px 0;">
-          <h3>Email Sent to Recipient:</h3>
-          <div style="border:1px solid #ddd; padding:10px; background:#f9f9f9;">
-            {html_message}
-          </div>
-        </td>
-      </tr>
-    </table>
-  </center>
-</body>
-</html>
-        """
-
+        # Send copy to admin email (same as sent to recipient)
         success_admin = send_mailgun_email(
             [admin_email],
-            admin_subject,
-            admin_text.strip(),
-            html_content=admin_html,
+            f"[ADMIN COPY] {subject}",
+            message,  # Plain text version
+            html_content=html_message,
             attachments=attachments if attachments else None
         )
 
@@ -6071,6 +6030,9 @@ class AdminSendTutorEmailsView(APIView):
                     'error': 'Subject and body are required'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+            # Wrap plain text message in HTML template
+            html_body = wrap_message_in_html_template(body)
+
             # Get all tutor emails
             tutors = User.objects.filter(
                 roles='tutor',
@@ -6109,7 +6071,7 @@ class AdminSendTutorEmailsView(APIView):
                         "from": "EGS Tutoring <info@egstutoring-portal.ca>",
                         "to": [tutor_email],
                         "subject": subject,
-                        "html": body,
+                        "html": html_body,
                         "h:Reply-To": "info@egstutoring.ca",
                     }
 
