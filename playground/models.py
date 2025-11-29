@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.forms.models import model_to_dict
 from cryptography.fernet import Fernet
-import secrets
 
 
 class User(AbstractUser):
@@ -112,17 +111,6 @@ class User(AbstractUser):
     email_monthly_hours = models.BooleanField(default=True, help_text="Email when monthly hours are available")
     email_monthly_reports = models.BooleanField(default=True, help_text="Email when monthly reports are submitted")
 
-    # Tutor referral code (6-digit code for direct referrals)
-    tutor_referral_code = models.CharField(max_length=6, blank=True, null=True, unique=True, help_text="6-digit referral code for tutors")
-
-    # Onboarding tour tracking
-    has_seen_tour = models.BooleanField(default=False, help_text="Whether user has completed the onboarding tour")
-
-    # Mapulus geocoded coordinates
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geocoded latitude")
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geocoded longitude")
-    geocoded_address = models.CharField(max_length=255, blank=True, null=True, help_text="Full geocoded address from Mapulus")
-
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
@@ -167,7 +155,7 @@ class User(AbstractUser):
             self.rateInPerson = 0.00
         elif self.roles == 'parent':
             self.rateOnline = 35.00
-            self.rateInPerson = 60.00
+            self.rateInPerson = 65.00
         elif self.roles == 'tutor':
             self.rateOnline = 20.00
             self.rateInPerson = 28.00
@@ -179,25 +167,6 @@ class User(AbstractUser):
         referrals = self.referrals_made.filter(reward_applied=True)
         total_credit = sum(ref.credit_amount - ref.used_amount for ref in referrals)
         return max(total_credit, 0.00)  # Never negative
-
-    def generate_tutor_referral_code(self):
-        """Generate a unique 6-digit referral code for tutors"""
-        import random
-        import string
-
-        while True:
-            # Generate a 6-character alphanumeric code (uppercase letters and digits)
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            # Check if this code already exists
-            if not User.objects.filter(tutor_referral_code=code).exists():
-                self.tutor_referral_code = code
-                return code
-
-    def save(self, *args, **kwargs):
-        # Auto-generate referral code for tutors if not set
-        if self.roles == 'tutor' and not self.tutor_referral_code:
-            self.generate_tutor_referral_code()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
@@ -231,37 +200,51 @@ class ErrorTicket(models.Model):
     file = models.FileField(upload_to='user_error/')
 
 class MonthlyReport(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('submitted', 'Submitted'),
+    HOMEWORK_COMPLETION_CHOICES = [
+        ('excellent', 'Excellent'),
+        ('good', 'Good'),
+        ('satisfactory', 'Satisfactory'),
+        ('needs_improvement', 'Needs Improvement'),
     ]
-
+    
+    PARTICIPATION_LEVEL_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+    
     tutor = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_tutor')
     student = models.ForeignKey('User', on_delete=models.CASCADE, related_name='monthly_report_student')
     month = models.PositiveSmallIntegerField()
     year = models.PositiveSmallIntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', help_text="Report status")
-    due_date = models.DateField(null=True, blank=True, help_text="Date when report is due (1st of following month)")
-
-    # New Report Questions - All required text fields
-    overall_progress = models.TextField(blank=True, default="", help_text="How would you describe the child's progress this month?")
-    strengths = models.TextField(blank=True, default="", help_text="What subject areas or skills has the child improved in or shown strong ability?")
-    challenges = models.TextField(blank=True, default="", help_text="What areas still need extra support or practice?")
-    work_habits = models.TextField(blank=True, default="", help_text="How is the child's focus, participation, and effort during tutoring sessions?")
-    confidence_attitude = models.TextField(blank=True, default="", help_text="Do you notice any changes in the child's confidence or attitude toward learning?")
-    homework_practice = models.TextField(blank=True, default="", help_text="How consistent has the child been with completing assignments or practicing skills outside of tutoring?")
-    parent_support = models.TextField(blank=True, default="", help_text="Is there anything parents can do at home to reinforce learning?")
-    looking_ahead = models.TextField(blank=True, default="", help_text="What will be the main focus for the next month?")
-
+    
+    # Report content fields
+    progress_summary = models.TextField(default="", help_text="Overall summary of the student's progress this month")
+    strengths = models.TextField(default="", help_text="Student's strengths observed during tutoring sessions")
+    areas_for_improvement = models.TextField(default="", help_text="Areas where the student needs to improve")
+    homework_completion = models.CharField(
+        max_length=20, 
+        choices=HOMEWORK_COMPLETION_CHOICES,
+        default="good",
+        help_text="How well the student completes homework assignments"
+    )
+    participation_level = models.CharField(
+        max_length=10,
+        choices=PARTICIPATION_LEVEL_CHOICES,
+        default="medium",
+        help_text="Student's level of participation during sessions"
+    )
+    goals_for_next_month = models.TextField(default="", help_text="Goals and objectives for the upcoming month")
+    additional_comments = models.TextField(blank=True, default="", help_text="Any additional comments or observations")
+    
     created_at = models.DateTimeField(auto_now_add=True)
-    submitted_at = models.DateTimeField(null=True, blank=True, help_text="Date when report was submitted")
-
+    
     class Meta:
         unique_together = ('tutor', 'student', 'month', 'year')
         ordering = ['-year', '-month', '-created_at']
-
+    
     def __str__(self):
-        return f"Report for {self.student.firstName} {self.student.lastName} - {self.month}/{self.year} ({self.status})"
+        return f"Report for {self.student.firstName} {self.student.lastName} - {self.month}/{self.year}"
 
 class Announcements(models.Model):
     name = models.CharField(max_length=255, blank=True)
@@ -280,22 +263,13 @@ class Announcements(models.Model):
         ('student', 'Students'),
         ('tutor', 'Tutors'),
     ]
-    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,student" or "all"')
+    audience = models.CharField(max_length=20, choices=audience_choices, default='all')
 
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.name or f"Announcement #{self.id}"
-
-    def is_visible_to_role(self, user_role):
-        """Check if announcement should be visible to a specific user role"""
-        if self.audience == 'all':
-            return True
-
-        # Parse comma-separated roles
-        target_roles = [role.strip() for role in self.audience.split(',')]
-        return user_role in target_roles
         
 class Session(models.Model):
     STATUS_CHOICES = [
@@ -456,7 +430,7 @@ class Hours(models.Model):
         ('Void', 'VOID'),
     ]
     ELIGIBLE_CHOICES = [
-        ('Late', 'LATE'),
+y        ('Late', 'LATE'),
         ('Eligible', 'ELIGIBLE'),
     ]
     student = models.ForeignKey(
@@ -487,14 +461,6 @@ class Hours(models.Model):
     edited_at = models.DateTimeField(null=True, blank=True)
     edit_history = models.JSONField(default=dict, blank=True)
     tutor_reply = models.TextField(blank=True, null=True)
-    
-    # Invoice tracking
-    INVOICE_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('invoiced', 'Invoiced'),
-    ]
-    invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS_CHOICES, default='pending')
-    invoice_id = models.CharField(max_length=100, blank=True, null=True, help_text="Stripe invoice ID if invoiced")
 
 
 class WeeklyHours(models.Model):
@@ -522,14 +488,6 @@ class MonthlyHours(models.Model):
     InPersonHours = models.DecimalField(max_digits=5, decimal_places=2)
     TotalBeforeTax = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
-    
-    # Payout tracking
-    PAYOUT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('paid', 'Paid'),
-    ]
-    payout_status = models.CharField(max_length=10, choices=PAYOUT_STATUS_CHOICES, default='pending')
-    transfer_id = models.CharField(max_length=100, blank=True, null=True, help_text="Stripe transfer ID if paid")
 
 class StripePayout(models.Model):
     tutor          = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stripe_payouts")
@@ -546,9 +504,6 @@ class StripePayout(models.Model):
 class AiChatSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    message_count = models.IntegerField(default=0)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    last_message_at = models.DateTimeField(null=True, blank=True)
 
     def get_last_request(self):
         """"Gets most recent request linked to current session"""
@@ -723,43 +678,7 @@ Stay focused on platform support, be helpful and professional about EGS Tutoring
                 pass
         return all_messages
 
-    def check_rate_limit(self):
-        """Check if session has exceeded rate limits"""
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        now = timezone.now()
-        
-        # Limit: 30 messages per session total
-        if self.message_count >= 30:
-            return False, "Message limit exceeded. Maximum 30 messages per session."
-        
-        # Limit: 5 messages per minute (if last message was sent)
-        if self.last_message_at:
-            time_since_last = now - self.last_message_at
-            if time_since_last < timedelta(seconds=12):  # 5 messages per minute = 12 seconds between messages
-                return False, "Rate limit exceeded. Please wait a moment before sending another message."
-        
-        # Check messages in last hour: max 20 per hour per IP
-        if self.ip_address:
-            recent_sessions = AiChatSession.objects.filter(
-                ip_address=self.ip_address,
-                created_at__gte=now - timedelta(hours=1)
-            ).aggregate(total_messages=models.Sum('message_count'))['total_messages'] or 0
-            
-            if recent_sessions >= 20:
-                return False, "Hourly limit exceeded. Please try again later."
-        
-        return True, None
-
     def send(self, message):
-        from django.utils import timezone
-        
-        # Check rate limits first
-        can_send, error_message = self.check_rate_limit()
-        if not can_send:
-            raise ValueError(error_message)
-        
         last_request = self.get_last_request()  # Fetching last request.
 
         if not last_request:
@@ -775,11 +694,6 @@ Stay focused on platform support, be helpful and professional about EGS Tutoring
             )
         else:
             return
-        
-        # Update rate limiting fields
-        self.message_count += 1
-        self.last_message_at = timezone.now()
-        self.save()
 
        
 class AiRequest(models.Model):
@@ -971,140 +885,3 @@ class TutorChangeRequest(models.Model):
     
     def __str__(self):
         return f"Change request for {self.student.firstName} {self.student.lastName} - {self.subject} from {self.current_tutor.firstName} {self.current_tutor.lastName}"
-
-
-class TutorReferralRequest(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('declined', 'Declined'),
-    ]
-
-    parent = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='referral_requests_as_parent',
-        limit_choices_to={'roles': 'parent'}
-    )
-    student = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='referral_requests_as_student',
-        limit_choices_to={'roles': 'student'}
-    )
-    tutor = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='referral_requests_received',
-        limit_choices_to={'roles': 'tutor'}
-    )
-    subject = models.CharField(max_length=100)
-    grade = models.CharField(max_length=15)
-    service = models.CharField(max_length=30)
-    city = models.CharField(max_length=30)
-    description = models.TextField()
-    referral_code_used = models.CharField(max_length=6, help_text="The tutor code that was used")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    token = models.CharField(max_length=100, unique=True, help_text="Unique token for referral link")
-    tutoring_request = models.ForeignKey(
-        'TutoringRequest',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='referral_request'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    responded_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Referral request for {self.tutor.firstName} {self.tutor.lastName} - {self.student.firstName} {self.student.lastName} ({self.status})"
-
-
-class Popup(models.Model):
-    """
-    Admin-created popups that display on homepage once per user
-    """
-    title = models.CharField(max_length=255, help_text="Popup title")
-    content = models.TextField(help_text="Popup content/message")
-
-    # Optional fields similar to announcements
-    image = models.ImageField(upload_to='popups/', blank=True, null=True, help_text="Optional popup image")
-    link = models.URLField(blank=True, help_text="Optional link/call-to-action URL")
-    link_text = models.CharField(max_length=100, blank=True, help_text="Text for the link button")
-
-    # Audience targeting
-    audience_choices = [
-        ('all', 'Everyone'),
-        ('parent', 'Parents'),
-        ('student', 'Students'),
-        ('tutor', 'Tutors'),
-    ]
-    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,student" or "all"')
-
-    # Activation/Deactivation
-    is_active = models.BooleanField(default=True, help_text="Whether popup is currently active")
-
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(blank=True, null=True, help_text="Optional expiration date")
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.title} (Active: {self.is_active})"
-
-    def is_visible_to_role(self, user_role):
-        """Check if popup should be visible to a specific user role"""
-        if self.audience == 'all':
-            return True
-
-        # Parse comma-separated roles
-        target_roles = [role.strip() for role in self.audience.split(',')]
-        return user_role in target_roles
-
-
-class PopupDismissal(models.Model):
-    """
-    Track which users have dismissed which popups
-    """
-    popup = models.ForeignKey(Popup, on_delete=models.CASCADE, related_name='dismissals')
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='popup_dismissals'
-    )
-    dismissed_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('popup', 'user')  # Each user can only dismiss a popup once
-        ordering = ['-dismissed_at']
-
-    def __str__(self):
-        return f"{self.user.username} dismissed '{self.popup.title}'"
-
-
-class DiscountRegistration(models.Model):
-    """
-    Track users who register for a permanent 10% discount
-    """
-    CONTACT_TYPE_CHOICES = [
-        ('email', 'Email'),
-        ('phone', 'Phone'),
-    ]
-
-    first_name = models.CharField(max_length=50, help_text="First name")
-    last_name = models.CharField(max_length=50, help_text="Last name")
-    contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, help_text="Email or Phone")
-    contact_value = models.CharField(max_length=255, help_text="Email address or phone number")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} - {self.contact_type}: {self.contact_value}"
-

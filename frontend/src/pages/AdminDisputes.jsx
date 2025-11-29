@@ -59,7 +59,7 @@ const AdminDisputes = () => {
       setError('Failed to process dispute action');
     } finally {
       setActionLoading(false);
-    }
+    }            
   };
 
   const getStatusColor = (status) => {
@@ -76,12 +76,12 @@ const AdminDisputes = () => {
   };
 
   if (!user?.is_superuser) {
-    return <div>{t('errors.accessDenied')}</div>;
+    return <div>Access denied</div>;
   }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '2rem' }}>{t('admin.disputeManagementTitle')}</h1>
+      <h1 style={{ marginBottom: '2rem' }}>Dispute Management</h1>
       
       {/* Filter Buttons */}
       <div style={{ marginBottom: '2rem' }}>
@@ -118,12 +118,12 @@ const AdminDisputes = () => {
       )}
 
       {loading ? (
-        <div>{t('admin.loadingDisputes')}</div>
+        <div>Loading disputes...</div>
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {disputes.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-              {t('admin.noDisputesFound', { filter: filter !== 'all' ? filter : '' })}
+              No {filter !== 'all' ? filter : ''} disputes found
             </div>
           ) : (
             disputes.map(dispute => (
@@ -140,7 +140,7 @@ const AdminDisputes = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div>
                     <h3 style={{ margin: '0 0 0.5rem 0' }}>
-                      {t('admin.disputeNumber', { id: dispute.id })}
+                      Dispute #{dispute.id}
                       <span
                         style={{
                           marginLeft: '1rem',
@@ -155,10 +155,10 @@ const AdminDisputes = () => {
                       </span>
                     </h3>
                     <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                      {t('admin.reportedBy')}: {dispute.complainer_name} ({dispute.complainer_username})
+                      Reported by: {dispute.complainer_name} ({dispute.complainer_username})
                     </p>
                     <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                      {t('admin.submitted')}: {formatDateTime(dispute.created_at)}
+                      Submitted: {formatDateTime(dispute.created_at)}
                     </p>
                   </div>
                 </div>
@@ -170,21 +170,21 @@ const AdminDisputes = () => {
                   borderRadius: '4px',
                   marginBottom: '1rem'
                 }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0' }}>{t('admin.sessionDetailsTitle')}</h4>
+                  <h4 style={{ margin: '0 0 0.5rem 0' }}>Session Details:</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <div><strong>{t('admin.student')}:</strong> {dispute.hour_details.student_name}</div>
-                    <div><strong>{t('admin.tutor')}:</strong> {dispute.hour_details.tutor_name}</div>
-                    <div><strong>{t('admin.date')}:</strong> {dispute.hour_details.date}</div>
-                    <div><strong>{t('common.time')}:</strong> {dispute.hour_details.startTime} - {dispute.hour_details.endTime}</div>
-                    <div><strong>{t('admin.duration')}:</strong> {dispute.hour_details.totalTime} {t('common.hours')}</div>
-                    <div><strong>{t('admin.location')}:</strong> {dispute.hour_details.location}</div>
-                    <div><strong>{t('admin.subject')}:</strong> {dispute.hour_details.subject}</div>
+                    <div><strong>Student:</strong> {dispute.hour_details.student_name}</div>
+                    <div><strong>Tutor:</strong> {dispute.hour_details.tutor_name}</div>
+                    <div><strong>Date:</strong> {dispute.hour_details.date}</div>
+                    <div><strong>Time:</strong> {dispute.hour_details.startTime} - {dispute.hour_details.endTime}</div>
+                    <div><strong>Duration:</strong> {dispute.hour_details.totalTime} hours</div>
+                    <div><strong>Location:</strong> {dispute.hour_details.location}</div>
+                    <div><strong>Subject:</strong> {dispute.hour_details.subject}</div>
                   </div>
                 </div>
 
                 {/* Dispute Message */}
                 <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0' }}>{t('admin.issueDescriptionTitle')}</h4>
+                  <h4 style={{ margin: '0 0 0.5rem 0' }}>Issue Description:</h4>
                   <p style={{
                     margin: '0',
                     padding: '1rem',
@@ -200,7 +200,7 @@ const AdminDisputes = () => {
                 {/* Admin Reply (if resolved) */}
                 {dispute.admin_reply && (
                   <div style={{ marginBottom: '1rem' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0' }}>{t('admin.adminResponseTitle')}</h4>
+                    <h4 style={{ margin: '0 0 0.5rem 0' }}>Admin Response:</h4>
                     <p style={{
                       margin: '0',
                       padding: '1rem',
@@ -211,7 +211,7 @@ const AdminDisputes = () => {
                       {dispute.admin_reply}
                     </p>
                     <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-                      {t('admin.resolvedBy')}: {dispute.resolved_by_name} {t('common.on', 'on')} {formatDateTime(dispute.resolved_at)}
+                      Resolved by: {dispute.resolved_by_name} on {formatDateTime(dispute.resolved_at)}
                     </p>
                   </div>
                 )}
@@ -224,7 +224,7 @@ const AdminDisputes = () => {
                         <textarea
                           value={adminReply}
                           onChange={(e) => setAdminReply(e.target.value)}
-                          placeholder={t('admin.disputeResponsePlaceholder')}
+                          placeholder="Enter your response to this dispute..."
                           rows={3}
                           style={{
                             width: '100%',
@@ -249,7 +249,7 @@ const AdminDisputes = () => {
                               cursor: actionLoading ? 'not-allowed' : 'pointer'
                             }}
                           >
-                            {actionLoading ? t('admin.processing') : t('admin.markAsResolved')}
+                            {actionLoading ? 'Processing...' : 'Mark as Resolved'}
                           </button>
                           <button
                             onClick={() => handleDisputeAction(dispute.id, 'dismiss')}
@@ -263,7 +263,7 @@ const AdminDisputes = () => {
                               cursor: actionLoading ? 'not-allowed' : 'pointer'
                             }}
                           >
-                            {actionLoading ? t('admin.processing') : t('admin.markAsDismissed')}
+                            {actionLoading ? 'Processing...' : 'Dismiss'}
                           </button>
                           <button
                             onClick={() => {
@@ -279,7 +279,7 @@ const AdminDisputes = () => {
                               cursor: 'pointer'
                             }}
                           >
-                            {t('admin.cancel')}
+                            Cancel
                           </button>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ const AdminDisputes = () => {
                           cursor: 'pointer'
                         }}
                       >
-                        {t('admin.takeAction')}
+                        Take Action
                       </button>
                     )}
                   </div>
