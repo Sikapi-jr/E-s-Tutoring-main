@@ -110,7 +110,7 @@ def current_user_view(request):
                 else None
             ),
             "tutor_referral_code": getattr(request.user, 'tutor_referral_code', None),
-            "has_seen_tour": request.user.has_seen_tour
+            "has_seen_tour": getattr(request.user, 'has_seen_tour', False)
         }
 
         # Add parent if not None
@@ -128,8 +128,10 @@ def current_user_view(request):
 def mark_tour_complete(request):
     """Mark the onboarding tour as complete for the current user"""
     if request.user and request.user.is_authenticated:
-        request.user.has_seen_tour = True
-        request.user.save(update_fields=['has_seen_tour'])
+        # Check if has_seen_tour field exists before setting it
+        if hasattr(request.user, 'has_seen_tour'):
+            request.user.has_seen_tour = True
+            request.user.save(update_fields=['has_seen_tour'])
         return Response({"success": True, "message": "Tour marked as complete"})
     return Response({"error": "User is not authenticated"}, status=401)
 
@@ -4647,7 +4649,7 @@ class AdminUserHoursView(APIView):
             'last_login': user.last_login,
             'profile_picture': user.profile_picture.url if user.profile_picture else None,
             'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None,
-            'tutor_referral_code': user.tutor_referral_code if user.roles == 'tutor' else None,
+            'tutor_referral_code': getattr(user, 'tutor_referral_code', None) if user.roles == 'tutor' else None,
             'parent_id': user.parent.id if user.parent else None,
             'parent_name': f"{user.parent.firstName} {user.parent.lastName}" if user.parent else None,
         }
