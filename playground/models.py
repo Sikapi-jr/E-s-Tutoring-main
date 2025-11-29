@@ -430,7 +430,7 @@ class Hours(models.Model):
         ('Void', 'VOID'),
     ]
     ELIGIBLE_CHOICES = [
-y        ('Late', 'LATE'),
+        ('Late', 'LATE'),
         ('Eligible', 'ELIGIBLE'),
     ]
     student = models.ForeignKey(
