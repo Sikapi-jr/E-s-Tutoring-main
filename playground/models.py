@@ -885,3 +885,25 @@ class TutorChangeRequest(models.Model):
     
     def __str__(self):
         return f"Change request for {self.student.firstName} {self.student.lastName} - {self.subject} from {self.current_tutor.firstName} {self.current_tutor.lastName}"
+
+
+class DiscountRegistration(models.Model):
+    """
+    Track users who register for a permanent 10% discount
+    """
+    CONTACT_TYPE_CHOICES = [
+        ('email', 'Email'),
+        ('phone', 'Phone'),
+    ]
+
+    first_name = models.CharField(max_length=50, help_text="First name")
+    last_name = models.CharField(max_length=50, help_text="Last name")
+    contact_type = models.CharField(max_length=10, choices=CONTACT_TYPE_CHOICES, help_text="Email or Phone")
+    contact_value = models.CharField(max_length=255, help_text="Email address or phone number")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.contact_type}: {self.contact_value}"
