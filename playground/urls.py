@@ -129,6 +129,10 @@ urlpatterns = [
     # Admin discount registration
     path('admin/discount-registration/', views.DiscountRegistrationView.as_view(), name='admin-discount-registration'),
 
+    # Admin bulk email endpoints
+    path('admin/send-parent-emails/', views.AdminSendParentEmailsView.as_view(), name='admin-send-parent-emails'),
+    path('admin/send-tutor-emails/', views.AdminSendTutorEmailsView.as_view(), name='admin-send-tutor-emails'),
+
 ]
 
 if settings.DEBUG:

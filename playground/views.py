@@ -5843,3 +5843,224 @@ class DiscountRegistrationView(APIView):
             'details': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
+class AdminSendParentEmailsView(APIView):
+    """
+    Admin endpoint to send bulk emails to all unique parent emails
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all unique parent emails"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get all users with role 'parent' and unique emails
+            parents = User.objects.filter(
+                roles='parent',
+                email__isnull=False
+            ).exclude(email='').values_list('email', flat=True).distinct()
+
+            parent_emails = list(parents)
+
+            return Response({
+                'parent_emails': parent_emails,
+                'count': len(parent_emails)
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error fetching parent emails: {e}")
+            return Response({
+                'error': f'Error fetching parent emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        """Send email to all unique parent emails"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get parameters from request
+            subject = request.data.get('subject', 'Important Update from EGS Tutoring')
+            html_body = request.data.get('html_body', '')
+            bcc_emails = request.data.get('bcc_emails', '')  # Comma-separated string
+
+            if not html_body:
+                return Response({
+                    'error': 'Email body is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get all unique parent emails
+            parents = User.objects.filter(
+                roles='parent',
+                email__isnull=False
+            ).exclude(email='').values_list('email', flat=True).distinct()
+
+            parent_emails = list(parents)
+
+            if not parent_emails:
+                return Response({
+                    'error': 'No parent emails found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare email data
+            data = {
+                "from": "EGS Tutoring <info@egstutoring-portal.ca>",
+                "to": parent_emails,
+                "subject": subject,
+                "html": html_body,
+                "h:Reply-To": "info@egstutoring.ca",
+            }
+
+            # Add BCC if provided
+            if bcc_emails:
+                bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
+                if bcc_list:
+                    data["bcc"] = bcc_list
+
+            # Send email using Mailgun API directly for BCC support
+            response = requests.post(
+                settings.MAILGUN_API_URL,
+                auth=("api", settings.MAILGUN_API_KEY),
+                data=data,
+                timeout=30
+            )
+
+            if response.status_code == 200:
+                logger.info(f"Parent emails sent successfully to {len(parent_emails)} parents by admin {request.user.email}")
+                return Response({
+                    'detail': f'Email sent successfully to {len(parent_emails)} parents',
+                    'count': len(parent_emails),
+                    'bcc_count': len(bcc_list) if bcc_emails else 0
+                }, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"Failed to send parent emails: {response.status_code} - {response.text}")
+                return Response({
+                    'error': f'Failed to send emails: {response.text}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            logger.error(f"Error sending parent emails: {e}")
+            return Response({
+                'error': f'Error sending parent emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminSendTutorEmailsView(APIView):
+    """
+    Admin endpoint to send bulk emails to all tutors with custom subject/body/attachments
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all tutor emails"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get all users with role 'tutor'
+            tutors = User.objects.filter(
+                roles='tutor',
+                email__isnull=False
+            ).exclude(email='').values_list('email', flat=True).distinct()
+
+            tutor_emails = list(tutors)
+
+            return Response({
+                'tutor_emails': tutor_emails,
+                'count': len(tutor_emails)
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error fetching tutor emails: {e}")
+            return Response({
+                'error': f'Error fetching tutor emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        """Send email to all tutors with custom subject/body/attachments"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get parameters from request
+            subject = request.data.get('subject', '')
+            body = request.data.get('body', '')
+            bcc_emails = request.data.get('bcc_emails', '')  # Comma-separated string
+
+            if not subject or not body:
+                return Response({
+                    'error': 'Subject and body are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get all tutor emails
+            tutors = User.objects.filter(
+                roles='tutor',
+                email__isnull=False
+            ).exclude(email='').values_list('email', flat=True).distinct()
+
+            tutor_emails = list(tutors)
+
+            if not tutor_emails:
+                return Response({
+                    'error': 'No tutor emails found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare attachments from uploaded files
+            attachments = []
+            files_data = []
+
+            # Process file uploads
+            for key in request.FILES:
+                uploaded_file = request.FILES[key]
+                files_data.append(('attachment', (uploaded_file.name, uploaded_file.read())))
+
+            # Prepare email data
+            data = {
+                "from": "EGS Tutoring <info@egstutoring-portal.ca>",
+                "to": tutor_emails,
+                "subject": subject,
+                "text": body,
+                "h:Reply-To": "info@egstutoring.ca",
+            }
+
+            # Add BCC if provided
+            if bcc_emails:
+                bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
+                if bcc_list:
+                    data["bcc"] = bcc_list
+
+            # Send email using Mailgun API with file attachments
+            response = requests.post(
+                settings.MAILGUN_API_URL,
+                auth=("api", settings.MAILGUN_API_KEY),
+                data=data,
+                files=files_data if files_data else None,
+                timeout=30
+            )
+
+            if response.status_code == 200:
+                logger.info(f"Tutor emails sent successfully to {len(tutor_emails)} tutors by admin {request.user.email}")
+                return Response({
+                    'detail': f'Email sent successfully to {len(tutor_emails)} tutors',
+                    'count': len(tutor_emails),
+                    'attachments_count': len(files_data),
+                    'bcc_count': len(bcc_list) if bcc_emails else 0
+                }, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"Failed to send tutor emails: {response.status_code} - {response.text}")
+                return Response({
+                    'error': f'Failed to send emails: {response.text}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            logger.error(f"Error sending tutor emails: {e}")
+            return Response({
+                'error': f'Error sending tutor emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
