@@ -5091,49 +5091,52 @@ def admin_test_email(request):
                 file_content = file.read()
                 attachments.append((file.name, file_content, file.content_type))
 
-        # Send email to recipient (message is already HTML formatted from frontend)
+        # Email content with admin signature
+        email_body = f"""
+{message}
+
+---
+This is a test email sent from EGS Tutoring Admin Panel.
+Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
+Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Best regards,
+EGS Tutoring Admin Team
+        """
+
+        # Send email to recipient
         success_recipient = send_mailgun_email(
             [recipient_email],
             f"[TEST] {subject}",
-            text_content=f"Test email sent from EGS Tutoring Admin Panel",
+            email_body.strip(),
             html_content=message,
             attachments=attachments if attachments else None
         )
 
-        # Send copy to admin email with metadata
+        # Send copy to admin email
         admin_subject = f"[ADMIN COPY] Test Email Sent to {recipient_email}"
-        admin_html_body = f"""
-<!doctype html>
-<html>
-<body style="margin:0; padding:0; background:#f4f4f4;">
-  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
-    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
-      <tr>
-        <td style="font-size:15px; line-height:1.5; color:#333333;">
-          <h2 style="color:#0b63d6; margin-top:0;">Admin Copy - Test Email</h2>
-          <p><strong>Original Recipient:</strong> {recipient_email}</p>
-          <p><strong>Subject:</strong> {subject}</p>
-          <p><strong>Sent by:</strong> {request.user.first_name} {request.user.last_name} ({request.user.email})</p>
-          <p><strong>Timestamp:</strong> {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-          <p><strong>Attachments:</strong> {len(attachments)} file(s)</p>
-          <hr style="border:none; border-top:1px solid #ddd; margin:20px 0;">
-          <h3>Email Content Preview:</h3>
-          <div style="border:1px solid #ddd; padding:10px; background:#f9f9f9;">
-            {message}
-          </div>
-        </td>
-      </tr>
-    </table>
-  </center>
-</body>
-</html>
+        admin_body = f"""
+This is a copy of the test email you sent.
+
+Original Recipient: {recipient_email}
+Subject: {subject}
+
+Message:
+{message}
+
+---
+Test email sent successfully from EGS Tutoring Admin Panel.
+Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
+Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Attachments: {len(attachments)} file(s) attached
         """
 
         success_admin = send_mailgun_email(
             [admin_email],
             admin_subject,
-            text_content=f"Admin copy of test email sent to {recipient_email}",
-            html_content=admin_html_body,
+            admin_body.strip(),
+            html_content=message,
             attachments=attachments if attachments else None
         )
 
