@@ -1071,6 +1071,7 @@
     "noEmail": "No email available for this parent.",
     "manageStaleRequests": "Manage Stale Requests",
     "testEmail": "Test Email",
+    "bulkEmails": "Bulk Emails",
     "testEmailTool": "Admin Test Email Tool",
     "testEmailDescription": "Send a test email to any recipient with optional file attachments. A copy will also be sent to elvissikapi@gmail.com.",
     "recipientEmail": "Recipient Email",

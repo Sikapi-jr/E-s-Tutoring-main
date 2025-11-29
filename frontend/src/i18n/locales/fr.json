@@ -1052,6 +1052,7 @@
     "hasDisputes": "Contient des différends",
     "noSessionsFound": "Aucune session trouvée pour cet utilisateur",
     "testEmail": "Email de Test",
+    "bulkEmails": "Emails en Masse",
     "testEmailTool": "Outil d'Email de Test Admin",
     "testEmailDescription": "Envoyer un email de test à n'importe quel destinataire avec des pièces jointes optionnelles. Une copie sera également envoyée à elvissikapi@gmail.com.",
     "recipientEmail": "Email du Destinataire",
