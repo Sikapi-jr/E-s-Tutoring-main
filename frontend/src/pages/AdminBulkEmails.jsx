@@ -14,7 +14,7 @@ const AdminBulkEmails = () => {
   const [parentEmailData, setParentEmailData] = useState({
     parentCount: 0,
     bccEmails: '',
-    htmlBody: ''
+    messageBody: ''
   });
   const [tutorEmailData, setTutorEmailData] = useState({
     tutorCount: 0,
@@ -26,70 +26,13 @@ const AdminBulkEmails = () => {
   const [customEmailData, setCustomEmailData] = useState({
     emailList: '',
     subject: '',
-    htmlBody: '',
+    messageBody: '',
     bccEmails: '',
     files: []
   });
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Default HTML template for parent emails
-  const defaultParentHTML = `<!doctype html>
-<html>
-<body style="margin:0; padding:0; background:#f4f4f4;">
-  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
-    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
-      <tr>
-        <td style="text-align:center;">
-          <img src="https://egstutoring-portal.ca/media/LOGO%20EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
-        </td>
-      </tr>
-
-      <tr>
-        <td style="font-size:15px; line-height:1.5; color:#333333;">
-
-          <!-- Write your email content here -->
-
-          <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
-            EGS Tutoring · Bilingual Tutoring Across the GTA<br>
-            Phone: 289-423-8434 · Email: info@egstutoring.ca
-          </p>
-
-        </td>
-      </tr>
-    </table>
-  </center>
-</body>
-</html>`;
-
-  // Default HTML template for custom emails
-  const defaultCustomHTML = `<!doctype html>
-<html>
-<body style="margin:0; padding:0; background:#f4f4f4;">
-  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
-    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
-      <tr>
-        <td style="text-align:center;">
-          <img src="https://egstutoring-portal.ca/media/LOGO%20EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
-        </td>
-      </tr>
-
-      <tr>
-        <td style="font-size:15px; line-height:1.5; color:#333333;">
-
-          <!-- Write your email content here -->
-
-          <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
-            EGS Tutoring · Bilingual Tutoring Across the GTA<br>
-            Phone: 289-423-8434 · Email: info@egstutoring.ca
-          </p>
-
-        </td>
-      </tr>
-    </table>
-  </center>
-</body>
-</html>`;
 
   // Check if user is admin/superuser
   if (!user?.is_superuser) {
@@ -111,18 +54,12 @@ const AdminBulkEmails = () => {
 
       setParentEmailData(prev => ({
         ...prev,
-        parentCount: parentResponse.data.count,
-        htmlBody: defaultParentHTML
+        parentCount: parentResponse.data.count
       }));
 
       setTutorEmailData(prev => ({
         ...prev,
         tutorCount: tutorResponse.data.count
-      }));
-
-      setCustomEmailData(prev => ({
-        ...prev,
-        htmlBody: defaultCustomHTML
       }));
     } catch (error) {
       console.error('Error fetching email counts:', error);
@@ -180,7 +117,7 @@ const AdminBulkEmails = () => {
   };
 
   const handleSendParentEmails = async () => {
-    if (!parentEmailData.htmlBody.trim()) {
+    if (!parentEmailData.messageBody.trim()) {
       setResult({
         type: 'error',
         message: 'Email body cannot be empty'
@@ -194,7 +131,7 @@ const AdminBulkEmails = () => {
     try {
       const response = await api.post('/api/admin/send-parent-emails/', {
         subject: 'Message from EGS Tutoring',
-        html_body: parentEmailData.htmlBody,
+        message_body: parentEmailData.messageBody,
         bcc_emails: parentEmailData.bccEmails
       });
 
@@ -300,7 +237,7 @@ const AdminBulkEmails = () => {
   };
 
   const handleSendCustomEmails = async () => {
-    if (!customEmailData.subject.trim() || !customEmailData.htmlBody.trim()) {
+    if (!customEmailData.subject.trim() || !customEmailData.messageBody.trim()) {
       setResult({
         type: 'error',
         message: 'Subject and body are required'
@@ -322,7 +259,7 @@ const AdminBulkEmails = () => {
     try {
       const formData = new FormData();
       formData.append('subject', customEmailData.subject);
-      formData.append('html_body', customEmailData.htmlBody);
+      formData.append('message_body', customEmailData.messageBody);
       formData.append('email_list', customEmailData.emailList);
       formData.append('bcc_emails', customEmailData.bccEmails);
 
@@ -360,7 +297,7 @@ const AdminBulkEmails = () => {
             ...prev,
             emailList: '',
             subject: '',
-            htmlBody: defaultCustomHTML,
+            messageBody: '',
             bccEmails: '',
             files: []
           }));
@@ -496,17 +433,20 @@ const AdminBulkEmails = () => {
 
               <div className="form-group">
                 <label htmlFor="parentBody">
-                  Email Body (HTML) *
+                  Email Message *
                 </label>
                 <textarea
                   id="parentBody"
-                  value={parentEmailData.htmlBody}
-                  onChange={(e) => setParentEmailData(prev => ({ ...prev, htmlBody: e.target.value }))}
-                  rows={15}
+                  value={parentEmailData.messageBody}
+                  onChange={(e) => setParentEmailData(prev => ({ ...prev, messageBody: e.target.value }))}
+                  rows={10}
                   disabled={sending}
-                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                  placeholder="Write your message here. Line breaks will be preserved in the email."
                   required
                 />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Your message will be formatted with the EGS logo and contact information
+                </small>
               </div>
             </div>
 
@@ -712,17 +652,20 @@ const AdminBulkEmails = () => {
 
               <div className="form-group">
                 <label htmlFor="customBody">
-                  Email Body (HTML) *
+                  Email Message *
                 </label>
                 <textarea
                   id="customBody"
-                  value={customEmailData.htmlBody}
-                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, htmlBody: e.target.value }))}
-                  rows={15}
+                  value={customEmailData.messageBody}
+                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, messageBody: e.target.value }))}
+                  rows={10}
                   disabled={sending}
-                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                  placeholder="Write your message here. Line breaks will be preserved in the email."
                   required
                 />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Your message will be formatted with the EGS logo and contact information
+                </small>
               </div>
 
               <div className="form-group">
