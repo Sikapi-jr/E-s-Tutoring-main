@@ -132,6 +132,7 @@ urlpatterns = [
     # Admin bulk email endpoints
     path('admin/send-parent-emails/', views.AdminSendParentEmailsView.as_view(), name='admin-send-parent-emails'),
     path('admin/send-tutor-emails/', views.AdminSendTutorEmailsView.as_view(), name='admin-send-tutor-emails'),
+    path('admin/send-custom-emails/', views.AdminSendCustomEmailsView.as_view(), name='admin-send-custom-emails'),
 
 ]
 
