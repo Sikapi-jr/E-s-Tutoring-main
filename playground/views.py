@@ -5091,50 +5091,49 @@ def admin_test_email(request):
                 file_content = file.read()
                 attachments.append((file.name, file_content, file.content_type))
 
-        # Email content with admin signature
-        email_body = f"""
-{message}
-
----
-This is a test email sent from EGS Tutoring Admin Panel.
-Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
-Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
-
-Best regards,
-EGS Tutoring Admin Team
-        """
-
-        # Send email to recipient
+        # Send email to recipient (message is already HTML formatted from frontend)
         success_recipient = send_mailgun_email(
             [recipient_email],
             f"[TEST] {subject}",
-            email_body.strip(),
+            text_content=f"Test email sent from EGS Tutoring Admin Panel",
+            html_content=message,
             attachments=attachments if attachments else None
         )
 
-        # Send copy to admin email
+        # Send copy to admin email with metadata
         admin_subject = f"[ADMIN COPY] Test Email Sent to {recipient_email}"
-        admin_body = f"""
-This is a copy of the test email you sent.
-
-Original Recipient: {recipient_email}
-Subject: {subject}
-
-Message:
-{message}
-
----
-Test email sent successfully from EGS Tutoring Admin Panel.
-Sent by: {request.user.first_name} {request.user.last_name} ({request.user.email})
-Timestamp: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
-
-Attachments: {len(attachments)} file(s) attached
+        admin_html_body = f"""
+<!doctype html>
+<html>
+<body style="margin:0; padding:0; background:#f4f4f4;">
+  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
+    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
+      <tr>
+        <td style="font-size:15px; line-height:1.5; color:#333333;">
+          <h2 style="color:#0b63d6; margin-top:0;">Admin Copy - Test Email</h2>
+          <p><strong>Original Recipient:</strong> {recipient_email}</p>
+          <p><strong>Subject:</strong> {subject}</p>
+          <p><strong>Sent by:</strong> {request.user.first_name} {request.user.last_name} ({request.user.email})</p>
+          <p><strong>Timestamp:</strong> {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+          <p><strong>Attachments:</strong> {len(attachments)} file(s)</p>
+          <hr style="border:none; border-top:1px solid #ddd; margin:20px 0;">
+          <h3>Email Content Preview:</h3>
+          <div style="border:1px solid #ddd; padding:10px; background:#f9f9f9;">
+            {message}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>
         """
 
         success_admin = send_mailgun_email(
             [admin_email],
             admin_subject,
-            admin_body.strip(),
+            text_content=f"Admin copy of test email sent to {recipient_email}",
+            html_content=admin_html_body,
             attachments=attachments if attachments else None
         )
 
@@ -6055,7 +6054,7 @@ class AdminSendTutorEmailsView(APIView):
                         "from": "EGS Tutoring <info@egstutoring-portal.ca>",
                         "to": [tutor_email],
                         "subject": subject,
-                        "text": body,
+                        "html": body,
                         "h:Reply-To": "info@egstutoring.ca",
                     }
 
@@ -6105,5 +6104,124 @@ class AdminSendTutorEmailsView(APIView):
             logger.error(f"Error sending tutor emails: {e}")
             return Response({
                 'error': f'Error sending tutor emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminSendCustomEmailsView(APIView):
+    """
+    Admin endpoint to send bulk emails to a custom list of email addresses
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Send email to custom list of email addresses"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get parameters from request
+            subject = request.data.get('subject', '')
+            html_body = request.data.get('html_body', '')
+            email_list = request.data.get('email_list', '')  # Comma-separated or newline-separated
+            bcc_emails = request.data.get('bcc_emails', '')
+
+            if not subject or not html_body:
+                return Response({
+                    'error': 'Subject and body are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not email_list:
+                return Response({
+                    'error': 'Email list is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Parse email list (support both comma and newline separated)
+            custom_emails = []
+            for email in email_list.replace('\n', ',').split(','):
+                email = email.strip()
+                if email and '@' in email:
+                    custom_emails.append(email)
+
+            if not custom_emails:
+                return Response({
+                    'error': 'No valid email addresses found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Parse BCC emails if provided
+            bcc_list = []
+            if bcc_emails:
+                bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
+
+            # Prepare attachments from uploaded files
+            files_data = []
+            for key in request.FILES:
+                uploaded_file = request.FILES[key]
+                # Store file content for reuse
+                file_content = uploaded_file.read()
+                files_data.append((uploaded_file.name, file_content, uploaded_file.content_type))
+
+            # Send individual emails to each address
+            sent_count = 0
+            failed_count = 0
+            failed_emails = []
+
+            for email_address in custom_emails:
+                try:
+                    # Prepare email data for this recipient
+                    data = {
+                        "from": "EGS Tutoring <info@egstutoring-portal.ca>",
+                        "to": [email_address],
+                        "subject": subject,
+                        "html": html_body,
+                        "h:Reply-To": "info@egstutoring.ca",
+                    }
+
+                    # Add BCC if provided
+                    if bcc_list:
+                        data["bcc"] = bcc_list
+
+                    # Prepare files for this request
+                    files_for_request = []
+                    if files_data:
+                        for file_name, file_content, content_type in files_data:
+                            files_for_request.append(('attachment', (file_name, file_content, content_type)))
+
+                    # Send email using Mailgun API
+                    response = requests.post(
+                        settings.MAILGUN_API_URL,
+                        auth=("api", settings.MAILGUN_API_KEY),
+                        data=data,
+                        files=files_for_request if files_for_request else None,
+                        timeout=30
+                    )
+
+                    if response.status_code == 200:
+                        sent_count += 1
+                    else:
+                        failed_count += 1
+                        failed_emails.append(email_address)
+                        logger.error(f"Failed to send to {email_address}: {response.status_code} - {response.text}")
+
+                except Exception as e:
+                    failed_count += 1
+                    failed_emails.append(email_address)
+                    logger.error(f"Exception sending to {email_address}: {e}")
+
+            logger.info(f"Custom emails: {sent_count} sent, {failed_count} failed by admin {request.user.email}")
+
+            return Response({
+                'detail': f'Emails sent to {sent_count} recipients, {failed_count} failed',
+                'sent_count': sent_count,
+                'failed_count': failed_count,
+                'failed_emails': failed_emails,
+                'attachments_count': len(files_data),
+                'bcc_count': len(bcc_list) if bcc_list else 0
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error sending custom emails: {e}")
+            return Response({
+                'error': f'Error sending custom emails: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

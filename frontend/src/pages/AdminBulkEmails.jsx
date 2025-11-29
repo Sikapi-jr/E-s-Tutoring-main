@@ -10,6 +10,7 @@ const AdminBulkEmails = () => {
   const { user } = useUser();
   const [showParentModal, setShowParentModal] = useState(false);
   const [showTutorModal, setShowTutorModal] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
   const [parentEmailData, setParentEmailData] = useState({
     parentCount: 0,
     bccEmails: '',
@@ -19,6 +20,13 @@ const AdminBulkEmails = () => {
     tutorCount: 0,
     subject: '',
     body: '',
+    bccEmails: '',
+    files: []
+  });
+  const [customEmailData, setCustomEmailData] = useState({
+    emailList: '',
+    subject: '',
+    htmlBody: '',
     bccEmails: '',
     files: []
   });
@@ -33,36 +41,43 @@ const AdminBulkEmails = () => {
     <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
       <tr>
         <td style="text-align:center;">
-          <img src="https://static.wixstatic.com/media/b72034_63e58f49589147d987fde676e33ffef0~mv2.jpg" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
+          <img src="https://egstutoring-portal.ca/media/LOGO EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
         </td>
       </tr>
 
       <tr>
         <td style="font-size:15px; line-height:1.5; color:#333333;">
 
-          <p>Hello,</p>
+          <!-- Write your email content here -->
 
-          <p>I hope this message finds you well. My name is <strong>Elvis Sikapi</strong>, and I represent EGS Tutoring. We offer bilingual (English/French) tutoring services to students across the GTA, from Toronto to Bowmanville.</p>
+          <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
+            EGS Tutoring · Bilingual Tutoring Across the GTA<br>
+            Phone: 289-423-8434 · Email: info@egstutoring.ca
+          </p>
 
-          <p>Our program provides both in-person and online support, guided by a qualified child psychologist. We are proud to have helped over 50 students achieve significant academic improvement, including students progressing from C to A grades. EGS Tutoring is also approved by a school director and a member of Conseil Scolaire Viamonde.</p>
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
 
-          <p>We would like to kindly ask for your support in one of the following ways:</p>
+  // Default HTML template for custom emails
+  const defaultCustomHTML = `<!doctype html>
+<html>
+<body style="margin:0; padding:0; background:#f4f4f4;">
+  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
+    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
+      <tr>
+        <td style="text-align:center;">
+          <img src="https://egstutoring-portal.ca/media/LOGO EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
+        </td>
+      </tr>
 
-          <ul style="margin:0 0 16px 24px; padding:0;">
-            <li style="margin-bottom:8px;">Would you consider including EGS Tutoring as a recommended resource in your school newsletter or newspaper?</li>
-            <li>Alternatively, could we schedule a brief call or meeting to discuss how our services can be a safe, effective option for your students?</li>
-          </ul>
+      <tr>
+        <td style="font-size:15px; line-height:1.5; color:#333333;">
 
-          <p>Our mission is to support student learning while keeping families connected with the trusted schools in their communities.</p>
-
-          <p>Thank you very much for your time and consideration. I look forward to hearing from you.</p>
-
-          <p><strong>Best regards,</strong><br><br>Elvis Sikapi<br>EGS Tutoring<br>289-423-8434<br>info@egstutoring.ca</p>
-
-          <div style="text-align:center; margin:22px 0;">
-            <a href="tel:+12894238434" style="display:inline-block; background:#0b63d6; color:#ffffff; padding:12px 18px; border-radius:6px; text-decoration:none; font-weight:600; margin-right:8px;">Call Us</a>
-            <a href="https://egstutoring.ca" style="display:inline-block; background:#eeeeee; color:#333333; padding:12px 18px; border-radius:6px; text-decoration:none; font-weight:600;">Visit Website</a>
-          </div>
+          <!-- Write your email content here -->
 
           <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
             EGS Tutoring · Bilingual Tutoring Across the GTA<br>
@@ -104,6 +119,11 @@ const AdminBulkEmails = () => {
         ...prev,
         tutorCount: tutorResponse.data.count
       }));
+
+      setCustomEmailData(prev => ({
+        ...prev,
+        htmlBody: defaultCustomHTML
+      }));
     } catch (error) {
       console.error('Error fetching email counts:', error);
       setResult({
@@ -127,12 +147,21 @@ const AdminBulkEmails = () => {
     setResult(null);
   };
 
+  const handleOpenCustomModal = () => {
+    setShowCustomModal(true);
+    setResult(null);
+  };
+
   const handleCloseParentModal = () => {
     setShowParentModal(false);
   };
 
   const handleCloseTutorModal = () => {
     setShowTutorModal(false);
+  };
+
+  const handleCloseCustomModal = () => {
+    setShowCustomModal(false);
   };
 
   const handleFileChange = (e) => {
@@ -270,6 +299,100 @@ const AdminBulkEmails = () => {
     }
   };
 
+  const handleSendCustomEmails = async () => {
+    if (!customEmailData.subject.trim() || !customEmailData.htmlBody.trim()) {
+      setResult({
+        type: 'error',
+        message: 'Subject and body are required'
+      });
+      return;
+    }
+
+    if (!customEmailData.emailList.trim()) {
+      setResult({
+        type: 'error',
+        message: 'Email list is required'
+      });
+      return;
+    }
+
+    setSending(true);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('subject', customEmailData.subject);
+      formData.append('html_body', customEmailData.htmlBody);
+      formData.append('email_list', customEmailData.emailList);
+      formData.append('bcc_emails', customEmailData.bccEmails);
+
+      // Add files
+      customEmailData.files.forEach((file, index) => {
+        formData.append(`file_${index}`, file);
+      });
+
+      const response = await api.post('/api/admin/send-custom-emails/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const { sent_count, failed_count, failed_emails } = response.data;
+      let message = response.data.detail || `Emails sent to ${sent_count} recipients`;
+
+      if (failed_count > 0) {
+        message += `\n\nFailed to send to ${failed_count} recipients`;
+        if (failed_emails && failed_emails.length > 0) {
+          message += `:\n${failed_emails.join(', ')}`;
+        }
+      }
+
+      setResult({
+        type: failed_count > 0 ? 'warning' : 'success',
+        message: message
+      });
+
+      setTimeout(() => {
+        if (failed_count === 0) {
+          handleCloseCustomModal();
+          // Reset form
+          setCustomEmailData(prev => ({
+            ...prev,
+            emailList: '',
+            subject: '',
+            htmlBody: defaultCustomHTML,
+            bccEmails: '',
+            files: []
+          }));
+        }
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error sending custom emails:', error);
+      setResult({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to send custom emails'
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleCustomFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setCustomEmailData(prev => ({
+      ...prev,
+      files: files
+    }));
+  };
+
+  const removeCustomFile = (indexToRemove) => {
+    setCustomEmailData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   return (
     <div className="form-container">
       <h1>Admin Bulk Email Tools</h1>
@@ -311,6 +434,25 @@ const AdminBulkEmails = () => {
             style={{ width: '100%' }}
           >
             Send Tutor Emails ({tutorEmailData.tutorCount} recipients)
+          </button>
+        </div>
+
+        {/* Custom Email List Button */}
+        <div style={{ flex: '1', minWidth: '300px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          <h3>Send to Custom List</h3>
+          <p>Send an email to your own custom list of recipients</p>
+          <ul style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+            <li>Paste your email list (comma or newline separated)</li>
+            <li>Custom subject and HTML body</li>
+            <li>Attach files (optional)</li>
+            <li>Add BCC recipients (optional)</li>
+          </ul>
+          <button
+            onClick={handleOpenCustomModal}
+            className="form-button"
+            style={{ width: '100%' }}
+          >
+            Send Custom List Emails
           </button>
         </div>
       </div>
@@ -425,16 +567,17 @@ const AdminBulkEmails = () => {
 
               <div className="form-group">
                 <label htmlFor="tutorBody">
-                  Message Body *
+                  Message Body (HTML Supported) *
                 </label>
                 <textarea
                   id="tutorBody"
                   value={tutorEmailData.body}
                   onChange={(e) => setTutorEmailData(prev => ({ ...prev, body: e.target.value }))}
-                  placeholder="Enter your message here..."
+                  placeholder="Enter your message here (HTML supported)..."
                   rows={10}
                   disabled={sending}
                   required
+                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
                 />
               </div>
 
@@ -512,6 +655,150 @@ const AdminBulkEmails = () => {
                 disabled={sending}
               >
                 {sending ? 'Sending...' : `Send to ${tutorEmailData.tutorCount} Tutors`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Email Modal */}
+      {showCustomModal && (
+        <div className="modal-overlay" onClick={handleCloseCustomModal}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Send Email to Custom List</h2>
+              <button className="modal-close" onClick={handleCloseCustomModal}>×</button>
+            </div>
+
+            <div className="modal-body">
+              {result && (
+                <div className={`form-message ${result.type === 'error' ? 'error' : 'success'}`}>
+                  {result.message}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="customEmailList">
+                  Email List *
+                </label>
+                <textarea
+                  id="customEmailList"
+                  value={customEmailData.emailList}
+                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, emailList: e.target.value }))}
+                  placeholder="Enter email addresses separated by commas or new lines&#10;example@email.com, another@email.com&#10;or&#10;example@email.com&#10;another@email.com"
+                  rows={5}
+                  disabled={sending}
+                  required
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Separate emails with commas or new lines
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customSubject">
+                  Subject *
+                </label>
+                <input
+                  type="text"
+                  id="customSubject"
+                  value={customEmailData.subject}
+                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Enter email subject"
+                  disabled={sending}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customBody">
+                  Email Body (HTML) *
+                </label>
+                <textarea
+                  id="customBody"
+                  value={customEmailData.htmlBody}
+                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, htmlBody: e.target.value }))}
+                  rows={15}
+                  disabled={sending}
+                  style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="customFiles">
+                  Attachments (optional)
+                </label>
+                <input
+                  type="file"
+                  id="customFiles"
+                  multiple
+                  onChange={handleCustomFileChange}
+                  disabled={sending}
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls,.ppt,.pptx"
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Supported formats: PDF, DOC, images, ZIP, etc.
+                </small>
+              </div>
+
+              {customEmailData.files.length > 0 && (
+                <div className="form-group">
+                  <label>Selected Files:</label>
+                  <div className="file-list">
+                    {customEmailData.files.map((file, index) => (
+                      <div key={index} className="file-item">
+                        <span className="file-name">{file.name}</span>
+                        <span className="file-size">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeCustomFile(index)}
+                          className="file-remove-btn"
+                          disabled={sending}
+                          title="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="customBcc">
+                  BCC Emails (optional)
+                </label>
+                <input
+                  type="text"
+                  id="customBcc"
+                  value={customEmailData.bccEmails}
+                  onChange={(e) => setCustomEmailData(prev => ({ ...prev, bccEmails: e.target.value }))}
+                  placeholder="email1@example.com, email2@example.com"
+                  disabled={sending}
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Separate multiple emails with commas
+                </small>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={handleCloseCustomModal}
+                className="modal-button cancel"
+                disabled={sending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendCustomEmails}
+                className="modal-button confirm"
+                disabled={sending}
+              >
+                {sending ? 'Sending...' : 'Send Emails'}
               </button>
             </div>
           </div>

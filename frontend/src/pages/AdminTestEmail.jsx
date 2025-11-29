@@ -8,10 +8,40 @@ import '../styles/Form.css';
 const AdminTestEmail = () => {
   const { t } = useTranslation();
   const { user } = useUser();
+
+  // Default HTML template for test emails
+  const defaultEmailHTML = `<!doctype html>
+<html>
+<body style="margin:0; padding:0; background:#f4f4f4;">
+  <center style="width:100%; padding:20px 0; background:#f4f4f4;">
+    <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
+      <tr>
+        <td style="text-align:center;">
+          <img src="https://egstutoring-portal.ca/media/LOGO EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
+        </td>
+      </tr>
+
+      <tr>
+        <td style="font-size:15px; line-height:1.5; color:#333333;">
+
+          <!-- Write your email content here -->
+
+          <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
+            EGS Tutoring · Bilingual Tutoring Across the GTA<br>
+            Phone: 289-423-8434 · Email: info@egstutoring.ca
+          </p>
+
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+</html>`;
+
   const [formData, setFormData] = useState({
     recipientEmail: '',
     subject: '',
-    message: '',
+    message: defaultEmailHTML,
     attachments: []
   });
   const [sending, setSending] = useState(false);
@@ -91,7 +121,7 @@ const AdminTestEmail = () => {
       setFormData({
         recipientEmail: '',
         subject: '',
-        message: '',
+        message: defaultEmailHTML,
         attachments: []
       });
 
@@ -158,7 +188,7 @@ const AdminTestEmail = () => {
 
         <div className="form-group">
           <label htmlFor="message">
-            {t('admin.emailMessage', 'Message')} *
+            {t('admin.emailMessage', 'Message')} (HTML) *
           </label>
           <textarea
             id="message"
@@ -166,10 +196,10 @@ const AdminTestEmail = () => {
             value={formData.message}
             onChange={handleInputChange}
             placeholder={t('admin.emailMessagePlaceholder', 'Enter your message here...')}
-            rows={8}
+            rows={15}
             required
             disabled={sending}
-            style={{ minHeight: '150px', resize: 'vertical' }}
+            style={{ minHeight: '300px', resize: 'vertical', fontFamily: 'monospace', fontSize: '12px' }}
           />
         </div>
 
