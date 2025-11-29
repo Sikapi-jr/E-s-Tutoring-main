@@ -9,6 +9,8 @@ from django.urls import reverse
 from django.conf import settings
 from playground.email_utils import send_mailgun_email
 import logging
+import random
+import string
 
 from django_rest_passwordreset.signals import reset_password_token_created
 
@@ -63,6 +65,22 @@ EGS Tutoring Team
     except Exception as e:
         logger.error(f"Error sending password reset email: {str(e)}")
         # Don't raise the exception to prevent the password reset from failing completely
+
+
+@receiver(post_save, sender=User)
+def generate_tutor_referral_code(sender, instance, created, **kwargs):
+    """
+    Generate unique referral code for tutors when they are created
+    """
+    if created and instance.roles == 'tutor' and not instance.tutor_referral_code:
+        # Generate unique 6-digit alphanumeric code
+        while True:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if not User.objects.filter(tutor_referral_code=code).exists():
+                instance.tutor_referral_code = code
+                instance.save(update_fields=['tutor_referral_code'])
+                logger.info(f"Generated referral code {code} for tutor {instance.username}")
+                break
 
 
 @receiver(post_save, sender=User)

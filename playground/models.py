@@ -111,6 +111,10 @@ class User(AbstractUser):
     email_monthly_hours = models.BooleanField(default=True, help_text="Email when monthly hours are available")
     email_monthly_reports = models.BooleanField(default=True, help_text="Email when monthly reports are submitted")
 
+    # Tutor referral code and onboarding tour
+    tutor_referral_code = models.CharField(max_length=6, blank=True, null=True, unique=True, help_text="6-digit referral code for tutors")
+    has_seen_tour = models.BooleanField(default=False, help_text="Whether user has completed the onboarding tour")
+
     _encrypted_google_access_token = models.TextField(blank=True, null=True)
     _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
