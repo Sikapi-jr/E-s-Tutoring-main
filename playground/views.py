@@ -5906,41 +5906,60 @@ class AdminSendParentEmailsView(APIView):
                     'error': 'No parent emails found'
                 }, status=status.HTTP_404_NOT_FOUND)
 
-            # Prepare email data
-            data = {
-                "from": "EGS Tutoring <info@egstutoring-portal.ca>",
-                "to": parent_emails,
-                "subject": subject,
-                "html": html_body,
-                "h:Reply-To": "info@egstutoring.ca",
-            }
-
-            # Add BCC if provided
+            # Parse BCC emails if provided
+            bcc_list = []
             if bcc_emails:
                 bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
-                if bcc_list:
-                    data["bcc"] = bcc_list
 
-            # Send email using Mailgun API directly for BCC support
-            response = requests.post(
-                settings.MAILGUN_API_URL,
-                auth=("api", settings.MAILGUN_API_KEY),
-                data=data,
-                timeout=30
-            )
+            # Send individual emails to each parent
+            sent_count = 0
+            failed_count = 0
+            failed_emails = []
 
-            if response.status_code == 200:
-                logger.info(f"Parent emails sent successfully to {len(parent_emails)} parents by admin {request.user.email}")
-                return Response({
-                    'detail': f'Email sent successfully to {len(parent_emails)} parents',
-                    'count': len(parent_emails),
-                    'bcc_count': len(bcc_list) if bcc_emails else 0
-                }, status=status.HTTP_200_OK)
-            else:
-                logger.error(f"Failed to send parent emails: {response.status_code} - {response.text}")
-                return Response({
-                    'error': f'Failed to send emails: {response.text}'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            for parent_email in parent_emails:
+                try:
+                    # Prepare email data for this recipient
+                    data = {
+                        "from": "EGS Tutoring <info@egstutoring-portal.ca>",
+                        "to": [parent_email],
+                        "subject": subject,
+                        "html": html_body,
+                        "h:Reply-To": "info@egstutoring.ca",
+                    }
+
+                    # Add BCC if provided
+                    if bcc_list:
+                        data["bcc"] = bcc_list
+
+                    # Send email using Mailgun API
+                    response = requests.post(
+                        settings.MAILGUN_API_URL,
+                        auth=("api", settings.MAILGUN_API_KEY),
+                        data=data,
+                        timeout=30
+                    )
+
+                    if response.status_code == 200:
+                        sent_count += 1
+                    else:
+                        failed_count += 1
+                        failed_emails.append(parent_email)
+                        logger.error(f"Failed to send to {parent_email}: {response.status_code} - {response.text}")
+
+                except Exception as e:
+                    failed_count += 1
+                    failed_emails.append(parent_email)
+                    logger.error(f"Exception sending to {parent_email}: {e}")
+
+            logger.info(f"Parent emails: {sent_count} sent, {failed_count} failed by admin {request.user.email}")
+
+            return Response({
+                'detail': f'Emails sent to {sent_count} parents, {failed_count} failed',
+                'sent_count': sent_count,
+                'failed_count': failed_count,
+                'failed_emails': failed_emails,
+                'bcc_count': len(bcc_list) if bcc_list else 0
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Error sending parent emails: {e}")
@@ -6012,51 +6031,75 @@ class AdminSendTutorEmailsView(APIView):
                 }, status=status.HTTP_404_NOT_FOUND)
 
             # Prepare attachments from uploaded files
-            attachments = []
             files_data = []
-
-            # Process file uploads
             for key in request.FILES:
                 uploaded_file = request.FILES[key]
-                files_data.append(('attachment', (uploaded_file.name, uploaded_file.read())))
+                # Store file content for reuse
+                file_content = uploaded_file.read()
+                files_data.append((uploaded_file.name, file_content, uploaded_file.content_type))
 
-            # Prepare email data
-            data = {
-                "from": "EGS Tutoring <info@egstutoring-portal.ca>",
-                "to": tutor_emails,
-                "subject": subject,
-                "text": body,
-                "h:Reply-To": "info@egstutoring.ca",
-            }
-
-            # Add BCC if provided
+            # Parse BCC emails if provided
+            bcc_list = []
             if bcc_emails:
                 bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
-                if bcc_list:
-                    data["bcc"] = bcc_list
 
-            # Send email using Mailgun API with file attachments
-            response = requests.post(
-                settings.MAILGUN_API_URL,
-                auth=("api", settings.MAILGUN_API_KEY),
-                data=data,
-                files=files_data if files_data else None,
-                timeout=30
-            )
+            # Send individual emails to each tutor
+            sent_count = 0
+            failed_count = 0
+            failed_emails = []
 
-            if response.status_code == 200:
-                logger.info(f"Tutor emails sent successfully to {len(tutor_emails)} tutors by admin {request.user.email}")
-                return Response({
-                    'detail': f'Email sent successfully to {len(tutor_emails)} tutors',
-                    'count': len(tutor_emails),
-                    'attachments_count': len(files_data),
-                    'bcc_count': len(bcc_list) if bcc_emails else 0
-                }, status=status.HTTP_200_OK)
-            else:
-                logger.error(f"Failed to send tutor emails: {response.status_code} - {response.text}")
-                return Response({
-                    'error': f'Failed to send emails: {response.text}'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            for tutor_email in tutor_emails:
+                try:
+                    # Prepare email data for this recipient
+                    data = {
+                        "from": "EGS Tutoring <info@egstutoring-portal.ca>",
+                        "to": [tutor_email],
+                        "subject": subject,
+                        "text": body,
+                        "h:Reply-To": "info@egstutoring.ca",
+                    }
+
+                    # Add BCC if provided
+                    if bcc_list:
+                        data["bcc"] = bcc_list
+
+                    # Prepare files for this request
+                    files_for_request = []
+                    if files_data:
+                        for file_name, file_content, content_type in files_data:
+                            files_for_request.append(('attachment', (file_name, file_content, content_type)))
+
+                    # Send email using Mailgun API with file attachments
+                    response = requests.post(
+                        settings.MAILGUN_API_URL,
+                        auth=("api", settings.MAILGUN_API_KEY),
+                        data=data,
+                        files=files_for_request if files_for_request else None,
+                        timeout=30
+                    )
+
+                    if response.status_code == 200:
+                        sent_count += 1
+                    else:
+                        failed_count += 1
+                        failed_emails.append(tutor_email)
+                        logger.error(f"Failed to send to {tutor_email}: {response.status_code} - {response.text}")
+
+                except Exception as e:
+                    failed_count += 1
+                    failed_emails.append(tutor_email)
+                    logger.error(f"Exception sending to {tutor_email}: {e}")
+
+            logger.info(f"Tutor emails: {sent_count} sent, {failed_count} failed by admin {request.user.email}")
+
+            return Response({
+                'detail': f'Emails sent to {sent_count} tutors, {failed_count} failed',
+                'sent_count': sent_count,
+                'failed_count': failed_count,
+                'failed_emails': failed_emails,
+                'attachments_count': len(files_data),
+                'bcc_count': len(bcc_list) if bcc_list else 0
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Error sending tutor emails: {e}")

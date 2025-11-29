@@ -169,14 +169,26 @@ const AdminBulkEmails = () => {
         bcc_emails: parentEmailData.bccEmails
       });
 
+      const { sent_count, failed_count, failed_emails } = response.data;
+      let message = response.data.detail || `Emails sent to ${sent_count} parents`;
+
+      if (failed_count > 0) {
+        message += `\n\nFailed to send to ${failed_count} recipients`;
+        if (failed_emails && failed_emails.length > 0) {
+          message += `:\n${failed_emails.join(', ')}`;
+        }
+      }
+
       setResult({
-        type: 'success',
-        message: response.data.detail || `Email sent successfully to ${parentEmailData.parentCount} parents`
+        type: failed_count > 0 ? 'warning' : 'success',
+        message: message
       });
 
       setTimeout(() => {
-        handleCloseParentModal();
-      }, 2000);
+        if (failed_count === 0) {
+          handleCloseParentModal();
+        }
+      }, 3000);
 
     } catch (error) {
       console.error('Error sending parent emails:', error);
@@ -218,22 +230,34 @@ const AdminBulkEmails = () => {
         },
       });
 
+      const { sent_count, failed_count, failed_emails } = response.data;
+      let message = response.data.detail || `Emails sent to ${sent_count} tutors`;
+
+      if (failed_count > 0) {
+        message += `\n\nFailed to send to ${failed_count} recipients`;
+        if (failed_emails && failed_emails.length > 0) {
+          message += `:\n${failed_emails.join(', ')}`;
+        }
+      }
+
       setResult({
-        type: 'success',
-        message: response.data.detail || `Email sent successfully to ${tutorEmailData.tutorCount} tutors`
+        type: failed_count > 0 ? 'warning' : 'success',
+        message: message
       });
 
       setTimeout(() => {
-        handleCloseTutorModal();
-        // Reset form
-        setTutorEmailData(prev => ({
-          ...prev,
-          subject: '',
-          body: '',
-          bccEmails: '',
-          files: []
-        }));
-      }, 2000);
+        if (failed_count === 0) {
+          handleCloseTutorModal();
+          // Reset form
+          setTutorEmailData(prev => ({
+            ...prev,
+            subject: '',
+            body: '',
+            bccEmails: '',
+            files: []
+          }));
+        }
+      }, 3000);
 
     } catch (error) {
       console.error('Error sending tutor emails:', error);
