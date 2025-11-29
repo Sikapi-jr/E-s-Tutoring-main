@@ -41,7 +41,7 @@ const AdminBulkEmails = () => {
     <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
       <tr>
         <td style="text-align:center;">
-          <img src="https://egstutoring-portal.ca/media/LOGO EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
+          <img src="https://egstutoring-portal.ca/media/LOGO%20EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
         </td>
       </tr>
 
@@ -70,7 +70,7 @@ const AdminBulkEmails = () => {
     <table width="100%" style="max-width:600px; background:#ffffff; border-radius:8px; padding:32px; font-family:Arial, Helvetica, sans-serif;">
       <tr>
         <td style="text-align:center;">
-          <img src="https://egstutoring-portal.ca/media/LOGO EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
+          <img src="https://egstutoring-portal.ca/media/LOGO%20EMAIL.png" alt="EGS Tutoring" style="width:100%; max-height:260px; object-fit:cover; border-radius:6px; display:block; margin-bottom:16px;">
         </td>
       </tr>
 
