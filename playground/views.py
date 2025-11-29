@@ -109,7 +109,7 @@ def current_user_view(request):
                 if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
                 else None
             ),
-            "tutor_referral_code": request.user.tutor_referral_code,
+            "tutor_referral_code": getattr(request.user, 'tutor_referral_code', None),
             "has_seen_tour": request.user.has_seen_tour
         }
 
