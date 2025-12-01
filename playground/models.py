@@ -437,6 +437,10 @@ class Hours(models.Model):
         ('Late', 'LATE'),
         ('Eligible', 'ELIGIBLE'),
     ]
+    INVOICE_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('invoiced', 'Invoiced'),
+    ]
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -461,6 +465,8 @@ class Hours(models.Model):
     notes = models.TextField()
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Accepted')
     eligible = models.CharField(max_length=15, choices=ELIGIBLE_CHOICES, default='Eligible')
+    invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS_CHOICES, default='pending')
+    invoice_id = models.CharField(max_length=100, blank=True, null=True, help_text='Stripe invoice ID if invoiced')
     created_at = models.DateTimeField(auto_now_add=True)
     edited_at = models.DateTimeField(null=True, blank=True)
     edit_history = models.JSONField(default=dict, blank=True)

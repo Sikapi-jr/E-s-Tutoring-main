@@ -425,7 +425,7 @@ class HoursSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Hours
-        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'parent_firstName', 'parent_lastName', 'has_disputes', 'dispute_id']
+        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'invoice_status', 'invoice_id', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'parent_firstName', 'parent_lastName', 'has_disputes', 'dispute_id']
         extra_kwargs = {
             "student": {"required": True},
             "parent": {"required": False},
