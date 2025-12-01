@@ -256,21 +256,13 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
                             ))}
                         </select>
 
-                        <div className="form-row">
-                            <input
-                                className="form-input"
-                                type="text"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                placeholder={t('logHours.subject')}
-                            />
-
-                            <select className="form-input" value={location} onChange={(e) => setLocation(e.target.value)}>
-                                <option value="">{t('logHours.selectLocation')}</option>
-                                <option value="Online">{t('logHours.online')}</option>
-                                <option value="In-Person">{t('logHours.inPerson')}</option>
-                            </select>
-                        </div>
+                        <input
+                            className="form-input"
+                            type="text"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            placeholder={t('logHours.subject')}
+                        />
 
                         <input
                             className="form-input"
@@ -282,6 +274,12 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
                             max={getCurrentWeekRange().max}
                             title={t('logHours.currentWeekOnly')}
                         />
+
+                        <select className="form-input" value={location} onChange={(e) => setLocation(e.target.value)}>
+                            <option value="">{t('logHours.selectLocation')}</option>
+                            <option value="Online">{t('logHours.online')}</option>
+                            <option value="In-Person">{t('logHours.inPerson')}</option>
+                        </select>
 
                         <div className="form-row">
                             <div className="time-field">
