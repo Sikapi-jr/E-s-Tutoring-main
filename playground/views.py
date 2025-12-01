@@ -2533,6 +2533,9 @@ class LogHoursCreateView(APIView):
         student = User.objects.get(pk=student_id)
         parent = student.parent_id
 
+        if not parent:
+            raise ValidationError("Student does not have an associated parent. Please contact admin to link a parent account.")
+
         # Handle date and time fields
         date_str = data.get("date")
         start_time_str = data.get("start_time")
@@ -2674,13 +2677,13 @@ class ParentHoursListView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=404)
         
-        # Filter hours based on user role (only show eligible hours)
+        # Filter hours based on user role
         if user.roles == 'parent':
-            records = Hours.objects.filter(parent=user, eligible='Eligible').order_by('-created_at')
+            records = Hours.objects.filter(parent=user).order_by('-created_at')
         elif user.roles == 'student':
-            records = Hours.objects.filter(student=user, eligible='Eligible').order_by('-created_at')
+            records = Hours.objects.filter(student=user).order_by('-created_at')
         elif user.roles == 'tutor':
-            records = Hours.objects.filter(tutor=user, eligible='Eligible').order_by('-created_at')
+            records = Hours.objects.filter(tutor=user).order_by('-created_at')
         else:
             records = Hours.objects.none()  # Return empty queryset for unknown roles
             
