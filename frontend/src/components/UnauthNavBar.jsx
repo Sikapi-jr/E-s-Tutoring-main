@@ -31,7 +31,7 @@ export default function UnauthNavbar() {
         <NavLink to="/" className="nav-link brand-link">
           <EGSLogo className="nav-logo" />
         </NavLink>
-        <LanguageSwitcher className="nav-language-switcher" />
+        <LanguageSwitcher className="nav-language-switcher nav-language-mobile" />
       </div>
 
       {/* Mobile hamburger button */}
@@ -46,6 +46,20 @@ export default function UnauthNavbar() {
       </button>
 
       <ul className={`nav-links ${mobileMenuOpen ? "is-open" : ""}`}>
+        <li className="nav-language-desktop-wrapper">
+          <LanguageSwitcher className="nav-language-switcher nav-language-desktop" />
+        </li>
+        <li>
+          <a
+            href="https://www.egstutoring.ca/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-link"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {t('footer.aboutUs')}
+          </a>
+        </li>
         <li>
           <NavLink
             to="/contact"

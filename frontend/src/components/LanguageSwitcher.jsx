@@ -9,8 +9,8 @@ const LanguageSwitcher = memo(({ className = "" }) => {
   };
 
   const languages = [
-    { code: 'en', label: 'EN' },
-    { code: 'fr', label: 'FR' }
+    { code: 'en', label: '🇺🇸' },
+    { code: 'fr', label: '🇫🇷' }
   ];
 
   return (
@@ -19,7 +19,7 @@ const LanguageSwitcher = memo(({ className = "" }) => {
         value={i18n.language}
         onChange={(e) => handleLanguageChange(e.target.value)}
         style={{
-          padding: '0.1rem 0.5rem',
+          padding: '0.15rem 0.5rem',
           borderRadius: '4px',
           border: '1px solid #ccc',
           backgroundColor: '#fff',
@@ -27,7 +27,7 @@ const LanguageSwitcher = memo(({ className = "" }) => {
           cursor: 'pointer',
           minWidth: '75px',
           width: '75px',
-          height: '28px',
+          height: '26px',
           lineHeight: '1',
           appearance: 'none',
           WebkitAppearance: 'none',
