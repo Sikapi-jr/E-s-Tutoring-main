@@ -110,7 +110,8 @@ def wrap_message_in_html_template(message_text):
 
           <p style="font-size:12px; color:#777777; text-align:center; margin-top:20px;">
             EGS Tutoring · Bilingual Tutoring Across the GTA<br>
-            Phone: 289-423-8434 · Email: info@egstutoring.ca
+            Phone: 289-423-8434 · Email: info@egstutoring.ca<br>
+            Website: <a href="https://www.egstutoring.ca/" style="color:#0066cc; text-decoration:none;">www.egstutoring.ca</a>
           </p>
         </td>
       </tr>
