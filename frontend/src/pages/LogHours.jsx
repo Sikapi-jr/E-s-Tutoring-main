@@ -282,7 +282,7 @@ const LogHours = memo(() => {
                         placeholder={t('logHours.subject')}
                     />
 
-                    <select className="form-input" name="selectedLocation" onChange={(e) => setLocation(e.target.value)}>
+                    <select className="form-input" name="selectedLocation" value={location} onChange={(e) => setLocation(e.target.value)}>
                         <option value="">{t('logHours.selectLocation')}</option>
                         <option value="Online">{t('logHours.online')}</option>
                         <option value="In-Person">{t('logHours.inPerson')}</option>
