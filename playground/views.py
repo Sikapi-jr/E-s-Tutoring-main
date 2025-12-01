@@ -5898,9 +5898,9 @@ class AdminSendParentEmailsView(APIView):
             message_body = request.data.get('message_body', '')
             bcc_emails = request.data.get('bcc_emails', '')  # Comma-separated string
 
-            if not message_body:
+            if not subject or not message_body:
                 return Response({
-                    'error': 'Email body is required'
+                    'error': 'Subject and body are required'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # Wrap plain text message in HTML template
@@ -5918,6 +5918,14 @@ class AdminSendParentEmailsView(APIView):
                 return Response({
                     'error': 'No parent emails found'
                 }, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare attachments from uploaded files
+            files_data = []
+            for key in request.FILES:
+                uploaded_file = request.FILES[key]
+                # Store file content for reuse
+                file_content = uploaded_file.read()
+                files_data.append((uploaded_file.name, file_content, uploaded_file.content_type))
 
             # Parse BCC emails if provided
             bcc_list = []
@@ -5944,11 +5952,18 @@ class AdminSendParentEmailsView(APIView):
                     if bcc_list:
                         data["bcc"] = bcc_list
 
-                    # Send email using Mailgun API
+                    # Prepare files for this request
+                    files_for_request = []
+                    if files_data:
+                        for file_name, file_content, content_type in files_data:
+                            files_for_request.append(('attachment', (file_name, file_content, content_type)))
+
+                    # Send email using Mailgun API with file attachments
                     response = requests.post(
                         settings.MAILGUN_API_URL,
                         auth=("api", settings.MAILGUN_API_KEY),
                         data=data,
+                        files=files_for_request if files_for_request else None,
                         timeout=30
                     )
 
@@ -5971,6 +5986,7 @@ class AdminSendParentEmailsView(APIView):
                 'sent_count': sent_count,
                 'failed_count': failed_count,
                 'failed_emails': failed_emails,
+                'attachments_count': len(files_data),
                 'bcc_count': len(bcc_list) if bcc_list else 0
             }, status=status.HTTP_200_OK)
 

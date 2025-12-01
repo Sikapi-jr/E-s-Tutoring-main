@@ -13,8 +13,10 @@ const AdminBulkEmails = () => {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [parentEmailData, setParentEmailData] = useState({
     parentCount: 0,
+    subject: '',
+    messageBody: '',
     bccEmails: '',
-    messageBody: ''
+    files: []
   });
   const [tutorEmailData, setTutorEmailData] = useState({
     tutorCount: 0,
@@ -116,11 +118,26 @@ const AdminBulkEmails = () => {
     }));
   };
 
+  const handleParentFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setParentEmailData(prev => ({
+      ...prev,
+      files: files
+    }));
+  };
+
+  const removeParentFile = (indexToRemove) => {
+    setParentEmailData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
   const handleSendParentEmails = async () => {
-    if (!parentEmailData.messageBody.trim()) {
+    if (!parentEmailData.subject.trim() || !parentEmailData.messageBody.trim()) {
       setResult({
         type: 'error',
-        message: 'Email body cannot be empty'
+        message: 'Subject and body are required'
       });
       return;
     }
@@ -129,10 +146,20 @@ const AdminBulkEmails = () => {
     setResult(null);
 
     try {
-      const response = await api.post('/api/admin/send-parent-emails/', {
-        subject: 'Message from EGS Tutoring',
-        message_body: parentEmailData.messageBody,
-        bcc_emails: parentEmailData.bccEmails
+      const formData = new FormData();
+      formData.append('subject', parentEmailData.subject);
+      formData.append('message_body', parentEmailData.messageBody);
+      formData.append('bcc_emails', parentEmailData.bccEmails);
+
+      // Add files
+      parentEmailData.files.forEach((file, index) => {
+        formData.append(`file_${index}`, file);
+      });
+
+      const response = await api.post('/api/admin/send-parent-emails/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       const { sent_count, failed_count, failed_emails } = response.data;
@@ -153,6 +180,14 @@ const AdminBulkEmails = () => {
       setTimeout(() => {
         if (failed_count === 0) {
           handleCloseParentModal();
+          // Reset form
+          setParentEmailData(prev => ({
+            ...prev,
+            subject: '',
+            messageBody: '',
+            bccEmails: '',
+            files: []
+          }));
         }
       }, 3000);
 
@@ -343,9 +378,9 @@ const AdminBulkEmails = () => {
           <h3>Send to All Parents</h3>
           <p>Send an email to all {parentEmailData.parentCount} unique parent emails</p>
           <ul style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
-            <li>Pre-filled template for school outreach</li>
+            <li>Custom subject and body</li>
+            <li>Attach files (optional)</li>
             <li>Add BCC recipients (optional)</li>
-            <li>Edit email body as needed</li>
           </ul>
           <button
             onClick={handleOpenParentModal}
@@ -415,20 +450,18 @@ const AdminBulkEmails = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="parentBcc">
-                  BCC Emails (optional)
+                <label htmlFor="parentSubject">
+                  Subject *
                 </label>
                 <input
                   type="text"
-                  id="parentBcc"
-                  value={parentEmailData.bccEmails}
-                  onChange={(e) => setParentEmailData(prev => ({ ...prev, bccEmails: e.target.value }))}
-                  placeholder="email1@example.com, email2@example.com"
+                  id="parentSubject"
+                  value={parentEmailData.subject}
+                  onChange={(e) => setParentEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Enter email subject"
                   disabled={sending}
+                  required
                 />
-                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                  Separate multiple emails with commas
-                </small>
               </div>
 
               <div className="form-group">
@@ -446,6 +479,65 @@ const AdminBulkEmails = () => {
                 />
                 <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
                   Your message will be formatted with the EGS logo and contact information
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="parentFiles">
+                  Attachments (optional)
+                </label>
+                <input
+                  type="file"
+                  id="parentFiles"
+                  multiple
+                  onChange={handleParentFileChange}
+                  disabled={sending}
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls,.ppt,.pptx"
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Supported formats: PDF, DOC, images, ZIP, etc.
+                </small>
+              </div>
+
+              {parentEmailData.files.length > 0 && (
+                <div className="form-group">
+                  <label>Selected Files:</label>
+                  <div className="file-list">
+                    {parentEmailData.files.map((file, index) => (
+                      <div key={index} className="file-item">
+                        <span className="file-name">{file.name}</span>
+                        <span className="file-size">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeParentFile(index)}
+                          className="file-remove-btn"
+                          disabled={sending}
+                          title="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="parentBcc">
+                  BCC Emails (optional)
+                </label>
+                <input
+                  type="text"
+                  id="parentBcc"
+                  value={parentEmailData.bccEmails}
+                  onChange={(e) => setParentEmailData(prev => ({ ...prev, bccEmails: e.target.value }))}
+                  placeholder="email1@example.com, email2@example.com"
+                  disabled={sending}
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Separate multiple emails with commas
                 </small>
               </div>
             </div>
