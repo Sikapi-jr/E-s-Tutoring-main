@@ -8,7 +8,13 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError  # Useful for validating form/models/serializer data
 from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
-from .models import TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument, ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest, Popup, PopupDismissal, DiscountRegistration
+from .models import (
+    TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument,
+    ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest,
+    Popup, PopupDismissal, DiscountRegistration,
+    GroupTutoringClass, GroupEnrollment, DiagnosticTest, DiagnosticTestSubmission,
+    ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission
+)
 from datetime import timedelta
 from playground.models import AiChatSession
 
@@ -605,3 +611,213 @@ class DiscountRegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'created_at': {'read_only': True},
         }
+
+
+# ============================================================================
+# Group Tutoring Serializers
+# ============================================================================
+
+class GroupTutoringClassSerializer(serializers.ModelSerializer):
+    """Serializer for GroupTutoringClass model"""
+    enrolled_count = serializers.ReadOnlyField()
+    is_full = serializers.ReadOnlyField()
+
+    class Meta:
+        model = GroupTutoringClass
+        fields = [
+            'id', 'title', 'description', 'difficulty', 'subject',
+            'start_date', 'end_date', 'max_students', 'num_quizzes',
+            'is_active', 'enrolled_count', 'is_full', 'created_at', 'updated_at'
+        ]
+        extra_kwargs = {
+            'created_at': {'read_only': True},
+            'updated_at': {'read_only': True},
+        }
+
+
+class GroupEnrollmentSerializer(serializers.ModelSerializer):
+    """Serializer for GroupEnrollment model"""
+    student_name = serializers.SerializerMethodField()
+    parent_name = serializers.SerializerMethodField()
+    class_title = serializers.CharField(source='tutoring_class.title', read_only=True)
+    class_difficulty = serializers.CharField(source='tutoring_class.get_difficulty_display', read_only=True)
+
+    class Meta:
+        model = GroupEnrollment
+        fields = [
+            'id', 'tutoring_class', 'student', 'parent', 'status',
+            'requires_diagnostic', 'diagnostic_score', 'admin_notes',
+            'enrolled_at', 'created_at', 'updated_at',
+            'student_name', 'parent_name', 'class_title', 'class_difficulty'
+        ]
+        extra_kwargs = {
+            'created_at': {'read_only': True},
+            'updated_at': {'read_only': True},
+        }
+
+    def get_student_name(self, obj):
+        return f"{obj.student.firstName} {obj.student.lastName}"
+
+    def get_parent_name(self, obj):
+        return f"{obj.parent.firstName} {obj.parent.lastName}"
+
+
+class DiagnosticTestSerializer(serializers.ModelSerializer):
+    """Serializer for DiagnosticTest questions"""
+    class Meta:
+        model = DiagnosticTest
+        fields = [
+            'id', 'tutoring_class', 'question_text', 'question_type',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'correct_answer', 'points', 'order'
+        ]
+
+
+class DiagnosticTestPublicSerializer(serializers.ModelSerializer):
+    """Public serializer for DiagnosticTest (hides correct answers)"""
+    class Meta:
+        model = DiagnosticTest
+        fields = [
+            'id', 'question_text', 'question_type',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'points', 'order'
+        ]
+
+
+class DiagnosticTestSubmissionSerializer(serializers.ModelSerializer):
+    """Serializer for DiagnosticTestSubmission"""
+    student_name = serializers.SerializerMethodField()
+    class_title = serializers.CharField(source='enrollment.tutoring_class.title', read_only=True)
+
+    class Meta:
+        model = DiagnosticTestSubmission
+        fields = [
+            'id', 'enrollment', 'access_token', 'token_used', 'token_expires_at',
+            'answers', 'submitted_at', 'score', 'reviewed_by', 'reviewed_at',
+            'created_at', 'student_name', 'class_title'
+        ]
+        extra_kwargs = {
+            'access_token': {'read_only': True},
+            'created_at': {'read_only': True},
+        }
+
+    def get_student_name(self, obj):
+        return f"{obj.enrollment.student.firstName} {obj.enrollment.student.lastName}"
+
+
+class ClassSessionSerializer(serializers.ModelSerializer):
+    """Serializer for ClassSession"""
+    class_title = serializers.CharField(source='tutoring_class.title', read_only=True)
+
+    class Meta:
+        model = ClassSession
+        fields = [
+            'id', 'tutoring_class', 'session_date', 'start_time', 'end_time',
+            'title', 'description', 'is_cancelled', 'cancellation_reason',
+            'created_at', 'updated_at', 'class_title'
+        ]
+        extra_kwargs = {
+            'created_at': {'read_only': True},
+            'updated_at': {'read_only': True},
+        }
+
+
+class ClassAttendanceSerializer(serializers.ModelSerializer):
+    """Serializer for ClassAttendance"""
+    student_name = serializers.SerializerMethodField()
+    session_date = serializers.DateField(source='session.session_date', read_only=True)
+    session_title = serializers.CharField(source='session.title', read_only=True)
+
+    class Meta:
+        model = ClassAttendance
+        fields = [
+            'id', 'session', 'enrollment', 'status', 'notes',
+            'marked_at', 'marked_by', 'student_name', 'session_date', 'session_title'
+        ]
+        extra_kwargs = {
+            'marked_at': {'read_only': True},
+        }
+
+    def get_student_name(self, obj):
+        return f"{obj.enrollment.student.firstName} {obj.enrollment.student.lastName}"
+
+
+class ClassFileSerializer(serializers.ModelSerializer):
+    """Serializer for ClassFile"""
+    class_title = serializers.CharField(source='tutoring_class.title', read_only=True)
+    uploaded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ClassFile
+        fields = [
+            'id', 'tutoring_class', 'title', 'description', 'file',
+            'week_number', 'is_current', 'uploaded_at', 'uploaded_by',
+            'class_title', 'uploaded_by_name'
+        ]
+        extra_kwargs = {
+            'uploaded_at': {'read_only': True},
+        }
+
+    def get_uploaded_by_name(self, obj):
+        if obj.uploaded_by:
+            return f"{obj.uploaded_by.firstName} {obj.uploaded_by.lastName}"
+        return None
+
+
+class QuizQuestionSerializer(serializers.ModelSerializer):
+    """Serializer for QuizQuestion"""
+    class Meta:
+        model = QuizQuestion
+        fields = [
+            'id', 'quiz', 'question_text', 'question_type',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'correct_answer', 'points', 'order'
+        ]
+
+
+class QuizQuestionPublicSerializer(serializers.ModelSerializer):
+    """Public serializer for QuizQuestion (hides correct answers)"""
+    class Meta:
+        model = QuizQuestion
+        fields = [
+            'id', 'question_text', 'question_type',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'points', 'order'
+        ]
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    """Serializer for Quiz"""
+    questions = QuizQuestionSerializer(many=True, read_only=True)
+    class_title = serializers.CharField(source='tutoring_class.title', read_only=True)
+
+    class Meta:
+        model = Quiz
+        fields = [
+            'id', 'tutoring_class', 'session', 'title', 'description',
+            'scheduled_date', 'time_limit_minutes', 'is_active', 'passing_score',
+            'created_at', 'updated_at', 'questions', 'class_title'
+        ]
+        extra_kwargs = {
+            'created_at': {'read_only': True},
+            'updated_at': {'read_only': True},
+        }
+
+
+class QuizSubmissionSerializer(serializers.ModelSerializer):
+    """Serializer for QuizSubmission"""
+    student_name = serializers.SerializerMethodField()
+    quiz_title = serializers.CharField(source='quiz.title', read_only=True)
+
+    class Meta:
+        model = QuizSubmission
+        fields = [
+            'id', 'quiz', 'enrollment', 'answers', 'score', 'passed',
+            'started_at', 'submitted_at', 'student_name', 'quiz_title'
+        ]
+        extra_kwargs = {
+            'started_at': {'read_only': True},
+        }
+
+    def get_student_name(self, obj):
+        return f"{obj.enrollment.student.firstName} {obj.enrollment.student.lastName}"

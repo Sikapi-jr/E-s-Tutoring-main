@@ -1031,3 +1031,347 @@ class PopupDismissal(models.Model):
 
     def __str__(self):
         return f"{self.user.username} dismissed '{self.popup.title}'"
+
+
+# ============================================================================
+# Group Tutoring Models
+# ============================================================================
+
+class GroupTutoringClass(models.Model):
+    """
+    Represents a group tutoring class (e.g., French Beginner, Advanced Math)
+    """
+    DIFFICULTY_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate_l1', 'Intermediate L1'),
+        ('intermediate_l2', 'Intermediate L2'),
+        ('advanced', 'Advanced'),
+    ]
+
+    title = models.CharField(max_length=200, help_text="Class title (e.g., 'French for Beginners')")
+    description = models.TextField(blank=True, help_text="Detailed class description")
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='beginner')
+    subject = models.CharField(max_length=100, default='French', help_text="Subject being taught")
+
+    # Date and timing information
+    start_date = models.DateField(help_text="When the class series begins")
+    end_date = models.DateField(help_text="When the class series ends")
+
+    # Class capacity and enrollment
+    max_students = models.PositiveIntegerField(default=20, help_text="Maximum number of students")
+
+    # Quizzes and assessment
+    num_quizzes = models.PositiveIntegerField(default=0, help_text="Number of quizzes planned for this class")
+
+    # Metadata
+    is_active = models.BooleanField(default=True, help_text="Whether this class is currently accepting enrollments")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Group Tutoring Classes"
+        ordering = ['-is_active', 'start_date', 'difficulty']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_difficulty_display()})"
+
+    @property
+    def enrolled_count(self):
+        """Count of currently enrolled students"""
+        return self.enrollments.filter(status='enrolled').count()
+
+    @property
+    def is_full(self):
+        """Check if class is at capacity"""
+        return self.enrolled_count >= self.max_students
+
+
+class GroupEnrollment(models.Model):
+    """
+    Links students to group tutoring classes with enrollment status
+    """
+    STATUS_CHOICES = [
+        ('pending_diagnostic', 'Pending Diagnostic'),
+        ('diagnostic_submitted', 'Diagnostic Submitted'),
+        ('approved', 'Approved'),
+        ('enrolled', 'Enrolled'),
+        ('rejected', 'Rejected'),
+        ('withdrawn', 'Withdrawn'),
+    ]
+
+    tutoring_class = models.ForeignKey(GroupTutoringClass, on_delete=models.CASCADE, related_name='enrollments')
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='group_enrollments_as_student'
+    )
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='group_enrollments_as_parent'
+    )
+
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='pending_diagnostic')
+
+    # Diagnostic test tracking
+    requires_diagnostic = models.BooleanField(default=True, help_text="Whether student needs to take diagnostic")
+    diagnostic_score = models.FloatField(null=True, blank=True, help_text="Diagnostic test score (if applicable)")
+    admin_notes = models.TextField(blank=True, help_text="Admin notes about enrollment/diagnostic review")
+
+    # Timestamps
+    enrolled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('tutoring_class', 'student')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.student.firstName} {self.student.lastName} - {self.tutoring_class.title} ({self.get_status_display()})"
+
+
+class DiagnosticTest(models.Model):
+    """
+    Stores diagnostic test questions for group tutoring classes
+    """
+    QUESTION_TYPE_CHOICES = [
+        ('multiple_choice', 'Multiple Choice'),
+        ('short_answer', 'Short Answer'),
+        ('essay', 'Essay'),
+    ]
+
+    tutoring_class = models.ForeignKey(GroupTutoringClass, on_delete=models.CASCADE, related_name='diagnostic_questions')
+    question_text = models.TextField(help_text="The question text")
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='multiple_choice')
+
+    # For multiple choice questions
+    option_a = models.CharField(max_length=500, blank=True)
+    option_b = models.CharField(max_length=500, blank=True)
+    option_c = models.CharField(max_length=500, blank=True)
+    option_d = models.CharField(max_length=500, blank=True)
+    correct_answer = models.CharField(max_length=500, blank=True, help_text="Correct answer or answer key")
+
+    # Metadata
+    points = models.PositiveIntegerField(default=1, help_text="Points this question is worth")
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+
+    class Meta:
+        ordering = ['tutoring_class', 'order']
+
+    def __str__(self):
+        return f"{self.tutoring_class.title} - Q{self.order}: {self.question_text[:50]}"
+
+
+class DiagnosticTestSubmission(models.Model):
+    """
+    Stores student diagnostic test submissions with unique one-time access tokens
+    """
+    enrollment = models.OneToOneField(GroupEnrollment, on_delete=models.CASCADE, related_name='diagnostic_submission')
+
+    # One-time access token
+    access_token = models.CharField(max_length=64, unique=True, help_text="One-time token for accessing the test")
+    token_used = models.BooleanField(default=False, help_text="Whether the token has been used")
+    token_expires_at = models.DateTimeField(help_text="When the token expires")
+
+    # Submission data
+    answers = models.JSONField(default=dict, help_text="Student's answers stored as JSON")
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    score = models.FloatField(null=True, blank=True)
+
+    # Review
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='diagnostic_reviews'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Diagnostic for {self.enrollment.student.firstName} - {self.enrollment.tutoring_class.title}"
+
+    def generate_token(self):
+        """Generate a unique access token"""
+        import secrets
+        self.access_token = secrets.token_urlsafe(48)
+
+
+class ClassSession(models.Model):
+    """
+    Individual class sessions (meetings) for a group tutoring class
+    """
+    tutoring_class = models.ForeignKey(GroupTutoringClass, on_delete=models.CASCADE, related_name='sessions')
+
+    session_date = models.DateField(help_text="Date of this session")
+    start_time = models.TimeField(help_text="Session start time")
+    end_time = models.TimeField(help_text="Session end time")
+
+    title = models.CharField(max_length=200, blank=True, help_text="Session title/topic")
+    description = models.TextField(blank=True, help_text="What will be covered in this session")
+
+    # Session status
+    is_cancelled = models.BooleanField(default=False)
+    cancellation_reason = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['session_date', 'start_time']
+        unique_together = ('tutoring_class', 'session_date', 'start_time')
+
+    def __str__(self):
+        return f"{self.tutoring_class.title} - {self.session_date} {self.start_time}"
+
+
+class ClassAttendance(models.Model):
+    """
+    Tracks student attendance for each class session
+    """
+    ATTENDANCE_STATUS_CHOICES = [
+        ('attended', 'Attended'),
+        ('absent', 'Absent'),
+        ('cancelled_advance', 'Cancelled in Advance'),
+    ]
+
+    session = models.ForeignKey(ClassSession, on_delete=models.CASCADE, related_name='attendance_records')
+    enrollment = models.ForeignKey(GroupEnrollment, on_delete=models.CASCADE, related_name='attendance_records')
+
+    status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default='attended')
+    notes = models.TextField(blank=True, help_text="Additional notes about attendance")
+
+    marked_at = models.DateTimeField(auto_now=True)
+    marked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='marked_attendance'
+    )
+
+    class Meta:
+        unique_together = ('session', 'enrollment')
+        ordering = ['session', 'enrollment']
+
+    def __str__(self):
+        return f"{self.enrollment.student.firstName} - {self.session.session_date}: {self.get_status_display()}"
+
+
+class ClassFile(models.Model):
+    """
+    Files and materials for group tutoring classes
+    """
+    tutoring_class = models.ForeignKey(GroupTutoringClass, on_delete=models.CASCADE, related_name='files')
+
+    title = models.CharField(max_length=200, help_text="File title/name")
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='group_tutoring_files/')
+
+    # Organization
+    week_number = models.PositiveIntegerField(null=True, blank=True, help_text="Week number (optional)")
+    is_current = models.BooleanField(default=False, help_text="Is this from the current week?")
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_class_files'
+    )
+
+    class Meta:
+        ordering = ['-week_number', '-uploaded_at']
+
+    def __str__(self):
+        week_str = f"Week {self.week_number}" if self.week_number else "General"
+        return f"{self.tutoring_class.title} - {week_str}: {self.title}"
+
+
+class Quiz(models.Model):
+    """
+    Quizzes for group tutoring classes
+    """
+    tutoring_class = models.ForeignKey(GroupTutoringClass, on_delete=models.CASCADE, related_name='quizzes')
+    session = models.ForeignKey(ClassSession, on_delete=models.SET_NULL, null=True, blank=True, related_name='quizzes')
+
+    title = models.CharField(max_length=200, help_text="Quiz title")
+    description = models.TextField(blank=True)
+
+    # Timing
+    scheduled_date = models.DateField(help_text="When the quiz is scheduled")
+    time_limit_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Time limit in minutes (optional)")
+
+    # Quiz settings
+    is_active = models.BooleanField(default=False, help_text="Whether students can currently take this quiz")
+    passing_score = models.FloatField(default=70.0, help_text="Passing score percentage")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['scheduled_date']
+        verbose_name_plural = "Quizzes"
+
+    def __str__(self):
+        return f"{self.tutoring_class.title} - {self.title}"
+
+
+class QuizQuestion(models.Model):
+    """
+    Individual questions for quizzes
+    """
+    QUESTION_TYPE_CHOICES = [
+        ('multiple_choice', 'Multiple Choice'),
+        ('short_answer', 'Short Answer'),
+        ('true_false', 'True/False'),
+    ]
+
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='multiple_choice')
+
+    # For multiple choice
+    option_a = models.CharField(max_length=500, blank=True)
+    option_b = models.CharField(max_length=500, blank=True)
+    option_c = models.CharField(max_length=500, blank=True)
+    option_d = models.CharField(max_length=500, blank=True)
+    correct_answer = models.CharField(max_length=500, help_text="Correct answer")
+
+    points = models.PositiveIntegerField(default=1)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['quiz', 'order']
+
+    def __str__(self):
+        return f"{self.quiz.title} - Q{self.order}"
+
+
+class QuizSubmission(models.Model):
+    """
+    Student quiz submissions
+    """
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='submissions')
+    enrollment = models.ForeignKey(GroupEnrollment, on_delete=models.CASCADE, related_name='quiz_submissions')
+
+    answers = models.JSONField(default=dict)
+    score = models.FloatField(null=True, blank=True)
+    passed = models.BooleanField(default=False)
+
+    started_at = models.DateTimeField(auto_now_add=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('quiz', 'enrollment')
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.enrollment.student.firstName} - {self.quiz.title}: {self.score}%"

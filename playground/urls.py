@@ -1,9 +1,16 @@
 #URLS from egstutoring/url.py/ are forwarded here
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from playground.views import create_chat_session, chat_session, stripe_reauth_token, create_event, google_status, list_egs_tutoring_events, list_egs_tutoring_events_unfiltered, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
+from playground import group_tutoring_views
+
+# Router for group tutoring viewsets
+router = DefaultRouter()
+router.register(r'group-tutoring/classes', group_tutoring_views.GroupTutoringClassViewSet, basename='group-tutoring-class')
+router.register(r'group-tutoring/enrollments', group_tutoring_views.GroupEnrollmentViewSet, basename='group-enrollment')
 
 urlpatterns = [
     path('tutor/upload-document/', views.upload_tutor_document, name='tutor-upload-document'),
@@ -133,6 +140,13 @@ urlpatterns = [
     path('admin/send-parent-emails/', views.AdminSendParentEmailsView.as_view(), name='admin-send-parent-emails'),
     path('admin/send-tutor-emails/', views.AdminSendTutorEmailsView.as_view(), name='admin-send-tutor-emails'),
     path('admin/send-custom-emails/', views.AdminSendCustomEmailsView.as_view(), name='admin-send-custom-emails'),
+
+    # Group Tutoring endpoints
+    path('', include(router.urls)),  # Include router URLs
+    path('diagnostic-test/<str:token>/', group_tutoring_views.diagnostic_test, name='diagnostic-test'),
+    path('group-tutoring/parent-dashboard/', group_tutoring_views.parent_dashboard, name='parent-dashboard'),
+    path('group-tutoring/student-attendance/<int:enrollment_id>/', group_tutoring_views.student_attendance, name='student-attendance'),
+    path('group-tutoring/student-files/<int:enrollment_id>/', group_tutoring_views.student_files, name='student-files'),
 
 ]
 
