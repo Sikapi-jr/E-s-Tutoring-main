@@ -119,7 +119,7 @@ class UserSerializer(serializers.ModelSerializer):
             "parent",          # write-only username
             "parent_id",       # read-only integer id
             "rateOnline", "rateInPerson",
-            "stripe_account_id", "is_active", "is_superuser",
+            "stripe_account_id", "is_active", "is_superuser", "is_staff",
             "documents",
             "profile_picture",
             "tutor_referral_code",

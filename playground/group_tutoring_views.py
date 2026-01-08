@@ -36,7 +36,7 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         # Admins can see all classes
-        if user.roles == 'admin' or user.is_staff:
+        if user.roles == 'admin' or user.is_staff or user.is_superuser:
             return GroupTutoringClass.objects.all().order_by('-is_active', 'start_date')
 
         # Parents can only see active classes
@@ -65,7 +65,7 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def enrollments(self, request, pk=None):
         """Get all enrollments for a class (admin only)"""
-        if request.user.roles not in ['admin'] and not request.user.is_staff:
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
             return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
 
         tutoring_class = self.get_object()
@@ -87,7 +87,7 @@ class GroupEnrollmentViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         # Admins can see all enrollments
-        if user.roles == 'admin' or user.is_staff:
+        if user.roles == 'admin' or user.is_staff or user.is_superuser:
             return GroupEnrollment.objects.all().select_related('student', 'parent', 'tutoring_class')
 
         # Parents can only see their own children's enrollments
@@ -200,7 +200,7 @@ EGS Tutoring Team
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Approve an enrollment (admin only)"""
-        if request.user.roles not in ['admin'] and not request.user.is_staff:
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
             return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
 
         enrollment = self.get_object()
@@ -214,7 +214,7 @@ EGS Tutoring Team
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Reject an enrollment (admin only)"""
-        if request.user.roles not in ['admin'] and not request.user.is_staff:
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
             return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
 
         enrollment = self.get_object()

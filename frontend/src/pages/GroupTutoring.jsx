@@ -12,8 +12,8 @@ const GroupTutoring = () => {
   const [enrollments, setEnrollments] = useState([]);
   const [error, setError] = useState('');
 
-  // Check if user is admin
-  const isAdmin = user?.roles === 'admin' || user?.is_staff;
+  // Check if user is admin or superuser
+  const isAdmin = user?.roles === 'admin' || user?.is_staff || user?.is_superuser;
 
   useEffect(() => {
     if (!isAdmin) {
