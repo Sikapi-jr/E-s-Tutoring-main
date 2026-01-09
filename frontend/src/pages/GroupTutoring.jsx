@@ -14,15 +14,16 @@ const GroupTutoring = () => {
 
   // Check if user is admin or superuser
   const isAdmin = user?.roles === 'admin' || user?.is_staff || user?.is_superuser;
+  const isParent = user?.roles === 'parent';
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin && !isParent) {
       setLoading(false);
       return;
     }
 
     fetchData();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, isParent]);
 
   const fetchData = async () => {
     try {
@@ -69,12 +70,12 @@ const GroupTutoring = () => {
     }
   };
 
-  // Non-admin view
-  if (!isAdmin) {
+  // Non-authorized view
+  if (!isAdmin && !isParent) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h2>Group Tutoring</h2>
-        <p>This page is only accessible to administrators.</p>
+        <p>This page is only accessible to administrators and parents.</p>
       </div>
     );
   }
@@ -90,7 +91,7 @@ const GroupTutoring = () => {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '2rem' }}>Group Tutoring Management</h1>
+      <h1 style={{ marginBottom: '2rem' }}>{isAdmin ? 'Group Tutoring Management' : 'Group Tutoring'}</h1>
 
       {error && (
         <div style={{
@@ -106,7 +107,7 @@ const GroupTutoring = () => {
 
       {/* Classes Overview */}
       <section style={{ marginBottom: '3rem' }}>
-        <h2 style={{ marginBottom: '1rem' }}>Active Classes</h2>
+        <h2 style={{ marginBottom: '1rem' }}>{isAdmin ? 'Active Classes' : 'Available Classes'}</h2>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
@@ -148,14 +149,17 @@ const GroupTutoring = () => {
 
         {classes.filter(c => c.is_active).length === 0 && (
           <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-            No active classes found. Use the Django admin panel to create classes.
+            {isAdmin ? 'No active classes found. Use the Django admin panel to create classes.' : 'There are no open classes currently.'}
           </p>
         )}
       </section>
 
-      {/* Pending Enrollments */}
-      <section>
-        <h2 style={{ marginBottom: '1rem' }}>Pending Enrollments</h2>
+      {/* Admin-only sections */}
+      {isAdmin && (
+        <>
+          {/* Pending Enrollments */}
+          <section>
+            <h2 style={{ marginBottom: '1rem' }}>Pending Enrollments</h2>
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{
@@ -320,6 +324,8 @@ const GroupTutoring = () => {
           <li><a href="/admin/playground/classattendance/" target="_blank" rel="noopener noreferrer">Mark Attendance</a></li>
         </ul>
       </section>
+        </>
+      )}
     </div>
   );
 };
