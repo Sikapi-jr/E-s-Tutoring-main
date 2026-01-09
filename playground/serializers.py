@@ -621,18 +621,34 @@ class GroupTutoringClassSerializer(serializers.ModelSerializer):
     """Serializer for GroupTutoringClass model"""
     enrolled_count = serializers.ReadOnlyField()
     is_full = serializers.ReadOnlyField()
+    tutor_details = serializers.SerializerMethodField()
 
     class Meta:
         model = GroupTutoringClass
         fields = [
             'id', 'title', 'description', 'difficulty', 'subject',
-            'start_date', 'end_date', 'max_students', 'num_quizzes',
+            'tutors', 'tutor_details',
+            'start_date', 'end_date',
+            'schedule_days', 'schedule_time', 'duration_minutes',
+            'location', 'location_link',
+            'max_students', 'num_quizzes',
             'is_active', 'enrolled_count', 'is_full', 'created_at', 'updated_at'
         ]
         extra_kwargs = {
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},
         }
+
+    def get_tutor_details(self, obj):
+        """Get tutor names and IDs"""
+        return [
+            {
+                'id': tutor.id,
+                'name': f"{tutor.firstName} {tutor.lastName}",
+                'email': tutor.email
+            }
+            for tutor in obj.tutors.all()
+        ]
 
 
 class GroupEnrollmentSerializer(serializers.ModelSerializer):

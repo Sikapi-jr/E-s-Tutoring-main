@@ -1048,14 +1048,44 @@ class GroupTutoringClass(models.Model):
         ('advanced', 'Advanced'),
     ]
 
+    DAYS_OF_WEEK_CHOICES = [
+        ('monday', 'Monday'),
+        ('tuesday', 'Tuesday'),
+        ('wednesday', 'Wednesday'),
+        ('thursday', 'Thursday'),
+        ('friday', 'Friday'),
+        ('saturday', 'Saturday'),
+        ('sunday', 'Sunday'),
+    ]
+
     title = models.CharField(max_length=200, help_text="Class title (e.g., 'French for Beginners')")
     description = models.TextField(blank=True, help_text="Detailed class description")
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='beginner')
     subject = models.CharField(max_length=100, default='French', help_text="Subject being taught")
 
+    # Assigned tutors
+    tutors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='teaching_group_classes',
+        limit_choices_to={'roles': 'tutor'},
+        help_text="Tutors assigned to teach this class"
+    )
+
     # Date and timing information
     start_date = models.DateField(help_text="When the class series begins")
     end_date = models.DateField(help_text="When the class series ends")
+
+    # Schedule information
+    schedule_days = models.JSONField(
+        default=list,
+        help_text="Days of the week when class meets (e.g., ['monday', 'wednesday'])"
+    )
+    schedule_time = models.TimeField(null=True, blank=True, help_text="Regular class meeting time")
+    duration_minutes = models.PositiveIntegerField(default=60, help_text="Class duration in minutes")
+
+    # Location
+    location = models.CharField(max_length=200, blank=True, help_text="Class location (e.g., 'Room 101', 'Online - Zoom')")
+    location_link = models.URLField(blank=True, help_text="Link for online classes (e.g., Zoom link)")
 
     # Class capacity and enrollment
     max_students = models.PositiveIntegerField(default=20, help_text="Maximum number of students")

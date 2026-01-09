@@ -73,6 +73,44 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
         serializer = GroupEnrollmentSerializer(enrollments, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def available_tutors(self, request):
+        """Get list of available tutors (admin only)"""
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+        tutors = User.objects.filter(roles='tutor', is_active=True).order_by('firstName', 'lastName')
+        tutor_list = [
+            {
+                'id': tutor.id,
+                'name': f"{tutor.firstName} {tutor.lastName}",
+                'email': tutor.email
+            }
+            for tutor in tutors
+        ]
+        return Response(tutor_list)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new class (admin only)"""
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Update a class (admin only)"""
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Delete a class (admin only)"""
+        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+        return super().destroy(request, *args, **kwargs)
+
 
 class GroupEnrollmentViewSet(viewsets.ModelViewSet):
     """

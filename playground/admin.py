@@ -48,11 +48,27 @@ class QuizQuestionInline(admin.TabularInline):
 
 @admin.register(GroupTutoringClass)
 class GroupTutoringClassAdmin(admin.ModelAdmin):
-    list_display = ('title', 'difficulty', 'subject', 'start_date', 'end_date', 'enrolled_count', 'max_students', 'is_active')
-    list_filter = ('difficulty', 'subject', 'is_active')
-    search_fields = ('title', 'description')
+    list_display = ('title', 'difficulty', 'subject', 'location', 'start_date', 'end_date', 'enrolled_count', 'max_students', 'is_active')
+    list_filter = ('difficulty', 'subject', 'is_active', 'tutors')
+    search_fields = ('title', 'description', 'location')
+    filter_horizontal = ('tutors',)
     inlines = [DiagnosticTestInline, ClassSessionInline, ClassFileInline]
     readonly_fields = ('enrolled_count', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'description', 'difficulty', 'subject', 'tutors')
+        }),
+        ('Schedule & Location', {
+            'fields': ('start_date', 'end_date', 'schedule_days', 'schedule_time', 'duration_minutes', 'location', 'location_link')
+        }),
+        ('Capacity & Assessment', {
+            'fields': ('max_students', 'num_quizzes', 'is_active')
+        }),
+        ('Metadata', {
+            'fields': ('enrolled_count', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 @admin.register(GroupEnrollment)
 class GroupEnrollmentAdmin(admin.ModelAdmin):
