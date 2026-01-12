@@ -39,6 +39,10 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
         if user.roles == 'admin' or user.is_staff or user.is_superuser:
             return GroupTutoringClass.objects.all().order_by('-is_active', 'start_date')
 
+        # Tutors can only see classes they're assigned to
+        if user.roles == 'tutor':
+            return GroupTutoringClass.objects.filter(tutors=user).order_by('-is_active', 'start_date')
+
         # Parents can only see active classes
         if user.roles == 'parent':
             return GroupTutoringClass.objects.filter(is_active=True).order_by('start_date')
@@ -64,11 +68,18 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def enrollments(self, request, pk=None):
-        """Get all enrollments for a class (admin only)"""
-        if request.user.roles not in ['admin'] and not request.user.is_staff and not request.user.is_superuser:
-            return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
-
+        """Get all enrollments for a class (admin or assigned tutor)"""
         tutoring_class = self.get_object()
+        user = request.user
+
+        # Allow admins and tutors assigned to this class
+        if user.roles not in ['admin', 'tutor'] and not user.is_staff and not user.is_superuser:
+            return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # If tutor, verify they're assigned to this class
+        if user.roles == 'tutor' and user not in tutoring_class.tutors.all():
+            return Response({'error': 'You are not assigned to this class'}, status=status.HTTP_403_FORBIDDEN)
+
         enrollments = GroupEnrollment.objects.filter(tutoring_class=tutoring_class).order_by('-created_at')
         serializer = GroupEnrollmentSerializer(enrollments, many=True)
         return Response(serializer.data)
@@ -89,6 +100,36 @@ class GroupTutoringClassViewSet(viewsets.ModelViewSet):
             for tutor in tutors
         ]
         return Response(tutor_list)
+
+    @action(detail=True, methods=['post'])
+    def upload_file(self, request, pk=None):
+        """Upload a file for a class (tutor only)"""
+        user = request.user
+        tutoring_class = self.get_object()
+
+        # Check if user is a tutor assigned to this class
+        if user.roles != 'tutor' or user not in tutoring_class.tutors.all():
+            return Response({'error': 'Only assigned tutors can upload files'}, status=status.HTTP_403_FORBIDDEN)
+
+        title = request.data.get('title')
+        file = request.FILES.get('file')
+        week_number = request.data.get('week_number')
+        is_current = request.data.get('is_current', False)
+
+        if not title or not file:
+            return Response({'error': 'Title and file are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        class_file = ClassFile.objects.create(
+            tutoring_class=tutoring_class,
+            title=title,
+            file=file,
+            week_number=week_number if week_number else None,
+            is_current=is_current,
+            uploaded_by=user
+        )
+
+        serializer = ClassFileSerializer(class_file)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def create(self, request, *args, **kwargs):
         """Create a new class (admin only)"""
@@ -134,6 +175,23 @@ class GroupEnrollmentViewSet(viewsets.ModelViewSet):
 
         # Default: no access
         return GroupEnrollment.objects.none()
+
+    @action(detail=False, methods=['get'])
+    def my_students(self, request):
+        """Get parent's students (children)"""
+        if request.user.roles != 'parent':
+            return Response({'error': 'Only parents can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+
+        students = User.objects.filter(parent=request.user, roles='student')
+        student_list = [
+            {
+                'id': student.id,
+                'name': f"{student.firstName} {student.lastName}",
+                'email': student.email
+            }
+            for student in students
+        ]
+        return Response(student_list)
 
     def create(self, request, *args, **kwargs):
         """Create a new enrollment"""
