@@ -6307,15 +6307,25 @@ def send_unpaid_invoice_reminders(request):
                         limit=100
                     )
 
+                    # Filter invoices that are overdue by more than 10 days
                     if invoices.data:
-                        # This parent has unpaid invoices
-                        total_unpaid = sum(inv.amount_due / 100 for inv in invoices.data)
-                        parents_with_unpaid.append({
-                            'email': parent.email,
-                            'name': f"{parent.firstName} {parent.lastName}",
-                            'unpaid_count': len(invoices.data),
-                            'total_unpaid': total_unpaid
-                        })
+                        current_time = timezone.now().timestamp()
+                        ten_days_ago = current_time - (10 * 24 * 60 * 60)  # 10 days in seconds
+
+                        overdue_invoices = [
+                            inv for inv in invoices.data
+                            if inv.due_date and inv.due_date < ten_days_ago
+                        ]
+
+                        if overdue_invoices:
+                            # This parent has invoices overdue by more than 10 days
+                            total_unpaid = sum(inv.amount_due / 100 for inv in overdue_invoices)
+                            parents_with_unpaid.append({
+                                'email': parent.email,
+                                'name': f"{parent.firstName} {parent.lastName}",
+                                'unpaid_count': len(overdue_invoices),
+                                'total_unpaid': total_unpaid
+                            })
             except stripe.error.StripeError as e:
                 logger.warning(f"Stripe error for {parent.email}: {str(e)}")
                 continue
@@ -6413,7 +6423,7 @@ def send_unpaid_invoice_reminders(request):
             <a href="{invoices_url}" class="button">View My Invoices</a>
         </div>
 
-        <p>If you have any questions or concerns about your invoices, please don't hesitate to contact us at <a href="mailto:support@egstutoring-portal.ca">support@egstutoring-portal.ca</a>.</p>
+        <p>If you have any questions or concerns about your invoices, please don't hesitate to contact us at <a href="mailto:support@egstutoring.ca">support@egstutoring.ca</a>.</p>
 
         <p>Thank you for your prompt attention to this matter.</p>
 
@@ -6423,7 +6433,7 @@ def send_unpaid_invoice_reminders(request):
 
     <div class="footer">
         <p>EGS Tutoring Portal<br>
-        <a href="mailto:support@egstutoring-portal.ca">support@egstutoring-portal.ca</a></p>
+        <a href="mailto:support@egstutoring.ca">support@egstutoring.ca</a></p>
         <p><small>This is an automated reminder. Please do not reply to this email.</small></p>
     </div>
 </body>
@@ -6441,7 +6451,7 @@ This is a friendly reminder that you have outstanding invoice(s) that require pa
 To view and pay your invoices, please visit:
 {invoices_url}
 
-If you have any questions or concerns about your invoices, please contact us at support@egstutoring-portal.ca.
+If you have any questions or concerns about your invoices, please contact us at support@egstutoring.ca.
 
 Thank you for your prompt attention to this matter.
 
@@ -6450,7 +6460,7 @@ EGS Tutoring Team
 
 ---
 EGS Tutoring Portal
-support@egstutoring-portal.ca
+support@egstutoring.ca
 """
 
         # Collect all email addresses for BCC
@@ -6472,7 +6482,7 @@ support@egstutoring-portal.ca
             "subject": subject,
             "text": text_content,
             "html": html_content,
-            "h:Reply-To": "support@egstutoring-portal.ca",
+            "h:Reply-To": "support@egstutoring.ca",
         }
 
         response = requests.post(
