@@ -6265,3 +6265,240 @@ class AdminSendCustomEmailsView(APIView):
                 'error': f'Error sending custom emails: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_unpaid_invoice_reminders(request):
+    """
+    Send reminder emails to all parents with unpaid invoices.
+    Admin only. Emails are sent via BCC.
+    """
+    user = request.user
+
+    # Check if user is admin
+    if not (user.is_staff or user.is_superuser):
+        return Response({
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        # Get all parents (users with role 'parent')
+        User = get_user_model()
+        parents = User.objects.filter(roles='parent', is_active=True)
+
+        parents_with_unpaid = []
+
+        # Check each parent for unpaid invoices in Stripe
+        for parent in parents:
+            if not parent.email:
+                continue
+
+            try:
+                # Try to find Stripe customer
+                customers = stripe.Customer.list(email=parent.email, limit=1)
+
+                if customers.data:
+                    customer = customers.data[0]
+
+                    # Check for unpaid invoices
+                    invoices = stripe.Invoice.list(
+                        customer=customer.id,
+                        status='open',  # Unpaid invoices
+                        limit=100
+                    )
+
+                    if invoices.data:
+                        # This parent has unpaid invoices
+                        total_unpaid = sum(inv.amount_due / 100 for inv in invoices.data)
+                        parents_with_unpaid.append({
+                            'email': parent.email,
+                            'name': f"{parent.firstName} {parent.lastName}",
+                            'unpaid_count': len(invoices.data),
+                            'total_unpaid': total_unpaid
+                        })
+            except stripe.error.StripeError as e:
+                logger.warning(f"Stripe error for {parent.email}: {str(e)}")
+                continue
+            except Exception as e:
+                logger.warning(f"Error checking invoices for {parent.email}: {str(e)}")
+                continue
+
+        if not parents_with_unpaid:
+            return Response({
+                'message': 'No parents with unpaid invoices found',
+                'sent_count': 0
+            }, status=status.HTTP_200_OK)
+
+        # Prepare email content
+        subject = "Reminder: Outstanding Invoice Payment - EGS Tutoring"
+
+        # Get the site domain
+        site_domain = settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://egstutoring-portal.ca'
+        invoices_url = f"{site_domain}/ViewInvoices"
+
+        # HTML email template
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #192A88;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }}
+        .button {{
+            display: inline-block;
+            background-color: #192A88;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }}
+        .footer {{
+            background-color: #f1f1f1;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            border-radius: 0 0 5px 5px;
+        }}
+        .highlight {{
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>EGS Tutoring</h1>
+    </div>
+
+    <div class="content">
+        <h2>Outstanding Invoice Reminder</h2>
+
+        <p>Dear Parent,</p>
+
+        <p>This is a friendly reminder that you have outstanding invoice(s) that require payment.</p>
+
+        <div class="highlight">
+            <strong>Action Required:</strong> Please review and pay your outstanding invoices at your earliest convenience.
+        </div>
+
+        <p>To view and pay your invoices, please click the button below:</p>
+
+        <div style="text-align: center;">
+            <a href="{invoices_url}" class="button">View My Invoices</a>
+        </div>
+
+        <p>If you have any questions or concerns about your invoices, please don't hesitate to contact us at <a href="mailto:support@egstutoring-portal.ca">support@egstutoring-portal.ca</a>.</p>
+
+        <p>Thank you for your prompt attention to this matter.</p>
+
+        <p>Best regards,<br>
+        <strong>EGS Tutoring Team</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>EGS Tutoring Portal<br>
+        <a href="mailto:support@egstutoring-portal.ca">support@egstutoring-portal.ca</a></p>
+        <p><small>This is an automated reminder. Please do not reply to this email.</small></p>
+    </div>
+</body>
+</html>
+"""
+
+        # Plain text version
+        text_content = f"""
+EGS Tutoring - Outstanding Invoice Reminder
+
+Dear Parent,
+
+This is a friendly reminder that you have outstanding invoice(s) that require payment.
+
+To view and pay your invoices, please visit:
+{invoices_url}
+
+If you have any questions or concerns about your invoices, please contact us at support@egstutoring-portal.ca.
+
+Thank you for your prompt attention to this matter.
+
+Best regards,
+EGS Tutoring Team
+
+---
+EGS Tutoring Portal
+support@egstutoring-portal.ca
+"""
+
+        # Collect all email addresses for BCC
+        bcc_emails = [parent['email'] for parent in parents_with_unpaid]
+
+        # Send email using Mailgun with BCC
+        from .email_utils import send_mailgun_email
+
+        # For BCC, we need to send using Mailgun's BCC feature
+        # We'll send to a dummy address and BCC everyone
+        mailgun_url = settings.MAILGUN_API_URL
+        mailgun_api_key = settings.MAILGUN_API_KEY
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        data = {
+            "from": from_email,
+            "to": from_email,  # Send to ourselves
+            "bcc": bcc_emails,  # All parents in BCC
+            "subject": subject,
+            "text": text_content,
+            "html": html_content,
+            "h:Reply-To": "support@egstutoring-portal.ca",
+        }
+
+        response = requests.post(
+            mailgun_url,
+            auth=("api", mailgun_api_key),
+            data=data,
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            logger.info(f"Unpaid invoice reminders sent to {len(bcc_emails)} parents by admin {request.user.email}")
+
+            return Response({
+                'message': 'Invoice reminders sent successfully',
+                'sent_count': len(bcc_emails),
+                'recipients': parents_with_unpaid
+            }, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"Failed to send invoice reminders: {response.status_code} - {response.text}")
+            return Response({
+                'error': f'Failed to send emails: {response.text}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        logger.error(f"Error sending unpaid invoice reminders: {str(e)}")
+        return Response({
+            'error': f'Error sending reminders: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

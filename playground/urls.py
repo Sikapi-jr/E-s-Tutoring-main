@@ -140,6 +140,7 @@ urlpatterns = [
     path('admin/send-parent-emails/', views.AdminSendParentEmailsView.as_view(), name='admin-send-parent-emails'),
     path('admin/send-tutor-emails/', views.AdminSendTutorEmailsView.as_view(), name='admin-send-tutor-emails'),
     path('admin/send-custom-emails/', views.AdminSendCustomEmailsView.as_view(), name='admin-send-custom-emails'),
+    path('admin/send-unpaid-invoice-reminders/', views.send_unpaid_invoice_reminders, name='send-unpaid-invoice-reminders'),
 
     # Group Tutoring endpoints
     path('', include(router.urls)),  # Include router URLs

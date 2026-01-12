@@ -34,6 +34,7 @@ const AdminBulkEmails = () => {
   });
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
+  const [sendingInvoiceReminders, setSendingInvoiceReminders] = useState(false);
 
 
   // Check if user is admin/superuser
@@ -365,6 +366,38 @@ const AdminBulkEmails = () => {
     }));
   };
 
+  const handleSendUnpaidInvoiceReminders = async () => {
+    if (!confirm('Are you sure you want to send invoice reminders to all parents with unpaid invoices? This will send emails via BCC to protect privacy.')) {
+      return;
+    }
+
+    setSendingInvoiceReminders(true);
+    setResult(null);
+
+    try {
+      const response = await api.post('/api/admin/send-unpaid-invoice-reminders/');
+
+      setResult({
+        type: 'success',
+        message: `Invoice reminders sent successfully to ${response.data.sent_count} parents with unpaid invoices.`
+      });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setResult(null);
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error sending invoice reminders:', error);
+      setResult({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to send invoice reminders'
+      });
+    } finally {
+      setSendingInvoiceReminders(false);
+    }
+  };
+
   return (
     <div className="form-container">
       <h1>Admin Bulk Email Tools</h1>
@@ -425,6 +458,30 @@ const AdminBulkEmails = () => {
             style={{ width: '100%' }}
           >
             Send Custom List Emails
+          </button>
+        </div>
+
+        {/* Unpaid Invoice Reminders Button */}
+        <div style={{ flex: '1', minWidth: '300px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff8e1' }}>
+          <h3>Send Unpaid Invoice Reminders</h3>
+          <p>Send reminder emails to parents with outstanding invoices</p>
+          <ul style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+            <li>Automatically finds parents with unpaid invoices</li>
+            <li>Sends via BCC (privacy protected)</li>
+            <li>Includes link to invoices page</li>
+            <li>Professional HTML template</li>
+          </ul>
+          <button
+            onClick={handleSendUnpaidInvoiceReminders}
+            className="form-button"
+            style={{
+              width: '100%',
+              backgroundColor: sendingInvoiceReminders ? '#6c757d' : '#ffc107',
+              color: '#000'
+            }}
+            disabled={sendingInvoiceReminders}
+          >
+            {sendingInvoiceReminders ? 'Sending...' : 'Send Invoice Reminders'}
           </button>
         </div>
       </div>
