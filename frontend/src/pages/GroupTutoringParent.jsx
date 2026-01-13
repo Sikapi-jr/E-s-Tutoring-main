@@ -14,6 +14,7 @@ const GroupTutoringParent = () => {
   const [students, setStudents] = useState([]);
   const [myEnrollments, setMyEnrollments] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -48,7 +49,6 @@ const GroupTutoringParent = () => {
 
   const handleEnrollClick = (classItem) => {
     if (students.length === 0) {
-      // Redirect to students page to add a student
       if (confirm('You need to add a student first. Would you like to go to the Students page?')) {
         navigate('/students');
       }
@@ -83,7 +83,6 @@ const GroupTutoringParent = () => {
   };
 
   const handleSessionClick = (session) => {
-    // Only allow cancellation of future sessions
     const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
     const now = new Date();
 
@@ -109,15 +108,49 @@ const GroupTutoringParent = () => {
     }
   };
 
-  const getSessionsByDate = () => {
-    const sessionsByDate = {};
-    sessions.forEach(session => {
-      if (!sessionsByDate[session.session_date]) {
-        sessionsByDate[session.session_date] = [];
-      }
-      sessionsByDate[session.session_date].push(session);
-    });
-    return sessionsByDate;
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+
+    // Add empty cells for days before the month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  };
+
+  const getSessionsForDate = (date) => {
+    if (!date) return [];
+    const dateStr = date.toISOString().split('T')[0];
+    return sessions.filter(s => s.session_date === dateStr);
+  };
+
+  const isToday = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
 
   const getAttendanceColor = (session) => {
@@ -137,7 +170,7 @@ const GroupTutoringParent = () => {
       return '#fff3cd'; // Yellow for cancelled
     }
 
-    return '#f8f9fa'; // Default gray
+    return '#f8f9fa';
   };
 
   const getAttendanceIcon = (session) => {
@@ -155,8 +188,8 @@ const GroupTutoringParent = () => {
     );
   }
 
-  const sessionsByDate = getSessionsByDate();
-  const today = new Date().toISOString().split('T')[0];
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -195,7 +228,7 @@ const GroupTutoringParent = () => {
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
 
         {/* Calendar Section - Only show if enrolled */}
-        {myEnrollments.length > 0 && sessions.length > 0 && (
+        {myEnrollments.length > 0 && (
           <div style={{ marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#192A88', textAlign: 'center' }}>
               My Class Schedule
@@ -207,118 +240,162 @@ const GroupTutoringParent = () => {
               padding: '2rem',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}>
-              <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
+              {/* Legend */}
+              <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.85rem' }}>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', marginRight: '5px' }}></span>Upcoming</span>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px' }}></span>Attended</span>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Missed</span>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#fff3cd', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled</span>
-                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#ffdfba', border: '2px solid #ff9800', marginRight: '5px' }}></span>Today</span>
+                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#ffb74d', border: '2px solid #ff9800', marginRight: '5px' }}></span>Today</span>
               </div>
 
+              {/* Calendar Navigation */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px'
+              }}>
+                <button
+                  onClick={prevMonth}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#192A88',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ← Previous
+                </button>
+                <h3 style={{ margin: 0, color: '#192A88', fontSize: '1.5rem' }}>
+                  {monthName}
+                </h3>
+                <button
+                  onClick={nextMonth}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#192A88',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+
+              {/* Calendar Grid */}
               <div style={{
                 display: 'grid',
-                gap: '1rem',
-                maxHeight: '600px',
-                overflowY: 'auto'
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                gap: '8px'
               }}>
-                {Object.keys(sessionsByDate).sort().map(date => {
-                  const isToday = date === today;
+                {/* Day Headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} style={{
+                    padding: '0.75rem',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    backgroundColor: '#192A88',
+                    color: 'white',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem'
+                  }}>
+                    {day}
+                  </div>
+                ))}
+
+                {/* Calendar Days */}
+                {daysInMonth.map((date, index) => {
+                  const daySessions = date ? getSessionsForDate(date) : [];
+                  const todayCell = date && isToday(date);
 
                   return (
-                    <div key={date} style={{
-                      border: isToday ? '2px solid #ff9800' : '1px solid #ddd',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      backgroundColor: isToday ? '#ffdfba' : '#fff'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        color: '#192A88',
-                        fontSize: '1.1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
-                        {new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        {isToday && <span style={{ fontSize: '0.85rem', color: '#ff9800', fontWeight: 'bold' }}>TODAY</span>}
-                      </h3>
+                    <div
+                      key={index}
+                      style={{
+                        minHeight: '120px',
+                        padding: '0.5rem',
+                        border: todayCell ? '3px solid #ff9800' : '1px solid #ddd',
+                        borderRadius: '8px',
+                        backgroundColor: todayCell ? '#ffb74d' : (date ? 'white' : '#f5f5f5'),
+                        position: 'relative'
+                      }}
+                    >
+                      {date && (
+                        <>
+                          <div style={{
+                            fontWeight: todayCell ? 'bold' : 'normal',
+                            fontSize: '1rem',
+                            marginBottom: '0.5rem',
+                            color: todayCell ? 'white' : '#333',
+                            textAlign: 'center'
+                          }}>
+                            {date.getDate()}
+                          </div>
 
-                      <div style={{ display: 'grid', gap: '0.75rem' }}>
-                        {sessionsByDate[date].map(session => {
-                          const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
-                          const now = new Date();
-                          const isFuture = sessionDateTime > now;
-                          const canCancel = isFuture && !session.attendance_status;
+                          {daySessions.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {daySessions.map(session => {
+                                const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
+                                const now = new Date();
+                                const canCancel = sessionDateTime > now && !session.attendance_status;
 
-                          return (
-                            <div
-                              key={`${session.id}-${session.enrollment_id}`}
-                              onClick={() => canCancel && handleSessionClick(session)}
-                              style={{
-                                backgroundColor: getAttendanceColor(session),
-                                padding: '1rem',
-                                borderRadius: '6px',
-                                border: '1px solid #ddd',
-                                cursor: canCancel ? 'pointer' : 'default',
-                                transition: 'transform 0.2s, box-shadow 0.2s'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (canCancel) {
-                                  e.currentTarget.style.transform = 'translateY(-2px)';
-                                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (canCancel) {
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
-                                }
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.25rem', color: '#192A88' }}>
-                                    {getAttendanceIcon(session)} {session.class_title}
-                                  </div>
-                                  <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.25rem' }}>
-                                    👤 {session.student_name}
-                                  </div>
-                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                                    🕐 {session.start_time} - {session.end_time}
-                                  </div>
-                                  {session.location && (
-                                    <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
-                                      📍 {session.location}
+                                return (
+                                  <div
+                                    key={`${session.id}-${session.enrollment_id}`}
+                                    onClick={() => canCancel && handleSessionClick(session)}
+                                    style={{
+                                      backgroundColor: getAttendanceColor(session),
+                                      padding: '0.4rem',
+                                      borderRadius: '4px',
+                                      fontSize: '0.75rem',
+                                      cursor: canCancel ? 'pointer' : 'default',
+                                      border: '1px solid #ddd',
+                                      transition: 'transform 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (canCancel) {
+                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (canCancel) {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                      }
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 'bold', marginBottom: '2px', color: '#192A88' }}>
+                                      {getAttendanceIcon(session)} {session.class_title}
                                     </div>
-                                  )}
-                                </div>
-                                {canCancel && (
-                                  <div style={{
-                                    fontSize: '0.85rem',
-                                    color: '#dc3545',
-                                    fontWeight: 'bold'
-                                  }}>
-                                    Click to cancel
+                                    <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                                      👤 {session.student_name}
+                                    </div>
+                                    <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                                      🕐 {session.start_time}
+                                    </div>
+                                    {canCancel && (
+                                      <div style={{ color: '#dc3545', fontSize: '0.65rem', marginTop: '2px', fontWeight: 'bold' }}>
+                                        Click to cancel
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                {session.attendance_status && (
-                                  <div style={{
-                                    fontSize: '0.85rem',
-                                    padding: '0.25rem 0.5rem',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'rgba(0,0,0,0.1)',
-                                    fontWeight: 'bold'
-                                  }}>
-                                    {session.attendance_status === 'attended' ? 'Attended' :
-                                     session.attendance_status === 'absent' ? 'Missed' :
-                                     session.attendance_status === 'cancelled_advance' ? 'Cancelled' : ''}
-                                  </div>
-                                )}
-                              </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                      </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -421,8 +498,7 @@ const GroupTutoringParent = () => {
                       padding: '2rem',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       border: '2px solid #e9ecef',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      cursor: 'pointer'
+                      transition: 'transform 0.2s, box-shadow 0.2s'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
