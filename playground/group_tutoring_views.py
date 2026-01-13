@@ -482,3 +482,143 @@ def student_files(request, enrollment_id):
 
     serializer = ClassFileSerializer(files, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def parent_sessions_calendar(request):
+    """
+    Get all sessions for a parent's enrolled students with attendance status
+    """
+    user = request.user
+
+    if user.roles != 'parent':
+        return Response({'error': 'Only parents can access this endpoint'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Get all enrollments for this parent's children
+    enrollments = GroupEnrollment.objects.filter(
+        parent=user,
+        status='enrolled'
+    ).select_related('student', 'tutoring_class')
+
+    # Get all sessions for these classes
+    class_ids = [e.tutoring_class.id for e in enrollments]
+    sessions = ClassSession.objects.filter(
+        tutoring_class_id__in=class_ids,
+        is_cancelled=False
+    ).select_related('tutoring_class').order_by('session_date', 'start_time')
+
+    # Build session data with attendance info
+    session_data = []
+    for session in sessions:
+        # Get enrollments for this specific class
+        class_enrollments = [e for e in enrollments if e.tutoring_class_id == session.tutoring_class_id]
+
+        for enrollment in class_enrollments:
+            # Get attendance record if exists
+            try:
+                attendance = ClassAttendance.objects.get(
+                    session=session,
+                    enrollment=enrollment
+                )
+                attendance_status = attendance.status
+            except ClassAttendance.DoesNotExist:
+                # No attendance record yet (future class)
+                attendance_status = None
+
+            session_data.append({
+                'id': session.id,
+                'enrollment_id': enrollment.id,
+                'class_title': session.tutoring_class.title,
+                'class_id': session.tutoring_class.id,
+                'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
+                'student_id': enrollment.student.id,
+                'session_date': session.session_date,
+                'start_time': session.start_time,
+                'end_time': session.end_time,
+                'title': session.title,
+                'description': session.description,
+                'location': session.tutoring_class.location,
+                'location_link': session.tutoring_class.location_link,
+                'attendance_status': attendance_status
+            })
+
+    return Response(session_data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cancel_session_attendance(request, session_id):
+    """
+    Cancel attendance for a specific session
+    Parent must cancel at least 6 hours in advance
+    """
+    user = request.user
+
+    if user.roles != 'parent':
+        return Response({'error': 'Only parents can cancel attendance'}, status=status.HTTP_403_FORBIDDEN)
+
+    enrollment_id = request.data.get('enrollment_id')
+
+    try:
+        session = ClassSession.objects.get(id=session_id)
+        enrollment = GroupEnrollment.objects.get(id=enrollment_id, parent=user, status='enrolled')
+    except ClassSession.DoesNotExist:
+        return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
+    except GroupEnrollment.DoesNotExist:
+        return Response({'error': 'Enrollment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if session is in the future
+    session_datetime = timezone.make_aware(
+        timezone.datetime.combine(session.session_date, session.start_time)
+    )
+    now = timezone.now()
+
+    if session_datetime <= now:
+        return Response({'error': 'Cannot cancel past sessions'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if cancellation is at least 6 hours in advance
+    time_until_session = (session_datetime - now).total_seconds() / 3600  # Convert to hours
+
+    if time_until_session < 6:
+        # Mark as absent (too late to cancel)
+        attendance, created = ClassAttendance.objects.get_or_create(
+            session=session,
+            enrollment=enrollment,
+            defaults={
+                'status': 'absent',
+                'notes': 'Late cancellation (less than 6 hours notice)',
+                'marked_by': user
+            }
+        )
+        if not created:
+            attendance.status = 'absent'
+            attendance.notes = 'Late cancellation (less than 6 hours notice)'
+            attendance.marked_by = user
+            attendance.save()
+
+        return Response({
+            'message': 'Session cancelled, but marked as absent due to late notice (less than 6 hours)',
+            'status': 'absent'
+        }, status=status.HTTP_200_OK)
+    else:
+        # Mark as cancelled in advance
+        attendance, created = ClassAttendance.objects.get_or_create(
+            session=session,
+            enrollment=enrollment,
+            defaults={
+                'status': 'cancelled_advance',
+                'notes': 'Cancelled by parent in advance',
+                'marked_by': user
+            }
+        )
+        if not created:
+            attendance.status = 'cancelled_advance'
+            attendance.notes = 'Cancelled by parent in advance'
+            attendance.marked_by = user
+            attendance.save()
+
+        return Response({
+            'message': 'Session cancelled successfully',
+            'status': 'cancelled_advance'
+        }, status=status.HTTP_200_OK)
