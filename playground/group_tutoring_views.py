@@ -489,7 +489,10 @@ def student_files(request, enrollment_id):
 def parent_sessions_calendar(request):
     """
     Get all sessions for a parent's enrolled students with attendance status
+    Generates sessions dynamically based on class schedule
     """
+    from datetime import datetime, date, time as dt_time
+
     user = request.user
 
     if user.roles != 'parent':
@@ -501,47 +504,92 @@ def parent_sessions_calendar(request):
         status='enrolled'
     ).select_related('student', 'tutoring_class')
 
-    # Get all sessions for these classes
-    class_ids = [e.tutoring_class.id for e in enrollments]
-    sessions = ClassSession.objects.filter(
-        tutoring_class_id__in=class_ids,
-        is_cancelled=False
-    ).select_related('tutoring_class').order_by('session_date', 'start_time')
-
-    # Build session data with attendance info
     session_data = []
-    for session in sessions:
-        # Get enrollments for this specific class
-        class_enrollments = [e for e in enrollments if e.tutoring_class_id == session.tutoring_class_id]
 
-        for enrollment in class_enrollments:
-            # Get attendance record if exists
-            try:
-                attendance = ClassAttendance.objects.get(
-                    session=session,
-                    enrollment=enrollment
-                )
-                attendance_status = attendance.status
-            except ClassAttendance.DoesNotExist:
-                # No attendance record yet (future class)
+    # Map day names to weekday numbers (0 = Monday, 6 = Sunday)
+    day_name_to_num = {
+        'monday': 0,
+        'tuesday': 1,
+        'wednesday': 2,
+        'thursday': 3,
+        'friday': 4,
+        'saturday': 5,
+        'sunday': 6
+    }
+
+    for enrollment in enrollments:
+        tutoring_class = enrollment.tutoring_class
+
+        # Skip if class doesn't have schedule configured
+        if not tutoring_class.schedule_days or not tutoring_class.schedule_time:
+            continue
+
+        # Get class date range
+        start_date = tutoring_class.start_date
+        end_date = tutoring_class.end_date
+
+        # Generate sessions for each scheduled day
+        current_date = start_date
+        while current_date <= end_date:
+            # Check if this day is in the schedule
+            day_name = current_date.strftime('%A').lower()
+
+            if day_name in [d.lower() for d in tutoring_class.schedule_days]:
+                # Calculate end time based on duration
+                start_time = tutoring_class.schedule_time
+                duration = timedelta(minutes=tutoring_class.duration_minutes)
+
+                # Create a datetime to calculate end time
+                start_datetime = datetime.combine(current_date, start_time)
+                end_datetime = start_datetime + duration
+                end_time = end_datetime.time()
+
+                # Create unique session identifier (date + class + student)
+                session_id = f"{tutoring_class.id}-{enrollment.student.id}-{current_date}"
+
+                # Check if there's an attendance record
                 attendance_status = None
+                existing_session_id = None
+                try:
+                    # Try to find existing session
+                    existing_session = ClassSession.objects.get(
+                        tutoring_class=tutoring_class,
+                        session_date=current_date
+                    )
+                    existing_session_id = existing_session.id
+                    # Check attendance
+                    try:
+                        attendance = ClassAttendance.objects.get(
+                            session=existing_session,
+                            enrollment=enrollment
+                        )
+                        attendance_status = attendance.status
+                    except ClassAttendance.DoesNotExist:
+                        pass
+                except ClassSession.DoesNotExist:
+                    pass
 
-            session_data.append({
-                'id': session.id,
-                'enrollment_id': enrollment.id,
-                'class_title': session.tutoring_class.title,
-                'class_id': session.tutoring_class.id,
-                'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
-                'student_id': enrollment.student.id,
-                'session_date': session.session_date,
-                'start_time': session.start_time,
-                'end_time': session.end_time,
-                'title': session.title,
-                'description': session.description,
-                'location': session.tutoring_class.location,
-                'location_link': session.tutoring_class.location_link,
-                'attendance_status': attendance_status
-            })
+                # Use existing session ID if available, otherwise use generated ID
+                final_session_id = existing_session_id if existing_session_id else session_id
+
+                session_data.append({
+                    'id': final_session_id,
+                    'enrollment_id': enrollment.id,
+                    'class_title': tutoring_class.title,
+                    'class_id': tutoring_class.id,
+                    'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
+                    'student_id': enrollment.student.id,
+                    'session_date': str(current_date),
+                    'start_time': str(start_time),
+                    'end_time': str(end_time),
+                    'title': f"{tutoring_class.title}",
+                    'description': tutoring_class.description or '',
+                    'location': tutoring_class.location or '',
+                    'location_link': tutoring_class.location_link or '',
+                    'attendance_status': attendance_status
+                })
+
+            current_date += timedelta(days=1)
 
     return Response(session_data)
 
@@ -552,7 +600,10 @@ def cancel_session_attendance(request, session_id):
     """
     Cancel attendance for a specific session
     Parent must cancel at least 6 hours in advance
+    Handles dynamically generated sessions
     """
+    from datetime import datetime
+
     user = request.user
 
     if user.roles != 'parent':
@@ -561,12 +612,43 @@ def cancel_session_attendance(request, session_id):
     enrollment_id = request.data.get('enrollment_id')
 
     try:
-        session = ClassSession.objects.get(id=session_id)
         enrollment = GroupEnrollment.objects.get(id=enrollment_id, parent=user, status='enrolled')
-    except ClassSession.DoesNotExist:
-        return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
     except GroupEnrollment.DoesNotExist:
         return Response({'error': 'Enrollment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Handle dynamically generated session IDs (format: "classid-studentid-date")
+    if isinstance(session_id, str) and '-' in session_id and not session_id.isdigit():
+        parts = session_id.split('-')
+        if len(parts) >= 3:
+            class_id = parts[0]
+            student_id = parts[1]
+            session_date_str = '-'.join(parts[2:])  # YYYY-MM-DD
+
+            try:
+                session_date = datetime.strptime(session_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({'error': 'Invalid session date format'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get or create the session
+            tutoring_class = enrollment.tutoring_class
+            session, created = ClassSession.objects.get_or_create(
+                tutoring_class=tutoring_class,
+                session_date=session_date,
+                defaults={
+                    'title': f"{tutoring_class.title}",
+                    'start_time': tutoring_class.schedule_time,
+                    'end_time': (
+                        datetime.combine(session_date, tutoring_class.schedule_time) +
+                        timedelta(minutes=tutoring_class.duration_minutes)
+                    ).time()
+                }
+            )
+    else:
+        # Handle traditional numeric session ID
+        try:
+            session = ClassSession.objects.get(id=session_id)
+        except ClassSession.DoesNotExist:
+            return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if session is in the future
     session_datetime = timezone.make_aware(
