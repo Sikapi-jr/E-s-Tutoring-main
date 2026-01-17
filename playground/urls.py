@@ -149,7 +149,15 @@ urlpatterns = [
     path('group-tutoring/student-attendance/<int:enrollment_id>/', group_tutoring_views.student_attendance, name='student-attendance'),
     path('group-tutoring/student-files/<int:enrollment_id>/', group_tutoring_views.student_files, name='student-files'),
     path('group-tutoring/parent-sessions-calendar/', group_tutoring_views.parent_sessions_calendar, name='parent-sessions-calendar'),
-    path('group-tutoring/cancel-session/<int:session_id>/', group_tutoring_views.cancel_session_attendance, name='cancel-session'),
+    path('group-tutoring/cancel-session/<str:session_id>/', group_tutoring_views.cancel_session_attendance, name='cancel-session'),
+
+    # Admin Group Tutoring endpoints
+    path('group-tutoring/admin/classes/<int:class_id>/upload-file/', group_tutoring_views.admin_upload_class_file, name='admin-upload-class-file'),
+    path('group-tutoring/admin/files/<int:file_id>/', group_tutoring_views.admin_delete_class_file, name='admin-delete-class-file'),
+    path('group-tutoring/admin/classes/<int:class_id>/sessions/', group_tutoring_views.admin_get_class_sessions, name='admin-class-sessions'),
+    path('group-tutoring/admin/classes/<int:class_id>/attendance/<str:session_date>/', group_tutoring_views.admin_session_attendance, name='admin-session-attendance'),
+    path('group-tutoring/admin/classes/<int:class_id>/email-parents/', group_tutoring_views.admin_email_class_parents, name='admin-email-class-parents'),
+    path('group-tutoring/admin/classes/<int:class_id>/update-schedule/', group_tutoring_views.admin_update_class_schedule, name='admin-update-class-schedule'),
 
 ]
 

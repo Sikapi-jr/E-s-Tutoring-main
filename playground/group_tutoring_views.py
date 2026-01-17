@@ -596,6 +596,456 @@ def parent_sessions_calendar(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def admin_upload_class_file(request, class_id):
+    """
+    Admin endpoint to upload files to a specific class week
+    """
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    title = request.data.get('title')
+    file = request.FILES.get('file')
+    week_number = request.data.get('week_number')
+    description = request.data.get('description', '')
+    is_current = request.data.get('is_current', False)
+
+    if not title or not file:
+        return Response({'error': 'Title and file are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    class_file = ClassFile.objects.create(
+        tutoring_class=tutoring_class,
+        title=title,
+        description=description,
+        file=file,
+        week_number=int(week_number) if week_number else None,
+        is_current=is_current == 'true' or is_current == True,
+        uploaded_by=user
+    )
+
+    serializer = ClassFileSerializer(class_file)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_delete_class_file(request, file_id):
+    """
+    Admin endpoint to delete a class file
+    """
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        class_file = ClassFile.objects.get(id=file_id)
+        class_file.delete()
+        return Response({'message': 'File deleted successfully'}, status=status.HTTP_200_OK)
+    except ClassFile.DoesNotExist:
+        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_get_class_sessions(request, class_id):
+    """
+    Admin endpoint to get all sessions for a class (including dynamically generated ones)
+    """
+    from datetime import datetime, timedelta as td
+
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get or generate sessions
+    sessions = []
+
+    if tutoring_class.schedule_days and tutoring_class.schedule_time:
+        current_date = tutoring_class.start_date
+        end_date = tutoring_class.end_date
+
+        while current_date <= end_date:
+            day_name = current_date.strftime('%A').lower()
+
+            if day_name in [d.lower() for d in tutoring_class.schedule_days]:
+                # Try to find existing session
+                try:
+                    session = ClassSession.objects.get(
+                        tutoring_class=tutoring_class,
+                        session_date=current_date
+                    )
+                    sessions.append({
+                        'id': session.id,
+                        'session_date': str(current_date),
+                        'start_time': str(session.start_time),
+                        'end_time': str(session.end_time),
+                        'title': session.title,
+                        'is_cancelled': session.is_cancelled,
+                        'exists_in_db': True
+                    })
+                except ClassSession.DoesNotExist:
+                    # Generate session info
+                    start_time = tutoring_class.schedule_time
+                    duration = td(minutes=tutoring_class.duration_minutes)
+                    end_datetime = datetime.combine(current_date, start_time) + duration
+
+                    sessions.append({
+                        'id': f"{tutoring_class.id}-{current_date}",
+                        'session_date': str(current_date),
+                        'start_time': str(start_time),
+                        'end_time': str(end_datetime.time()),
+                        'title': tutoring_class.title,
+                        'is_cancelled': False,
+                        'exists_in_db': False
+                    })
+
+            current_date += td(days=1)
+
+    return Response(sessions)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_session_attendance(request, class_id, session_date):
+    """
+    Admin endpoint to view and mark attendance for a session
+    GET: Get all enrolled students with their attendance status
+    POST: Mark attendance for multiple students
+    """
+    from datetime import datetime
+
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Parse session date
+    try:
+        session_date_obj = datetime.strptime(session_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get or create the session
+    session, created = ClassSession.objects.get_or_create(
+        tutoring_class=tutoring_class,
+        session_date=session_date_obj,
+        defaults={
+            'title': tutoring_class.title,
+            'start_time': tutoring_class.schedule_time,
+            'end_time': (
+                datetime.combine(session_date_obj, tutoring_class.schedule_time) +
+                timedelta(minutes=tutoring_class.duration_minutes)
+            ).time()
+        }
+    )
+
+    if request.method == 'GET':
+        # Get all enrolled students
+        enrollments = GroupEnrollment.objects.filter(
+            tutoring_class=tutoring_class,
+            status='enrolled'
+        ).select_related('student')
+
+        attendance_data = []
+        for enrollment in enrollments:
+            try:
+                attendance = ClassAttendance.objects.get(session=session, enrollment=enrollment)
+                status_value = attendance.status
+                notes = attendance.notes
+            except ClassAttendance.DoesNotExist:
+                status_value = None
+                notes = ''
+
+            attendance_data.append({
+                'enrollment_id': enrollment.id,
+                'student_id': enrollment.student.id,
+                'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
+                'status': status_value,
+                'notes': notes
+            })
+
+        return Response({
+            'session_id': session.id,
+            'session_date': str(session_date_obj),
+            'class_title': tutoring_class.title,
+            'attendance': attendance_data
+        })
+
+    elif request.method == 'POST':
+        # Mark attendance for students
+        attendance_records = request.data.get('attendance', [])
+
+        for record in attendance_records:
+            enrollment_id = record.get('enrollment_id')
+            status_value = record.get('status')
+            notes = record.get('notes', '')
+
+            if not enrollment_id or not status_value:
+                continue
+
+            try:
+                enrollment = GroupEnrollment.objects.get(id=enrollment_id)
+            except GroupEnrollment.DoesNotExist:
+                continue
+
+            attendance, created = ClassAttendance.objects.update_or_create(
+                session=session,
+                enrollment=enrollment,
+                defaults={
+                    'status': status_value,
+                    'notes': notes,
+                    'marked_by': user
+                }
+            )
+
+        return Response({'message': 'Attendance marked successfully'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_email_class_parents(request, class_id):
+    """
+    Admin endpoint to send emails to all parents of enrolled students in a class
+    """
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    subject = request.data.get('subject')
+    message = request.data.get('message')
+
+    if not subject or not message:
+        return Response({'error': 'Subject and message are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get all parents of enrolled students
+    enrollments = GroupEnrollment.objects.filter(
+        tutoring_class=tutoring_class,
+        status='enrolled'
+    ).select_related('parent', 'student')
+
+    # Group by parent to avoid duplicate emails
+    parent_emails = {}
+    for enrollment in enrollments:
+        if enrollment.parent.email not in parent_emails:
+            parent_emails[enrollment.parent.email] = {
+                'parent': enrollment.parent,
+                'students': []
+            }
+        parent_emails[enrollment.parent.email]['students'].append(enrollment.student)
+
+    sent_count = 0
+    failed_count = 0
+
+    for email, data in parent_emails.items():
+        parent = data['parent']
+        students = data['students']
+        student_names = ', '.join([f"{s.firstName} {s.lastName}" for s in students])
+
+        # Personalize message
+        personalized_message = f"""
+Hello {parent.firstName},
+
+This message is regarding your child(ren) enrolled in {tutoring_class.title}: {student_names}
+
+{message}
+
+Best regards,
+EGS Tutoring Team
+        """
+
+        try:
+            send_mail(
+                subject=f"{subject} - {tutoring_class.title}",
+                message=personalized_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            sent_count += 1
+        except Exception as e:
+            print(f"Failed to send email to {email}: {e}")
+            failed_count += 1
+
+    return Response({
+        'message': f'Emails sent successfully',
+        'sent_count': sent_count,
+        'failed_count': failed_count,
+        'total_parents': len(parent_emails)
+    })
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def admin_update_class_schedule(request, class_id):
+    """
+    Admin endpoint to update class schedule and notify parents
+    """
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Store old schedule for comparison
+    old_schedule = {
+        'schedule_days': tutoring_class.schedule_days,
+        'schedule_time': str(tutoring_class.schedule_time) if tutoring_class.schedule_time else None,
+        'start_date': str(tutoring_class.start_date) if tutoring_class.start_date else None,
+        'end_date': str(tutoring_class.end_date) if tutoring_class.end_date else None,
+        'location': tutoring_class.location,
+        'location_link': tutoring_class.location_link
+    }
+
+    # Update schedule fields
+    if 'schedule_days' in request.data:
+        tutoring_class.schedule_days = request.data['schedule_days']
+    if 'schedule_time' in request.data:
+        tutoring_class.schedule_time = request.data['schedule_time']
+    if 'start_date' in request.data:
+        tutoring_class.start_date = request.data['start_date']
+    if 'end_date' in request.data:
+        tutoring_class.end_date = request.data['end_date']
+    if 'duration_minutes' in request.data:
+        tutoring_class.duration_minutes = request.data['duration_minutes']
+    if 'location' in request.data:
+        tutoring_class.location = request.data['location']
+    if 'location_link' in request.data:
+        tutoring_class.location_link = request.data['location_link']
+
+    tutoring_class.save()
+
+    # Notify parents if requested
+    notify_parents = request.data.get('notify_parents', False)
+
+    if notify_parents:
+        # Get all parents of enrolled students
+        enrollments = GroupEnrollment.objects.filter(
+            tutoring_class=tutoring_class,
+            status='enrolled'
+        ).select_related('parent', 'student')
+
+        parent_emails = {}
+        for enrollment in enrollments:
+            if enrollment.parent.email not in parent_emails:
+                parent_emails[enrollment.parent.email] = {
+                    'parent': enrollment.parent,
+                    'students': []
+                }
+            parent_emails[enrollment.parent.email]['students'].append(enrollment.student)
+
+        # Build schedule change summary
+        new_schedule = {
+            'schedule_days': tutoring_class.schedule_days,
+            'schedule_time': str(tutoring_class.schedule_time) if tutoring_class.schedule_time else None,
+            'start_date': str(tutoring_class.start_date) if tutoring_class.start_date else None,
+            'end_date': str(tutoring_class.end_date) if tutoring_class.end_date else None,
+            'location': tutoring_class.location,
+            'location_link': tutoring_class.location_link
+        }
+
+        changes = []
+        if old_schedule['schedule_days'] != new_schedule['schedule_days']:
+            old_days = ', '.join([d.capitalize() for d in (old_schedule['schedule_days'] or [])])
+            new_days = ', '.join([d.capitalize() for d in (new_schedule['schedule_days'] or [])])
+            changes.append(f"- Class days changed from [{old_days}] to [{new_days}]")
+        if old_schedule['schedule_time'] != new_schedule['schedule_time']:
+            changes.append(f"- Class time changed from {old_schedule['schedule_time']} to {new_schedule['schedule_time']}")
+        if old_schedule['start_date'] != new_schedule['start_date']:
+            changes.append(f"- Start date changed from {old_schedule['start_date']} to {new_schedule['start_date']}")
+        if old_schedule['end_date'] != new_schedule['end_date']:
+            changes.append(f"- End date changed from {old_schedule['end_date']} to {new_schedule['end_date']}")
+        if old_schedule['location'] != new_schedule['location']:
+            changes.append(f"- Location changed from '{old_schedule['location']}' to '{new_schedule['location']}'")
+        if old_schedule['location_link'] != new_schedule['location_link']:
+            changes.append(f"- Location link updated")
+
+        if changes:
+            change_summary = '\n'.join(changes)
+
+            sent_count = 0
+            for email, data in parent_emails.items():
+                parent = data['parent']
+                students = data['students']
+                student_names = ', '.join([f"{s.firstName} {s.lastName}" for s in students])
+
+                message = f"""
+Hello {parent.firstName},
+
+We wanted to inform you about a schedule change for {tutoring_class.title}.
+
+Your enrolled child(ren): {student_names}
+
+Changes made:
+{change_summary}
+
+New Schedule:
+- Days: {', '.join([d.capitalize() for d in (tutoring_class.schedule_days or [])])}
+- Time: {tutoring_class.schedule_time}
+- Duration: {tutoring_class.duration_minutes} minutes
+- Dates: {tutoring_class.start_date} to {tutoring_class.end_date}
+- Location: {tutoring_class.location or 'TBD'}
+{f'- Link: {tutoring_class.location_link}' if tutoring_class.location_link else ''}
+
+If you have any questions, please contact us.
+
+Best regards,
+EGS Tutoring Team
+                """
+
+                try:
+                    send_mail(
+                        subject=f"Schedule Change - {tutoring_class.title}",
+                        message=message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        fail_silently=True,
+                    )
+                    sent_count += 1
+                except Exception as e:
+                    print(f"Failed to send schedule notification to {email}: {e}")
+
+            return Response({
+                'message': 'Schedule updated and parents notified',
+                'notifications_sent': sent_count,
+                'class': GroupTutoringClassSerializer(tutoring_class).data
+            })
+
+    return Response({
+        'message': 'Schedule updated successfully',
+        'class': GroupTutoringClassSerializer(tutoring_class).data
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def cancel_session_attendance(request, session_id):
     """
     Cancel attendance for a specific session

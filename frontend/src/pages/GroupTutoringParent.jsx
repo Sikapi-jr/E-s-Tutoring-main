@@ -133,7 +133,11 @@ const GroupTutoringParent = () => {
 
   const getSessionsForDate = (date) => {
     if (!date) return [];
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date formatting to avoid timezone issues with toISOString()
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return sessions.filter(s => s.session_date === dateStr);
   };
 
@@ -227,12 +231,44 @@ const GroupTutoringParent = () => {
       {/* Main Content */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
 
-        {/* Calendar Section - Only show if enrolled */}
-        {myEnrollments.length > 0 && (
+        {/* Pending Enrollment Notice */}
+        {myEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length > 0 && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            borderRadius: '12px',
+            padding: '1.5rem 2rem',
+            marginBottom: '2rem',
+            border: '1px solid #ffc107'
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404' }}>Pending Enrollment(s)</h3>
+            <p style={{ margin: 0, color: '#856404' }}>
+              You have {myEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length} enrollment(s) awaiting approval.
+              {myEnrollments.some(e => e.status === 'pending_diagnostic') && ' Please check your email for the diagnostic test link.'}
+              {myEnrollments.some(e => e.status === 'diagnostic_submitted') && ' Your diagnostic test has been submitted and is being reviewed.'}
+            </p>
+          </div>
+        )}
+
+        {/* Calendar Section - Only show if has enrolled students */}
+        {myEnrollments.filter(e => e.status === 'enrolled').length > 0 && (
           <div style={{ marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#192A88', textAlign: 'center' }}>
               My Class Schedule
             </h2>
+
+            {sessions.length === 0 ? (
+              <div style={{
+                backgroundColor: '#fff3cd',
+                borderRadius: '12px',
+                padding: '2rem',
+                textAlign: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <p style={{ margin: 0, color: '#856404' }}>
+                  No scheduled sessions found. Classes will appear here once the schedule is configured.
+                </p>
+              </div>
+            ) : null}
 
             <div style={{
               backgroundColor: 'white',
@@ -420,40 +456,61 @@ const GroupTutoringParent = () => {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '1.5rem'
             }}>
-              {myEnrollments.map(enrollment => (
-                <div
-                  key={enrollment.id}
-                  style={{
-                    backgroundColor: 'white',
-                    padding: '1.5rem',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    border: '2px solid #28a745'
-                  }}
-                >
-                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#192A88' }}>
-                    {enrollment.class_title}
-                  </h3>
-                  <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                    <strong>Student:</strong> {enrollment.student_name}
+              {myEnrollments.map(enrollment => {
+                // Find the class info for this enrollment
+                const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
+
+                return (
+                  <div
+                    key={enrollment.id}
+                    style={{
+                      backgroundColor: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      border: `2px solid ${enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d'}`
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#192A88' }}>
+                      {enrollment.class_title}
+                    </h3>
+                    <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                      <strong>Student:</strong> {enrollment.student_name}
+                    </div>
+                    <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                      <strong>Difficulty:</strong> {enrollment.class_difficulty}
+                    </div>
+                    {classInfo && classInfo.schedule_days && classInfo.schedule_days.length > 0 && (
+                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                        <strong>Schedule:</strong> {classInfo.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
+                        {classInfo.schedule_time && ` at ${classInfo.schedule_time}`}
+                      </div>
+                    )}
+                    {classInfo && classInfo.location && (
+                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                        <strong>Location:</strong> {classInfo.location}
+                        {classInfo.location_link && (
+                          <a href={classInfo.location_link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem', color: '#192A88' }}>
+                            (Join Link)
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.95rem', marginTop: '0.75rem' }}>
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '20px',
+                        backgroundColor: enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : enrollment.status === 'diagnostic_submitted' ? '#17a2b8' : '#6c757d',
+                        color: 'white',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {enrollment.status.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                    <strong>Difficulty:</strong> {enrollment.class_difficulty}
-                  </div>
-                  <div style={{ fontSize: '0.95rem' }}>
-                    <span style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '20px',
-                      backgroundColor: enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d',
-                      color: 'white',
-                      fontSize: '0.85rem',
-                      fontWeight: 'bold'
-                    }}>
-                      {enrollment.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
