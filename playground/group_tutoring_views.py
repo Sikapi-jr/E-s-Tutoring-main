@@ -1044,6 +1044,160 @@ EGS Tutoring Team
     })
 
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def admin_update_session(request, class_id, session_date):
+    """
+    Admin endpoint to update an individual session's date, time, or cancel it
+    This allows admins to reschedule specific sessions without changing the entire class schedule
+    """
+    from datetime import datetime
+
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Parse original session date
+    try:
+        original_date = datetime.strptime(session_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get or create the session
+    session, created = ClassSession.objects.get_or_create(
+        tutoring_class=tutoring_class,
+        session_date=original_date,
+        defaults={
+            'title': tutoring_class.title,
+            'start_time': tutoring_class.schedule_time,
+            'end_time': (
+                datetime.combine(original_date, tutoring_class.schedule_time) +
+                timedelta(minutes=tutoring_class.duration_minutes)
+            ).time()
+        }
+    )
+
+    # Handle cancellation
+    if request.data.get('is_cancelled'):
+        session.is_cancelled = True
+        session.cancellation_reason = request.data.get('cancellation_reason', 'Cancelled by admin')
+        session.save()
+        return Response({
+            'message': 'Session cancelled successfully',
+            'session': ClassSessionSerializer(session).data
+        })
+
+    # Handle rescheduling to a new date
+    new_date = request.data.get('new_date')
+    new_time = request.data.get('new_time')
+    new_end_time = request.data.get('new_end_time')
+
+    if new_date:
+        try:
+            new_date_obj = datetime.strptime(new_date, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({'error': 'Invalid new date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If rescheduling to a different date, we need to:
+        # 1. Mark the original session as cancelled with a note
+        # 2. Create a new session for the new date
+        if new_date_obj != original_date:
+            # Mark original as cancelled
+            session.is_cancelled = True
+            session.cancellation_reason = f'Rescheduled to {new_date}'
+            session.save()
+
+            # Calculate times for new session
+            if new_time:
+                try:
+                    start_time = datetime.strptime(new_time, '%H:%M').time()
+                except ValueError:
+                    start_time = tutoring_class.schedule_time
+            else:
+                start_time = tutoring_class.schedule_time
+
+            if new_end_time:
+                try:
+                    end_time = datetime.strptime(new_end_time, '%H:%M').time()
+                except ValueError:
+                    end_time = (
+                        datetime.combine(new_date_obj, start_time) +
+                        timedelta(minutes=tutoring_class.duration_minutes)
+                    ).time()
+            else:
+                end_time = (
+                    datetime.combine(new_date_obj, start_time) +
+                    timedelta(minutes=tutoring_class.duration_minutes)
+                ).time()
+
+            # Create new session for the new date
+            new_session, _ = ClassSession.objects.get_or_create(
+                tutoring_class=tutoring_class,
+                session_date=new_date_obj,
+                defaults={
+                    'title': f"{tutoring_class.title} (Rescheduled from {original_date})",
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'description': f'Rescheduled from {original_date}'
+                }
+            )
+
+            # If new session already exists, update it
+            if not _:
+                new_session.title = f"{tutoring_class.title} (Rescheduled from {original_date})"
+                new_session.start_time = start_time
+                new_session.end_time = end_time
+                new_session.is_cancelled = False
+                new_session.save()
+
+            return Response({
+                'message': f'Session rescheduled from {original_date} to {new_date}',
+                'original_session': ClassSessionSerializer(session).data,
+                'new_session': ClassSessionSerializer(new_session).data
+            })
+
+    # Just updating time for the same date
+    if new_time:
+        try:
+            session.start_time = datetime.strptime(new_time, '%H:%M').time()
+        except ValueError:
+            return Response({'error': 'Invalid time format. Use HH:MM'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if new_end_time:
+        try:
+            session.end_time = datetime.strptime(new_end_time, '%H:%M').time()
+        except ValueError:
+            return Response({'error': 'Invalid end time format. Use HH:MM'}, status=status.HTTP_400_BAD_REQUEST)
+    elif new_time:
+        # Auto-calculate end time based on duration
+        session.end_time = (
+            datetime.combine(original_date, session.start_time) +
+            timedelta(minutes=tutoring_class.duration_minutes)
+        ).time()
+
+    # Update title if provided
+    if request.data.get('title'):
+        session.title = request.data.get('title')
+
+    # Un-cancel if it was cancelled
+    if request.data.get('is_cancelled') == False:
+        session.is_cancelled = False
+        session.cancellation_reason = ''
+
+    session.save()
+
+    return Response({
+        'message': 'Session updated successfully',
+        'session': ClassSessionSerializer(session).data
+    })
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_session_attendance(request, session_id):

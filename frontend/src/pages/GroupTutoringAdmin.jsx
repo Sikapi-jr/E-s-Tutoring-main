@@ -36,11 +36,20 @@ const GroupTutoringAdmin = () => {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showSessionsCalendarModal, setShowSessionsCalendarModal] = useState(false);
+  const [showEditSessionModal, setShowEditSessionModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [classFiles, setClassFiles] = useState([]);
   const [classSessions, setClassSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [editSessionForm, setEditSessionForm] = useState({
+    new_date: '',
+    new_time: '',
+    is_cancelled: false,
+    cancellation_reason: ''
+  });
   const [uploadForm, setUploadForm] = useState({
     title: '',
     description: '',
@@ -374,6 +383,139 @@ const GroupTutoringAdmin = () => {
     }
   };
 
+  // ========== Sessions Calendar Modal Handlers ==========
+  const handleOpenSessionsCalendarModal = async (classItem) => {
+    setSelectedClass(classItem);
+    setSelectedSession(null);
+    setCurrentMonth(new Date());
+    setModalLoading(true);
+
+    try {
+      const response = await api.get(`/api/group-tutoring/admin/classes/${classItem.id}/sessions/`);
+      setClassSessions(response.data);
+    } catch (err) {
+      console.error('Error fetching sessions:', err);
+      setClassSessions([]);
+    } finally {
+      setModalLoading(false);
+    }
+    setShowSessionsCalendarModal(true);
+  };
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+
+    // Add empty cells for days before the month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  };
+
+  const getSessionsForDate = (date) => {
+    if (!date) return [];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    return classSessions.filter(s => s.session_date === dateStr);
+  };
+
+  const isToday = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const getSessionColor = (session) => {
+    if (session.is_cancelled) {
+      return '#f8d7da'; // Red for cancelled
+    }
+    if (session.exists_in_db) {
+      return '#d4edda'; // Green for modified/saved in DB
+    }
+    return '#e3f2fd'; // Light blue for auto-generated
+  };
+
+  const handleSessionClick = (session) => {
+    setSelectedSession(session);
+    setEditSessionForm({
+      new_date: session.session_date,
+      new_time: session.start_time?.substring(0, 5) || '',
+      is_cancelled: session.is_cancelled || false,
+      cancellation_reason: ''
+    });
+    setShowEditSessionModal(true);
+  };
+
+  const handleSaveSessionEdit = async (e) => {
+    e.preventDefault();
+    if (!selectedSession || !selectedClass) return;
+
+    setModalLoading(true);
+    try {
+      const payload = {};
+
+      // Check if date changed
+      if (editSessionForm.new_date !== selectedSession.session_date) {
+        payload.new_date = editSessionForm.new_date;
+      }
+
+      // Check if time changed
+      if (editSessionForm.new_time && editSessionForm.new_time !== selectedSession.start_time?.substring(0, 5)) {
+        payload.new_time = editSessionForm.new_time;
+      }
+
+      // Check if cancellation status changed
+      if (editSessionForm.is_cancelled !== selectedSession.is_cancelled) {
+        payload.is_cancelled = editSessionForm.is_cancelled;
+        if (editSessionForm.is_cancelled && editSessionForm.cancellation_reason) {
+          payload.cancellation_reason = editSessionForm.cancellation_reason;
+        }
+      }
+
+      const response = await api.patch(
+        `/api/group-tutoring/admin/classes/${selectedClass.id}/sessions/${selectedSession.session_date}/`,
+        payload
+      );
+
+      alert(response.data.message);
+      setShowEditSessionModal(false);
+
+      // Refresh sessions
+      const sessionsResponse = await api.get(`/api/group-tutoring/admin/classes/${selectedClass.id}/sessions/`);
+      setClassSessions(sessionsResponse.data);
+    } catch (err) {
+      console.error('Error updating session:', err);
+      alert('Failed to update session: ' + (err.response?.data?.error || 'Unknown error'));
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -541,6 +683,20 @@ const GroupTutoringAdmin = () => {
                   }}
                 >
                   Edit Schedule
+                </button>
+                <button
+                  onClick={() => handleOpenSessionsCalendarModal(classItem)}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    backgroundColor: '#e83e8c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  Manage Sessions
                 </button>
               </div>
             </div>
@@ -718,7 +874,8 @@ const GroupTutoringAdmin = () => {
           <li><strong>Upload Documents</strong> - Add files/materials for specific weeks of a class</li>
           <li><strong>Mark Attendance</strong> - Record attendance for any class session</li>
           <li><strong>Email Parents</strong> - Send announcements to all parents of enrolled students</li>
-          <li><strong>Edit Schedule</strong> - Change class schedule and notify parents automatically</li>
+          <li><strong>Edit Schedule</strong> - Change the recurring class schedule and notify parents automatically</li>
+          <li><strong>Manage Sessions</strong> - View calendar and modify individual class dates (reschedule or cancel specific sessions)</li>
         </ul>
 
         <h4 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>Advanced Management (Django Admin)</h4>
@@ -1685,6 +1842,362 @@ const GroupTutoringAdmin = () => {
                   }}
                 >
                   {modalLoading ? 'Saving...' : 'Save Schedule'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sessions Calendar Modal */}
+      {showSessionsCalendarModal && selectedClass && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '1100px',
+            width: '95%',
+            maxHeight: '95vh',
+            overflowY: 'auto',
+            margin: '1rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: '#192A88' }}>Manage Sessions - {selectedClass.title}</h2>
+              <button
+                onClick={() => setShowSessionsCalendarModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <p style={{ marginBottom: '1rem', color: '#666' }}>
+              Click on any session to reschedule or cancel it. Changes to individual sessions do not affect the recurring schedule.
+            </p>
+
+            {/* Legend */}
+            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ display: 'inline-block', width: '20px', height: '20px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', borderRadius: '4px' }}></span>
+                Auto-generated
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ display: 'inline-block', width: '20px', height: '20px', backgroundColor: '#d4edda', border: '1px solid #ddd', borderRadius: '4px' }}></span>
+                Modified/Rescheduled
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ display: 'inline-block', width: '20px', height: '20px', backgroundColor: '#f8d7da', border: '1px solid #ddd', borderRadius: '4px' }}></span>
+                Cancelled
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ display: 'inline-block', width: '20px', height: '20px', backgroundColor: '#ffb74d', border: '2px solid #ff9800', borderRadius: '4px' }}></span>
+                Today
+              </span>
+            </div>
+
+            {modalLoading ? (
+              <p style={{ textAlign: 'center', padding: '2rem' }}>Loading sessions...</p>
+            ) : (
+              <>
+                {/* Calendar Navigation */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px'
+                }}>
+                  <button
+                    onClick={prevMonth}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#192A88',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Previous
+                  </button>
+                  <h3 style={{ margin: 0, color: '#192A88', fontSize: '1.5rem' }}>
+                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button
+                    onClick={nextMonth}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#192A88',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
+
+                {/* Calendar Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  gap: '8px'
+                }}>
+                  {/* Day Headers */}
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} style={{
+                      padding: '0.75rem',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      backgroundColor: '#192A88',
+                      color: 'white',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem'
+                    }}>
+                      {day}
+                    </div>
+                  ))}
+
+                  {/* Calendar Days */}
+                  {getDaysInMonth(currentMonth).map((date, index) => {
+                    const daySessions = date ? getSessionsForDate(date) : [];
+                    const todayCell = date && isToday(date);
+
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          minHeight: '100px',
+                          padding: '0.5rem',
+                          border: todayCell ? '3px solid #ff9800' : '1px solid #ddd',
+                          borderRadius: '8px',
+                          backgroundColor: todayCell ? '#fff8e1' : (date ? 'white' : '#f5f5f5'),
+                          position: 'relative'
+                        }}
+                      >
+                        {date && (
+                          <>
+                            <div style={{
+                              fontWeight: todayCell ? 'bold' : 'normal',
+                              fontSize: '0.9rem',
+                              marginBottom: '0.5rem',
+                              color: todayCell ? '#e65100' : '#333',
+                              textAlign: 'center'
+                            }}>
+                              {date.getDate()}
+                            </div>
+
+                            {daySessions.length > 0 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {daySessions.map(session => (
+                                  <div
+                                    key={session.id}
+                                    onClick={() => handleSessionClick(session)}
+                                    style={{
+                                      backgroundColor: getSessionColor(session),
+                                      padding: '0.4rem',
+                                      borderRadius: '4px',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                      border: '1px solid #ddd',
+                                      transition: 'transform 0.2s, box-shadow 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform = 'scale(1.02)';
+                                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform = 'scale(1)';
+                                      e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                  >
+                                    <div style={{ fontWeight: 'bold', marginBottom: '2px', color: session.is_cancelled ? '#721c24' : '#192A88' }}>
+                                      {session.is_cancelled && '✗ '}{session.title}
+                                    </div>
+                                    <div style={{ color: '#666', fontSize: '0.7rem' }}>
+                                      {session.start_time?.substring(0, 5)} - {session.end_time?.substring(0, 5)}
+                                    </div>
+                                    {session.is_cancelled && (
+                                      <div style={{ color: '#dc3545', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                                        CANCELLED
+                                      </div>
+                                    )}
+                                    {session.exists_in_db && !session.is_cancelled && (
+                                      <div style={{ color: '#28a745', fontSize: '0.65rem' }}>
+                                        Modified
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowSessionsCalendarModal(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Session Modal */}
+      {showEditSessionModal && selectedSession && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1001
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: '#192A88' }}>Edit Session</h2>
+              <button
+                onClick={() => setShowEditSessionModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+              <p style={{ margin: '0 0 0.5rem 0' }}><strong>Original Date:</strong> {new Date(selectedSession.session_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p style={{ margin: 0 }}><strong>Original Time:</strong> {selectedSession.start_time?.substring(0, 5)} - {selectedSession.end_time?.substring(0, 5)}</p>
+            </div>
+
+            <form onSubmit={handleSaveSessionEdit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  New Date
+                </label>
+                <input
+                  type="date"
+                  value={editSessionForm.new_date}
+                  onChange={(e) => setEditSessionForm(prev => ({ ...prev, new_date: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                <small style={{ color: '#666' }}>Change to reschedule to a different date</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  New Time
+                </label>
+                <input
+                  type="time"
+                  value={editSessionForm.new_time}
+                  onChange={(e) => setEditSessionForm(prev => ({ ...prev, new_time: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                <small style={{ color: '#666' }}>Change to modify the start time</small>
+              </div>
+
+              <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: selectedSession.is_cancelled ? '#d4edda' : '#fff3cd', borderRadius: '4px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={editSessionForm.is_cancelled}
+                    onChange={(e) => setEditSessionForm(prev => ({ ...prev, is_cancelled: e.target.checked }))}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  <span style={{ fontWeight: 'bold' }}>
+                    {selectedSession.is_cancelled ? 'Session is cancelled - Uncheck to restore' : 'Cancel this session'}
+                  </span>
+                </label>
+              </div>
+
+              {editSessionForm.is_cancelled && !selectedSession.is_cancelled && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    Cancellation Reason (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editSessionForm.cancellation_reason}
+                    onChange={(e) => setEditSessionForm(prev => ({ ...prev, cancellation_reason: e.target.value }))}
+                    placeholder="e.g., Holiday, Tutor unavailable..."
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEditSessionModal(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalLoading}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: modalLoading ? '#ccc' : '#e83e8c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: modalLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {modalLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
