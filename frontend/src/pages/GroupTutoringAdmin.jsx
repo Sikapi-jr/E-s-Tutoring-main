@@ -471,6 +471,52 @@ const GroupTutoringAdmin = () => {
     setShowEditSessionModal(true);
   };
 
+  // ========== Week Date Range Calculator ==========
+  const getWeekRanges = (classItem) => {
+    if (!classItem || !classItem.start_date || !classItem.end_date) return [];
+
+    const weeks = [];
+    const startDate = new Date(classItem.start_date);
+    const endDate = new Date(classItem.end_date);
+
+    let weekNum = 1;
+    let currentWeekStart = new Date(startDate);
+
+    while (currentWeekStart <= endDate) {
+      // Calculate end of this week (6 days after start, or end_date if sooner)
+      let currentWeekEnd = new Date(currentWeekStart);
+      currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
+
+      if (currentWeekEnd > endDate) {
+        currentWeekEnd = new Date(endDate);
+      }
+
+      const formatDate = (date) => {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+
+      weeks.push({
+        weekNumber: weekNum,
+        startDate: new Date(currentWeekStart),
+        endDate: new Date(currentWeekEnd),
+        label: `Week ${weekNum}: ${formatDate(currentWeekStart)} - ${formatDate(currentWeekEnd)}`
+      });
+
+      // Move to next week
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+      weekNum++;
+    }
+
+    return weeks;
+  };
+
+  const getWeekLabel = (weekNumber, classItem) => {
+    if (!weekNumber) return 'General';
+    const weeks = getWeekRanges(classItem);
+    const week = weeks.find(w => w.weekNumber === parseInt(weekNumber));
+    return week ? week.label : `Week ${weekNumber}`;
+  };
+
   const handleSaveSessionEdit = async (e) => {
     e.preventDefault();
     if (!selectedSession || !selectedClass) return;
@@ -1338,15 +1384,19 @@ const GroupTutoringAdmin = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Week Number</label>
-                  <input
-                    type="number"
-                    min="1"
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Week</label>
+                  <select
                     value={uploadForm.week_number}
                     onChange={(e) => setUploadForm(prev => ({ ...prev, week_number: e.target.value }))}
-                    placeholder="e.g., 1, 2, 3..."
                     style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                  />
+                  >
+                    <option value="">General (no specific week)</option>
+                    {getWeekRanges(selectedClass).map(week => (
+                      <option key={week.weekNumber} value={week.weekNumber}>
+                        {week.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', paddingTop: '1.5rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -1409,7 +1459,7 @@ const GroupTutoringAdmin = () => {
                         {file.title}
                         {file.is_current && <span style={{ marginLeft: '0.5rem', color: '#28a745', fontSize: '0.8rem' }}>(Current)</span>}
                       </td>
-                      <td style={{ padding: '0.75rem' }}>{file.week_number || 'General'}</td>
+                      <td style={{ padding: '0.75rem' }}>{getWeekLabel(file.week_number, selectedClass)}</td>
                       <td style={{ padding: '0.75rem' }}>{new Date(file.uploaded_at).toLocaleDateString()}</td>
                       <td style={{ padding: '0.75rem' }}>
                         <button
