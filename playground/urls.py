@@ -159,6 +159,7 @@ urlpatterns = [
     path('group-tutoring/admin/classes/<int:class_id>/email-parents/', group_tutoring_views.admin_email_class_parents, name='admin-email-class-parents'),
     path('group-tutoring/admin/classes/<int:class_id>/update-schedule/', group_tutoring_views.admin_update_class_schedule, name='admin-update-class-schedule'),
     path('group-tutoring/admin/classes/<int:class_id>/sessions/<str:session_date>/', group_tutoring_views.admin_update_session, name='admin-update-session'),
+    path('group-tutoring/admin/classes/<int:class_id>/parent-view-sessions/', group_tutoring_views.admin_class_parent_view_sessions, name='admin-class-parent-view-sessions'),
 
 ]
 

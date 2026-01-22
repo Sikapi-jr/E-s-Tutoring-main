@@ -413,7 +413,7 @@ const GroupTutoringAdmin = () => {
 
     try {
       const [sessionsRes, filesRes] = await Promise.all([
-        api.get(`/api/group-tutoring/admin/classes/${classItem.id}/sessions/`),
+        api.get(`/api/group-tutoring/admin/classes/${classItem.id}/parent-view-sessions/`),
         api.get(`/api/group-tutoring/classes/${classItem.id}/files/`)
       ]);
       setParentViewSessions(sessionsRes.data);
@@ -467,13 +467,29 @@ const GroupTutoringAdmin = () => {
     if (session.is_cancelled) {
       return '#f8d7da'; // Red for cancelled
     }
+    // Check attendance status first
+    if (session.attendance_status === 'attended') {
+      return '#d4edda'; // Green for attended
+    } else if (session.attendance_status === 'absent') {
+      return '#f8d7da'; // Red for missed/absent
+    } else if (session.attendance_status === 'cancelled_advance') {
+      return '#fff3cd'; // Yellow for cancelled in advance
+    }
+    // For sessions without attendance status
     const sessionDate = new Date(session.session_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (sessionDate < today) {
-      return '#d4edda'; // Green for past (assumed attended)
+      return '#f8f9fa'; // Gray for past without attendance record
     }
     return '#e3f2fd'; // Light blue for upcoming
+  };
+
+  const getParentViewAttendanceIcon = (session) => {
+    if (session.attendance_status === 'attended') return '✓';
+    if (session.attendance_status === 'absent') return '✗';
+    if (session.attendance_status === 'cancelled_advance') return '⊗';
+    return '';
   };
 
   const getDaysInMonth = (date) => {
@@ -2460,8 +2476,9 @@ const GroupTutoringAdmin = () => {
                     {/* Legend */}
                     <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
                       <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', marginRight: '5px' }}></span>Upcoming</span>
-                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px' }}></span>Past</span>
-                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px' }}></span>Attended</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Missed</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#fff3cd', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled in Advance</span>
                       <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#ffb74d', border: '2px solid #ff9800', marginRight: '5px' }}></span>Today</span>
                     </div>
 
@@ -2570,11 +2587,23 @@ const GroupTutoringAdmin = () => {
                                           border: '1px solid #ddd'
                                         }}
                                       >
-                                        <div style={{ fontWeight: 'bold', color: session.is_cancelled ? '#721c24' : '#192A88' }}>
-                                          {session.is_cancelled && '✗ '}{session.start_time?.substring(0, 5)}
+                                        <div style={{ fontWeight: 'bold', color: session.is_cancelled ? '#721c24' : (session.attendance_status === 'absent' ? '#721c24' : '#192A88') }}>
+                                          {getParentViewAttendanceIcon(session)} {session.is_cancelled ? '✗ ' : ''}{session.start_time?.substring(0, 5)}
+                                        </div>
+                                        <div style={{ color: '#666', fontSize: '0.6rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {session.student_name}
                                         </div>
                                         {session.is_cancelled && (
-                                          <div style={{ color: '#dc3545', fontSize: '0.6rem' }}>Cancelled</div>
+                                          <div style={{ color: '#dc3545', fontSize: '0.6rem' }}>Session Cancelled</div>
+                                        )}
+                                        {session.attendance_status === 'absent' && !session.is_cancelled && (
+                                          <div style={{ color: '#dc3545', fontSize: '0.6rem', fontWeight: 'bold' }}>MISSED</div>
+                                        )}
+                                        {session.attendance_status === 'attended' && (
+                                          <div style={{ color: '#28a745', fontSize: '0.6rem' }}>Attended</div>
+                                        )}
+                                        {session.attendance_status === 'cancelled_advance' && (
+                                          <div style={{ color: '#856404', fontSize: '0.6rem' }}>Cancelled</div>
                                         )}
                                       </div>
                                     ))}

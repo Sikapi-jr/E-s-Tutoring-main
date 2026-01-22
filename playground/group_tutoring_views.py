@@ -594,6 +594,103 @@ def parent_sessions_calendar(request):
     return Response(session_data)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_class_parent_view_sessions(request, class_id):
+    """
+    Admin endpoint to get all sessions for a class with attendance status for all enrolled students.
+    This is used for the "View as Parent" feature in the admin panel.
+    """
+    from datetime import datetime, date, time as dt_time
+
+    user = request.user
+
+    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get all enrolled students for this class
+    enrollments = GroupEnrollment.objects.filter(
+        tutoring_class=tutoring_class,
+        status='enrolled'
+    ).select_related('student')
+
+    session_data = []
+
+    # Skip if class doesn't have schedule configured
+    if not tutoring_class.schedule_days or not tutoring_class.schedule_time:
+        return Response(session_data)
+
+    # Get class date range
+    start_date = tutoring_class.start_date
+    end_date = tutoring_class.end_date
+
+    # Generate sessions for each scheduled day
+    current_date = start_date
+    while current_date <= end_date:
+        # Check if this day is in the schedule
+        day_name = current_date.strftime('%A').lower()
+
+        if day_name in [d.lower() for d in tutoring_class.schedule_days]:
+            # Calculate end time based on duration
+            start_time = tutoring_class.schedule_time
+            duration = timedelta(minutes=tutoring_class.duration_minutes)
+
+            # Create a datetime to calculate end time
+            start_datetime = datetime.combine(current_date, start_time)
+            end_datetime = start_datetime + duration
+            end_time = end_datetime.time()
+
+            # Check if there's an existing session in DB (for cancellations, etc.)
+            is_cancelled = False
+            existing_session = None
+            try:
+                existing_session = ClassSession.objects.get(
+                    tutoring_class=tutoring_class,
+                    session_date=current_date
+                )
+                is_cancelled = existing_session.is_cancelled
+            except ClassSession.DoesNotExist:
+                pass
+
+            # For each enrollment, get attendance status
+            for enrollment in enrollments:
+                attendance_status = None
+                if existing_session:
+                    try:
+                        attendance = ClassAttendance.objects.get(
+                            session=existing_session,
+                            enrollment=enrollment
+                        )
+                        attendance_status = attendance.status
+                    except ClassAttendance.DoesNotExist:
+                        pass
+
+                session_id = f"{tutoring_class.id}-{enrollment.student.id}-{current_date}"
+
+                session_data.append({
+                    'id': session_id,
+                    'enrollment_id': enrollment.id,
+                    'class_title': tutoring_class.title,
+                    'class_id': tutoring_class.id,
+                    'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
+                    'student_id': enrollment.student.id,
+                    'session_date': str(current_date),
+                    'start_time': str(start_time),
+                    'end_time': str(end_time),
+                    'is_cancelled': is_cancelled,
+                    'attendance_status': attendance_status
+                })
+
+        current_date += timedelta(days=1)
+
+    return Response(session_data)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_upload_class_file(request, class_id):
