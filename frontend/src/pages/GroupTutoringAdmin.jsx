@@ -38,6 +38,9 @@ const GroupTutoringAdmin = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showSessionsCalendarModal, setShowSessionsCalendarModal] = useState(false);
   const [showEditSessionModal, setShowEditSessionModal] = useState(false);
+  const [showParentViewModal, setShowParentViewModal] = useState(false);
+  const [parentViewMonth, setParentViewMonth] = useState(new Date());
+  const [parentViewSessions, setParentViewSessions] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [classFiles, setClassFiles] = useState([]);
   const [classSessions, setClassSessions] = useState([]);
@@ -402,6 +405,77 @@ const GroupTutoringAdmin = () => {
     setShowSessionsCalendarModal(true);
   };
 
+  // ========== Parent View Modal Handlers ==========
+  const handleOpenParentViewModal = async (classItem) => {
+    setSelectedClass(classItem);
+    setParentViewMonth(new Date());
+    setModalLoading(true);
+
+    try {
+      const [sessionsRes, filesRes] = await Promise.all([
+        api.get(`/api/group-tutoring/admin/classes/${classItem.id}/sessions/`),
+        api.get(`/api/group-tutoring/classes/${classItem.id}/files/`)
+      ]);
+      setParentViewSessions(sessionsRes.data);
+      setClassFiles(filesRes.data);
+    } catch (err) {
+      console.error('Error fetching parent view data:', err);
+      setParentViewSessions([]);
+      setClassFiles([]);
+    } finally {
+      setModalLoading(false);
+    }
+    setShowParentViewModal(true);
+  };
+
+  const getParentViewDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    return days;
+  };
+
+  const getParentViewSessionsForDate = (date) => {
+    if (!date) return [];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    return parentViewSessions.filter(s => s.session_date === dateStr);
+  };
+
+  const parentViewNextMonth = () => {
+    setParentViewMonth(new Date(parentViewMonth.getFullYear(), parentViewMonth.getMonth() + 1, 1));
+  };
+
+  const parentViewPrevMonth = () => {
+    setParentViewMonth(new Date(parentViewMonth.getFullYear(), parentViewMonth.getMonth() - 1, 1));
+  };
+
+  const getParentViewSessionColor = (session) => {
+    if (session.is_cancelled) {
+      return '#f8d7da'; // Red for cancelled
+    }
+    const sessionDate = new Date(session.session_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (sessionDate < today) {
+      return '#d4edda'; // Green for past (assumed attended)
+    }
+    return '#e3f2fd'; // Light blue for upcoming
+  };
+
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -744,6 +818,20 @@ const GroupTutoringAdmin = () => {
                 >
                   Manage Sessions
                 </button>
+                <button
+                  onClick={() => handleOpenParentViewModal(classItem)}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    backgroundColor: '#192A88',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  View as Parent
+                </button>
               </div>
             </div>
           ))}
@@ -922,6 +1010,7 @@ const GroupTutoringAdmin = () => {
           <li><strong>Email Parents</strong> - Send announcements to all parents of enrolled students</li>
           <li><strong>Edit Schedule</strong> - Change the recurring class schedule and notify parents automatically</li>
           <li><strong>Manage Sessions</strong> - View calendar and modify individual class dates (reschedule or cancel specific sessions)</li>
+          <li><strong>View as Parent</strong> - Preview what parents see: calendar, weekly materials, and quiz grades</li>
         </ul>
 
         <h4 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>Advanced Management (Django Admin)</h4>
@@ -2251,6 +2340,453 @@ const GroupTutoringAdmin = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Parent View Modal */}
+      {showParentViewModal && selectedClass && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            backgroundColor: '#f8f9fa',
+            borderRadius: '8px',
+            padding: '0',
+            maxWidth: '1200px',
+            width: '95%',
+            maxHeight: '95vh',
+            overflowY: 'auto',
+            margin: '1rem'
+          }}>
+            {/* Hero Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #192A88 0%, #3a4db5 100%)',
+              color: 'white',
+              padding: '2rem',
+              borderRadius: '8px 8px 0 0',
+              position: 'relative'
+            }}>
+              <button
+                onClick={() => setShowParentViewModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                &times;
+              </button>
+              <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+                Parent View Preview
+              </div>
+              <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>{selectedClass.title}</h2>
+              <p style={{ margin: 0, opacity: 0.9 }}>
+                {selectedClass.difficulty?.replace('_', ' ').toUpperCase()} | {selectedClass.subject}
+              </p>
+            </div>
+
+            <div style={{ padding: '2rem' }}>
+              {/* Class Info Card */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '2rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: '#192A88' }}>Class Information</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  <div>
+                    <strong>Schedule:</strong> {selectedClass.schedule_days?.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') || 'TBD'}
+                    {selectedClass.schedule_time && ` at ${selectedClass.schedule_time}`}
+                  </div>
+                  <div>
+                    <strong>Duration:</strong> {new Date(selectedClass.start_date).toLocaleDateString()} - {new Date(selectedClass.end_date).toLocaleDateString()}
+                  </div>
+                  {selectedClass.location && (
+                    <div>
+                      <strong>Location:</strong> {selectedClass.location}
+                      {selectedClass.location_link && (
+                        <a href={selectedClass.location_link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem', color: '#192A88' }}>
+                          (Join Link)
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {selectedClass.tutor_details && selectedClass.tutor_details.length > 0 && (
+                    <div>
+                      <strong>Tutors:</strong> {selectedClass.tutor_details.map(t => t.name).join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Calendar Section */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '2rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 1.5rem 0', color: '#192A88' }}>Class Calendar</h3>
+
+                {modalLoading ? (
+                  <p>Loading calendar...</p>
+                ) : (
+                  <>
+                    {/* Legend */}
+                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', marginRight: '5px' }}></span>Upcoming</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px' }}></span>Past</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled</span>
+                      <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#ffb74d', border: '2px solid #ff9800', marginRight: '5px' }}></span>Today</span>
+                    </div>
+
+                    {/* Calendar Navigation */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                      padding: '0.75rem',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px'
+                    }}>
+                      <button
+                        onClick={parentViewPrevMonth}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#192A88',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Previous
+                      </button>
+                      <h4 style={{ margin: 0, color: '#192A88' }}>
+                        {parentViewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </h4>
+                      <button
+                        onClick={parentViewNextMonth}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#192A88',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Next
+                      </button>
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(7, 1fr)',
+                      gap: '4px'
+                    }}>
+                      {/* Day Headers */}
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} style={{
+                          padding: '0.5rem',
+                          textAlign: 'center',
+                          fontWeight: 'bold',
+                          backgroundColor: '#192A88',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '0.8rem'
+                        }}>
+                          {day}
+                        </div>
+                      ))}
+
+                      {/* Calendar Days */}
+                      {getParentViewDaysInMonth(parentViewMonth).map((date, index) => {
+                        const daySessions = date ? getParentViewSessionsForDate(date) : [];
+                        const todayCell = date && isToday(date);
+
+                        return (
+                          <div
+                            key={index}
+                            style={{
+                              minHeight: '80px',
+                              padding: '0.25rem',
+                              border: todayCell ? '2px solid #ff9800' : '1px solid #ddd',
+                              borderRadius: '4px',
+                              backgroundColor: todayCell ? '#fff8e1' : (date ? 'white' : '#f5f5f5')
+                            }}
+                          >
+                            {date && (
+                              <>
+                                <div style={{
+                                  fontWeight: todayCell ? 'bold' : 'normal',
+                                  fontSize: '0.8rem',
+                                  marginBottom: '0.25rem',
+                                  color: todayCell ? '#e65100' : '#333',
+                                  textAlign: 'center'
+                                }}>
+                                  {date.getDate()}
+                                </div>
+
+                                {daySessions.length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    {daySessions.map(session => (
+                                      <div
+                                        key={session.id}
+                                        style={{
+                                          backgroundColor: getParentViewSessionColor(session),
+                                          padding: '0.25rem',
+                                          borderRadius: '3px',
+                                          fontSize: '0.65rem',
+                                          border: '1px solid #ddd'
+                                        }}
+                                      >
+                                        <div style={{ fontWeight: 'bold', color: session.is_cancelled ? '#721c24' : '#192A88' }}>
+                                          {session.is_cancelled && '✗ '}{session.start_time?.substring(0, 5)}
+                                        </div>
+                                        {session.is_cancelled && (
+                                          <div style={{ color: '#dc3545', fontSize: '0.6rem' }}>Cancelled</div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Weekly Materials Section */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '2rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 1.5rem 0', color: '#192A88' }}>Weekly Materials</h3>
+
+                {classFiles.length === 0 ? (
+                  <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+                    No materials uploaded yet.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Group files by week */}
+                    {(() => {
+                      const weeks = getWeekRanges(selectedClass);
+                      const generalFiles = classFiles.filter(f => !f.week_number);
+                      const weeklyFiles = weeks.map(week => ({
+                        ...week,
+                        files: classFiles.filter(f => f.week_number === week.weekNumber)
+                      })).filter(w => w.files.length > 0);
+
+                      return (
+                        <>
+                          {/* General Files */}
+                          {generalFiles.length > 0 && (
+                            <div style={{
+                              border: '1px solid #ddd',
+                              borderRadius: '8px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                backgroundColor: '#6c757d',
+                                color: 'white',
+                                padding: '0.75rem 1rem',
+                                fontWeight: 'bold'
+                              }}>
+                                General Resources
+                              </div>
+                              <div style={{ padding: '1rem' }}>
+                                {generalFiles.map(file => (
+                                  <div
+                                    key={file.id}
+                                    style={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      padding: '0.5rem 0',
+                                      borderBottom: '1px solid #eee'
+                                    }}
+                                  >
+                                    <div>
+                                      <div style={{ fontWeight: 'bold' }}>{file.title}</div>
+                                      {file.description && <div style={{ fontSize: '0.85rem', color: '#666' }}>{file.description}</div>}
+                                    </div>
+                                    <a
+                                      href={file.file}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        padding: '0.4rem 0.8rem',
+                                        backgroundColor: '#192A88',
+                                        color: 'white',
+                                        textDecoration: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '0.85rem'
+                                      }}
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Weekly Files */}
+                          {weeklyFiles.map(week => (
+                            <div
+                              key={week.weekNumber}
+                              style={{
+                                border: '1px solid #ddd',
+                                borderRadius: '8px',
+                                overflow: 'hidden'
+                              }}
+                            >
+                              <div style={{
+                                backgroundColor: week.files.some(f => f.is_current) ? '#28a745' : '#192A88',
+                                color: 'white',
+                                padding: '0.75rem 1rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <span>{week.label}</span>
+                                {week.files.some(f => f.is_current) && (
+                                  <span style={{
+                                    backgroundColor: 'white',
+                                    color: '#28a745',
+                                    padding: '0.2rem 0.5rem',
+                                    borderRadius: '4px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold'
+                                  }}>
+                                    CURRENT WEEK
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ padding: '1rem' }}>
+                                {week.files.map(file => (
+                                  <div
+                                    key={file.id}
+                                    style={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      padding: '0.5rem 0',
+                                      borderBottom: '1px solid #eee'
+                                    }}
+                                  >
+                                    <div>
+                                      <div style={{ fontWeight: 'bold' }}>{file.title}</div>
+                                      {file.description && <div style={{ fontSize: '0.85rem', color: '#666' }}>{file.description}</div>}
+                                    </div>
+                                    <a
+                                      href={file.file}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        padding: '0.4rem 0.8rem',
+                                        backgroundColor: '#192A88',
+                                        color: 'white',
+                                        textDecoration: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '0.85rem'
+                                      }}
+                                    >
+                                      Download
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Quiz Grades Section (Placeholder) */}
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: '#192A88' }}>Quiz Grades</h3>
+                <div style={{
+                  backgroundColor: '#e3f2fd',
+                  borderRadius: '8px',
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: '#1565c0'
+                }}>
+                  <p style={{ margin: 0, fontSize: '1.1rem' }}>
+                    Quiz grades will appear here once quizzes are added to this class.
+                  </p>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', opacity: 0.8 }}>
+                    Number of quizzes configured: {selectedClass.num_quizzes || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                <button
+                  onClick={() => setShowParentViewModal(false)}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
