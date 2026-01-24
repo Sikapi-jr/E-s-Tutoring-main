@@ -5098,6 +5098,54 @@ class AdminRecentUsersView(APIView):
         return Response(user_list, status=200)
 
 
+class AdminDeleteUserView(APIView):
+    """Admin endpoint to delete a user"""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, user_id):
+        # Check if user is admin/superuser
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        try:
+            user_to_delete = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+
+        # Prevent deleting yourself
+        if user_to_delete.id == request.user.id:
+            return Response({'error': 'Cannot delete your own account'}, status=400)
+
+        # Prevent deleting other superusers
+        if user_to_delete.is_superuser:
+            return Response({'error': 'Cannot delete superuser accounts'}, status=400)
+
+        user_name = f"{user_to_delete.firstName} {user_to_delete.lastName}"
+        user_email = user_to_delete.email
+        user_role = user_to_delete.roles
+
+        # If deleting a parent, also delete their children (students)
+        if user_to_delete.roles == 'parent':
+            children = User.objects.filter(parent=user_to_delete)
+            children_count = children.count()
+            children.delete()
+        else:
+            children_count = 0
+
+        # Delete the user
+        user_to_delete.delete()
+
+        return Response({
+            'message': f'User "{user_name}" ({user_email}) has been deleted',
+            'deleted_user': {
+                'name': user_name,
+                'email': user_email,
+                'role': user_role
+            },
+            'children_deleted': children_count
+        }, status=200)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_test_email(request):

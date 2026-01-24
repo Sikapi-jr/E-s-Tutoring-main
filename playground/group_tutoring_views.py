@@ -657,33 +657,50 @@ def admin_class_parent_view_sessions(request, class_id):
             except ClassSession.DoesNotExist:
                 pass
 
-            # For each enrollment, get attendance status
-            for enrollment in enrollments:
-                attendance_status = None
-                if existing_session:
-                    try:
-                        attendance = ClassAttendance.objects.get(
-                            session=existing_session,
-                            enrollment=enrollment
-                        )
-                        attendance_status = attendance.status
-                    except ClassAttendance.DoesNotExist:
-                        pass
+            # If there are enrolled students, create one session entry per student
+            if enrollments.exists():
+                for enrollment in enrollments:
+                    attendance_status = None
+                    if existing_session:
+                        try:
+                            attendance = ClassAttendance.objects.get(
+                                session=existing_session,
+                                enrollment=enrollment
+                            )
+                            attendance_status = attendance.status
+                        except ClassAttendance.DoesNotExist:
+                            pass
 
-                session_id = f"{tutoring_class.id}-{enrollment.student.id}-{current_date}"
+                    session_id = f"{tutoring_class.id}-{enrollment.student.id}-{current_date}"
 
+                    session_data.append({
+                        'id': session_id,
+                        'enrollment_id': enrollment.id,
+                        'class_title': tutoring_class.title,
+                        'class_id': tutoring_class.id,
+                        'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
+                        'student_id': enrollment.student.id,
+                        'session_date': str(current_date),
+                        'start_time': str(start_time),
+                        'end_time': str(end_time),
+                        'is_cancelled': is_cancelled,
+                        'attendance_status': attendance_status
+                    })
+            else:
+                # No enrolled students - still show the session date
+                session_id = f"{tutoring_class.id}-0-{current_date}"
                 session_data.append({
                     'id': session_id,
-                    'enrollment_id': enrollment.id,
+                    'enrollment_id': None,
                     'class_title': tutoring_class.title,
                     'class_id': tutoring_class.id,
-                    'student_name': f"{enrollment.student.firstName} {enrollment.student.lastName}",
-                    'student_id': enrollment.student.id,
+                    'student_name': 'No students enrolled',
+                    'student_id': None,
                     'session_date': str(current_date),
                     'start_time': str(start_time),
                     'end_time': str(end_time),
                     'is_cancelled': is_cancelled,
-                    'attendance_status': attendance_status
+                    'attendance_status': None
                 })
 
         current_date += timedelta(days=1)

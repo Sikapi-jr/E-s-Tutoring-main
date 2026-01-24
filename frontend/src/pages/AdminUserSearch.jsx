@@ -22,6 +22,8 @@ export default function AdminUserSearch() {
   const [currentRequests, setCurrentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Recent users state
   const [recentTutors, setRecentTutors] = useState([]);
@@ -127,6 +129,25 @@ export default function AdminUserSearch() {
     setDocuments([]);
     setCurrentRequests([]);
     setError("");
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await api.delete(`/api/admin/users/${selectedUser.id}/delete/`);
+      alert(response.data.message + (response.data.children_deleted > 0 ? ` (${response.data.children_deleted} children also deleted)` : ''));
+      setShowDeleteModal(false);
+      clearSearch();
+      // Refresh recent users lists
+      window.location.reload();
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert('Failed to delete user: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -358,7 +379,26 @@ export default function AdminUserSearch() {
           </div>
 
           <div className="user-info-card">
-            <h2>{t('admin.userInformation')}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>{t('admin.userInformation')}</h2>
+              {!userInfo.is_superuser && (
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  🗑️ Delete User
+                </button>
+              )}
+            </div>
             <div className="user-info-grid">
               <div className="info-item">
                 <label>{t('common.name')}:</label>
@@ -750,6 +790,97 @@ export default function AdminUserSearch() {
       {selectedUser && userHours.length === 0 && !loading && (
         <div className="no-hours-message">
           <p>{t('admin.noSessionsFound')}</p>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ margin: '0 0 1rem 0', color: '#dc3545' }}>
+              ⚠️ Delete User
+            </h2>
+            <p style={{ marginBottom: '1rem' }}>
+              Are you sure you want to delete <strong>{userInfo?.firstName} {userInfo?.lastName}</strong> ({userInfo?.email})?
+            </p>
+            <p style={{ marginBottom: '1rem', color: '#666' }}>
+              Role: <strong>{userInfo?.roles}</strong>
+            </p>
+            {userInfo?.roles === 'parent' && relationships?.children?.length > 0 && (
+              <div style={{
+                backgroundColor: '#fff3cd',
+                padding: '1rem',
+                borderRadius: '4px',
+                marginBottom: '1rem',
+                border: '1px solid #ffc107'
+              }}>
+                <strong>⚠️ Warning:</strong> This parent has {relationships.children.length} student(s) who will also be deleted:
+                <ul style={{ margin: '0.5rem 0 0 1.5rem', padding: 0 }}>
+                  {relationships.children.map(child => (
+                    <li key={child.id}>{child.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p style={{
+              backgroundColor: '#f8d7da',
+              padding: '1rem',
+              borderRadius: '4px',
+              marginBottom: '1.5rem',
+              color: '#721c24'
+            }}>
+              <strong>This action cannot be undone!</strong> All associated data (hours, requests, documents) will be permanently deleted.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={deleteLoading}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                {deleteLoading ? 'Deleting...' : '🗑️ Delete User'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

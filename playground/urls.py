@@ -120,6 +120,7 @@ urlpatterns = [
     path('admin/users/search/', views.AdminUserSearchView.as_view(), name='admin-user-search'),
     path('admin/users/<int:user_id>/hours/', views.AdminUserHoursView.as_view(), name='admin-user-hours'),
     path('admin/recent-users/', views.AdminRecentUsersView.as_view(), name='admin-recent-users'),
+    path('admin/users/<int:user_id>/delete/', views.AdminDeleteUserView.as_view(), name='admin-delete-user'),
 
     # Admin test email tool
     path('admin/test-email/', views.admin_test_email, name='admin-test-email'),
