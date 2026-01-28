@@ -1312,6 +1312,50 @@ def admin_update_session(request, class_id, session_date):
     })
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def student_quizzes(request, enrollment_id):
+    """
+    Get quizzes for a specific enrollment's class along with the student's submission status
+    """
+    try:
+        enrollment = GroupEnrollment.objects.select_related('student', 'parent', 'tutoring_class').get(id=enrollment_id)
+    except GroupEnrollment.DoesNotExist:
+        return Response({'error': 'Enrollment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Verify access (parent or admin)
+    if not (request.user.id == enrollment.parent.id or request.user.roles == 'admin' or request.user.is_staff):
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Get quizzes for this class
+    quizzes = Quiz.objects.filter(
+        tutoring_class=enrollment.tutoring_class
+    ).order_by('scheduled_date')
+
+    quiz_data = []
+    for quiz in quizzes:
+        # Check if student has submitted this quiz
+        submission = QuizSubmission.objects.filter(quiz=quiz, enrollment=enrollment).first()
+
+        quiz_data.append({
+            'id': quiz.id,
+            'title': quiz.title,
+            'description': quiz.description,
+            'scheduled_date': str(quiz.scheduled_date),
+            'time_limit_minutes': quiz.time_limit_minutes,
+            'is_active': quiz.is_active,
+            'passing_score': quiz.passing_score,
+            'submission': {
+                'id': submission.id,
+                'score': submission.score,
+                'passed': submission.passed,
+                'submitted_at': str(submission.submitted_at) if submission.submitted_at else None
+            } if submission else None
+        })
+
+    return Response(quiz_data)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_session_attendance(request, session_id):

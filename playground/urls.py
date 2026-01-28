@@ -149,6 +149,7 @@ urlpatterns = [
     path('group-tutoring/parent-dashboard/', group_tutoring_views.parent_dashboard, name='parent-dashboard'),
     path('group-tutoring/student-attendance/<int:enrollment_id>/', group_tutoring_views.student_attendance, name='student-attendance'),
     path('group-tutoring/student-files/<int:enrollment_id>/', group_tutoring_views.student_files, name='student-files'),
+    path('group-tutoring/student-quizzes/<int:enrollment_id>/', group_tutoring_views.student_quizzes, name='student-quizzes'),
     path('group-tutoring/parent-sessions-calendar/', group_tutoring_views.parent_sessions_calendar, name='parent-sessions-calendar'),
     path('group-tutoring/cancel-session/<str:session_id>/', group_tutoring_views.cancel_session_attendance, name='cancel-session'),
 
