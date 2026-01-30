@@ -13,21 +13,32 @@ const GroupTutoringEnrollmentDetail = () => {
   const [classInfo, setClassInfo] = useState(null);
   const [files, setFiles] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchData();
   }, [enrollmentId]);
 
+  useEffect(() => {
+    // Generate sessions when classInfo is available
+    if (classInfo) {
+      generateSessions();
+    }
+  }, [classInfo, attendance]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch enrollment details, files, and quizzes
-      const [enrollmentsRes, filesRes, quizzesRes] = await Promise.all([
+      // Fetch enrollment details, files, quizzes, and attendance
+      const [enrollmentsRes, filesRes, quizzesRes, attendanceRes] = await Promise.all([
         api.get('/api/group-tutoring/enrollments/'),
         api.get(`/api/group-tutoring/student-files/${enrollmentId}/`),
-        api.get(`/api/group-tutoring/student-quizzes/${enrollmentId}/`)
+        api.get(`/api/group-tutoring/student-quizzes/${enrollmentId}/`),
+        api.get(`/api/group-tutoring/student-attendance/${enrollmentId}/`)
       ]);
 
       // Find this enrollment
@@ -44,12 +55,151 @@ const GroupTutoringEnrollmentDetail = () => {
 
       setFiles(filesRes.data);
       setQuizzes(quizzesRes.data);
+      setAttendance(attendanceRes.data);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load enrollment details');
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateSessions = () => {
+    if (!classInfo || !classInfo.schedule_days || !classInfo.schedule_time) {
+      setSessions([]);
+      return;
+    }
+
+    const generatedSessions = [];
+    const startDate = new Date(classInfo.start_date);
+    const endDate = new Date(classInfo.end_date);
+
+    // Create a map of attendance by date for quick lookup
+    const attendanceMap = {};
+    attendance.forEach(att => {
+      if (att.session_date) {
+        attendanceMap[att.session_date] = att.status;
+      }
+    });
+
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+
+      if (classInfo.schedule_days.map(d => d.toLowerCase()).includes(dayName)) {
+        // Format date as YYYY-MM-DD
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // Calculate end time
+        const [hours, minutes] = classInfo.schedule_time.split(':');
+        const startDateTime = new Date(currentDate);
+        startDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+        const endDateTime = new Date(startDateTime.getTime() + classInfo.duration_minutes * 60000);
+        const endTime = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
+
+        generatedSessions.push({
+          id: `${classInfo.id}-${dateStr}`,
+          session_date: dateStr,
+          start_time: classInfo.schedule_time,
+          end_time: endTime,
+          attendance_status: attendanceMap[dateStr] || null
+        });
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    setSessions(generatedSessions);
+  };
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+
+    // Add empty cells for days before the month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  };
+
+  const getSessionForDate = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    return sessions.find(s => s.session_date === dateStr);
+  };
+
+  const isToday = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const getAttendanceColor = (session) => {
+    const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
+    const now = new Date();
+    const isPast = sessionDateTime < now;
+
+    if (!isPast && !session.attendance_status) {
+      return '#e3f2fd'; // Light blue for future
+    }
+
+    if (session.attendance_status === 'attended') {
+      return '#d4edda'; // Green for attended
+    } else if (session.attendance_status === 'absent') {
+      return '#f8d7da'; // Red for missed
+    } else if (session.attendance_status === 'cancelled_advance') {
+      return '#fff3cd'; // Yellow for cancelled
+    }
+
+    return '#f8f9fa';
+  };
+
+  const getAttendanceIcon = (session) => {
+    if (session.attendance_status === 'attended') return '✓';
+    if (session.attendance_status === 'absent') return '✗';
+    if (session.attendance_status === 'cancelled_advance') return '⊗';
+    return '';
+  };
+
+  const getAttendanceLabel = (session) => {
+    const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
+    const now = new Date();
+    const isPast = sessionDateTime < now;
+
+    if (session.attendance_status === 'attended') return 'Attended';
+    if (session.attendance_status === 'absent') return 'Absent';
+    if (session.attendance_status === 'cancelled_advance') return 'Cancelled';
+    if (!isPast) return 'Upcoming';
+    return 'Not Marked';
   };
 
   if (loading) {
@@ -127,7 +277,7 @@ const GroupTutoringEnrollmentDetail = () => {
       {/* Main Content */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
 
-        {/* Schedule Section */}
+        {/* Class Schedule Calendar Section */}
         {classInfo && (
           <div style={{
             backgroundColor: 'white',
@@ -137,81 +287,204 @@ const GroupTutoringEnrollmentDetail = () => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ margin: '0 0 1.5rem 0', color: '#192A88', fontSize: '1.5rem' }}>
-              Schedule Information
+              Class Schedule
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+
+            {/* Schedule Info Summary */}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '1.5rem',
+              marginBottom: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px'
+            }}>
               <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Days</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>Days: </span>
+                <span style={{ fontWeight: '600' }}>
                   {classInfo.schedule_days?.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') || 'Not set'}
-                </div>
+                </span>
               </div>
               <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Time</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {classInfo.schedule_time || 'Not set'}
-                </div>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>Time: </span>
+                <span style={{ fontWeight: '600' }}>{classInfo.schedule_time || 'Not set'}</span>
               </div>
               <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Duration</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {classInfo.duration_minutes} minutes
-                </div>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>Duration: </span>
+                <span style={{ fontWeight: '600' }}>{classInfo.duration_minutes} min</span>
               </div>
               <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Location</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {classInfo.location || 'Not set'}
-                  {classInfo.location_link && (
-                    <a
-                      href={classInfo.location_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        marginLeft: '0.5rem',
-                        color: '#192A88',
-                        textDecoration: 'none',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      (Join Link)
-                    </a>
-                  )}
-                </div>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>Location: </span>
+                <span style={{ fontWeight: '600' }}>{classInfo.location || 'TBD'}</span>
+                {classInfo.location_link && (
+                  <a
+                    href={classInfo.location_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ marginLeft: '0.5rem', color: '#192A88', textDecoration: 'none', fontWeight: 'bold' }}
+                  >
+                    (Join)
+                  </a>
+                )}
               </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Class Period</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {new Date(classInfo.start_date).toLocaleDateString()} - {new Date(classInfo.end_date).toLocaleDateString()}
+              {classInfo.tutor_details && classInfo.tutor_details.length > 0 && (
+                <div>
+                  <span style={{ color: '#666', fontSize: '0.9rem' }}>Tutors: </span>
+                  <span style={{ fontWeight: '600' }}>{classInfo.tutor_details.map(t => t.name).join(', ')}</span>
                 </div>
-              </div>
-              <div>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Difficulty</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {classInfo.difficulty?.replace(/_/g, ' ').toUpperCase() || 'Not set'}
-                </div>
-              </div>
+              )}
             </div>
-            {classInfo.tutor_details && classInfo.tutor_details.length > 0 && (
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e9ecef' }}>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Tutors</div>
-                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>
-                  {classInfo.tutor_details.map(t => t.name).join(', ')}
+
+            {/* Legend */}
+            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem' }}>
+              <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', marginRight: '5px', verticalAlign: 'middle' }}></span>Upcoming</span>
+              <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px', verticalAlign: 'middle' }}></span>Attended</span>
+              <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px', verticalAlign: 'middle' }}></span>Absent</span>
+              <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#fff3cd', border: '1px solid #ddd', marginRight: '5px', verticalAlign: 'middle' }}></span>Cancelled</span>
+            </div>
+
+            {/* Calendar Navigation */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#192A88',
+              borderRadius: '8px',
+              color: 'white'
+            }}>
+              <button
+                onClick={prevMonth}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                &larr; Prev
+              </button>
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
+                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h3>
+              <button
+                onClick={nextMonth}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                Next &rarr;
+              </button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '4px'
+            }}>
+              {/* Day Headers */}
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} style={{
+                  padding: '0.5rem',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  color: '#333'
+                }}>
+                  {day}
                 </div>
-              </div>
-            )}
-            {classInfo.description && (
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e9ecef' }}>
-                <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Description</div>
-                <div style={{ fontSize: '1rem', lineHeight: '1.5' }}>
-                  {classInfo.description}
-                </div>
-              </div>
-            )}
+              ))}
+
+              {/* Calendar Days */}
+              {getDaysInMonth(currentMonth).map((date, index) => {
+                const session = date ? getSessionForDate(date) : null;
+                const todayCell = date && isToday(date);
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      minHeight: '80px',
+                      padding: '0.4rem',
+                      border: todayCell ? '2px solid #ff9800' : '1px solid #e9ecef',
+                      borderRadius: '4px',
+                      backgroundColor: todayCell ? '#fff8e1' : (date ? 'white' : '#f5f5f5'),
+                      position: 'relative'
+                    }}
+                  >
+                    {date && (
+                      <>
+                        <div style={{
+                          fontWeight: todayCell ? 'bold' : 'normal',
+                          fontSize: '0.85rem',
+                          marginBottom: '0.25rem',
+                          color: todayCell ? '#e65100' : '#333',
+                          textAlign: 'center'
+                        }}>
+                          {date.getDate()}
+                        </div>
+
+                        {session && (
+                          <div
+                            style={{
+                              backgroundColor: getAttendanceColor(session),
+                              padding: '0.3rem',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              border: '1px solid #ddd',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', color: '#192A88' }}>
+                              {getAttendanceIcon(session)} {session.start_time.slice(0, 5)}
+                            </div>
+                            <div style={{ color: '#666', fontSize: '0.65rem' }}>
+                              {getAttendanceLabel(session)}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Class Period Info */}
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              color: '#666',
+              textAlign: 'center'
+            }}>
+              Class Period: {new Date(classInfo.start_date).toLocaleDateString()} - {new Date(classInfo.end_date).toLocaleDateString()}
+              {classInfo.difficulty && (
+                <span style={{ marginLeft: '1rem' }}>
+                  Level: <strong>{classInfo.difficulty?.replace(/_/g, ' ').toUpperCase()}</strong>
+                </span>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Files Section */}
+        {/* Files Section - Organized by Week */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '12px',
@@ -220,84 +493,180 @@ const GroupTutoringEnrollmentDetail = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
           <h2 style={{ margin: '0 0 1.5rem 0', color: '#192A88', fontSize: '1.5rem' }}>
-            Class Files
+            Class Materials
           </h2>
           {files.length === 0 ? (
             <p style={{ color: '#666', margin: 0, padding: '2rem', textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               No files available for this class yet.
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {files.map(file => (
-                <div
-                  key={file.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '1rem 1.25rem',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    border: '1px solid #e9ecef'
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: '#333', fontSize: '1.05rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {file.title}
-                      {file.week_number && (
-                        <span style={{
-                          padding: '0.2rem 0.6rem',
-                          backgroundColor: '#192A88',
-                          color: 'white',
-                          borderRadius: '12px',
-                          fontSize: '0.75rem',
-                          fontWeight: '500'
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Group files by week */}
+              {(() => {
+                // Separate files by week
+                const filesByWeek = {};
+                const noWeekFiles = [];
+
+                files.forEach(file => {
+                  if (file.week_number) {
+                    if (!filesByWeek[file.week_number]) {
+                      filesByWeek[file.week_number] = [];
+                    }
+                    filesByWeek[file.week_number].push(file);
+                  } else {
+                    noWeekFiles.push(file);
+                  }
+                });
+
+                // Sort weeks
+                const sortedWeeks = Object.keys(filesByWeek).sort((a, b) => parseInt(a) - parseInt(b));
+
+                return (
+                  <>
+                    {sortedWeeks.map(weekNum => (
+                      <div key={weekNum}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          marginBottom: '0.75rem'
                         }}>
-                          Week {file.week_number}
-                        </span>
-                      )}
-                      {file.is_current && (
-                        <span style={{
-                          padding: '0.2rem 0.6rem',
-                          backgroundColor: '#28a745',
-                          color: 'white',
-                          borderRadius: '12px',
-                          fontSize: '0.75rem',
-                          fontWeight: '500'
+                          <span style={{
+                            padding: '0.4rem 1rem',
+                            backgroundColor: '#192A88',
+                            color: 'white',
+                            borderRadius: '20px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600'
+                          }}>
+                            Week {weekNum}
+                          </span>
+                          {filesByWeek[weekNum].some(f => f.is_current) && (
+                            <span style={{
+                              padding: '0.25rem 0.75rem',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              borderRadius: '20px',
+                              fontSize: '0.75rem',
+                              fontWeight: '500'
+                            }}>
+                              Current Week
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {filesByWeek[weekNum].map(file => (
+                            <div
+                              key={file.id}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.75rem 1rem',
+                                backgroundColor: file.is_current ? '#e8f5e9' : '#f8f9fa',
+                                borderRadius: '8px',
+                                border: file.is_current ? '1px solid #28a745' : '1px solid #e9ecef'
+                              }}
+                            >
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '500', color: '#333', fontSize: '1rem' }}>
+                                  {file.title}
+                                </div>
+                                {file.description && (
+                                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                                    {file.description}
+                                  </div>
+                                )}
+                                <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
+                                  Uploaded: {new Date(file.uploaded_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <a
+                                href={file.file}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  backgroundColor: '#192A88',
+                                  color: 'white',
+                                  textDecoration: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  marginLeft: '1rem',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Download
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {noWeekFiles.length > 0 && (
+                      <div>
+                        <div style={{
+                          marginBottom: '0.75rem',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          color: '#666'
                         }}>
-                          Current
-                        </span>
-                      )}
-                    </div>
-                    {file.description && (
-                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.35rem' }}>
-                        {file.description}
+                          General Materials
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {noWeekFiles.map(file => (
+                            <div
+                              key={file.id}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.75rem 1rem',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px',
+                                border: '1px solid #e9ecef'
+                              }}
+                            >
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '500', color: '#333', fontSize: '1rem' }}>
+                                  {file.title}
+                                </div>
+                                {file.description && (
+                                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                                    {file.description}
+                                  </div>
+                                )}
+                                <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
+                                  Uploaded: {new Date(file.uploaded_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <a
+                                href={file.file}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  backgroundColor: '#192A88',
+                                  color: 'white',
+                                  textDecoration: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  marginLeft: '1rem',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Download
+                              </a>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.35rem' }}>
-                      Uploaded: {new Date(file.uploaded_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <a
-                    href={file.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      padding: '0.6rem 1.25rem',
-                      backgroundColor: '#192A88',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem',
-                      fontWeight: '500',
-                      marginLeft: '1rem',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    Download
-                  </a>
-                </div>
-              ))}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
