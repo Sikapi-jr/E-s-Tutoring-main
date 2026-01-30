@@ -109,10 +109,6 @@ const GroupTutoringParent = () => {
   };
 
   const handleEnrollmentClick = (enrollment) => {
-    // Only navigate for enrolled students
-    if (enrollment.status !== 'enrolled') {
-      return;
-    }
     navigate(`/group-tutoring/enrollment/${enrollment.id}`);
   };
 
@@ -467,7 +463,6 @@ const GroupTutoringParent = () => {
               {myEnrollments.map(enrollment => {
                 // Find the class info for this enrollment
                 const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
-                const isEnrolled = enrollment.status === 'enrolled';
 
                 return (
                   <div
@@ -479,20 +474,16 @@ const GroupTutoringParent = () => {
                       borderRadius: '8px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                       border: `2px solid ${enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d'}`,
-                      cursor: isEnrolled ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       transition: 'transform 0.2s, box-shadow 0.2s'
                     }}
                     onMouseEnter={(e) => {
-                      if (isEnrolled) {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                      }
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                     }}
                     onMouseLeave={(e) => {
-                      if (isEnrolled) {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                      }
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                     }}
                   >
                     <h3 style={{ margin: '0 0 0.5rem 0', color: '#192A88' }}>
@@ -532,11 +523,9 @@ const GroupTutoringParent = () => {
                       }}>
                         {enrollment.status.replace(/_/g, ' ').toUpperCase()}
                       </span>
-                      {isEnrolled && (
-                        <span style={{ color: '#192A88', fontSize: '0.85rem', fontWeight: '500' }}>
-                          Click for details
-                        </span>
-                      )}
+                      <span style={{ color: '#192A88', fontSize: '0.85rem', fontWeight: '500' }}>
+                        View details &rarr;
+                      </span>
                     </div>
                   </div>
                 );
