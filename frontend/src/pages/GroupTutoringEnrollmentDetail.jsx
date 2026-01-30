@@ -753,99 +753,108 @@ const GroupTutoringEnrollmentDetail = () => {
           </div>
 
           {/* Show selected student name if only one enrolled student */}
-          {enrolledStudents.length === 1 && (
+          {enrolledStudents.length === 1 && selectedQuizzes.length > 0 && (
             <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.95rem' }}>
               Showing quizzes for: <strong>{enrolledStudents[0].student_name}</strong>
             </p>
           )}
 
-          {/* Show notice if no enrolled students */}
-          {enrolledStudents.length === 0 && (
-            <p style={{ color: '#856404', margin: 0, padding: '1rem', textAlign: 'center', backgroundColor: '#fff3cd', borderRadius: '8px' }}>
-              Quizzes will be available once enrollment is confirmed.
-            </p>
-          )}
+          {/* Check if any quizzes exist for the class (check all students' quizzes) */}
+          {(() => {
+            const anyQuizzesExist = Object.values(quizzesByStudent).some(quizzes => quizzes.length > 0);
 
-          {enrolledStudents.length > 0 && (
-            <>
-              {selectedQuizzes.length === 0 ? (
+            // No quizzes exist for this class at all
+            if (!anyQuizzesExist) {
+              return (
                 <p style={{ color: '#666', margin: 0, padding: '2rem', textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
                   No quizzes available for this class yet.
                 </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {selectedQuizzes.map(quiz => (
-                    <div
-                      key={quiz.id}
-                      style={{
-                        padding: '1.25rem',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '8px',
-                        border: '1px solid #e9ecef'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '600', color: '#333', fontSize: '1.15rem' }}>
-                            {quiz.title}
-                          </div>
-                          {quiz.description && (
-                            <div style={{ fontSize: '0.95rem', color: '#666', marginTop: '0.35rem' }}>
-                              {quiz.description}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                            <span>Scheduled: {new Date(quiz.scheduled_date).toLocaleDateString()}</span>
-                            {quiz.time_limit_minutes && (
-                              <span>Time Limit: {quiz.time_limit_minutes} min</span>
-                            )}
-                            <span>Passing Score: {quiz.passing_score}%</span>
-                          </div>
+              );
+            }
+
+            // Quizzes exist but no enrolled students to view them
+            if (enrolledStudents.length === 0) {
+              return (
+                <p style={{ color: '#856404', margin: 0, padding: '1rem', textAlign: 'center', backgroundColor: '#fff3cd', borderRadius: '8px' }}>
+                  Quizzes will be available once enrollment is confirmed.
+                </p>
+              );
+            }
+
+            // Enrolled students exist and quizzes exist - show them
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {selectedQuizzes.map(quiz => (
+                  <div
+                    key={quiz.id}
+                    style={{
+                      padding: '1.25rem',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px',
+                      border: '1px solid #e9ecef'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: '#333', fontSize: '1.15rem' }}>
+                          {quiz.title}
                         </div>
-                        <div style={{ textAlign: 'right', minWidth: '150px' }}>
-                          {quiz.submission ? (
-                            <div>
-                              <span style={{
-                                padding: '0.35rem 1rem',
-                                borderRadius: '20px',
-                                backgroundColor: quiz.submission.passed ? '#28a745' : '#dc3545',
-                                color: 'white',
-                                fontSize: '0.9rem',
-                                fontWeight: 'bold',
-                                display: 'inline-block'
-                              }}>
-                                {quiz.submission.passed ? 'PASSED' : 'NOT PASSED'}
-                              </span>
-                              <div style={{ fontSize: '1.1rem', marginTop: '0.5rem', fontWeight: '600', color: '#333' }}>
-                                Score: {quiz.submission.score?.toFixed(1)}%
-                              </div>
-                              {quiz.submission.submitted_at && (
-                                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
-                                  Submitted: {new Date(quiz.submission.submitted_at).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
+                        {quiz.description && (
+                          <div style={{ fontSize: '0.95rem', color: '#666', marginTop: '0.35rem' }}>
+                            {quiz.description}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                          <span>Scheduled: {new Date(quiz.scheduled_date).toLocaleDateString()}</span>
+                          {quiz.time_limit_minutes && (
+                            <span>Time Limit: {quiz.time_limit_minutes} min</span>
+                          )}
+                          <span>Passing Score: {quiz.passing_score}%</span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', minWidth: '150px' }}>
+                        {quiz.submission ? (
+                          <div>
                             <span style={{
                               padding: '0.35rem 1rem',
                               borderRadius: '20px',
-                              backgroundColor: quiz.is_active ? '#ffc107' : '#6c757d',
-                              color: quiz.is_active ? '#333' : 'white',
+                              backgroundColor: quiz.submission.passed ? '#28a745' : '#dc3545',
+                              color: 'white',
                               fontSize: '0.9rem',
                               fontWeight: 'bold',
                               display: 'inline-block'
                             }}>
-                              {quiz.is_active ? 'AVAILABLE' : 'NOT YET AVAILABLE'}
+                              {quiz.submission.passed ? 'PASSED' : 'NOT PASSED'}
                             </span>
-                          )}
-                        </div>
+                            <div style={{ fontSize: '1.1rem', marginTop: '0.5rem', fontWeight: '600', color: '#333' }}>
+                              Score: {quiz.submission.score?.toFixed(1)}%
+                            </div>
+                            {quiz.submission.submitted_at && (
+                              <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                                Submitted: {new Date(quiz.submission.submitted_at).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{
+                            padding: '0.35rem 1rem',
+                            borderRadius: '20px',
+                            backgroundColor: quiz.is_active ? '#ffc107' : '#6c757d',
+                            color: quiz.is_active ? '#333' : 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold',
+                            display: 'inline-block'
+                          }}>
+                            {quiz.is_active ? 'AVAILABLE' : 'NOT YET AVAILABLE'}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
