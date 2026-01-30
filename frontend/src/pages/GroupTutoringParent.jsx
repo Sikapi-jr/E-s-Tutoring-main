@@ -108,8 +108,25 @@ const GroupTutoringParent = () => {
     }
   };
 
-  const handleEnrollmentClick = (enrollment) => {
-    navigate(`/group-tutoring/enrollment/${enrollment.id}`);
+  const handleClassClick = (classId) => {
+    navigate(`/group-tutoring/class/${classId}`);
+  };
+
+  // Group enrollments by class
+  const getEnrollmentsByClass = () => {
+    const grouped = {};
+    myEnrollments.forEach(enrollment => {
+      if (!grouped[enrollment.tutoring_class]) {
+        grouped[enrollment.tutoring_class] = {
+          classId: enrollment.tutoring_class,
+          class_title: enrollment.class_title,
+          class_difficulty: enrollment.class_difficulty,
+          enrollments: []
+        };
+      }
+      grouped[enrollment.tutoring_class].enrollments.push(enrollment);
+    });
+    return Object.values(grouped);
   };
 
   const getDaysInMonth = (date) => {
@@ -460,20 +477,26 @@ const GroupTutoringParent = () => {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '1.5rem'
             }}>
-              {myEnrollments.map(enrollment => {
-                // Find the class info for this enrollment
-                const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
+              {getEnrollmentsByClass().map(group => {
+                // Find the class info for this group
+                const classInfo = classes.find(c => c.id === group.classId);
+                // Check if any enrollment is fully enrolled
+                const hasEnrolled = group.enrollments.some(e => e.status === 'enrolled');
+                // Get the "best" status for border color (enrolled > diagnostic_submitted > pending)
+                const bestStatus = group.enrollments.some(e => e.status === 'enrolled') ? 'enrolled' :
+                  group.enrollments.some(e => e.status === 'diagnostic_submitted') ? 'diagnostic_submitted' :
+                  group.enrollments.some(e => e.status === 'pending_diagnostic') ? 'pending_diagnostic' : 'approved';
 
                 return (
                   <div
-                    key={enrollment.id}
-                    onClick={() => handleEnrollmentClick(enrollment)}
+                    key={group.classId}
+                    onClick={() => handleClassClick(group.classId)}
                     style={{
                       backgroundColor: 'white',
                       padding: '1.5rem',
                       borderRadius: '8px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      border: `2px solid ${enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d'}`,
+                      border: `2px solid ${bestStatus === 'enrolled' ? '#28a745' : bestStatus === 'pending_diagnostic' ? '#ffc107' : '#6c757d'}`,
                       cursor: 'pointer',
                       transition: 'transform 0.2s, box-shadow 0.2s'
                     }}
@@ -487,13 +510,30 @@ const GroupTutoringParent = () => {
                     }}
                   >
                     <h3 style={{ margin: '0 0 0.5rem 0', color: '#192A88' }}>
-                      {enrollment.class_title}
+                      {group.class_title}
                     </h3>
                     <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                      <strong>Student:</strong> {enrollment.student_name}
+                      <strong>Student(s):</strong>
+                      <div style={{ marginTop: '0.25rem' }}>
+                        {group.enrollments.map((enrollment, idx) => (
+                          <div key={enrollment.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <span>{enrollment.student_name}</span>
+                            <span style={{
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '12px',
+                              backgroundColor: enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : enrollment.status === 'diagnostic_submitted' ? '#17a2b8' : '#6c757d',
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              fontWeight: 'bold'
+                            }}>
+                              {enrollment.status.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                      <strong>Difficulty:</strong> {enrollment.class_difficulty}
+                      <strong>Difficulty:</strong> {group.class_difficulty}
                     </div>
                     {classInfo && classInfo.schedule_days && classInfo.schedule_days.length > 0 && (
                       <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
@@ -512,17 +552,7 @@ const GroupTutoringParent = () => {
                         )}
                       </div>
                     )}
-                    <div style={{ fontSize: '0.95rem', marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '20px',
-                        backgroundColor: enrollment.status === 'enrolled' ? '#28a745' : enrollment.status === 'pending_diagnostic' ? '#ffc107' : enrollment.status === 'diagnostic_submitted' ? '#17a2b8' : '#6c757d',
-                        color: 'white',
-                        fontSize: '0.85rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {enrollment.status.replace(/_/g, ' ').toUpperCase()}
-                      </span>
+                    <div style={{ fontSize: '0.95rem', marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                       <span style={{ color: '#192A88', fontSize: '0.85rem', fontWeight: '500' }}>
                         View details &rarr;
                       </span>

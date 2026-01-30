@@ -157,6 +157,7 @@ function AppRoutes() {
             <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
             <Route path="/monthly-reports" element={<ProtectedRoute><MonthlyReports /></ProtectedRoute>} />
             <Route path="/group-tutoring" element={<ProtectedRoute><GroupTutoring /></ProtectedRoute>} />
+            <Route path="/group-tutoring/class/:classId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />
             <Route path="/group-tutoring/enrollment/:enrollmentId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />
             <Route path="/admin-complaints" element={<ProtectedRoute><AdminComplaints /></ProtectedRoute>} />
             <Route path="/admin-disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />

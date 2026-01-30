@@ -5,60 +5,102 @@ import { useUser } from '../components/UserProvider';
 import api from '../api';
 
 const GroupTutoringEnrollmentDetail = () => {
-  const { enrollmentId } = useParams();
+  const { classId, enrollmentId } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
-  const [enrollment, setEnrollment] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
   const [classInfo, setClassInfo] = useState(null);
   const [files, setFiles] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
-  const [attendance, setAttendance] = useState([]);
+  const [quizzesByStudent, setQuizzesByStudent] = useState({});
+  const [attendanceByStudent, setAttendanceByStudent] = useState({});
   const [sessions, setSessions] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchData();
-  }, [enrollmentId]);
+  }, [classId, enrollmentId]);
 
   useEffect(() => {
     // Generate sessions when classInfo is available
     if (classInfo) {
       generateSessions();
     }
-  }, [classInfo, attendance]);
+  }, [classInfo, attendanceByStudent]);
+
+  // Set default selected student when enrollments load
+  useEffect(() => {
+    if (enrollments.length > 0 && !selectedStudentId) {
+      // Prefer enrolled students
+      const enrolledStudent = enrollments.find(e => e.status === 'enrolled');
+      setSelectedStudentId(enrolledStudent ? enrolledStudent.student : enrollments[0].student);
+    }
+  }, [enrollments]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // Fetch enrollment details, files, quizzes, and attendance
-      const [enrollmentsRes, filesRes, quizzesRes, attendanceRes] = await Promise.all([
-        api.get('/api/group-tutoring/enrollments/'),
-        api.get(`/api/group-tutoring/student-files/${enrollmentId}/`),
-        api.get(`/api/group-tutoring/student-quizzes/${enrollmentId}/`),
-        api.get(`/api/group-tutoring/student-attendance/${enrollmentId}/`)
-      ]);
+      // Fetch all enrollments for the parent
+      const enrollmentsRes = await api.get('/api/group-tutoring/enrollments/');
 
-      // Find this enrollment
-      const enrollmentData = enrollmentsRes.data.find(e => e.id === parseInt(enrollmentId));
-      if (!enrollmentData) {
-        setError('Enrollment not found');
+      let targetClassId = classId;
+      let relevantEnrollments = [];
+
+      if (classId) {
+        // Filter enrollments for this class
+        relevantEnrollments = enrollmentsRes.data.filter(e => e.tutoring_class === parseInt(classId));
+      } else if (enrollmentId) {
+        // Find the enrollment and get its class
+        const enrollment = enrollmentsRes.data.find(e => e.id === parseInt(enrollmentId));
+        if (enrollment) {
+          targetClassId = enrollment.tutoring_class;
+          relevantEnrollments = enrollmentsRes.data.filter(e => e.tutoring_class === targetClassId);
+        }
+      }
+
+      if (relevantEnrollments.length === 0) {
+        setError('No enrollments found for this class');
         return;
       }
-      setEnrollment(enrollmentData);
+
+      setEnrollments(relevantEnrollments);
 
       // Fetch class info
-      const classRes = await api.get(`/api/group-tutoring/classes/${enrollmentData.tutoring_class}/`);
+      const classRes = await api.get(`/api/group-tutoring/classes/${targetClassId}/`);
       setClassInfo(classRes.data);
 
+      // Fetch files for the class
+      const filesRes = await api.get(`/api/group-tutoring/student-files/${relevantEnrollments[0].id}/`);
       setFiles(filesRes.data);
-      setQuizzes(quizzesRes.data);
-      setAttendance(attendanceRes.data);
+
+      // Fetch quizzes and attendance for each enrolled student
+      const quizzesMap = {};
+      const attendanceMap = {};
+
+      for (const enrollment of relevantEnrollments) {
+        try {
+          const [quizzesRes, attendanceRes] = await Promise.all([
+            api.get(`/api/group-tutoring/student-quizzes/${enrollment.id}/`),
+            api.get(`/api/group-tutoring/student-attendance/${enrollment.id}/`)
+          ]);
+          quizzesMap[enrollment.student] = quizzesRes.data;
+          attendanceMap[enrollment.student] = attendanceRes.data;
+        } catch (err) {
+          console.error(`Error fetching data for enrollment ${enrollment.id}:`, err);
+          quizzesMap[enrollment.student] = [];
+          attendanceMap[enrollment.student] = [];
+        }
+      }
+
+      setQuizzesByStudent(quizzesMap);
+      setAttendanceByStudent(attendanceMap);
+
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load enrollment details');
+      setError('Failed to load class details');
     } finally {
       setLoading(false);
     }
@@ -74,12 +116,15 @@ const GroupTutoringEnrollmentDetail = () => {
     const startDate = new Date(classInfo.start_date);
     const endDate = new Date(classInfo.end_date);
 
-    // Create a map of attendance by date for quick lookup
-    const attendanceMap = {};
-    attendance.forEach(att => {
-      if (att.session_date) {
-        attendanceMap[att.session_date] = att.status;
-      }
+    // Create attendance maps for all students
+    const attendanceMaps = {};
+    Object.keys(attendanceByStudent).forEach(studentId => {
+      attendanceMaps[studentId] = {};
+      attendanceByStudent[studentId].forEach(att => {
+        if (att.session_date) {
+          attendanceMaps[studentId][att.session_date] = att.status;
+        }
+      });
     });
 
     const currentDate = new Date(startDate);
@@ -87,25 +132,29 @@ const GroupTutoringEnrollmentDetail = () => {
       const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
       if (classInfo.schedule_days.map(d => d.toLowerCase()).includes(dayName)) {
-        // Format date as YYYY-MM-DD
         const year = currentDate.getFullYear();
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         const day = String(currentDate.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
 
-        // Calculate end time
         const [hours, minutes] = classInfo.schedule_time.split(':');
         const startDateTime = new Date(currentDate);
         startDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
         const endDateTime = new Date(startDateTime.getTime() + classInfo.duration_minutes * 60000);
         const endTime = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
 
+        // Get attendance for each student
+        const studentAttendance = {};
+        enrollments.forEach(enrollment => {
+          studentAttendance[enrollment.student] = attendanceMaps[enrollment.student]?.[dateStr] || null;
+        });
+
         generatedSessions.push({
           id: `${classInfo.id}-${dateStr}`,
           session_date: dateStr,
           start_time: classInfo.schedule_time,
           end_time: endTime,
-          attendance_status: attendanceMap[dateStr] || null
+          studentAttendance
         });
       }
 
@@ -124,17 +173,12 @@ const GroupTutoringEnrollmentDetail = () => {
     const startingDayOfWeek = firstDay.getDay();
 
     const days = [];
-
-    // Add empty cells for days before the month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-
     return days;
   };
 
@@ -163,43 +207,33 @@ const GroupTutoringEnrollmentDetail = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
 
-  const getAttendanceColor = (session) => {
-    const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
-    const now = new Date();
-    const isPast = sessionDateTime < now;
-
-    if (!isPast && !session.attendance_status) {
+  const getAttendanceColor = (status, isPast) => {
+    if (!isPast && !status) {
       return '#e3f2fd'; // Light blue for future
     }
-
-    if (session.attendance_status === 'attended') {
-      return '#d4edda'; // Green for attended
-    } else if (session.attendance_status === 'absent') {
-      return '#f8d7da'; // Red for missed
-    } else if (session.attendance_status === 'cancelled_advance') {
-      return '#fff3cd'; // Yellow for cancelled
-    }
-
+    if (status === 'attended') return '#d4edda';
+    if (status === 'absent') return '#f8d7da';
+    if (status === 'cancelled_advance') return '#fff3cd';
     return '#f8f9fa';
   };
 
-  const getAttendanceIcon = (session) => {
-    if (session.attendance_status === 'attended') return '✓';
-    if (session.attendance_status === 'absent') return '✗';
-    if (session.attendance_status === 'cancelled_advance') return '⊗';
+  const getAttendanceIcon = (status) => {
+    if (status === 'attended') return '✓';
+    if (status === 'absent') return '✗';
+    if (status === 'cancelled_advance') return '⊗';
     return '';
   };
 
-  const getAttendanceLabel = (session) => {
-    const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
-    const now = new Date();
-    const isPast = sessionDateTime < now;
-
-    if (session.attendance_status === 'attended') return 'Attended';
-    if (session.attendance_status === 'absent') return 'Absent';
-    if (session.attendance_status === 'cancelled_advance') return 'Cancelled';
+  const getAttendanceLabel = (status, isPast) => {
+    if (status === 'attended') return 'Attended';
+    if (status === 'absent') return 'Absent';
+    if (status === 'cancelled_advance') return 'Cancelled';
     if (!isPast) return 'Upcoming';
     return 'Not Marked';
+  };
+
+  const getEnrollmentByStudentId = (studentId) => {
+    return enrollments.find(e => e.student === studentId);
   };
 
   if (loading) {
@@ -239,6 +273,9 @@ const GroupTutoringEnrollmentDetail = () => {
     );
   }
 
+  const enrolledStudents = enrollments.filter(e => e.status === 'enrolled');
+  const selectedQuizzes = quizzesByStudent[selectedStudentId] || [];
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
       {/* Header */}
@@ -266,10 +303,10 @@ const GroupTutoringEnrollmentDetail = () => {
             &larr; Back to Group Tutoring
           </button>
           <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
-            {enrollment?.class_title}
+            {classInfo?.title}
           </h1>
           <p style={{ margin: 0, opacity: 0.9 }}>
-            Student: <strong>{enrollment?.student_name}</strong>
+            Student(s): <strong>{enrollments.map(e => e.student_name).join(', ')}</strong>
           </p>
         </div>
       </div>
@@ -413,12 +450,14 @@ const GroupTutoringEnrollmentDetail = () => {
               {getDaysInMonth(currentMonth).map((date, index) => {
                 const session = date ? getSessionForDate(date) : null;
                 const todayCell = date && isToday(date);
+                const sessionDateTime = session ? new Date(`${session.session_date}T${session.start_time}`) : null;
+                const isPast = sessionDateTime ? sessionDateTime < new Date() : false;
 
                 return (
                   <div
                     key={index}
                     style={{
-                      minHeight: '80px',
+                      minHeight: enrollments.length > 1 ? '100px' : '80px',
                       padding: '0.4rem',
                       border: todayCell ? '2px solid #ff9800' : '1px solid #e9ecef',
                       borderRadius: '4px',
@@ -439,22 +478,27 @@ const GroupTutoringEnrollmentDetail = () => {
                         </div>
 
                         {session && (
-                          <div
-                            style={{
-                              backgroundColor: getAttendanceColor(session),
-                              padding: '0.3rem',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem',
-                              border: '1px solid #ddd',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <div style={{ fontWeight: 'bold', color: '#192A88' }}>
-                              {getAttendanceIcon(session)} {session.start_time.slice(0, 5)}
-                            </div>
-                            <div style={{ color: '#666', fontSize: '0.65rem' }}>
-                              {getAttendanceLabel(session)}
-                            </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {enrollments.map(enrollment => {
+                              const status = session.studentAttendance[enrollment.student];
+                              return (
+                                <div
+                                  key={enrollment.id}
+                                  style={{
+                                    backgroundColor: getAttendanceColor(status, isPast),
+                                    padding: '0.2rem',
+                                    borderRadius: '3px',
+                                    fontSize: '0.6rem',
+                                    border: '1px solid #ddd',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  <div style={{ fontWeight: 'bold', color: '#192A88' }}>
+                                    {getAttendanceIcon(status)} {enrollment.student_name.split(' ')[0]}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </>
@@ -501,9 +545,7 @@ const GroupTutoringEnrollmentDetail = () => {
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {/* Group files by week */}
               {(() => {
-                // Separate files by week
                 const filesByWeek = {};
                 const noWeekFiles = [];
 
@@ -518,7 +560,6 @@ const GroupTutoringEnrollmentDetail = () => {
                   }
                 });
 
-                // Sort weeks
                 const sortedWeeks = Object.keys(filesByWeek).sort((a, b) => parseInt(a) - parseInt(b));
 
                 return (
@@ -671,91 +712,139 @@ const GroupTutoringEnrollmentDetail = () => {
           )}
         </div>
 
-        {/* Quizzes Section */}
+        {/* Quizzes Section with Student Selector */}
         <div style={{
           backgroundColor: 'white',
           borderRadius: '12px',
           padding: '1.5rem',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
-          <h2 style={{ margin: '0 0 1.5rem 0', color: '#192A88', fontSize: '1.5rem' }}>
-            Quizzes
-          </h2>
-          {quizzes.length === 0 ? (
-            <p style={{ color: '#666', margin: 0, padding: '2rem', textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-              No quizzes available for this class yet.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {quizzes.map(quiz => (
-                <div
-                  key={quiz.id}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 style={{ margin: 0, color: '#192A88', fontSize: '1.5rem' }}>
+              Quizzes
+            </h2>
+
+            {/* Student Selector - Only show if multiple enrolled students */}
+            {enrolledStudents.length > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <label style={{ fontWeight: '500', color: '#666' }}>View for:</label>
+                <select
+                  value={selectedStudentId || ''}
+                  onChange={(e) => setSelectedStudentId(parseInt(e.target.value))}
                   style={{
-                    padding: '1.25rem',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    border: '1px solid #e9ecef'
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: '2px solid #192A88',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    color: '#192A88',
+                    cursor: 'pointer',
+                    backgroundColor: 'white'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '600', color: '#333', fontSize: '1.15rem' }}>
-                        {quiz.title}
-                      </div>
-                      {quiz.description && (
-                        <div style={{ fontSize: '0.95rem', color: '#666', marginTop: '0.35rem' }}>
-                          {quiz.description}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                        <span>Scheduled: {new Date(quiz.scheduled_date).toLocaleDateString()}</span>
-                        {quiz.time_limit_minutes && (
-                          <span>Time Limit: {quiz.time_limit_minutes} min</span>
-                        )}
-                        <span>Passing Score: {quiz.passing_score}%</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', minWidth: '150px' }}>
-                      {quiz.submission ? (
-                        <div>
-                          <span style={{
-                            padding: '0.35rem 1rem',
-                            borderRadius: '20px',
-                            backgroundColor: quiz.submission.passed ? '#28a745' : '#dc3545',
-                            color: 'white',
-                            fontSize: '0.9rem',
-                            fontWeight: 'bold',
-                            display: 'inline-block'
-                          }}>
-                            {quiz.submission.passed ? 'PASSED' : 'NOT PASSED'}
-                          </span>
-                          <div style={{ fontSize: '1.1rem', marginTop: '0.5rem', fontWeight: '600', color: '#333' }}>
-                            Score: {quiz.submission.score?.toFixed(1)}%
+                  {enrolledStudents.map(enrollment => (
+                    <option key={enrollment.student} value={enrollment.student}>
+                      {enrollment.student_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Show selected student name if only one enrolled student */}
+          {enrolledStudents.length === 1 && (
+            <p style={{ margin: '0 0 1rem 0', color: '#666', fontSize: '0.95rem' }}>
+              Showing quizzes for: <strong>{enrolledStudents[0].student_name}</strong>
+            </p>
+          )}
+
+          {/* Show notice if no enrolled students */}
+          {enrolledStudents.length === 0 && (
+            <p style={{ color: '#856404', margin: 0, padding: '1rem', textAlign: 'center', backgroundColor: '#fff3cd', borderRadius: '8px' }}>
+              Quizzes will be available once enrollment is confirmed.
+            </p>
+          )}
+
+          {enrolledStudents.length > 0 && (
+            <>
+              {selectedQuizzes.length === 0 ? (
+                <p style={{ color: '#666', margin: 0, padding: '2rem', textAlign: 'center', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                  No quizzes available for this class yet.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {selectedQuizzes.map(quiz => (
+                    <div
+                      key={quiz.id}
+                      style={{
+                        padding: '1.25rem',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', color: '#333', fontSize: '1.15rem' }}>
+                            {quiz.title}
                           </div>
-                          {quiz.submission.submitted_at && (
-                            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
-                              Submitted: {new Date(quiz.submission.submitted_at).toLocaleDateString()}
+                          {quiz.description && (
+                            <div style={{ fontSize: '0.95rem', color: '#666', marginTop: '0.35rem' }}>
+                              {quiz.description}
                             </div>
                           )}
+                          <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                            <span>Scheduled: {new Date(quiz.scheduled_date).toLocaleDateString()}</span>
+                            {quiz.time_limit_minutes && (
+                              <span>Time Limit: {quiz.time_limit_minutes} min</span>
+                            )}
+                            <span>Passing Score: {quiz.passing_score}%</span>
+                          </div>
                         </div>
-                      ) : (
-                        <span style={{
-                          padding: '0.35rem 1rem',
-                          borderRadius: '20px',
-                          backgroundColor: quiz.is_active ? '#ffc107' : '#6c757d',
-                          color: quiz.is_active ? '#333' : 'white',
-                          fontSize: '0.9rem',
-                          fontWeight: 'bold',
-                          display: 'inline-block'
-                        }}>
-                          {quiz.is_active ? 'AVAILABLE' : 'NOT YET AVAILABLE'}
-                        </span>
-                      )}
+                        <div style={{ textAlign: 'right', minWidth: '150px' }}>
+                          {quiz.submission ? (
+                            <div>
+                              <span style={{
+                                padding: '0.35rem 1rem',
+                                borderRadius: '20px',
+                                backgroundColor: quiz.submission.passed ? '#28a745' : '#dc3545',
+                                color: 'white',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                display: 'inline-block'
+                              }}>
+                                {quiz.submission.passed ? 'PASSED' : 'NOT PASSED'}
+                              </span>
+                              <div style={{ fontSize: '1.1rem', marginTop: '0.5rem', fontWeight: '600', color: '#333' }}>
+                                Score: {quiz.submission.score?.toFixed(1)}%
+                              </div>
+                              {quiz.submission.submitted_at && (
+                                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                                  Submitted: {new Date(quiz.submission.submitted_at).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{
+                              padding: '0.35rem 1rem',
+                              borderRadius: '20px',
+                              backgroundColor: quiz.is_active ? '#ffc107' : '#6c757d',
+                              color: quiz.is_active ? '#333' : 'white',
+                              fontSize: '0.9rem',
+                              fontWeight: 'bold',
+                              display: 'inline-block'
+                            }}>
+                              {quiz.is_active ? 'AVAILABLE' : 'NOT YET AVAILABLE'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
