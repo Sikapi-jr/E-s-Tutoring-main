@@ -366,37 +366,32 @@ const GroupTutoringParent = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 2rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 2rem' }}>
 
-        {/* Student Selector */}
+        {/* Student Selector - Small, right-aligned */}
         {students.length > 0 && (
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '1.5rem 2rem',
-            marginBottom: '2rem',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             display: 'flex',
+            justifyContent: 'flex-end',
             alignItems: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap'
+            gap: '0.5rem',
+            marginBottom: '1rem'
           }}>
-            <label style={{ fontWeight: '600', color: '#192A88', fontSize: '1.1rem' }}>
+            <label style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>
               Viewing as:
             </label>
             <select
               value={selectedStudentId || ''}
               onChange={(e) => handleStudentChange(parseInt(e.target.value))}
               style={{
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                border: '2px solid #192A88',
-                fontSize: '1rem',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '4px',
+                border: '1px solid #192A88',
+                fontSize: '0.85rem',
                 fontWeight: '600',
                 color: '#192A88',
                 cursor: 'pointer',
-                backgroundColor: 'white',
-                minWidth: '200px'
+                backgroundColor: 'white'
               }}
             >
               {students.map(student => (
@@ -405,9 +400,6 @@ const GroupTutoringParent = () => {
                 </option>
               ))}
             </select>
-            <span style={{ color: '#666', fontSize: '0.95rem' }}>
-              Select a child to view their classes and enrollments
-            </span>
           </div>
         )}
 
@@ -415,19 +407,249 @@ const GroupTutoringParent = () => {
         {studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length > 0 && (
           <div style={{
             backgroundColor: '#fff3cd',
-            borderRadius: '12px',
-            padding: '1.5rem 2rem',
-            marginBottom: '2rem',
+            borderRadius: '8px',
+            padding: '1rem 1.5rem',
+            marginBottom: '1.5rem',
             border: '1px solid #ffc107'
           }}>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404' }}>Pending Enrollment(s) for {selectedStudentName}</h3>
-            <p style={{ margin: 0, color: '#856404' }}>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404', fontSize: '1rem' }}>Pending Enrollment(s) for {selectedStudentName}</h3>
+            <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
               {selectedStudentName} has {studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length} enrollment(s) awaiting approval.
               {studentEnrollments.some(e => e.status === 'pending_diagnostic') && ' Please check your email for the diagnostic test link.'}
               {studentEnrollments.some(e => e.status === 'diagnostic_submitted') && ' The diagnostic test has been submitted and is being reviewed.'}
             </p>
           </div>
         )}
+
+        {/* My Enrollments Section */}
+        {studentEnrollments.length > 0 && (
+          <div style={{
+            padding: '1.5rem',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '12px',
+            marginBottom: '1.5rem'
+          }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#192A88' }}>
+              {selectedStudentName}'s Enrolled Classes
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '1rem'
+            }}>
+              {studentEnrollments.map(enrollment => {
+                const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
+                const stats = studentStats[enrollment.tutoring_class] || {};
+                const isCompleted = stats.isCompleted;
+
+                let borderColor = enrollment.status === 'enrolled' ? '#28a745' :
+                  enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d';
+                let cardBackground = 'white';
+
+                if (isCompleted) {
+                  if (stats.passed) {
+                    borderColor = '#28a745';
+                    cardBackground = '#d4edda';
+                  } else {
+                    borderColor = '#dc3545';
+                    cardBackground = '#f8d7da';
+                  }
+                }
+
+                return (
+                  <div
+                    key={enrollment.id}
+                    onClick={() => handleClassClick(enrollment.tutoring_class)}
+                    style={{
+                      backgroundColor: cardBackground,
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      border: `2px solid ${borderColor}`,
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <h3 style={{ margin: 0, color: '#192A88', fontSize: '1.1rem' }}>
+                        {enrollment.class_title}
+                      </h3>
+                      <span style={{
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '10px',
+                        backgroundColor: enrollment.status === 'enrolled' ? '#28a745' :
+                          enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d',
+                        color: 'white',
+                        fontSize: '0.65rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {enrollment.status.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    </div>
+
+                    {isCompleted && (
+                      <div style={{
+                        padding: '0.5rem',
+                        borderRadius: '4px',
+                        backgroundColor: stats.passed ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                        marginBottom: '0.5rem',
+                        fontSize: '0.8rem'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: stats.passed ? '#155724' : '#721c24' }}>
+                          {stats.passed ? '✓ COMPLETED' : '✗ NOT MET'}
+                        </div>
+                        <div style={{ color: stats.passed ? '#155724' : '#721c24' }}>
+                          Attendance: {stats.attendancePercent?.toFixed(0)}%
+                        </div>
+                        {!stats.passed && stats.reasons.length > 0 && (
+                          <div style={{ color: '#721c24', fontSize: '0.75rem' }}>
+                            {stats.reasons.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                      {enrollment.class_difficulty}
+                      {classInfo?.schedule_time && ` • ${classInfo.schedule_time}`}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#192A88', fontWeight: '500', textAlign: 'right' }}>
+                      View details →
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Available Classes Section */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#192A88' }}>
+            Available Classes for {selectedStudentName}
+          </h2>
+
+          {error && (
+            <div style={{
+              backgroundColor: '#f8d7da',
+              color: '#721c24',
+              padding: '0.75rem',
+              borderRadius: '4px',
+              marginBottom: '1rem',
+              fontSize: '0.9rem'
+            }}>
+              {error}
+            </div>
+          )}
+
+          {availableClasses.length === 0 ? (
+            <p style={{ textAlign: 'center', fontSize: '1rem', color: '#666', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              {students.length === 0
+                ? 'Add a student first to enroll in classes.'
+                : `${selectedStudentName} is enrolled in all available classes, or there are no open classes currently.`}
+            </p>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              {availableClasses.map(classItem => (
+                <div
+                  key={classItem.id}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    padding: '1.5rem',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e9ecef',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                  }}
+                >
+                  <h3 style={{ margin: '0 0 0.75rem 0', color: '#192A88', fontSize: '1.25rem' }}>
+                    {classItem.title}
+                  </h3>
+
+                  {classItem.description && (
+                    <p style={{ marginBottom: '0.75rem', color: '#666', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                      {classItem.description}
+                    </p>
+                  )}
+
+                  <div style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+                    <div style={{ marginBottom: '0.25rem' }}>
+                      <strong>📚</strong> {classItem.difficulty.replace('_', ' ').toUpperCase()}
+                    </div>
+                    <div style={{ marginBottom: '0.25rem' }}>
+                      <strong>🗓</strong> {new Date(classItem.start_date).toLocaleDateString()} - {new Date(classItem.end_date).toLocaleDateString()}
+                    </div>
+                    {classItem.schedule_days && classItem.schedule_days.length > 0 && (
+                      <div style={{ marginBottom: '0.25rem' }}>
+                        <strong>📅</strong> {classItem.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
+                        {classItem.schedule_time && ` at ${classItem.schedule_time}`}
+                      </div>
+                    )}
+                    {classItem.tutor_details && classItem.tutor_details.length > 0 && (
+                      <div>
+                        <strong>👨‍🏫</strong> {classItem.tutor_details.map(t => t.name).join(', ')}
+                      </div>
+                    )}
+                  </div>
+
+                  {classItem.is_full ? (
+                    <div style={{
+                      padding: '0.5rem',
+                      backgroundColor: '#f8d7da',
+                      color: '#721c24',
+                      borderRadius: '4px',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem'
+                    }}>
+                      Class Full
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleEnrollClick(classItem)}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
+                    >
+                      Enroll {selectedStudentName}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Calendar Section - Only show if student has enrolled classes */}
         {studentEnrollments.filter(e => e.status === 'enrolled').length > 0 && (
@@ -616,267 +838,6 @@ const GroupTutoringParent = () => {
             </div>
           </div>
         )}
-
-        {/* My Enrollments Section */}
-        {studentEnrollments.length > 0 && (
-          <div style={{
-            padding: '3rem 2rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '12px',
-            marginBottom: '3rem'
-          }}>
-            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#192A88' }}>
-              {selectedStudentName}'s Enrolled Classes
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '1.5rem'
-            }}>
-              {studentEnrollments.map(enrollment => {
-                const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
-                const stats = studentStats[enrollment.tutoring_class] || {};
-                const isCompleted = stats.isCompleted;
-
-                // Determine card styling based on completion status
-                let borderColor = enrollment.status === 'enrolled' ? '#28a745' :
-                  enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d';
-                let cardBackground = 'white';
-
-                if (isCompleted) {
-                  if (stats.passed) {
-                    borderColor = '#28a745';
-                    cardBackground = '#d4edda';
-                  } else {
-                    borderColor = '#dc3545';
-                    cardBackground = '#f8d7da';
-                  }
-                }
-
-                return (
-                  <div
-                    key={enrollment.id}
-                    onClick={() => handleClassClick(enrollment.tutoring_class)}
-                    style={{
-                      backgroundColor: cardBackground,
-                      padding: '1.5rem',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      border: `3px solid ${borderColor}`,
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s, box-shadow 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                      <h3 style={{ margin: 0, color: '#192A88' }}>
-                        {enrollment.class_title}
-                      </h3>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '12px',
-                        backgroundColor: enrollment.status === 'enrolled' ? '#28a745' :
-                          enrollment.status === 'pending_diagnostic' ? '#ffc107' : '#6c757d',
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {enrollment.status.replace(/_/g, ' ').toUpperCase()}
-                      </span>
-                    </div>
-
-                    {/* Completion Status */}
-                    {isCompleted && (
-                      <div style={{
-                        padding: '0.75rem',
-                        borderRadius: '6px',
-                        backgroundColor: stats.passed ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
-                        marginBottom: '0.75rem'
-                      }}>
-                        <div style={{
-                          fontWeight: 'bold',
-                          color: stats.passed ? '#155724' : '#721c24',
-                          marginBottom: '0.25rem'
-                        }}>
-                          {stats.passed ? '✓ COMPLETED SUCCESSFULLY' : '✗ REQUIREMENTS NOT MET'}
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: stats.passed ? '#155724' : '#721c24' }}>
-                          Attendance: {stats.attendancePercent?.toFixed(0)}% ({stats.attendedSessions}/{stats.totalSessions} sessions)
-                        </div>
-                        {stats.hasQuizzes && (
-                          <div style={{ fontSize: '0.85rem', color: stats.passed ? '#155724' : '#721c24' }}>
-                            Quizzes: {stats.allQuizzesPassed ? 'All Passed' : 'Some Failed'}
-                          </div>
-                        )}
-                        {!stats.passed && stats.reasons.length > 0 && (
-                          <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#721c24' }}>
-                            <strong>Reason:</strong> {stats.reasons.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                      <strong>Difficulty:</strong> {enrollment.class_difficulty}
-                    </div>
-                    {classInfo && classInfo.schedule_days && classInfo.schedule_days.length > 0 && (
-                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                        <strong>Schedule:</strong> {classInfo.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
-                        {classInfo.schedule_time && ` at ${classInfo.schedule_time}`}
-                      </div>
-                    )}
-                    {classInfo && classInfo.location && (
-                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                        <strong>Location:</strong> {classInfo.location}
-                        {classInfo.location_link && (
-                          <a href={classInfo.location_link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '0.5rem', color: '#192A88' }}
-                            onClick={(e) => e.stopPropagation()}>
-                            (Join Link)
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.95rem', marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                      <span style={{ color: '#192A88', fontSize: '0.85rem', fontWeight: '500' }}>
-                        View details →
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Available Classes Section */}
-        <div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#192A88', textAlign: 'center' }}>
-            Available Classes for {selectedStudentName}
-          </h2>
-
-          {error && (
-            <div style={{
-              backgroundColor: '#f8d7da',
-              color: '#721c24',
-              padding: '1rem',
-              borderRadius: '4px',
-              marginBottom: '1.5rem'
-            }}>
-              {error}
-            </div>
-          )}
-
-          {availableClasses.length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '1.2rem', color: '#666', padding: '2rem', backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
-              {students.length === 0
-                ? 'Add a student first to enroll in classes.'
-                : `${selectedStudentName} is enrolled in all available classes, or there are no open classes currently.`}
-            </p>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: '2rem'
-            }}>
-              {availableClasses.map(classItem => (
-                <div
-                  key={classItem.id}
-                  style={{
-                    backgroundColor: 'white',
-                    borderRadius: '12px',
-                    padding: '2rem',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: '2px solid #e9ecef',
-                    transition: 'transform 0.2s, box-shadow 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                  }}
-                >
-                  <h3 style={{ margin: '0 0 1rem 0', color: '#192A88', fontSize: '1.5rem' }}>
-                    {classItem.title}
-                  </h3>
-
-                  {classItem.description && (
-                    <p style={{ marginBottom: '1rem', color: '#666', lineHeight: '1.5' }}>
-                      {classItem.description}
-                    </p>
-                  )}
-
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                      <strong>📚 Difficulty:</strong> {classItem.difficulty.replace('_', ' ').toUpperCase()}
-                    </div>
-                    <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                      <strong>🗓 Duration:</strong> {new Date(classItem.start_date).toLocaleDateString()} - {new Date(classItem.end_date).toLocaleDateString()}
-                    </div>
-                    {classItem.schedule_days && classItem.schedule_days.length > 0 && (
-                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                        <strong>📅 Schedule:</strong> {classItem.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
-                        {classItem.schedule_time && ` at ${classItem.schedule_time}`}
-                      </div>
-                    )}
-                    {classItem.location && (
-                      <div style={{ marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                        <strong>📍 Location:</strong> {classItem.location}
-                      </div>
-                    )}
-                    {classItem.tutor_details && classItem.tutor_details.length > 0 && (
-                      <div style={{ fontSize: '0.95rem' }}>
-                        <strong>👨‍🏫 Tutors:</strong> {classItem.tutor_details.map(t => t.name).join(', ')}
-                      </div>
-                    )}
-                  </div>
-
-                  {classItem.is_full ? (
-                    <div style={{
-                      padding: '0.75rem',
-                      backgroundColor: '#f8d7da',
-                      color: '#721c24',
-                      borderRadius: '4px',
-                      textAlign: 'center',
-                      fontWeight: 'bold'
-                    }}>
-                      Class Full
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleEnrollClick(classItem)}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        backgroundColor: '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
-                    >
-                      Enroll {selectedStudentName}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Enroll Modal */}
