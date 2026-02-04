@@ -224,7 +224,7 @@ const GroupTutoringParent = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: 'white',
-        padding: '4rem 2rem',
+        padding: '6.4rem 2rem',
         textAlign: 'center',
         position: 'relative'
       }}>
