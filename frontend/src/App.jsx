@@ -110,9 +110,20 @@ function AppRoutes() {
     "/admin-discount-registration"
   ];
 
+  // Define paths that should hide the navbar entirely
+  const noNavbarPaths = [
+    "/group-tutoring"
+  ];
+
   // Check if current path should show UnauthNavbar
-  const isUnauthPage = unauthPaths.some(path => 
-    location.pathname === path || 
+  const isUnauthPage = unauthPaths.some(path =>
+    location.pathname === path ||
+    location.pathname.startsWith(path + "/")
+  );
+
+  // Check if current path should hide navbar entirely
+  const isNoNavbarPage = noNavbarPaths.some(path =>
+    location.pathname === path ||
     location.pathname.startsWith(path + "/")
   );
 
@@ -120,16 +131,16 @@ function AppRoutes() {
   const showUnauthNavbar = isUnauthPage;
 
   useEffect(() => {
-    if (!showUnauthNavbar) {
+    if (!showUnauthNavbar && !isNoNavbarPage) {
       document.body.classList.add("has-fixed-footer");
     } else {
       document.body.classList.remove("has-fixed-footer");
     }
-  }, [showUnauthNavbar]);
+  }, [showUnauthNavbar, isNoNavbarPage]);
 
   return (
     <div className="page-wrapper">
-      {showUnauthNavbar ? <UnauthNavbar /> : <Navbar />}
+      {!isNoNavbarPage && (showUnauthNavbar ? <UnauthNavbar /> : <Navbar />)}
 
       <main className="main-content">
         <Suspense fallback={<LoadingSpinner />}>
@@ -189,12 +200,12 @@ function AppRoutes() {
         </Suspense>
       </main>
 
-      {!showUnauthNavbar && (
+      {!showUnauthNavbar && !isNoNavbarPage && (
         <Footer />
       )}
 
       {/* Floating Chat - Available on all authenticated pages */}
-      {!showUnauthNavbar && <FloatingChat />}
+      {!showUnauthNavbar && !isNoNavbarPage && <FloatingChat />}
     </div>
   );
 }

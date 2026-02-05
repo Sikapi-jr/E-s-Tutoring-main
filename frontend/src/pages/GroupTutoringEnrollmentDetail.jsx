@@ -4,6 +4,58 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../components/UserProvider';
 import api from '../api';
 
+// Home icon component
+const HomeIcon = () => {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      onClick={() => navigate('/home')}
+      style={{
+        position: 'fixed',
+        top: '1rem',
+        left: '1rem',
+        zIndex: 1000,
+        backgroundColor: '#192A88',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '48px',
+        height: '48px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        transition: 'transform 0.2s, box-shadow 0.2s'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.1)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+      }}
+      title="Go to Home"
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    </button>
+  );
+};
+
 const GroupTutoringEnrollmentDetail = () => {
   const { classId, enrollmentId } = useParams();
   const navigate = useNavigate();
@@ -239,6 +291,7 @@ const GroupTutoringEnrollmentDetail = () => {
   if (loading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <HomeIcon />
         <p>Loading...</p>
       </div>
     );
@@ -247,6 +300,7 @@ const GroupTutoringEnrollmentDetail = () => {
   if (error) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <HomeIcon />
         <div style={{
           backgroundColor: '#f8d7da',
           color: '#721c24',
@@ -278,13 +332,27 @@ const GroupTutoringEnrollmentDetail = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      <HomeIcon />
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #192A88 0%, #3a4db5 100%)',
+        backgroundImage: 'url(/GroupTutoring.avif)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         color: 'white',
-        padding: '2rem'
+        padding: '2rem',
+        position: 'relative'
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Dark overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)'
+        }} />
+        {/* Content */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <button
             onClick={() => navigate('/group-tutoring')}
             style={{
@@ -302,7 +370,7 @@ const GroupTutoringEnrollmentDetail = () => {
           >
             &larr; Back to Group Tutoring
           </button>
-          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>
+          <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
             {classInfo?.title}
           </h1>
           <p style={{ margin: 0, opacity: 0.9 }}>

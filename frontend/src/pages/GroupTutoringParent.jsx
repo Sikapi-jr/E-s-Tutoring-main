@@ -220,33 +220,48 @@ const GroupTutoringParent = () => {
     <div style={{ minHeight: '100vh' }}>
       {/* Hero Section */}
       <div style={{
-        background: 'linear-gradient(135deg, #192A88 0%, #3a4db5 100%)',
+        backgroundImage: 'url(/GroupTutoring.avif)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         color: 'white',
         padding: '4rem 2rem',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative'
       }}>
-        <h1 style={{
-          fontSize: '3rem',
-          fontWeight: 'bold',
-          marginBottom: '1rem',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-        }}>
-          Group French Classes
-        </h1>
-        <p style={{
-          fontSize: '1.5rem',
-          marginBottom: '2rem',
-          opacity: 0.95
-        }}>
-          Learn French in a fun, interactive group setting!
-        </p>
-        <p style={{
-          fontSize: '1.2rem',
-          marginBottom: '0',
-          opacity: 0.9
-        }}>
-          Expert tutors • Small class sizes • Flexible schedules
-        </p>
+        {/* Dark overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)'
+        }} />
+        {/* Content */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h1 style={{
+            fontSize: '3rem',
+            fontWeight: 'bold',
+            marginBottom: '1rem',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+          }}>
+            Group French Classes
+          </h1>
+          <p style={{
+            fontSize: '1.5rem',
+            marginBottom: '2rem',
+            opacity: 0.95
+          }}>
+            Learn French in a fun, interactive group setting!
+          </p>
+          <p style={{
+            fontSize: '1.2rem',
+            marginBottom: '0',
+            opacity: 0.9
+          }}>
+            Expert tutors • Small class sizes • Flexible schedules
+          </p>
+        </div>
       </div>
 
       {/* Main Content */}
