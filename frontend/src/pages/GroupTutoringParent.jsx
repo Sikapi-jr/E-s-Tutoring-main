@@ -384,14 +384,16 @@ const GroupTutoringParent = () => {
               value={selectedStudentId || ''}
               onChange={(e) => handleStudentChange(parseInt(e.target.value))}
               style={{
-                padding: '0.4rem 0.75rem',
+                padding: '0.3rem 0.5rem',
                 borderRadius: '4px',
                 border: '1px solid #192A88',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontWeight: '600',
                 color: '#192A88',
                 cursor: 'pointer',
-                backgroundColor: 'white'
+                backgroundColor: 'white',
+                width: 'auto',
+                maxWidth: '180px'
               }}
             >
               {students.map(student => (
