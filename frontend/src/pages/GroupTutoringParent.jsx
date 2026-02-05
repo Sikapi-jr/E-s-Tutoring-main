@@ -368,43 +368,6 @@ const GroupTutoringParent = () => {
       {/* Main Content */}
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 2rem' }}>
 
-        {/* Student Selector - Small, right-aligned */}
-        {students.length > 0 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '1rem'
-          }}>
-            <label style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>
-              Viewing as:
-            </label>
-            <select
-              value={selectedStudentId || ''}
-              onChange={(e) => handleStudentChange(parseInt(e.target.value))}
-              style={{
-                padding: '0.3rem 0.5rem',
-                borderRadius: '4px',
-                border: '1px solid #192A88',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                color: '#192A88',
-                cursor: 'pointer',
-                backgroundColor: 'white',
-                width: 'auto',
-                maxWidth: '180px'
-              }}
-            >
-              {students.map(student => (
-                <option key={student.id} value={student.id}>
-                  {student.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {/* Pending Enrollment Notice */}
         {studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length > 0 && (
           <div style={{
@@ -431,9 +394,38 @@ const GroupTutoringParent = () => {
             borderRadius: '12px',
             marginBottom: '1.5rem'
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#192A88' }}>
-              {selectedStudentName}'s Enrolled Classes
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#192A88' }}>
+                {selectedStudentName}'s Enrolled Classes
+              </h2>
+              {students.length > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <label style={{ fontWeight: '500', color: '#666', fontSize: '0.8rem' }}>
+                    Viewing as:
+                  </label>
+                  <select
+                    value={selectedStudentId || ''}
+                    onChange={(e) => handleStudentChange(parseInt(e.target.value))}
+                    style={{
+                      padding: '0.25rem 0.4rem',
+                      borderRadius: '4px',
+                      border: '1px solid #192A88',
+                      fontSize: '0.8rem',
+                      fontWeight: '600',
+                      color: '#192A88',
+                      cursor: 'pointer',
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    {students.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
