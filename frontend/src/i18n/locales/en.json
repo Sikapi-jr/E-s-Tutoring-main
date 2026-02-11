@@ -1299,6 +1299,7 @@
     "loading": "Loading...",
     "noAccess": "You do not have access to this page.",
     "calendar": "Calendar",
-    "clickToCancel": "Click to cancel"
+    "clickToCancel": "Click to cancel",
+    "noActiveClasses": "{{name}} has no active classes."
   }
 }

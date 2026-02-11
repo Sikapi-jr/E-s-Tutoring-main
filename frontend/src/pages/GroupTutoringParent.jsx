@@ -400,46 +400,46 @@ const GroupTutoringParent = () => {
           </div>
         )}
 
-        {/* Active Enrollments Section */}
-        {activeEnrollments.length > 0 && (
-          <div style={{
-            padding: '1.5rem',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '12px',
-            marginBottom: '1.5rem'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#192A88' }}>
-                {t('groupTutoring.activeClasses', { name: selectedStudentName, defaultValue: `${selectedStudentName}'s Active Classes` })}
-              </h2>
-              {students.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
-                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>{t('groupTutoring.viewingAs', 'Viewing as:')}</span>
-                  <select
-                    value={selectedStudentId || ''}
-                    onChange={(e) => handleStudentChange(parseInt(e.target.value))}
-                    style={{
-                      padding: '0.1rem 0.2rem',
-                      borderRadius: '3px',
-                      border: '1px solid #192A88',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      color: '#192A88',
-                      cursor: 'pointer',
-                      backgroundColor: 'white',
-                      textAlign: 'center',
-                      textAlignLast: 'center'
-                    }}
-                  >
-                    {students.map(student => (
-                      <option key={student.id} value={student.id}>
-                        {student.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
+        {/* Active Enrollments Section - Always show for the viewing selector */}
+        <div style={{
+          padding: '1.5rem',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: activeEnrollments.length > 0 ? '1rem' : '0' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#192A88' }}>
+              {t('groupTutoring.activeClasses', { name: selectedStudentName, defaultValue: `${selectedStudentName}'s Active Classes` })}
+            </h2>
+            {students.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
+                <span style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>{t('groupTutoring.viewingAs', 'Viewing as:')}</span>
+                <select
+                  value={selectedStudentId || ''}
+                  onChange={(e) => handleStudentChange(parseInt(e.target.value))}
+                  style={{
+                    padding: '0.1rem 0.2rem',
+                    borderRadius: '3px',
+                    border: '1px solid #192A88',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    color: '#192A88',
+                    cursor: 'pointer',
+                    backgroundColor: 'white',
+                    textAlign: 'center',
+                    textAlignLast: 'center'
+                  }}
+                >
+                  {students.map(student => (
+                    <option key={student.id} value={student.id}>
+                      {student.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          {activeEnrollments.length > 0 ? (
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -536,8 +536,12 @@ const GroupTutoringParent = () => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <p style={{ textAlign: 'center', color: '#666', margin: '1rem 0 0 0', fontSize: '0.95rem' }}>
+              {t('groupTutoring.noActiveClasses', { name: selectedStudentName, defaultValue: `${selectedStudentName} has no active classes.` })}
+            </p>
+          )}
+        </div>
 
         {/* Completed Classes Section */}
         {completedEnrollments.length > 0 && (

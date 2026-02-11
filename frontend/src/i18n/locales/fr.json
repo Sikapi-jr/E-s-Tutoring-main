@@ -1261,6 +1261,7 @@
     "loading": "Chargement...",
     "noAccess": "Vous n'avez pas accès à cette page.",
     "calendar": "Calendrier",
-    "clickToCancel": "Cliquer pour annuler"
+    "clickToCancel": "Cliquer pour annuler",
+    "noActiveClasses": "{{name}} n'a pas de classes actives."
   }
 }
