@@ -631,7 +631,7 @@ class GroupTutoringClassSerializer(serializers.ModelSerializer):
             'start_date', 'end_date',
             'schedule_days', 'schedule_time', 'duration_minutes',
             'location', 'location_link',
-            'max_students', 'num_quizzes',
+            'max_students', 'header_image', 'num_quizzes',
             'is_active', 'enrolled_count', 'is_full', 'created_at', 'updated_at'
         ]
         extra_kwargs = {

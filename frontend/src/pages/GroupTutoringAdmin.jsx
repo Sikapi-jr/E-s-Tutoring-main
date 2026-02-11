@@ -28,7 +28,8 @@ const GroupTutoringAdmin = () => {
     location_link: '',
     max_students: 20,
     num_quizzes: 0,
-    is_active: true
+    is_active: true,
+    header_image: null
   });
 
   // Admin quick link modals state
@@ -153,7 +154,8 @@ const GroupTutoringAdmin = () => {
       location_link: '',
       max_students: 20,
       num_quizzes: 0,
-      is_active: true
+      is_active: true,
+      header_image: null
     });
   };
 
@@ -174,7 +176,27 @@ const GroupTutoringAdmin = () => {
     e.preventDefault();
 
     try {
-      await api.post('/api/group-tutoring/classes/', formData);
+      // Use FormData if there's an image to upload
+      if (formData.header_image) {
+        const submitData = new FormData();
+        Object.keys(formData).forEach(key => {
+          if (key === 'header_image' && formData[key]) {
+            submitData.append('header_image', formData[key]);
+          } else if (key === 'tutors' || key === 'schedule_days') {
+            // Handle arrays
+            formData[key].forEach(item => submitData.append(key, item));
+          } else if (formData[key] !== null && formData[key] !== '') {
+            submitData.append(key, formData[key]);
+          }
+        });
+        await api.post('/api/group-tutoring/classes/', submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        // No image, use regular JSON
+        const { header_image, ...dataWithoutImage } = formData;
+        await api.post('/api/group-tutoring/classes/', dataWithoutImage);
+      }
       alert('Class created successfully!');
       handleCloseCreateModal();
       fetchData(); // Refresh data
@@ -1389,6 +1411,33 @@ const GroupTutoringAdmin = () => {
                     />
                     <span style={{ fontWeight: 'bold' }}>Class is Active (accepting enrollments)</span>
                   </label>
+                </div>
+
+                {/* Header Image Upload */}
+                <div style={{ marginTop: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    Header Image (optional)
+                  </label>
+                  <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.5rem' }}>
+                    This image will be displayed as the background header on the class details page.
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFormChange('header_image', e.target.files[0] || null)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem'
+                    }}
+                  />
+                  {formData.header_image && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#28a745' }}>
+                      Selected: {formData.header_image.name}
+                    </div>
+                  )}
                 </div>
               </div>
 

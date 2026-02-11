@@ -1090,6 +1090,14 @@ class GroupTutoringClass(models.Model):
     # Class capacity and enrollment
     max_students = models.PositiveIntegerField(default=20, help_text="Maximum number of students")
 
+    # Header image for class details page
+    header_image = models.ImageField(
+        upload_to='group_tutoring/headers/',
+        blank=True,
+        null=True,
+        help_text="Background header image displayed on the class details page"
+    )
+
     # Quizzes and assessment
     num_quizzes = models.PositiveIntegerField(default=0, help_text="Number of quizzes planned for this class")
 

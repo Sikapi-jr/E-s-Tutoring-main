@@ -358,7 +358,7 @@ const GroupTutoringEnrollmentDetail = () => {
       <HomeIcon />
       {/* Header */}
       <div style={{
-        backgroundImage: 'url(/GroupTutoring.avif)',
+        backgroundImage: classInfo?.header_image ? `url(${classInfo.header_image})` : 'url(/GroupTutoring.avif)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: 'white',

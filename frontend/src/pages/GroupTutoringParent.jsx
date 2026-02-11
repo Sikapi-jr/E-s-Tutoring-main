@@ -403,16 +403,16 @@ const GroupTutoringParent = () => {
                 {selectedStudentName}'s Enrolled Classes
               </h2>
               {students.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
-                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.75rem' }}>Viewing as:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>Viewing as:</span>
                   <select
                     value={selectedStudentId || ''}
                     onChange={(e) => handleStudentChange(parseInt(e.target.value))}
                     style={{
-                      padding: '0.2rem 0.3rem',
+                      padding: '0.1rem 0.2rem',
                       borderRadius: '3px',
                       border: '1px solid #192A88',
-                      fontSize: '0.75rem',
+                      fontSize: '0.85rem',
                       fontWeight: '600',
                       color: '#192A88',
                       cursor: 'pointer',
