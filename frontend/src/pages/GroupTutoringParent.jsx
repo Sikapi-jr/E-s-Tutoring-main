@@ -309,7 +309,7 @@ const GroupTutoringParent = () => {
   if (loading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>Loading...</p>
+        <p>{t('groupTutoring.loading')}</p>
       </div>
     );
   }
@@ -320,6 +320,16 @@ const GroupTutoringParent = () => {
   const studentSessions = getStudentSessions();
   const availableClasses = getAvailableClasses();
   const selectedStudentName = students.find(s => s.id === selectedStudentId)?.name || '';
+
+  // Separate active and completed enrollments
+  const activeEnrollments = studentEnrollments.filter(e => {
+    const classInfo = classes.find(c => c.id === e.tutoring_class);
+    return classInfo && new Date(classInfo.end_date) >= new Date();
+  });
+  const completedEnrollments = studentEnrollments.filter(e => {
+    const classInfo = classes.find(c => c.id === e.tutoring_class);
+    return classInfo && new Date(classInfo.end_date) < new Date();
+  });
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -350,21 +360,21 @@ const GroupTutoringParent = () => {
             marginBottom: '1rem',
             textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
           }}>
-            Group French Classes
+            {t('groupTutoring.title')}
           </h1>
           <p style={{
             fontSize: '1.5rem',
             marginBottom: '2rem',
             opacity: 0.95
           }}>
-            Learn French in a fun, interactive group setting!
+            {t('groupTutoring.subtitle')}
           </p>
           <p style={{
             fontSize: '1.2rem',
             marginBottom: '0',
             opacity: 0.9
           }}>
-            Expert tutors • Small class sizes • Flexible schedules
+            {t('groupTutoring.features')}
           </p>
         </div>
       </div>
@@ -381,17 +391,17 @@ const GroupTutoringParent = () => {
             marginBottom: '1.5rem',
             border: '1px solid #ffc107'
           }}>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404', fontSize: '1rem' }}>Pending Enrollment(s) for {selectedStudentName}</h3>
+            <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404', fontSize: '1rem' }}>{t('groupTutoring.pendingEnrollments', { name: selectedStudentName })}</h3>
             <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
-              {selectedStudentName} has {studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length} enrollment(s) awaiting approval.
-              {studentEnrollments.some(e => e.status === 'pending_diagnostic') && ' Please check your email for the diagnostic test link.'}
-              {studentEnrollments.some(e => e.status === 'diagnostic_submitted') && ' The diagnostic test has been submitted and is being reviewed.'}
+              {t('groupTutoring.pendingEnrollmentsMessage', { name: selectedStudentName, count: studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length })}
+              {studentEnrollments.some(e => e.status === 'pending_diagnostic') && ` ${t('groupTutoring.checkEmailDiagnostic')}`}
+              {studentEnrollments.some(e => e.status === 'diagnostic_submitted') && ` ${t('groupTutoring.diagnosticSubmitted')}`}
             </p>
           </div>
         )}
 
-        {/* My Enrollments Section */}
-        {studentEnrollments.length > 0 && (
+        {/* Active Enrollments Section */}
+        {activeEnrollments.length > 0 && (
           <div style={{
             padding: '1.5rem',
             backgroundColor: '#f8f9fa',
@@ -400,11 +410,11 @@ const GroupTutoringParent = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#192A88' }}>
-                {selectedStudentName}'s Enrolled Classes
+                {t('groupTutoring.activeClasses', { name: selectedStudentName, defaultValue: `${selectedStudentName}'s Active Classes` })}
               </h2>
               {students.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
-                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>Viewing as:</span>
+                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.85rem' }}>{t('groupTutoring.viewingAs', 'Viewing as:')}</span>
                   <select
                     value={selectedStudentId || ''}
                     onChange={(e) => handleStudentChange(parseInt(e.target.value))}
@@ -435,7 +445,7 @@ const GroupTutoringParent = () => {
               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
               gap: '1rem'
             }}>
-              {studentEnrollments.map(enrollment => {
+              {activeEnrollments.map(enrollment => {
                 const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
                 const stats = studentStats[enrollment.tutoring_class] || {};
                 const isCompleted = stats.isCompleted;
@@ -502,10 +512,10 @@ const GroupTutoringParent = () => {
                         fontSize: '0.8rem'
                       }}>
                         <div style={{ fontWeight: 'bold', color: stats.passed ? '#155724' : '#721c24' }}>
-                          {stats.passed ? '✓ COMPLETED' : '✗ NOT MET'}
+                          {stats.passed ? `✓ ${t('groupTutoring.completed')}` : `✗ ${t('groupTutoring.notMet')}`}
                         </div>
                         <div style={{ color: stats.passed ? '#155724' : '#721c24' }}>
-                          Attendance: {stats.attendancePercent?.toFixed(0)}%
+                          {t('groupTutoring.attendance')}: {stats.attendancePercent?.toFixed(0)}%
                         </div>
                         {!stats.passed && stats.reasons.length > 0 && (
                           <div style={{ color: '#721c24', fontSize: '0.75rem' }}>
@@ -520,7 +530,104 @@ const GroupTutoringParent = () => {
                       {classInfo?.schedule_time && ` • ${classInfo.schedule_time}`}
                     </div>
                     <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#192A88', fontWeight: '500', textAlign: 'right' }}>
-                      View details →
+                      {t('groupTutoring.viewDetails')} →
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Completed Classes Section */}
+        {completedEnrollments.length > 0 && (
+          <div style={{
+            padding: '1.5rem',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '12px',
+            marginBottom: '1.5rem'
+          }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#192A88' }}>
+              {t('groupTutoring.completedClasses', { name: selectedStudentName, defaultValue: `${selectedStudentName}'s Completed Classes` })}
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '1rem'
+            }}>
+              {completedEnrollments.map(enrollment => {
+                const classInfo = classes.find(c => c.id === enrollment.tutoring_class);
+                const stats = studentStats[enrollment.tutoring_class] || {};
+
+                let borderColor = stats.passed ? '#28a745' : '#dc3545';
+                let cardBackground = stats.passed ? '#d4edda' : '#f8d7da';
+
+                return (
+                  <div
+                    key={enrollment.id}
+                    onClick={() => handleClassClick(enrollment.tutoring_class)}
+                    style={{
+                      backgroundColor: cardBackground,
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      border: `2px solid ${borderColor}`,
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <h3 style={{ margin: 0, color: '#192A88', fontSize: '1.1rem' }}>
+                        {enrollment.class_title}
+                      </h3>
+                      <span style={{
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '10px',
+                        backgroundColor: stats.passed ? '#28a745' : '#dc3545',
+                        color: 'white',
+                        fontSize: '0.65rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {stats.passed ? t('groupTutoring.passed', 'PASSED') : t('groupTutoring.notPassed', 'NOT PASSED')}
+                      </span>
+                    </div>
+
+                    <div style={{
+                      padding: '0.5rem',
+                      borderRadius: '4px',
+                      backgroundColor: stats.passed ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                      marginBottom: '0.5rem',
+                      fontSize: '0.8rem'
+                    }}>
+                      <div style={{ color: stats.passed ? '#155724' : '#721c24' }}>
+                        {t('groupTutoring.attendance', 'Attendance')}: {stats.attendancePercent?.toFixed(0) || 0}%
+                      </div>
+                      {stats.hasQuizzes && (
+                        <div style={{ color: stats.passed ? '#155724' : '#721c24' }}>
+                          {t('groupTutoring.quizzes', 'Quizzes')}: {stats.allQuizzesPassed ? t('groupTutoring.allPassed', 'All Passed') : t('groupTutoring.someFailed', 'Some Failed')}
+                        </div>
+                      )}
+                      {!stats.passed && stats.reasons && stats.reasons.length > 0 && (
+                        <div style={{ color: '#721c24', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                          {stats.reasons.join(', ')}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                      {enrollment.class_difficulty}
+                      {classInfo?.end_date && ` • ${t('groupTutoring.ended', 'Ended')}: ${new Date(classInfo.end_date).toLocaleDateString()}`}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#192A88', fontWeight: '500', textAlign: 'right' }}>
+                      {t('groupTutoring.viewDetails', 'View details')} →
                     </div>
                   </div>
                 );
@@ -532,7 +639,7 @@ const GroupTutoringParent = () => {
         {/* Available Classes Section */}
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#192A88' }}>
-            Available Classes for {selectedStudentName}
+            {t('groupTutoring.availableClasses', { name: selectedStudentName, defaultValue: `Available Classes for ${selectedStudentName}` })}
           </h2>
 
           {error && (
@@ -551,8 +658,8 @@ const GroupTutoringParent = () => {
           {availableClasses.length === 0 ? (
             <p style={{ textAlign: 'center', fontSize: '1rem', color: '#666', padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
               {students.length === 0
-                ? 'Add a student first to enroll in classes.'
-                : `${selectedStudentName} is enrolled in all available classes, or there are no open classes currently.`}
+                ? t('groupTutoring.noStudentsMessage')
+                : t('groupTutoring.allEnrolledMessage', { name: selectedStudentName })}
             </p>
           ) : (
             <div style={{
@@ -620,7 +727,7 @@ const GroupTutoringParent = () => {
                       fontWeight: 'bold',
                       fontSize: '0.9rem'
                     }}>
-                      Class Full
+                      {t('groupTutoring.classFull')}
                     </div>
                   ) : (
                     <button
@@ -640,7 +747,7 @@ const GroupTutoringParent = () => {
                       onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = '#28a745'}
                     >
-                      Enroll {selectedStudentName}
+                      {t('groupTutoring.enrollStudent', { name: selectedStudentName })}
                     </button>
                   )}
                 </div>

@@ -1,6 +1,7 @@
 // src/pages/GroupTutoringEnrollmentDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '../components/UserProvider';
 import api from '../api';
 
@@ -60,6 +61,7 @@ const GroupTutoringEnrollmentDetail = () => {
   const { classId, enrollmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [enrollments, setEnrollments] = useState([]);
@@ -308,7 +310,7 @@ const GroupTutoringEnrollmentDetail = () => {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <HomeIcon />
-        <p>Loading...</p>
+        <p>{t('groupTutoring.loading')}</p>
       </div>
     );
   }
@@ -337,7 +339,7 @@ const GroupTutoringEnrollmentDetail = () => {
             cursor: 'pointer'
           }}
         >
-          Back to Group Tutoring
+          {t('groupTutoring.backToGroupTutoring')}
         </button>
       </div>
     );
@@ -391,13 +393,13 @@ const GroupTutoringEnrollmentDetail = () => {
               gap: '0.5rem'
             }}
           >
-            &larr; Back to Group Tutoring
+            &larr; {t('groupTutoring.backToGroupTutoring')}
           </button>
           <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
             {classInfo?.title}
           </h1>
           <p style={{ margin: 0, opacity: 0.9 }}>
-            Viewing as: <strong>{selectedStudentName}</strong>
+            {t('groupTutoring.viewingAs')} <strong>{selectedStudentName}</strong>
           </p>
         </div>
       </div>

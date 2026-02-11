@@ -104,8 +104,8 @@ const GroupTutoring = () => {
     <>
       <HomeIcon />
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Group Tutoring</h2>
-        <p>You do not have access to this page.</p>
+        <h2>{t('groupTutoring.title')}</h2>
+        <p>{t('groupTutoring.noAccess')}</p>
       </div>
     </>
   );
