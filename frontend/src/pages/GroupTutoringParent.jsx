@@ -229,13 +229,17 @@ const GroupTutoringParent = () => {
     return sessions.filter(s => s.student === selectedStudentId);
   };
 
-  // Get available classes for selected student (not enrolled yet)
+  // Get available classes for selected student (not enrolled yet and not ended)
   const getAvailableClasses = () => {
-    if (!selectedStudentId) return classes;
+    const now = new Date();
+    // Filter out classes that have already ended
+    const activeClasses = classes.filter(c => new Date(c.end_date) >= now);
+
+    if (!selectedStudentId) return activeClasses;
     const enrolledClassIds = myEnrollments
       .filter(e => e.student === selectedStudentId)
       .map(e => e.tutoring_class);
-    return classes.filter(c => !enrolledClassIds.includes(c.id));
+    return activeClasses.filter(c => !enrolledClassIds.includes(c.id));
   };
 
   const getDaysInMonth = (date) => {
@@ -398,23 +402,23 @@ const GroupTutoringParent = () => {
               <h2 style={{ fontSize: '1.5rem', margin: 0, color: '#192A88' }}>
                 {selectedStudentName}'s Enrolled Classes
               </h2>
-              {students.length > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <label style={{ fontWeight: '500', color: '#666', fontSize: '0.8rem' }}>
-                    Viewing as:
-                  </label>
+              {students.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontWeight: '500', color: '#666', fontSize: '0.75rem' }}>Viewing as:</span>
                   <select
                     value={selectedStudentId || ''}
                     onChange={(e) => handleStudentChange(parseInt(e.target.value))}
                     style={{
-                      padding: '0.25rem 0.4rem',
-                      borderRadius: '4px',
+                      padding: '0.2rem 0.3rem',
+                      borderRadius: '3px',
                       border: '1px solid #192A88',
-                      fontSize: '0.8rem',
+                      fontSize: '0.75rem',
                       fontWeight: '600',
                       color: '#192A88',
                       cursor: 'pointer',
-                      backgroundColor: 'white'
+                      backgroundColor: 'white',
+                      textAlign: 'center',
+                      textAlignLast: 'center'
                     }}
                   >
                     {students.map(student => (

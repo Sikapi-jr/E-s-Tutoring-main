@@ -1422,10 +1422,10 @@ EGS Tutoring Team
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_parent_registration_notification_async(self, parent_info):
     """
-    Send email notification to egstutor@gmail.com when a parent registers
+    Send email notification to admins when a parent registers
     """
     try:
-        admin_email = 'egstutor@gmail.com'
+        admin_emails = ['egstutor@gmail.com', 'elvissikapi@gmail.com']
         subject = 'New Parent Registration - EGS Tutoring'
 
         # Extract all parent information
@@ -1463,7 +1463,7 @@ EGS Tutoring System
             subject,
             message,
             settings.DEFAULT_FROM_EMAIL,
-            [admin_email],
+            admin_emails,
             fail_silently=False,
         )
 
