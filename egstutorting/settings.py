@@ -102,6 +102,10 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=23, minute=0, day_of_week=0),  # Sunday 6pm Toronto (11pm UTC during EST)
         'options': {'timezone': 'America/Toronto'}
     },
+    'daily-health-check': {
+        'task': 'playground.tasks.send_daily_health_check',
+        'schedule': crontab(hour=13, minute=0),  # 8am Toronto EST (1pm UTC)
+    },
 }
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')

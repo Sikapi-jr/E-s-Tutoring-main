@@ -68,3 +68,19 @@ services:
     depends_on:
       mq:
         condition: service_healthy
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: celery-beat
+    command: sh -c "celery -A egstutorting beat -l INFO"
+    environment:
+      - CELERY_BROKER_URL=amqp://mquser:aaasss12@mq:5672//
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=egstutorting.settings
+    volumes:
+      - .:/app
+    depends_on:
+      mq:
+        condition: service_healthy

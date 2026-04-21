@@ -309,3 +309,71 @@ def send_admin_referral_notification(admin_email, sender_name, sender_email, rec
     """
 
     return send_mailgun_email(from_email, admin_email, subject, html_content, text_content)
+
+
+def send_health_check_email(to_email, checks, timestamp):
+    """
+    Send a daily system health summary to the admin.
+    `checks` is a dict of { service_name: { 'ok': bool, 'detail': str } }
+    """
+    from_email = "support@egstutoring-portal.ca"
+    subject = f"EGS Tutoring — Daily System Health Check ({timestamp})"
+
+    all_ok = all(c['ok'] for c in checks.values())
+    overall_color = '#28a745' if all_ok else '#dc3545'
+    overall_label = 'ALL SYSTEMS OPERATIONAL' if all_ok else 'ACTION REQUIRED — SEE BELOW'
+
+    rows_html = ''
+    rows_text = ''
+    for service, result in checks.items():
+        icon = '✅' if result['ok'] else '❌'
+        status_word = 'OK' if result['ok'] else 'FAIL'
+        bg = '#f6fff7' if result['ok'] else '#fff5f5'
+        rows_html += f"""
+        <tr style="background:{bg};">
+            <td style="padding:10px 14px; font-weight:bold; text-transform:capitalize;">{service.capitalize()}</td>
+            <td style="padding:10px 14px; text-align:center; font-weight:bold; color:{'#28a745' if result['ok'] else '#dc3545'};">{icon} {status_word}</td>
+            <td style="padding:10px 14px; color:#555; font-size:13px;">{result['detail']}</td>
+        </tr>"""
+        rows_text += f"  [{status_word}] {service.upper()}: {result['detail']}\n"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #192A88; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;">
+            <h1 style="margin:0; font-size:20px;">EGS Tutoring — Daily Health Check</h1>
+            <p style="margin:6px 0 0; font-size:13px; opacity:0.85;">{timestamp}</p>
+        </div>
+
+        <div style="background:{overall_color}; color:white; padding:12px; text-align:center; font-weight:bold; font-size:15px; letter-spacing:0.5px;">
+            {overall_label}
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; border:1px solid #ddd; border-top:none;">
+            <thead>
+                <tr style="background:#f0f0f0;">
+                    <th style="padding:10px 14px; text-align:left; font-size:13px;">Service</th>
+                    <th style="padding:10px 14px; text-align:center; font-size:13px;">Status</th>
+                    <th style="padding:10px 14px; text-align:left; font-size:13px;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows_html}
+            </tbody>
+        </table>
+
+        <div style="background:#f9f9f9; padding:14px; border:1px solid #ddd; border-top:none; border-radius:0 0 5px 5px; font-size:12px; color:#888; text-align:center;">
+            Automated daily check — EGS Tutoring Platform
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+EGS Tutoring — Daily Health Check
+{timestamp}
+{'ALL SYSTEMS OPERATIONAL' if all_ok else 'ACTION REQUIRED'}
+
+{rows_text}
+Automated daily check — EGS Tutoring Platform
+    """
+
+    return send_mailgun_email(from_email, to_email, subject, html_content, text_content)

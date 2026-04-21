@@ -1617,3 +1617,67 @@ EGS Tutoring Team
         logger.error(f"Error sending student creation confirmation to {parent_email}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
 
+
+@shared_task
+def send_daily_health_check():
+    """
+    Runs every day at 8am Toronto time.
+    Checks Stripe, database, email (Mailgun), and Celery/broker health,
+    then sends a summary to elvissikapi@gmail.com.
+    """
+    import datetime
+    from playground.email_backends import send_health_check_email
+
+    checks = {}
+
+    # --- Stripe ---
+    try:
+        balance = stripe.Balance.retrieve()
+        available = balance['available'][0]['amount'] / 100 if balance.get('available') else 0
+        checks['stripe'] = {
+            'ok': True,
+            'detail': f"API key valid. Available balance: ${available:.2f} CAD",
+        }
+    except Exception as e:
+        checks['stripe'] = {'ok': False, 'detail': str(e)}
+
+    # --- Database ---
+    try:
+        from playground.models import User, Hours
+        user_count = User.objects.count()
+        pending_hours = Hours.objects.filter(invoice_status='pending').count()
+        checks['database'] = {
+            'ok': True,
+            'detail': f"Connected. {user_count} users, {pending_hours} pending hours.",
+        }
+    except Exception as e:
+        checks['database'] = {'ok': False, 'detail': str(e)}
+
+    # --- Mailgun ---
+    # Sending this email IS the Mailgun test — if it arrives, Mailgun is working.
+    checks['mailgun'] = {
+        'ok': True,
+        'detail': "Email delivered = Mailgun is operational.",
+    }
+
+    # --- Celery + Broker ---
+    # This task running at all proves Celery workers and RabbitMQ are healthy.
+    checks['celery'] = {
+        'ok': True,
+        'detail': "Task executed on schedule — worker and broker are healthy.",
+    }
+
+    # --- Send summary email ---
+    now_str = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    try:
+        send_health_check_email(
+            to_email='elvissikapi@gmail.com',
+            checks=checks,
+            timestamp=now_str,
+        )
+        logger.info(f"Daily health check email sent at {now_str}")
+    except Exception as e:
+        logger.error(f"Failed to send health check email: {e}")
+
+    return checks
+
