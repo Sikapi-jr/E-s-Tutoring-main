@@ -10,6 +10,11 @@ from celery.exceptions import Retry
 
 logger = logging.getLogger(__name__)
 
+# IMPORTANT: stripe.api_key must be set here so Celery workers have it.
+# views.py sets its own copy, but tasks.py runs in a separate worker process
+# and never imports views.py — so it needs its own assignment.
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 @shared_task
 def hello_task(name):
     print(f"Hello {name}. You have {len(name)} characters in your name")
@@ -433,6 +438,8 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     customer_id = customer_data['customer_id']
                     amount = customer_data['amount']  # in cents
                     description = customer_data.get('description', 'Tutoring Services')
+                    parent_email = customer_data.get('parent_email')
+                    parent_name = customer_data.get('parent_name', '')
                     
                     # Calculate due date (14 days from now)
                     import time
@@ -489,7 +496,30 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     # Finalize and send invoice
                     invoice = stripe.Invoice.finalize_invoice(invoice.id)
                     invoice = stripe.Invoice.send_invoice(invoice.id)
-                    
+
+                    # Send branded EGS email to parent with the Stripe payment link
+                    if parent_email and invoice.hosted_invoice_url:
+                        try:
+                            from playground.email_backends import send_parent_invoice_notification
+                            import datetime
+                            due_date_str = (
+                                datetime.datetime.fromtimestamp(invoice.due_date).strftime('%B %d, %Y')
+                                if invoice.due_date else '14 days from today'
+                            )
+                            amount_dollars = amount / 100  # convert cents back to dollars
+                            send_parent_invoice_notification(
+                                parent_email=parent_email,
+                                parent_name=parent_name,
+                                amount_dollars=amount_dollars,
+                                due_date_str=due_date_str,
+                                stripe_invoice_url=invoice.hosted_invoice_url,
+                                description=description,
+                            )
+                            logger.info(f"Invoice notification email sent to {parent_email} for invoice {invoice.id}")
+                        except Exception as email_error:
+                            # Email failure must not roll back the invoice — log and continue
+                            logger.error(f"Failed to send invoice email to {parent_email}: {email_error}")
+
                     # Update hours status AFTER invoice is successfully sent to prevent race conditions
                     hour_ids = customer_data.get('hour_ids', [])
                     if hour_ids:

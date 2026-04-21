@@ -3186,12 +3186,13 @@ class CreateInvoiceView(APIView):
         )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
-        rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
-        print(f"Rate data query result: {list(rate_data)}")
-        
+        rate_data = list(User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email', 'firstName', 'lastName'))
+        print(f"Rate data query result: {rate_data}")
+
         online_rate_dict = {item['id']: Decimal(item['rateOnline'] or 0) for item in rate_data}
         inperson_rate_dict = {item['id']: Decimal(item['rateInPerson'] or 0) for item in rate_data}
         parent_email_dict = {item['id']: item['email'] for item in rate_data}
+        parent_name_dict = {item['id']: f"{item['firstName']} {item['lastName']}".strip() for item in rate_data}
         
         print(f"Online rate dict: {online_rate_dict}")
         print(f"In-person rate dict: {inperson_rate_dict}")
@@ -3249,7 +3250,9 @@ class CreateInvoiceView(APIView):
                         'customer_id': customer.id,
                         'amount': amount_cents,
                         'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})',
-                        'hour_ids': parent_hour_ids  # Include hour IDs for status update
+                        'hour_ids': parent_hour_ids,  # Include hour IDs for status update
+                        'parent_email': email_str,
+                        'parent_name': parent_name_dict.get(parent_id, ''),
                     })
 
         if customer_data_list:

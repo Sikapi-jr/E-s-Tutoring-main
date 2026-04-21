@@ -194,6 +194,71 @@ def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, s
     return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content)
 
 
+def send_parent_invoice_notification(parent_email, parent_name, amount_dollars, due_date_str, stripe_invoice_url, description='Tutoring Sessions'):
+    """
+    Send a branded EGS billing email to the parent with their Stripe invoice payment link.
+    Called immediately after the Stripe invoice is created and finalized.
+    """
+    from_email = "billing@egstutoring-portal.ca"
+    subject = "Your EGS Tutoring Invoice is Ready"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #192A88; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">EGS Tutoring</h1>
+            <p style="margin: 8px 0 0; font-size: 16px;">Invoice Ready for Payment</p>
+        </div>
+
+        <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none;">
+            <p>Hi {parent_name},</p>
+
+            <p>Your invoice for <strong>{description}</strong> has been generated and is ready for payment.</p>
+
+            <div style="background: white; border: 1px solid #ddd; border-radius: 5px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0 0 5px; color: #666; font-size: 14px;">Amount Due (before tax)</p>
+                <p style="margin: 0; font-size: 32px; font-weight: bold; color: #192A88;">${amount_dollars:.2f} CAD</p>
+                <p style="margin: 8px 0 0; color: #666; font-size: 13px;">+ 13% HST/Tax</p>
+            </div>
+
+            <p style="color: #555;">Payment is due by <strong>{due_date_str}</strong>. Please click the button below to view your invoice and complete payment securely through Stripe.</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{stripe_invoice_url}"
+                   style="background-color: #192A88; color: white; padding: 14px 36px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+                    Pay Invoice Now
+                </a>
+            </div>
+
+            <p style="font-size: 13px; color: #888;">Or copy and paste this link into your browser:<br>
+               <a href="{stripe_invoice_url}" style="color: #192A88; word-break: break-all;">{stripe_invoice_url}</a>
+            </p>
+        </div>
+
+        <div style="background-color: #f1f1f1; padding: 20px; text-align: center; border-radius: 0 0 5px 5px; font-size: 13px; color: #666;">
+            <p style="margin: 0 0 5px;">Questions? Contact us at
+               <a href="mailto:billing@egstutoring-portal.ca" style="color: #192A88;">billing@egstutoring-portal.ca</a>
+            </p>
+            <p style="margin: 0;">EGS Tutoring &mdash; Thank you for choosing us!</p>
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+    Hi {parent_name},
+
+    Your EGS Tutoring invoice for {description} is ready.
+
+    Amount Due (before tax): ${amount_dollars:.2f} CAD + 13% HST/Tax
+    Due Date: {due_date_str}
+
+    Pay now: {stripe_invoice_url}
+
+    Questions? Email billing@egstutoring-portal.ca
+    """
+
+    return send_mailgun_email(from_email, parent_email, subject, html_content, text_content)
+
+
 def send_admin_referral_notification(admin_email, sender_name, sender_email, receiver_email):
     """
     Send notification to admin when a new referral is created
