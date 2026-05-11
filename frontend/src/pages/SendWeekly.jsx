@@ -27,6 +27,7 @@ const SendWeekly = () => {
   const [existingWeeklyHours, setExistingWeeklyHours] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [invoiceResults, setInvoiceResults] = useState([]);
 
   // superuser gate
   if (user.is_superuser === 0) {
@@ -68,13 +69,18 @@ const SendWeekly = () => {
 
   const confirmButtonClick = async () => {
     setError("");
+    setInvoiceResults([]);
     try {
       const res = await api.post(
         `/api/weeklyHours/`,
         total
       );
       if (res.status === 201) {
-        alert(t('weekly.weeklyHoursCreated'));
+        if (res.data.invoice_results && res.data.invoice_results.length > 0) {
+          setInvoiceResults(res.data.invoice_results);
+        } else {
+          alert(t('weekly.weeklyHoursCreated'));
+        }
       } else if (res.status === 301) {
         alert(t('weekly.duplicateNothingCreated'));
       } else {
@@ -184,6 +190,61 @@ const SendWeekly = () => {
       )}
 
       {error && <p className="monthly-error">{error}</p>}
+
+      {invoiceResults.length > 0 && (
+        <div style={{ marginTop: "2rem", padding: "1.25rem", border: "2px solid #192A88", borderRadius: "8px", backgroundColor: "#fff" }}>
+          <h3 style={{ color: "#192A88", marginTop: 0, marginBottom: "1rem", borderBottom: "2px solid #FFB31B", paddingBottom: "0.5rem" }}>
+            Invoice Processing Results
+          </h3>
+          {invoiceResults.map((result, index) => {
+            const allOk = result.stripe_created && result.email_sent && result.hours_updated > 0;
+            const borderColor = allOk ? "#28a745" : "#dc3545";
+            return (
+              <div key={index} style={{ marginBottom: "1rem", padding: "0.75rem 1rem", borderRadius: "6px", borderLeft: `4px solid ${borderColor}`, backgroundColor: "#f8f9fa" }}>
+                <strong style={{ fontSize: "1rem" }}>{result.parent_name}</strong>
+                <span style={{ marginLeft: "0.5rem", color: "#666", fontSize: "0.85rem" }}>({result.parent_email})</span>
+                <table style={{ marginTop: "0.6rem", width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ width: "24px", paddingRight: "8px" }}>
+                        {result.email_sent ? "✅" : "❌"}
+                      </td>
+                      <td style={{ fontWeight: "600", width: "160px" }}>Email</td>
+                      <td>
+                        {result.email_sent
+                          ? "Sent successfully"
+                          : <span style={{ color: "#dc3545" }}>Failed — {result.email_error || "Unknown error"}</span>}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ paddingRight: "8px" }}>
+                        {result.stripe_created ? "✅" : "❌"}
+                      </td>
+                      <td style={{ fontWeight: "600" }}>Stripe Invoice</td>
+                      <td>
+                        {result.stripe_created
+                          ? <span>Created — <code style={{ fontSize: "0.8rem", background: "#e9ecef", padding: "1px 4px", borderRadius: "3px" }}>{result.stripe_invoice_id}</code></span>
+                          : <span style={{ color: "#dc3545" }}>Failed — {result.stripe_error || "Unknown error"}</span>}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ paddingRight: "8px" }}>
+                        {result.hours_updated > 0 ? "✅" : "⚠️"}
+                      </td>
+                      <td style={{ fontWeight: "600" }}>Hours Status</td>
+                      <td>
+                        {result.hours_updated > 0
+                          ? `${result.hours_updated} session(s) marked as invoiced`
+                          : <span style={{ color: "#856404" }}>0 sessions updated (no pending hours found or Stripe failed)</span>}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Debugging Table - Existing Weekly Hours in Database */}
       {existingWeeklyHours.length > 0 && (

@@ -13,7 +13,8 @@ from .models import (
     ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest,
     Popup, PopupDismissal, DiscountRegistration,
     GroupTutoringClass, GroupEnrollment, DiagnosticTest, DiagnosticTestSubmission,
-    ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission
+    ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission,
+    EmailLog,
 )
 from datetime import timedelta
 from playground.models import AiChatSession
@@ -837,3 +838,17 @@ class QuizSubmissionSerializer(serializers.ModelSerializer):
 
     def get_student_name(self, obj):
         return f"{obj.enrollment.student.firstName} {obj.enrollment.student.lastName}"
+
+
+class EmailLogSerializer(serializers.ModelSerializer):
+    email_type_display = serializers.CharField(source='get_email_type_display', read_only=True)
+    status_display     = serializers.CharField(source='get_status_display',     read_only=True)
+
+    class Meta:
+        model  = EmailLog
+        fields = [
+            'id', 'recipient_email', 'recipient_name', 'subject',
+            'email_type', 'email_type_display',
+            'status', 'status_display',
+            'from_email', 'error_message', 'sent_at',
+        ]

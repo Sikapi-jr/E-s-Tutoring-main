@@ -4,7 +4,27 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-def send_mailgun_email(to_emails, subject, text_content, html_content=None, from_email=None, attachments=None):
+
+def _log_email(to_emails, subject, from_email, status, email_type='other', recipient_name='', error_message=''):
+    """Write one EmailLog row per recipient. Never raises — logging must not break email delivery."""
+    try:
+        from playground.models import EmailLog
+        emails = [to_emails] if isinstance(to_emails, str) else list(to_emails)
+        for addr in emails:
+            EmailLog.objects.create(
+                recipient_email=addr,
+                recipient_name=recipient_name,
+                subject=subject,
+                email_type=email_type,
+                status=status,
+                from_email=from_email or '',
+                error_message=error_message,
+            )
+    except Exception as log_err:
+        logger.warning(f"EmailLog write failed: {log_err}")
+
+
+def send_mailgun_email(to_emails, subject, text_content, html_content=None, from_email=None, attachments=None, email_type='other', recipient_name=''):
     """
     Send email using Mailgun REST API with optional file attachments
     
@@ -13,8 +33,10 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
     """
     if not settings.MAILGUN_API_KEY:
         logger.warning("Mailgun API key not configured, skipping email")
+        _log_email(to_emails, subject, from_email or settings.DEFAULT_FROM_EMAIL,
+                   'skipped', email_type, recipient_name, 'Mailgun API key not configured')
         return False
-    
+
     if not from_email:
         from_email = settings.DEFAULT_FROM_EMAIL
     
@@ -92,11 +114,15 @@ def send_mailgun_email(to_emails, subject, text_content, html_content=None, from
         if response.status_code == 200:
             attachment_count = len(files) if files else 0
             logger.info(f"Email sent successfully to {to_emails} with {attachment_count} attachments")
+            _log_email(to_emails, subject, from_email, 'sent', email_type, recipient_name)
             return True
         else:
-            logger.error(f"Failed to send email: {response.status_code} - {response.text}")
+            err = f"{response.status_code}: {response.text}"
+            logger.error(f"Failed to send email: {err}")
+            _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, err)
             return False
-            
+
     except Exception as e:
         logger.error(f"Error sending email via Mailgun: {str(e)}")
+        _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, str(e))
         return False
