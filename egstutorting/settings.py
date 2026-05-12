@@ -194,6 +194,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5177",
 ]
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
