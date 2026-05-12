@@ -3,6 +3,6 @@ COPY ./frontend /frontend
 RUN rm -rf /frontend/node_modules
 
 WORKDIR /frontend
-RUN npm ci && npm run build
+RUN npm ci
 
-CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["npm", "run", "dev"]

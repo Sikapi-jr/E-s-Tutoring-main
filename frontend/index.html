@@ -58,6 +58,12 @@
     <link rel="prefetch" href="/register" />
     <link rel="prefetch" href="/request" />
     
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
     <!-- Multi-language support -->
     <link rel="alternate" hreflang="en-ca" href="https://egstutoring.ca/" />
     <link rel="alternate" hreflang="fr-ca" href="https://egstutoring.ca/fr/" />
