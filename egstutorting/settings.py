@@ -375,18 +375,22 @@ else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
-# WhiteNoise configuration for serving media files
+# WhiteNoise configuration
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True
-
-# Tell WhiteNoise to serve media files
-WHITENOISE_ROOT_SQUASH = 3600  # Cache media files for 1 hour
+# Serve the built React frontend from the root URL (e.g. /assets/..., /favicon.ico)
+WHITENOISE_ROOT = os.path.join(BASE_DIR, 'frontend', 'dist')
+WHITENOISE_INDEX_FILE = True
 
 # Django REST Password Reset configuration
 DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 
 # Stripe configuration - use environment variables
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') 
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_KEY = os.getenv('STRIPE_WEBHOOK_KEY', '')
+
+# Security headers (sent via HTTP by Django middleware, NOT meta tags)
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
