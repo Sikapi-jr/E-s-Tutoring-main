@@ -114,6 +114,7 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Auto-detect Railway domain or use environment variable
 if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    SECURE_SSL_REDIRECT = True
     # Running on Railway - allow Railway domains
     ALLOWED_HOSTS = [
         os.getenv('RAILWAY_PUBLIC_DOMAIN', ''),
