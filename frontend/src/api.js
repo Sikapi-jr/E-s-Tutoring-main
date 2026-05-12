@@ -2,7 +2,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "./constants";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 const REFRESH_ENDPOINT = import.meta.env.VITE_REFRESH_URL || "/api/token/refresh/";
 
 console.log('API Configuration:', {
