@@ -9,14 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def send_mailgun_email(from_email, to_emails, subject, html_content, text_content=None, email_type='other', recipient_name=''):
+def send_mailgun_email(from_email, to_emails, subject, html_content, text_content=None):
     """
     Send email using Mailgun API with specified from_email address
     """
-    from playground.email_utils import _log_email
-
     if not settings.MAILGUN_API_KEY:
         logger.warning("Mailgun API key not configured. Using Django's default backend.")
+        # Fallback to Django's default email backend
         email = EmailMessage(
             subject=subject,
             body=html_content,
@@ -24,10 +23,7 @@ def send_mailgun_email(from_email, to_emails, subject, html_content, text_conten
             to=to_emails if isinstance(to_emails, list) else [to_emails]
         )
         email.content_subtype = "html"
-        result = email.send()
-        status = 'sent' if result else 'failed'
-        _log_email(to_emails, subject, from_email, status, email_type, recipient_name)
-        return result
+        return email.send()
     
     try:
         data = {
@@ -54,17 +50,13 @@ def send_mailgun_email(from_email, to_emails, subject, html_content, text_conten
         
         if response.status_code == 200:
             logger.info(f"Email sent successfully from {from_email} to {to_emails}")
-            _log_email(to_emails, subject, from_email, 'sent', email_type, recipient_name)
             return True
         else:
-            err = f"{response.status_code}: {response.text}"
-            logger.error(f"Failed to send email: {err}")
-            _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, err)
+            logger.error(f"Failed to send email: {response.status_code} - {response.text}")
             return False
-
+            
     except Exception as e:
         logger.error(f"Error sending email via Mailgun: {e}")
-        _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, str(e))
         return False
 
 
@@ -127,8 +119,7 @@ def send_referral_congratulations_email(user_email, user_name, referral_amount):
     Questions? Contact us at support@egstutoring-portal.ca
     """
     
-    return send_mailgun_email(from_email, user_email, subject, html_content, text_content,
-                              email_type='referral_bonus', recipient_name=user_name)
+    return send_mailgun_email(from_email, user_email, subject, html_content, text_content)
 
 
 def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, stripe_dashboard_url=None):
@@ -200,8 +191,7 @@ def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, s
     Questions? Contact us at support@egstutoring-portal.ca
     """
     
-    return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content,
-                              email_type='tutor_transfer', recipient_name=tutor_name)
+    return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content)
 
 
 def send_parent_invoice_notification(parent_email, parent_name, amount_dollars, due_date_str, stripe_invoice_url, description='Tutoring Sessions'):
@@ -266,8 +256,7 @@ def send_parent_invoice_notification(parent_email, parent_name, amount_dollars, 
     Questions? Email billing@egstutoring-portal.ca
     """
 
-    return send_mailgun_email(from_email, parent_email, subject, html_content, text_content,
-                              email_type='invoice', recipient_name=parent_name)
+    return send_mailgun_email(from_email, parent_email, subject, html_content, text_content)
 
 
 def send_admin_referral_notification(admin_email, sender_name, sender_email, receiver_email):
@@ -319,8 +308,7 @@ def send_admin_referral_notification(admin_email, sender_name, sender_email, rec
     This is an automated notification from the EGS Tutoring platform.
     """
 
-    return send_mailgun_email(from_email, admin_email, subject, html_content, text_content,
-                              email_type='referral_admin')
+    return send_mailgun_email(from_email, admin_email, subject, html_content, text_content)
 
 
 def send_health_check_email(to_email, checks, timestamp):
@@ -388,5 +376,4 @@ EGS Tutoring — Daily Health Check
 Automated daily check — EGS Tutoring Platform
     """
 
-    return send_mailgun_email(from_email, to_email, subject, html_content, text_content,
-                              email_type='health_check')
+    return send_mailgun_email(from_email, to_email, subject, html_content, text_content)

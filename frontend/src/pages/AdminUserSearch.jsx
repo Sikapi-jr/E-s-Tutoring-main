@@ -20,8 +20,6 @@ export default function AdminUserSearch() {
   const [relationships, setRelationships] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [currentRequests, setCurrentRequests] = useState([]);
-  const [userInvoices, setUserInvoices] = useState([]);
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -112,23 +110,6 @@ export default function AdminUserSearch() {
       setDocuments(response.data.documents || []);
       setCurrentRequests(response.data.current_requests || []);
       setSearchResults([]); // Hide dropdown
-
-      // Fetch Stripe invoices for parents
-      const fetchedUserInfo = response.data.user_info;
-      if (fetchedUserInfo.roles === 'parent') {
-        setLoadingInvoices(true);
-        try {
-          const invRes = await api.get(`/api/invoiceList/?email=${encodeURIComponent(fetchedUserInfo.email)}`);
-          setUserInvoices(Array.isArray(invRes.data) ? invRes.data : []);
-        } catch (invErr) {
-          console.error("Failed to fetch invoices:", invErr);
-          setUserInvoices([]);
-        } finally {
-          setLoadingInvoices(false);
-        }
-      } else {
-        setUserInvoices([]);
-      }
     } catch (err) {
       console.error("Error fetching user hours:", err);
       setError("Failed to load user data");
@@ -147,7 +128,6 @@ export default function AdminUserSearch() {
     setRelationships(null);
     setDocuments([]);
     setCurrentRequests([]);
-    setUserInvoices([]);
     setError("");
   };
 
@@ -509,76 +489,6 @@ export default function AdminUserSearch() {
                   <div className="stat-label">{t('admin.asTutor')}</div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Stripe Invoices — only shown for parents */}
-          {userInfo.roles === 'parent' && (
-            <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#192A88', borderBottom: '2px solid #FFB31B', paddingBottom: '0.5rem' }}>
-                💳 Stripe Invoices
-              </h3>
-              {loadingInvoices ? (
-                <p style={{ color: '#666' }}>Loading invoices…</p>
-              ) : userInvoices.length === 0 ? (
-                <p style={{ color: '#888' }}>No Stripe invoices found for this parent.</p>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-                    <thead>
-                      <tr style={{ background: '#192A88', color: '#fff' }}>
-                        {['Invoice ID', 'Created', 'Due Date', 'Amount (CAD)', 'Status', 'Link'].map(h => (
-                          <th key={h} style={{ padding: '9px 12px', textAlign: 'left', whiteSpace: 'nowrap', borderBottom: '2px solid #FFB31B' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userInvoices.map((inv, i) => {
-                        const STATUS_STYLE = {
-                          paid:           { background: '#d4edda', color: '#155724' },
-                          open:           { background: '#fff3cd', color: '#856404' },
-                          void:           { background: '#e2e3e5', color: '#383d41' },
-                          uncollectible:  { background: '#f8d7da', color: '#721c24' },
-                          draft:          { background: '#cce5ff', color: '#004085' },
-                        };
-                        const sc = STATUS_STYLE[inv.status] || {};
-                        const rowBg = i % 2 === 0 ? '#f9f9f9' : '#fff';
-                        const tdS = { padding: '8px 12px', borderBottom: '1px solid #e0e0e0', verticalAlign: 'middle' };
-                        return (
-                          <tr key={inv.id} style={{ background: rowBg }}>
-                            <td style={tdS}>
-                              <code style={{ fontSize: '0.78rem', background: '#e9ecef', padding: '2px 6px', borderRadius: '3px' }}>
-                                {inv.id}
-                              </code>
-                            </td>
-                            <td style={tdS}>{new Date(inv.date).toLocaleDateString('en-CA')}</td>
-                            <td style={tdS}>{inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-CA') : '—'}</td>
-                            <td style={{ ...tdS, fontWeight: '600' }}>
-                              ${(inv.amount / 100).toFixed(2)}
-                            </td>
-                            <td style={tdS}>
-                              <span style={{ ...sc, padding: '2px 10px', borderRadius: '12px', fontWeight: '600', fontSize: '0.8rem', display: 'inline-block', whiteSpace: 'nowrap' }}>
-                                {inv.status}
-                              </span>
-                            </td>
-                            <td style={tdS}>
-                              {inv.link ? (
-                                <a href={inv.link} target="_blank" rel="noopener noreferrer"
-                                   style={{ color: '#192A88', fontWeight: '600', textDecoration: 'none' }}>
-                                  View →
-                                </a>
-                              ) : <span style={{ color: '#aaa' }}>—</span>}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
-                    {userInvoices.length} invoice{userInvoices.length !== 1 ? 's' : ''} · amounts shown before tax
-                  </p>
-                </div>
-              )}
             </div>
           )}
 

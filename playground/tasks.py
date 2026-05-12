@@ -154,11 +154,9 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message,
-            email_type='verification',
-            recipient_name=f"{user.firstName} {user.lastName}",
+            text_content=message
         )
-
+        
         logger.info(f"Verification email sent to user {user_id} ({user.email})")
         return {'success': True, 'email': user.email}
         
@@ -196,11 +194,9 @@ def send_stripe_onboarding_email_async(self, user_id, onboarding_link):
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message,
-            email_type='welcome_tutor',
-            recipient_name=f"{user.firstName} {user.lastName}",
+            text_content=message
         )
-
+        
         logger.info(f"Stripe onboarding email sent to user {user_id} ({user.email})")
         return {'success': True, 'email': user.email}
         
@@ -287,9 +283,7 @@ EGS Tutoring Team"""
             to_emails=[user.email],
             subject=subject,
             text_content=message,
-            attachments=attachments if attachments else None,
-            email_type='welcome_tutor',
-            recipient_name=f"{user.firstName} {user.lastName}",
+            attachments=attachments if attachments else None
         )
         
         logger.info(f"Tutor welcome email sent to user {user_id} ({user.email})")
@@ -328,10 +322,9 @@ def send_reply_notification_email_async(self, parent_email, tutor_name, subject_
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message,
-            email_type='tutor_reply',
+            text_content=message
         )
-
+        
         logger.info(f"Reply notification email sent to {parent_email}")
         return {'success': True, 'email': parent_email}
         
@@ -365,10 +358,9 @@ def send_dispute_email_async(self, admin_emails, disputer_name, disputed_hours):
         for admin_email in admin_emails:
             try:
                 send_mailgun_email(
-                    to_emails=[admin_email],
+                    to_emails=[admin_email],  # Send to one admin at a time
                     subject=subject,
-                    text_content=message,
-                    email_type='dispute_admin',
+                    text_content=message
                 )
                 successful_emails.append(admin_email)
                 logger.info(f"Dispute email sent to: {admin_email}")
@@ -448,17 +440,11 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     description = customer_data.get('description', 'Tutoring Services')
                     parent_email = customer_data.get('parent_email')
                     parent_name = customer_data.get('parent_name', '')
-                    hour_ids_key = '-'.join(str(h) for h in sorted(customer_data.get('hour_ids', [])))
-
+                    
                     # Calculate due date (14 days from now)
                     import time
                     due_date = int(time.time()) + (14 * 24 * 60 * 60)  # 14 days in seconds
-
-                    # Idempotency key scoped to this exact set of hours — if the task retries
-                    # after a worker crash, Stripe returns the existing invoice instead of
-                    # creating a duplicate.
-                    idempotency_key = f"invoice-{customer_id}-{hour_ids_key}"
-
+                    
                     # Create invoice with due date and tax
                     invoice = stripe.Invoice.create(
                         customer=customer_id,
@@ -468,9 +454,8 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         collection_method='send_invoice',  # Required when setting due_date
                         auto_advance=False,  # Don't auto-advance when using due_date
                         default_tax_rates=[],  # We'll add tax rate below
-                        idempotency_key=idempotency_key,
                     )
-
+                    
                     # Add invoice item directly to the invoice
                     invoice_item = stripe.InvoiceItem.create(
                         customer=customer_id,
@@ -478,7 +463,6 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         amount=amount,
                         currency='cad',  # Changed to CAD
                         description=description,
-                        idempotency_key=f"{idempotency_key}-item",
                     )
                     
                     # Add 13% CAD tax to the invoice
@@ -509,23 +493,12 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     except Exception as tax_error:
                         logger.warning(f"Could not apply tax to invoice {invoice.id}: {tax_error}")
                     
-                    # Finalize the invoice — this is what generates hosted_invoice_url
+                    # Finalize and send invoice
                     invoice = stripe.Invoice.finalize_invoice(invoice.id)
-
-                    # Capture URL immediately after finalization before any further calls
-                    invoice_url = invoice.hosted_invoice_url
-
-                    if not invoice_url:
-                        logger.warning(f"Stripe returned no hosted_invoice_url for invoice {invoice.id} — customer {customer_id}")
-
-                    # Mark as sent in Stripe (non-fatal — if this fails we still have the URL)
-                    try:
-                        stripe.Invoice.send_invoice(invoice.id)
-                    except Exception as send_err:
-                        logger.warning(f"Stripe send_invoice failed for {invoice.id} (non-fatal): {send_err}")
+                    invoice = stripe.Invoice.send_invoice(invoice.id)
 
                     # Send branded EGS email to parent with the Stripe payment link
-                    if parent_email and invoice_url:
+                    if parent_email and invoice.hosted_invoice_url:
                         try:
                             from playground.email_backends import send_parent_invoice_notification
                             import datetime
@@ -539,10 +512,10 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                                 parent_name=parent_name,
                                 amount_dollars=amount_dollars,
                                 due_date_str=due_date_str,
-                                stripe_invoice_url=invoice_url,
+                                stripe_invoice_url=invoice.hosted_invoice_url,
                                 description=description,
                             )
-                            logger.info(f"Invoice notification email sent to {parent_email} for invoice {invoice.id} | URL: {invoice_url}")
+                            logger.info(f"Invoice notification email sent to {parent_email} for invoice {invoice.id}")
                         except Exception as email_error:
                             # Email failure must not roll back the invoice — log and continue
                             logger.error(f"Failed to send invoice email to {parent_email}: {email_error}")
@@ -1048,10 +1021,9 @@ EGS Tutoring Team
             to_emails=[parent_email],
             subject=subject,
             text_content=message,
-            attachments=attachment_files if attachment_files else None,
-            email_type='tutor_reply',
+            attachments=attachment_files if attachment_files else None
         )
-
+        
         attachment_count = len(attachment_files) if attachment_files else 0
         logger.info(f"Tutor reply notification sent to {parent_email} with {attachment_count} attachments")
         return {'success': True, 'email': parent_email, 'attachments': attachment_count}
@@ -1093,10 +1065,9 @@ EGS Tutoring Team
         for tutor_email in tutor_emails:
             try:
                 send_mailgun_email(
-                    to_emails=[tutor_email],
+                    to_emails=[tutor_email],  # Send to one tutor at a time
                     subject=email_subject,
-                    text_content=message,
-                    email_type='new_request',
+                    text_content=message
                 )
                 successful_emails.append(tutor_email)
                 logger.info(f"New request notification sent to: {tutor_email}")
@@ -1160,11 +1131,9 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[recipient_email],
             subject=subject,
-            text_content=message,
-            email_type='monthly_hours',
-            recipient_name=recipient_name,
+            text_content=message
         )
-
+        
         logger.info(f"Monthly hours notification sent to {recipient_email}")
         return {'success': True, 'email': recipient_email}
         
@@ -1207,11 +1176,9 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message,
-            email_type='monthly_report',
-            recipient_name=parent_name,
+            text_content=message
         )
-
+        
         logger.info(f"Monthly report notification sent to {parent_email}")
         return {'success': True, 'email': parent_email}
         
@@ -1287,9 +1254,7 @@ def send_tutor_dispute_notification_async(self, tutor_email, tutor_name, session
                 html_content=html_message,
                 text_content=plain_message,
                 to_emails=[tutor_email],
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                email_type='hour_dispute',
-                recipient_name=tutor_name,
+                from_email=settings.DEFAULT_FROM_EMAIL
             )
         else:
             send_mail(
@@ -1461,11 +1426,9 @@ EGS Tutoring Team
                 send_mailgun_email(
                     to_emails=[user.email],
                     subject=subject,
-                    text_content=user_message,
-                    email_type='other',
-                    recipient_name=f"{user.firstName} {user.lastName}",
+                    text_content=user_message
                 )
-
+                
                 successful_emails.append(user.email)
                 logger.info(f"System notification sent to {user.email}")
                 
@@ -1586,9 +1549,7 @@ EGS Tutoring Team
                 send_mailgun_email(
                     to_emails=[tutor.email],
                     subject=subject,
-                    text_content=message,
-                    email_type='hours_reminder',
-                    recipient_name=f"{tutor.firstName} {tutor.lastName}",
+                    text_content=message
                 )
 
                 successful_emails.append(tutor.email)
@@ -1646,9 +1607,7 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message,
-            email_type='welcome_parent',
-            recipient_name=parent_name,
+            text_content=message
         )
 
         logger.info(f"Student creation confirmation sent to {parent_email} for student {student_name}")

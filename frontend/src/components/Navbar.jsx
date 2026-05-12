@@ -48,7 +48,6 @@ const getRoutes = (t) => ({
   TestEmail: { to: "/admin-test-email", label: t('admin.testEmail') },
   DiscountReg: { to: "/admin-discount-registration", label: t('admin.discountRegistration', '10% Discount') },
   BulkEmails: { to: "/admin-bulk-emails", label: t('admin.bulkEmails', 'Bulk Emails') },
-  EmailLogs:  { to: "/admin-email-logs",  label: 'Email Logs' },
   Cal:     { to: "/calendar",          label: t('navigation.calendar') },
   Events:  { to: "/events",            label: t('navigation.events') },
   CalCon:  { to: "/events",   label: t('navigation.scheduleSession') },
@@ -67,7 +66,7 @@ const getRoleConfig = (BASE) => ({
     tutor:  [],
     sessions: [],
     cal:    [],
-    single: [BASE.Inv, BASE.Reports, BASE.GroupTutoring, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg, BASE.BulkEmails, BASE.EmailLogs],
+    single: [BASE.Inv, BASE.Reports, BASE.GroupTutoring, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg, BASE.BulkEmails],
   },
   parent: {
     main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Events, BASE.Inv, BASE.Reports],
