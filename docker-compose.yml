@@ -6,12 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     container_name: frontend
-    command: npm run dev
     ports:
       - 5173:5173 #Default port for vite server
-    volumes:
-      - ./frontend:/frontend
-    develop:
+    volumes: 
+      - ./frontend:/app
+    develop: 
       watch: #Syncs local files to ones inside the container. Need one for backend
         - action: sync
           path: ./frontend

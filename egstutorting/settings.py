@@ -387,10 +387,6 @@ DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
 
 # Stripe configuration - use environment variables
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY') 
 STRIPE_WEBHOOK_KEY = os.getenv('STRIPE_WEBHOOK_KEY', '')
-
-# Security headers (sent via HTTP by Django middleware, NOT meta tags)
-X_FRAME_OPTIONS = 'DENY'
-SECURE_CONTENT_TYPE_NOSNIFF = True
 
