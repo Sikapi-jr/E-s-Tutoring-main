@@ -10,6 +10,11 @@ from celery.exceptions import Retry
 
 logger = logging.getLogger(__name__)
 
+# IMPORTANT: stripe.api_key must be set here so Celery workers have it.
+# views.py sets its own copy, but tasks.py runs in a separate worker process
+# and never imports views.py — so it needs its own assignment.
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 @shared_task
 def hello_task(name):
     print(f"Hello {name}. You have {len(name)} characters in your name")
@@ -149,9 +154,11 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='verification',
+            recipient_name=f"{user.firstName} {user.lastName}",
         )
-        
+
         logger.info(f"Verification email sent to user {user_id} ({user.email})")
         return {'success': True, 'email': user.email}
         
@@ -189,9 +196,11 @@ def send_stripe_onboarding_email_async(self, user_id, onboarding_link):
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='welcome_tutor',
+            recipient_name=f"{user.firstName} {user.lastName}",
         )
-        
+
         logger.info(f"Stripe onboarding email sent to user {user_id} ({user.email})")
         return {'success': True, 'email': user.email}
         
@@ -278,7 +287,9 @@ EGS Tutoring Team"""
             to_emails=[user.email],
             subject=subject,
             text_content=message,
-            attachments=attachments if attachments else None
+            attachments=attachments if attachments else None,
+            email_type='welcome_tutor',
+            recipient_name=f"{user.firstName} {user.lastName}",
         )
         
         logger.info(f"Tutor welcome email sent to user {user_id} ({user.email})")
@@ -317,9 +328,10 @@ def send_reply_notification_email_async(self, parent_email, tutor_name, subject_
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='tutor_reply',
         )
-        
+
         logger.info(f"Reply notification email sent to {parent_email}")
         return {'success': True, 'email': parent_email}
         
@@ -353,9 +365,10 @@ def send_dispute_email_async(self, admin_emails, disputer_name, disputed_hours):
         for admin_email in admin_emails:
             try:
                 send_mailgun_email(
-                    to_emails=[admin_email],  # Send to one admin at a time
+                    to_emails=[admin_email],
                     subject=subject,
-                    text_content=message
+                    text_content=message,
+                    email_type='dispute_admin',
                 )
                 successful_emails.append(admin_email)
                 logger.info(f"Dispute email sent to: {admin_email}")
@@ -433,11 +446,19 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     customer_id = customer_data['customer_id']
                     amount = customer_data['amount']  # in cents
                     description = customer_data.get('description', 'Tutoring Services')
-                    
+                    parent_email = customer_data.get('parent_email')
+                    parent_name = customer_data.get('parent_name', '')
+                    hour_ids_key = '-'.join(str(h) for h in sorted(customer_data.get('hour_ids', [])))
+
                     # Calculate due date (14 days from now)
                     import time
                     due_date = int(time.time()) + (14 * 24 * 60 * 60)  # 14 days in seconds
-                    
+
+                    # Idempotency key scoped to this exact set of hours — if the task retries
+                    # after a worker crash, Stripe returns the existing invoice instead of
+                    # creating a duplicate.
+                    idempotency_key = f"invoice-{customer_id}-{hour_ids_key}"
+
                     # Create invoice with due date and tax
                     invoice = stripe.Invoice.create(
                         customer=customer_id,
@@ -447,8 +468,9 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         collection_method='send_invoice',  # Required when setting due_date
                         auto_advance=False,  # Don't auto-advance when using due_date
                         default_tax_rates=[],  # We'll add tax rate below
+                        idempotency_key=idempotency_key,
                     )
-                    
+
                     # Add invoice item directly to the invoice
                     invoice_item = stripe.InvoiceItem.create(
                         customer=customer_id,
@@ -456,6 +478,7 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                         amount=amount,
                         currency='cad',  # Changed to CAD
                         description=description,
+                        idempotency_key=f"{idempotency_key}-item",
                     )
                     
                     # Add 13% CAD tax to the invoice
@@ -486,10 +509,44 @@ def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=Non
                     except Exception as tax_error:
                         logger.warning(f"Could not apply tax to invoice {invoice.id}: {tax_error}")
                     
-                    # Finalize and send invoice
+                    # Finalize the invoice — this is what generates hosted_invoice_url
                     invoice = stripe.Invoice.finalize_invoice(invoice.id)
-                    invoice = stripe.Invoice.send_invoice(invoice.id)
-                    
+
+                    # Capture URL immediately after finalization before any further calls
+                    invoice_url = invoice.hosted_invoice_url
+
+                    if not invoice_url:
+                        logger.warning(f"Stripe returned no hosted_invoice_url for invoice {invoice.id} — customer {customer_id}")
+
+                    # Mark as sent in Stripe (non-fatal — if this fails we still have the URL)
+                    try:
+                        stripe.Invoice.send_invoice(invoice.id)
+                    except Exception as send_err:
+                        logger.warning(f"Stripe send_invoice failed for {invoice.id} (non-fatal): {send_err}")
+
+                    # Send branded EGS email to parent with the Stripe payment link
+                    if parent_email and invoice_url:
+                        try:
+                            from playground.email_backends import send_parent_invoice_notification
+                            import datetime
+                            due_date_str = (
+                                datetime.datetime.fromtimestamp(invoice.due_date).strftime('%B %d, %Y')
+                                if invoice.due_date else '14 days from today'
+                            )
+                            amount_dollars = amount / 100  # convert cents back to dollars
+                            send_parent_invoice_notification(
+                                parent_email=parent_email,
+                                parent_name=parent_name,
+                                amount_dollars=amount_dollars,
+                                due_date_str=due_date_str,
+                                stripe_invoice_url=invoice_url,
+                                description=description,
+                            )
+                            logger.info(f"Invoice notification email sent to {parent_email} for invoice {invoice.id} | URL: {invoice_url}")
+                        except Exception as email_error:
+                            # Email failure must not roll back the invoice — log and continue
+                            logger.error(f"Failed to send invoice email to {parent_email}: {email_error}")
+
                     # Update hours status AFTER invoice is successfully sent to prevent race conditions
                     hour_ids = customer_data.get('hour_ids', [])
                     if hour_ids:
@@ -991,9 +1048,10 @@ EGS Tutoring Team
             to_emails=[parent_email],
             subject=subject,
             text_content=message,
-            attachments=attachment_files if attachment_files else None
+            attachments=attachment_files if attachment_files else None,
+            email_type='tutor_reply',
         )
-        
+
         attachment_count = len(attachment_files) if attachment_files else 0
         logger.info(f"Tutor reply notification sent to {parent_email} with {attachment_count} attachments")
         return {'success': True, 'email': parent_email, 'attachments': attachment_count}
@@ -1035,9 +1093,10 @@ EGS Tutoring Team
         for tutor_email in tutor_emails:
             try:
                 send_mailgun_email(
-                    to_emails=[tutor_email],  # Send to one tutor at a time
+                    to_emails=[tutor_email],
                     subject=email_subject,
-                    text_content=message
+                    text_content=message,
+                    email_type='new_request',
                 )
                 successful_emails.append(tutor_email)
                 logger.info(f"New request notification sent to: {tutor_email}")
@@ -1101,9 +1160,11 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[recipient_email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='monthly_hours',
+            recipient_name=recipient_name,
         )
-        
+
         logger.info(f"Monthly hours notification sent to {recipient_email}")
         return {'success': True, 'email': recipient_email}
         
@@ -1146,9 +1207,11 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='monthly_report',
+            recipient_name=parent_name,
         )
-        
+
         logger.info(f"Monthly report notification sent to {parent_email}")
         return {'success': True, 'email': parent_email}
         
@@ -1224,7 +1287,9 @@ def send_tutor_dispute_notification_async(self, tutor_email, tutor_name, session
                 html_content=html_message,
                 text_content=plain_message,
                 to_emails=[tutor_email],
-                from_email=settings.DEFAULT_FROM_EMAIL
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                email_type='hour_dispute',
+                recipient_name=tutor_name,
             )
         else:
             send_mail(
@@ -1396,9 +1461,11 @@ EGS Tutoring Team
                 send_mailgun_email(
                     to_emails=[user.email],
                     subject=subject,
-                    text_content=user_message
+                    text_content=user_message,
+                    email_type='other',
+                    recipient_name=f"{user.firstName} {user.lastName}",
                 )
-                
+
                 successful_emails.append(user.email)
                 logger.info(f"System notification sent to {user.email}")
                 
@@ -1519,7 +1586,9 @@ EGS Tutoring Team
                 send_mailgun_email(
                     to_emails=[tutor.email],
                     subject=subject,
-                    text_content=message
+                    text_content=message,
+                    email_type='hours_reminder',
+                    recipient_name=f"{tutor.firstName} {tutor.lastName}",
                 )
 
                 successful_emails.append(tutor.email)
@@ -1577,7 +1646,9 @@ EGS Tutoring Team
         send_mailgun_email(
             to_emails=[parent_email],
             subject=subject,
-            text_content=message
+            text_content=message,
+            email_type='welcome_parent',
+            recipient_name=parent_name,
         )
 
         logger.info(f"Student creation confirmation sent to {parent_email} for student {student_name}")
@@ -1586,4 +1657,68 @@ EGS Tutoring Team
     except Exception as e:
         logger.error(f"Error sending student creation confirmation to {parent_email}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+
+@shared_task
+def send_daily_health_check():
+    """
+    Runs every day at 8am Toronto time.
+    Checks Stripe, database, email (Mailgun), and Celery/broker health,
+    then sends a summary to elvissikapi@gmail.com.
+    """
+    import datetime
+    from playground.email_backends import send_health_check_email
+
+    checks = {}
+
+    # --- Stripe ---
+    try:
+        balance = stripe.Balance.retrieve()
+        available = balance['available'][0]['amount'] / 100 if balance.get('available') else 0
+        checks['stripe'] = {
+            'ok': True,
+            'detail': f"API key valid. Available balance: ${available:.2f} CAD",
+        }
+    except Exception as e:
+        checks['stripe'] = {'ok': False, 'detail': str(e)}
+
+    # --- Database ---
+    try:
+        from playground.models import User, Hours
+        user_count = User.objects.count()
+        pending_hours = Hours.objects.filter(invoice_status='pending').count()
+        checks['database'] = {
+            'ok': True,
+            'detail': f"Connected. {user_count} users, {pending_hours} pending hours.",
+        }
+    except Exception as e:
+        checks['database'] = {'ok': False, 'detail': str(e)}
+
+    # --- Mailgun ---
+    # Sending this email IS the Mailgun test — if it arrives, Mailgun is working.
+    checks['mailgun'] = {
+        'ok': True,
+        'detail': "Email delivered = Mailgun is operational.",
+    }
+
+    # --- Celery + Broker ---
+    # This task running at all proves Celery workers and RabbitMQ are healthy.
+    checks['celery'] = {
+        'ok': True,
+        'detail': "Task executed on schedule — worker and broker are healthy.",
+    }
+
+    # --- Send summary email ---
+    now_str = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    try:
+        send_health_check_email(
+            to_email='elvissikapi@gmail.com',
+            checks=checks,
+            timestamp=now_str,
+        )
+        logger.info(f"Daily health check email sent at {now_str}")
+    except Exception as e:
+        logger.error(f"Failed to send health check email: {e}")
+
+    return checks
 

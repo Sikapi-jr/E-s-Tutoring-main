@@ -9,13 +9,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def send_mailgun_email(from_email, to_emails, subject, html_content, text_content=None):
+def send_mailgun_email(from_email, to_emails, subject, html_content, text_content=None, email_type='other', recipient_name=''):
     """
     Send email using Mailgun API with specified from_email address
     """
+    from playground.email_utils import _log_email
+
     if not settings.MAILGUN_API_KEY:
         logger.warning("Mailgun API key not configured. Using Django's default backend.")
-        # Fallback to Django's default email backend
         email = EmailMessage(
             subject=subject,
             body=html_content,
@@ -23,7 +24,10 @@ def send_mailgun_email(from_email, to_emails, subject, html_content, text_conten
             to=to_emails if isinstance(to_emails, list) else [to_emails]
         )
         email.content_subtype = "html"
-        return email.send()
+        result = email.send()
+        status = 'sent' if result else 'failed'
+        _log_email(to_emails, subject, from_email, status, email_type, recipient_name)
+        return result
     
     try:
         data = {
@@ -50,13 +54,17 @@ def send_mailgun_email(from_email, to_emails, subject, html_content, text_conten
         
         if response.status_code == 200:
             logger.info(f"Email sent successfully from {from_email} to {to_emails}")
+            _log_email(to_emails, subject, from_email, 'sent', email_type, recipient_name)
             return True
         else:
-            logger.error(f"Failed to send email: {response.status_code} - {response.text}")
+            err = f"{response.status_code}: {response.text}"
+            logger.error(f"Failed to send email: {err}")
+            _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, err)
             return False
-            
+
     except Exception as e:
         logger.error(f"Error sending email via Mailgun: {e}")
+        _log_email(to_emails, subject, from_email, 'failed', email_type, recipient_name, str(e))
         return False
 
 
@@ -119,7 +127,8 @@ def send_referral_congratulations_email(user_email, user_name, referral_amount):
     Questions? Contact us at support@egstutoring-portal.ca
     """
     
-    return send_mailgun_email(from_email, user_email, subject, html_content, text_content)
+    return send_mailgun_email(from_email, user_email, subject, html_content, text_content,
+                              email_type='referral_bonus', recipient_name=user_name)
 
 
 def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, stripe_dashboard_url=None):
@@ -191,7 +200,74 @@ def send_tutor_transfer_notification(tutor_email, tutor_name, transfer_amount, s
     Questions? Contact us at support@egstutoring-portal.ca
     """
     
-    return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content)
+    return send_mailgun_email(from_email, tutor_email, subject, html_content, text_content,
+                              email_type='tutor_transfer', recipient_name=tutor_name)
+
+
+def send_parent_invoice_notification(parent_email, parent_name, amount_dollars, due_date_str, stripe_invoice_url, description='Tutoring Sessions'):
+    """
+    Send a branded EGS billing email to the parent with their Stripe invoice payment link.
+    Called immediately after the Stripe invoice is created and finalized.
+    """
+    from_email = "billing@egstutoring-portal.ca"
+    subject = "Your EGS Tutoring Invoice is Ready"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #192A88; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">EGS Tutoring</h1>
+            <p style="margin: 8px 0 0; font-size: 16px;">Invoice Ready for Payment</p>
+        </div>
+
+        <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-top: none;">
+            <p>Hi {parent_name},</p>
+
+            <p>Your invoice for <strong>{description}</strong> has been generated and is ready for payment.</p>
+
+            <div style="background: white; border: 1px solid #ddd; border-radius: 5px; padding: 20px; margin: 20px 0; text-align: center;">
+                <p style="margin: 0 0 5px; color: #666; font-size: 14px;">Amount Due (before tax)</p>
+                <p style="margin: 0; font-size: 32px; font-weight: bold; color: #192A88;">${amount_dollars:.2f} CAD</p>
+                <p style="margin: 8px 0 0; color: #666; font-size: 13px;">+ 13% HST/Tax</p>
+            </div>
+
+            <p style="color: #555;">Payment is due by <strong>{due_date_str}</strong>. Please click the button below to view your invoice and complete payment securely through Stripe.</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{stripe_invoice_url}"
+                   style="background-color: #192A88; color: white; padding: 14px 36px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; display: inline-block;">
+                    Pay Invoice Now
+                </a>
+            </div>
+
+            <p style="font-size: 13px; color: #888;">Or copy and paste this link into your browser:<br>
+               <a href="{stripe_invoice_url}" style="color: #192A88; word-break: break-all;">{stripe_invoice_url}</a>
+            </p>
+        </div>
+
+        <div style="background-color: #f1f1f1; padding: 20px; text-align: center; border-radius: 0 0 5px 5px; font-size: 13px; color: #666;">
+            <p style="margin: 0 0 5px;">Questions? Contact us at
+               <a href="mailto:billing@egstutoring-portal.ca" style="color: #192A88;">billing@egstutoring-portal.ca</a>
+            </p>
+            <p style="margin: 0;">EGS Tutoring &mdash; Thank you for choosing us!</p>
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+    Hi {parent_name},
+
+    Your EGS Tutoring invoice for {description} is ready.
+
+    Amount Due (before tax): ${amount_dollars:.2f} CAD + 13% HST/Tax
+    Due Date: {due_date_str}
+
+    Pay now: {stripe_invoice_url}
+
+    Questions? Email billing@egstutoring-portal.ca
+    """
+
+    return send_mailgun_email(from_email, parent_email, subject, html_content, text_content,
+                              email_type='invoice', recipient_name=parent_name)
 
 
 def send_admin_referral_notification(admin_email, sender_name, sender_email, receiver_email):
@@ -243,4 +319,74 @@ def send_admin_referral_notification(admin_email, sender_name, sender_email, rec
     This is an automated notification from the EGS Tutoring platform.
     """
 
-    return send_mailgun_email(from_email, admin_email, subject, html_content, text_content)
+    return send_mailgun_email(from_email, admin_email, subject, html_content, text_content,
+                              email_type='referral_admin')
+
+
+def send_health_check_email(to_email, checks, timestamp):
+    """
+    Send a daily system health summary to the admin.
+    `checks` is a dict of { service_name: { 'ok': bool, 'detail': str } }
+    """
+    from_email = "support@egstutoring-portal.ca"
+    subject = f"EGS Tutoring — Daily System Health Check ({timestamp})"
+
+    all_ok = all(c['ok'] for c in checks.values())
+    overall_color = '#28a745' if all_ok else '#dc3545'
+    overall_label = 'ALL SYSTEMS OPERATIONAL' if all_ok else 'ACTION REQUIRED — SEE BELOW'
+
+    rows_html = ''
+    rows_text = ''
+    for service, result in checks.items():
+        icon = '✅' if result['ok'] else '❌'
+        status_word = 'OK' if result['ok'] else 'FAIL'
+        bg = '#f6fff7' if result['ok'] else '#fff5f5'
+        rows_html += f"""
+        <tr style="background:{bg};">
+            <td style="padding:10px 14px; font-weight:bold; text-transform:capitalize;">{service.capitalize()}</td>
+            <td style="padding:10px 14px; text-align:center; font-weight:bold; color:{'#28a745' if result['ok'] else '#dc3545'};">{icon} {status_word}</td>
+            <td style="padding:10px 14px; color:#555; font-size:13px;">{result['detail']}</td>
+        </tr>"""
+        rows_text += f"  [{status_word}] {service.upper()}: {result['detail']}\n"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #192A88; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;">
+            <h1 style="margin:0; font-size:20px;">EGS Tutoring — Daily Health Check</h1>
+            <p style="margin:6px 0 0; font-size:13px; opacity:0.85;">{timestamp}</p>
+        </div>
+
+        <div style="background:{overall_color}; color:white; padding:12px; text-align:center; font-weight:bold; font-size:15px; letter-spacing:0.5px;">
+            {overall_label}
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; border:1px solid #ddd; border-top:none;">
+            <thead>
+                <tr style="background:#f0f0f0;">
+                    <th style="padding:10px 14px; text-align:left; font-size:13px;">Service</th>
+                    <th style="padding:10px 14px; text-align:center; font-size:13px;">Status</th>
+                    <th style="padding:10px 14px; text-align:left; font-size:13px;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows_html}
+            </tbody>
+        </table>
+
+        <div style="background:#f9f9f9; padding:14px; border:1px solid #ddd; border-top:none; border-radius:0 0 5px 5px; font-size:12px; color:#888; text-align:center;">
+            Automated daily check — EGS Tutoring Platform
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+EGS Tutoring — Daily Health Check
+{timestamp}
+{'ALL SYSTEMS OPERATIONAL' if all_ok else 'ACTION REQUIRED'}
+
+{rows_text}
+Automated daily check — EGS Tutoring Platform
+    """
+
+    return send_mailgun_email(from_email, to_email, subject, html_content, text_content,
+                              email_type='health_check')

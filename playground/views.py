@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -2928,39 +2928,51 @@ class WeeklyHoursListView(APIView):
                     print(f"WeeklyHours overlap detected for parent {parent_id} in week {week_start} to {week_end}")
 
             # Send email notifications for all created entries
+            invoice_results = []
             if created_entries:
-                self._send_weekly_hours_emails(created_entries)
+                invoice_results = self._send_weekly_hours_emails(created_entries)
 
         except Exception as e:
             print(f"Error in WeeklyHoursListView.post: {e}")
             return Response({"error": str(e)}, status=500)
 
         if created:
-            return Response({"status": "created"}, status=201)
+            return Response({"status": "created", "invoice_results": invoice_results}, status=201)
         else:
             return Response({"status": "Not Created, Duplicate"}, status=301)
 
     def _send_weekly_hours_emails(self, created_entries):
-        """Send email notifications to parents with their weekly hours breakdown"""
+        """Send email notifications to parents with their weekly hours breakdown and Stripe invoice link"""
         from .email_utils import send_mailgun_email
         from collections import defaultdict
+        import time as _time
 
         # Group entries by parent
         parent_entries = defaultdict(list)
         for entry in created_entries:
             parent_entries[entry['parent']].append(entry)
 
+        all_results = []
+
         # Send email to each parent
         for parent, entries in parent_entries.items():
+            parent_result = {
+                'parent_email': parent.email,
+                'parent_name': f"{parent.firstName} {parent.lastName}",
+                'stripe_created': False,
+                'stripe_invoice_id': None,
+                'stripe_error': None,
+                'email_sent': False,
+                'email_error': None,
+                'hours_updated': 0,
+            }
             try:
-                # Get all hours details for this parent within the date range
                 date_obj = entries[0]['date']
                 from datetime import timedelta
                 week_start = date_obj - timedelta(days=date_obj.weekday())
                 week_end = week_start + timedelta(days=6)
 
                 # Fetch detailed hours for this parent within the week (only pending, not yet invoiced)
-                # Include both Eligible and Late hours (Late hours are admin-added via batch add)
                 hours_details = Hours.objects.filter(
                     parent=parent,
                     date__range=[week_start, week_end],
@@ -2968,8 +2980,128 @@ class WeeklyHoursListView(APIView):
                     invoice_status='pending'
                 ).order_by('date', 'startTime')
 
+                # Summary totals
+                total_online = sum(float(e['online_hours']) for e in entries)
+                total_inperson = sum(float(e['inperson_hours']) for e in entries)
+                total_cost = sum(float(e['total']) for e in entries)
+
+                # Generate a Stripe invoice for this specific parent and get their payment link
+                stripe_invoice_url = None
+                stripe_invoice_id = None
+                try:
+                    # Find or create this parent's Stripe customer (keyed to their email only)
+                    stripe_result = stripe.Customer.list(email=parent.email)
+                    if stripe_result and stripe_result.data:
+                        customer = stripe_result.data[0]
+                    else:
+                        customer = stripe.Customer.create(
+                            email=parent.email,
+                            name=f"{parent.firstName} {parent.lastName}",
+                            description="Parent account for tutoring services",
+                        )
+
+                    week_str = f"{week_start.strftime('%Y-%m-%d')} to {week_end.strftime('%Y-%m-%d')}"
+                    due_date_ts = int(_time.time()) + (14 * 24 * 60 * 60)
+
+                    hour_ids = list(hours_details.values_list('id', flat=True))
+                    hour_ids_key = '-'.join(str(h) for h in sorted(hour_ids))
+                    idempotency_key = f"invoice-{customer.id}-{hour_ids_key}"
+
+                    # Create the invoice for this parent
+                    invoice_obj = stripe.Invoice.create(
+                        customer=customer.id,
+                        currency='cad',
+                        due_date=due_date_ts,
+                        collection_method='send_invoice',
+                        auto_advance=False,
+                        idempotency_key=idempotency_key,
+                    )
+
+                    # Add the invoice line item
+                    amount_cents = int(total_cost * 100)
+                    invoice_item = stripe.InvoiceItem.create(
+                        customer=customer.id,
+                        invoice=invoice_obj.id,
+                        amount=amount_cents,
+                        currency='cad',
+                        description=f'Tutoring Sessions ({week_str})',
+                        idempotency_key=f"{idempotency_key}-item",
+                    )
+
+                    # Apply 13% CAD tax
+                    try:
+                        tax_rates = stripe.TaxRate.list(limit=100)
+                        cad_tax_rate = None
+                        for rate in tax_rates.data:
+                            if rate.display_name == "CAD Tax 13%" and rate.percentage == 13.0:
+                                cad_tax_rate = rate
+                                break
+                        if not cad_tax_rate:
+                            cad_tax_rate = stripe.TaxRate.create(
+                                display_name="CAD Tax 13%",
+                                description="13% tax for Canadian services",
+                                jurisdiction="CA",
+                                percentage=13.0,
+                                inclusive=False,
+                            )
+                        stripe.InvoiceItem.modify(invoice_item.id, tax_rates=[cad_tax_rate.id])
+                    except Exception as tax_error:
+                        print(f"Could not apply tax to invoice {invoice_obj.id}: {tax_error}")
+
+                    # Finalize the invoice — this is what generates hosted_invoice_url
+                    invoice_obj = stripe.Invoice.finalize_invoice(invoice_obj.id)
+
+                    # Capture URL and ID immediately after finalization before any further calls
+                    stripe_invoice_url = invoice_obj.hosted_invoice_url
+                    stripe_invoice_id = invoice_obj.id
+
+                    if not stripe_invoice_url:
+                        print(f"WARNING: Stripe returned no hosted_invoice_url for invoice {stripe_invoice_id} — parent {parent.email}")
+
+                    # Mark as sent in Stripe (non-fatal — if this fails we still have the URL)
+                    try:
+                        stripe.Invoice.send_invoice(stripe_invoice_id)
+                    except Exception as send_err:
+                        print(f"Stripe send_invoice failed for {stripe_invoice_id} (non-fatal): {send_err}")
+
+                    # Mark all hours for this parent as invoiced
+                    hour_ids = list(hours_details.values_list('id', flat=True))
+                    if hour_ids:
+                        Hours.objects.filter(id__in=hour_ids).update(
+                            invoice_status='invoiced',
+                            invoice_id=stripe_invoice_id,
+                        )
+                        parent_result['hours_updated'] = len(hour_ids)
+
+                    parent_result['stripe_created'] = True
+                    parent_result['stripe_invoice_id'] = stripe_invoice_id
+                    print(f"Stripe invoice {stripe_invoice_id} created for {parent.email} | URL: {stripe_invoice_url}")
+
+                except Exception as stripe_error:
+                    parent_result['stripe_error'] = str(stripe_error)
+                    print(f"Error generating Stripe invoice for {parent.email}: {stripe_error}")
+
                 # Build email content
                 subject = f"Weekly Tutoring Hours Summary - Week of {week_start.strftime('%B %d, %Y')}"
+
+                # Payment button section — only shown when a Stripe URL was successfully obtained
+                if stripe_invoice_url:
+                    payment_html_block = f"""
+                        <div style="margin-top: 30px; text-align: center;">
+                            <a href="{stripe_invoice_url}"
+                               style="display: inline-block; background-color: #FFB31B; color: #192A88;
+                                      padding: 14px 32px; border-radius: 6px; font-size: 1.1em;
+                                      font-weight: bold; text-decoration: none;">
+                                View &amp; Pay Invoice
+                            </a>
+                            <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                                Payment is due within 14 days.
+                            </p>
+                        </div>"""
+                    payment_text_block = f"\nPay your invoice here: {stripe_invoice_url}\nPayment is due within 14 days.\n"
+                else:
+                    payment_html_block = ""
+                    payment_text_block = ""
 
                 # Build HTML content
                 html_content = f"""
@@ -3011,11 +3143,6 @@ class WeeklyHoursListView(APIView):
                                 </tr>
                     """
 
-                # Summary totals
-                total_online = sum(float(e['online_hours']) for e in entries)
-                total_inperson = sum(float(e['inperson_hours']) for e in entries)
-                total_cost = sum(float(e['total']) for e in entries)
-
                 html_content += f"""
                             </tbody>
                         </table>
@@ -3027,7 +3154,7 @@ class WeeklyHoursListView(APIView):
                             <p style="margin: 5px 0;"><strong>Total Hours:</strong> {total_online + total_inperson:.2f}</p>
                             <p style="margin: 5px 0; font-size: 1.1em;"><strong>Total Amount:</strong> <span style="color: #192A88;">${total_cost:.2f}</span></p>
                         </div>
-
+                        {payment_html_block}
                         <p style="margin-top: 30px;">If you have any questions or concerns about these hours, please don't hesitate to contact us.</p>
 
                         <p style="margin-top: 20px;">Best regards,<br>
@@ -3062,7 +3189,7 @@ Summary:
 - In-Person Hours: {total_inperson:.2f}
 - Total Hours: {total_online + total_inperson:.2f}
 - Total Amount: ${total_cost:.2f}
-
+{payment_text_block}
 If you have any questions or concerns about these hours, please don't hesitate to contact us.
 
 Best regards,
@@ -3070,16 +3197,29 @@ EGS Tutoring Team
                 """
 
                 # Send the email
-                send_mailgun_email(
-                    to_emails=[parent.email],
-                    subject=subject,
-                    text_content=text_content,
-                    html_content=html_content
-                )
-                print(f"Weekly hours email sent to {parent.email}")
+                try:
+                    send_mailgun_email(
+                        to_emails=[parent.email],
+                        subject=subject,
+                        text_content=text_content,
+                        html_content=html_content,
+                        email_type='weekly_hours',
+                        recipient_name=f"{parent.firstName} {parent.lastName}",
+                    )
+                    parent_result['email_sent'] = True
+                    print(f"Weekly hours email sent to {parent.email}")
+                except Exception as email_err:
+                    parent_result['email_error'] = str(email_err)
+                    print(f"Error sending email to {parent.email}: {email_err}")
 
             except Exception as e:
-                print(f"Error sending email to {parent.email}: {e}")
+                if not parent_result['stripe_error'] and not parent_result['email_error']:
+                    parent_result['stripe_error'] = str(e)
+                print(f"Error processing weekly hours for {parent.email}: {e}")
+            finally:
+                all_results.append(parent_result)
+
+        return all_results
 
 class calculateTotal(APIView):
     permission_classes = [AllowAny]
@@ -3186,12 +3326,13 @@ class CreateInvoiceView(APIView):
         )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
-        rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
-        print(f"Rate data query result: {list(rate_data)}")
-        
+        rate_data = list(User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email', 'firstName', 'lastName'))
+        print(f"Rate data query result: {rate_data}")
+
         online_rate_dict = {item['id']: Decimal(item['rateOnline'] or 0) for item in rate_data}
         inperson_rate_dict = {item['id']: Decimal(item['rateInPerson'] or 0) for item in rate_data}
         parent_email_dict = {item['id']: item['email'] for item in rate_data}
+        parent_name_dict = {item['id']: f"{item['firstName']} {item['lastName']}".strip() for item in rate_data}
         
         print(f"Online rate dict: {online_rate_dict}")
         print(f"In-person rate dict: {inperson_rate_dict}")
@@ -3249,7 +3390,9 @@ class CreateInvoiceView(APIView):
                         'customer_id': customer.id,
                         'amount': amount_cents,
                         'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})',
-                        'hour_ids': parent_hour_ids  # Include hour IDs for status update
+                        'hour_ids': parent_hour_ids,  # Include hour IDs for status update
+                        'parent_email': email_str,
+                        'parent_name': parent_name_dict.get(parent_id, ''),
                     })
 
         if customer_data_list:
@@ -6559,4 +6702,58 @@ support@egstutoring.ca
         return Response({
             'error': f'Error sending reminders: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminEmailLogsView(APIView):
+    """Read-only list of all emails sent by the system, with optional filtering."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .serializers import EmailLogSerializer
+
+        qs = EmailLog.objects.all()
+
+        email_type = request.query_params.get('email_type')
+        status_filter = request.query_params.get('status')
+        search = request.query_params.get('search', '').strip()
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+
+        if email_type:
+            qs = qs.filter(email_type=email_type)
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if search:
+            qs = qs.filter(
+                Q(recipient_email__icontains=search) |
+                Q(recipient_name__icontains=search) |
+                Q(subject__icontains=search)
+            )
+        if date_from:
+            try:
+                from datetime import datetime
+                qs = qs.filter(sent_at__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date())
+            except ValueError:
+                pass
+        if date_to:
+            try:
+                from datetime import datetime
+                qs = qs.filter(sent_at__date__lte=datetime.strptime(date_to, '%Y-%m-%d').date())
+            except ValueError:
+                pass
+
+        total = qs.count()
+        # Page by 100 so we don't send huge payloads
+        page = int(request.query_params.get('page', 1))
+        page_size = 100
+        offset = (page - 1) * page_size
+        qs = qs[offset: offset + page_size]
+
+        serializer = EmailLogSerializer(qs, many=True)
+        return Response({
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'results': serializer.data,
+        })
 

@@ -1413,3 +1413,52 @@ class QuizSubmission(models.Model):
 
     def __str__(self):
         return f"{self.enrollment.student.firstName} - {self.quiz.title}: {self.score}%"
+
+
+class EmailLog(models.Model):
+    EMAIL_TYPE_CHOICES = [
+        ('weekly_hours',         'Weekly Hours Summary'),
+        ('monthly_hours',        'Monthly Hours Summary'),
+        ('invoice',              'Invoice Notification'),
+        ('invoice_reminder',     'Invoice Reminder'),
+        ('verification',         'Email Verification'),
+        ('welcome_tutor',        'Tutor Welcome'),
+        ('welcome_parent',       'Parent Welcome'),
+        ('tutor_reply',          'Tutor Reply'),
+        ('new_request',          'New Request'),
+        ('monthly_report',       'Monthly Report'),
+        ('hour_dispute',         'Hour Dispute'),
+        ('dispute_admin',        'Dispute Admin Notification'),
+        ('referral_bonus',       'Referral Bonus'),
+        ('referral_admin',       'Referral Admin Notification'),
+        ('tutor_transfer',       'Tutor Transfer'),
+        ('parent_registration',  'Parent Registration'),
+        ('health_check',         'Health Check'),
+        ('bulk_parent',          'Bulk Parent Email'),
+        ('bulk_tutor',           'Bulk Tutor Email'),
+        ('bulk_custom',          'Bulk Custom Email'),
+        ('hours_reminder',       'Hours Reminder'),
+        ('test',                 'Test Email'),
+        ('other',                'Other'),
+    ]
+
+    STATUS_CHOICES = [
+        ('sent',    'Sent'),
+        ('failed',  'Failed'),
+        ('skipped', 'Skipped'),
+    ]
+
+    recipient_email = models.EmailField()
+    recipient_name  = models.CharField(max_length=255, blank=True)
+    subject         = models.CharField(max_length=500)
+    email_type      = models.CharField(max_length=50, choices=EMAIL_TYPE_CHOICES, default='other')
+    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='sent')
+    from_email      = models.EmailField(blank=True)
+    error_message   = models.TextField(blank=True)
+    sent_at         = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"[{self.email_type}] to {self.recipient_email} — {self.status} @ {self.sent_at:%Y-%m-%d %H:%M}"
