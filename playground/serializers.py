@@ -447,14 +447,15 @@ class HoursSerializer(serializers.ModelSerializer):
         }
     
     def get_has_disputes(self, obj):
-        return obj.disputes.filter(status='pending').exists()
-    
+        return any(d.status == 'pending' for d in obj.disputes.all())
+
     def get_dispute_id(self, obj):
-        # Get the current user's pending dispute ID for this hour (if any)
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            pending_dispute = obj.disputes.filter(complainer=request.user, status='pending').first()
-            return pending_dispute.id if pending_dispute else None
+            user_id = request.user.id
+            for d in obj.disputes.all():
+                if d.complainer_id == user_id and d.status == 'pending':
+                    return d.id
         return None
 
         def validate_totalTime(self, value):

@@ -2678,12 +2678,17 @@ class ParentHoursListView(APIView):
             return Response({"error": "User not found"}, status=404)
         
         # Filter hours based on user role
+        base_qs = (
+            Hours.objects
+            .select_related('student', 'tutor', 'parent')
+            .prefetch_related('disputes')
+        )
         if user.roles == 'parent':
-            records = Hours.objects.filter(parent=user).order_by('-created_at')
+            records = base_qs.filter(parent=user).order_by('-created_at')
         elif user.roles == 'student':
-            records = Hours.objects.filter(student=user).order_by('-created_at')
+            records = base_qs.filter(student=user).order_by('-created_at')
         elif user.roles == 'tutor':
-            records = Hours.objects.filter(tutor=user).order_by('-created_at')
+            records = base_qs.filter(tutor=user).order_by('-created_at')
         else:
             records = Hours.objects.none()  # Return empty queryset for unknown roles
             
