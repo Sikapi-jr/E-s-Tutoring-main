@@ -5,6 +5,37 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from '../components/UserProvider';
 import api from '../api';
 
+const WEEK_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  if (Number.isNaN(hour)) return timeStr;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${m} ${period}`;
+};
+
+// Looks up the meeting time for a specific weekday, falling back to the
+// legacy single schedule_time for classes created before per-day times existed.
+const getScheduleTimeForDay = (classInfo, dayName) => {
+  return classInfo?.schedule_times?.[dayName] || classInfo?.schedule_time || null;
+};
+
+const formatClassSchedule = (classInfo) => {
+  const days = classInfo?.schedule_days || [];
+  if (days.length === 0) return '';
+  return WEEK_ORDER
+    .filter(day => days.includes(day))
+    .map(day => {
+      const time = getScheduleTimeForDay(classInfo, day);
+      const label = day.charAt(0).toUpperCase() + day.slice(1);
+      return time ? `${label} at ${formatTime12h(time)}` : label;
+    })
+    .join(', ');
+};
+
 // Home icon component
 const HomeIcon = () => {
   const navigate = useNavigate();
@@ -179,7 +210,7 @@ const GroupTutoringEnrollmentDetail = () => {
   };
 
   const generateSessions = () => {
-    if (!classInfo || !classInfo.schedule_days || !classInfo.schedule_time) {
+    if (!classInfo || !classInfo.schedule_days || classInfo.schedule_days.length === 0) {
       setSessions([]);
       return;
     }
@@ -203,24 +234,28 @@ const GroupTutoringEnrollmentDetail = () => {
       const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
       if (classInfo.schedule_days.map(d => d.toLowerCase()).includes(dayName)) {
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-        const day = String(currentDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
+        const dayTime = getScheduleTimeForDay(classInfo, dayName);
 
-        const [hours, minutes] = classInfo.schedule_time.split(':');
-        const startDateTime = new Date(currentDate);
-        startDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
-        const endDateTime = new Date(startDateTime.getTime() + classInfo.duration_minutes * 60000);
-        const endTime = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
+        if (dayTime) {
+          const year = currentDate.getFullYear();
+          const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+          const day = String(currentDate.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
 
-        generatedSessions.push({
-          id: `${classInfo.id}-${dateStr}`,
-          session_date: dateStr,
-          start_time: classInfo.schedule_time,
-          end_time: endTime,
-          attendance_status: attendanceMap[dateStr] || null
-        });
+          const [hours, minutes] = dayTime.split(':');
+          const startDateTime = new Date(currentDate);
+          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0);
+          const endDateTime = new Date(startDateTime.getTime() + classInfo.duration_minutes * 60000);
+          const endTime = `${String(endDateTime.getHours()).padStart(2, '0')}:${String(endDateTime.getMinutes()).padStart(2, '0')}`;
+
+          generatedSessions.push({
+            id: `${classInfo.id}-${dateStr}`,
+            session_date: dateStr,
+            start_time: dayTime,
+            end_time: endTime,
+            attendance_status: attendanceMap[dateStr] || null
+          });
+        }
       }
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -526,14 +561,10 @@ const GroupTutoringEnrollmentDetail = () => {
               borderRadius: '8px'
             }}>
               <div>
-                <span style={{ color: '#666', fontSize: '0.9rem' }}>Days: </span>
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>Schedule: </span>
                 <span style={{ fontWeight: '600' }}>
-                  {classInfo.schedule_days?.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') || 'Not set'}
+                  {formatClassSchedule(classInfo) || 'Not set'}
                 </span>
-              </div>
-              <div>
-                <span style={{ color: '#666', fontSize: '0.9rem' }}>Time: </span>
-                <span style={{ fontWeight: '600' }}>{classInfo.schedule_time || 'Not set'}</span>
               </div>
               <div>
                 <span style={{ color: '#666', fontSize: '0.9rem' }}>Duration: </span>

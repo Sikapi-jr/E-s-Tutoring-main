@@ -5,6 +5,37 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from '../components/UserProvider';
 import api from '../api';
 
+const WEEK_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  if (Number.isNaN(hour)) return timeStr;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${m} ${period}`;
+};
+
+// Looks up the meeting time for a specific weekday, falling back to the
+// legacy single schedule_time for classes created before per-day times existed.
+const getScheduleTimeForDay = (classInfo, dayName) => {
+  return classInfo?.schedule_times?.[dayName] || classInfo?.schedule_time || null;
+};
+
+const formatClassSchedule = (classInfo) => {
+  const days = classInfo?.schedule_days || [];
+  if (days.length === 0) return '';
+  return WEEK_ORDER
+    .filter(day => days.includes(day))
+    .map(day => {
+      const time = getScheduleTimeForDay(classInfo, day);
+      const label = day.charAt(0).toUpperCase() + day.slice(1);
+      return time ? `${label} at ${formatTime12h(time)}` : label;
+    })
+    .join(', ');
+};
+
 const GroupTutoringParent = () => {
   const { t } = useTranslation();
   const { user } = useUser();
@@ -527,7 +558,7 @@ const GroupTutoringParent = () => {
 
                     <div style={{ fontSize: '0.85rem', color: '#666' }}>
                       {enrollment.class_difficulty}
-                      {classInfo?.schedule_time && ` • ${classInfo.schedule_time}`}
+                      {classInfo && formatClassSchedule(classInfo) && ` • ${formatClassSchedule(classInfo)}`}
                     </div>
                     <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#192A88', fontWeight: '500', textAlign: 'right' }}>
                       {t('groupTutoring.viewDetails')} →
@@ -710,8 +741,7 @@ const GroupTutoringParent = () => {
                     </div>
                     {classItem.schedule_days && classItem.schedule_days.length > 0 && (
                       <div style={{ marginBottom: '0.25rem' }}>
-                        <strong>📅</strong> {classItem.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
-                        {classItem.schedule_time && ` at ${classItem.schedule_time}`}
+                        <strong>📅</strong> {formatClassSchedule(classItem)}
                       </div>
                     )}
                     {classItem.tutor_details && classItem.tutor_details.length > 0 && (

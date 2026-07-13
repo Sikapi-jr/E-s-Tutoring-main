@@ -16,7 +16,7 @@ from .models import (
     ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission,
     EmailLog,
 )
-from datetime import timedelta
+from datetime import datetime, timedelta
 from playground.models import AiChatSession
 
 
@@ -631,7 +631,7 @@ class GroupTutoringClassSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'difficulty', 'subject',
             'tutors', 'tutor_details',
             'start_date', 'end_date',
-            'schedule_days', 'schedule_time', 'duration_minutes',
+            'schedule_days', 'schedule_time', 'schedule_times', 'duration_minutes',
             'location', 'location_link',
             'max_students', 'header_image', 'num_quizzes',
             'is_active', 'enrolled_count', 'is_full', 'created_at', 'updated_at'
@@ -640,6 +640,78 @@ class GroupTutoringClassSerializer(serializers.ModelSerializer):
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},
         }
+
+    @staticmethod
+    def _is_valid_time_string(value):
+        if not isinstance(value, str):
+            return False
+        for fmt in ('%H:%M:%S', '%H:%M'):
+            try:
+                datetime.strptime(value, fmt)
+                return True
+            except ValueError:
+                continue
+        return False
+
+    def validate(self, data):
+        def get_value(field, default=None):
+            if field in data:
+                return data[field]
+            if self.instance is not None:
+                return getattr(self.instance, field)
+            return default
+
+        schedule_days = get_value('schedule_days', []) or []
+        schedule_times = get_value('schedule_times', {}) or {}
+        schedule_time = get_value('schedule_time', None)
+        start_date = get_value('start_date')
+        end_date = get_value('end_date')
+        max_students = get_value('max_students')
+
+        valid_days = {choice[0] for choice in GroupTutoringClass.DAYS_OF_WEEK_CHOICES}
+
+        if self.instance is None and not schedule_days:
+            raise serializers.ValidationError({'schedule_days': 'Select at least one class day.'})
+
+        if schedule_days:
+            invalid_days = [d for d in schedule_days if d not in valid_days]
+            if invalid_days:
+                raise serializers.ValidationError({
+                    'schedule_days': f"Invalid day(s): {', '.join(invalid_days)}"
+                })
+
+            if not isinstance(schedule_times, dict):
+                raise serializers.ValidationError({
+                    'schedule_times': 'Must be an object mapping day names to times.'
+                })
+
+            missing_days = []
+            for day in schedule_days:
+                value = schedule_times.get(day)
+                if value:
+                    if not self._is_valid_time_string(value):
+                        raise serializers.ValidationError({
+                            'schedule_times': f"Invalid time for {day.capitalize()}: '{value}'. Use HH:MM format."
+                        })
+                elif not schedule_time:
+                    missing_days.append(day)
+
+            if missing_days:
+                raise serializers.ValidationError({
+                    'schedule_times': f"Missing a class time for: {', '.join(d.capitalize() for d in missing_days)}"
+                })
+
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError({
+                'end_date': 'End date must be on or after the start date.'
+            })
+
+        if max_students is not None and max_students < 1:
+            raise serializers.ValidationError({
+                'max_students': 'Max students must be at least 1.'
+            })
+
+        return data
 
     def get_tutor_details(self, obj):
         """Get tutor names and IDs"""

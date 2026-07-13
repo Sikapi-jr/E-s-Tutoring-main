@@ -1080,7 +1080,12 @@ class GroupTutoringClass(models.Model):
         default=list,
         help_text="Days of the week when class meets (e.g., ['monday', 'wednesday'])"
     )
-    schedule_time = models.TimeField(null=True, blank=True, help_text="Regular class meeting time")
+    schedule_time = models.TimeField(null=True, blank=True, help_text="Regular class meeting time (legacy/default, used when a day has no entry in schedule_times)")
+    schedule_times = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Per-day meeting times, e.g. {'monday': '15:00', 'wednesday': '16:30'}. Falls back to schedule_time for any scheduled day without an entry here."
+    )
     duration_minutes = models.PositiveIntegerField(default=60, help_text="Class duration in minutes")
 
     # Location
@@ -1122,6 +1127,29 @@ class GroupTutoringClass(models.Model):
     def is_full(self):
         """Check if class is at capacity"""
         return self.enrolled_count >= self.max_students
+
+    def get_time_for_day(self, day_name):
+        """
+        Return the scheduled time (as a datetime.time) for the given day name,
+        preferring a per-day entry in schedule_times and falling back to schedule_time.
+        """
+        from datetime import datetime as _datetime
+
+        if day_name:
+            value = (self.schedule_times or {}).get(day_name.lower())
+            if value:
+                if hasattr(value, 'strftime'):
+                    return value
+                for fmt in ('%H:%M:%S', '%H:%M'):
+                    try:
+                        return _datetime.strptime(value, fmt).time()
+                    except (ValueError, TypeError):
+                        continue
+        return self.schedule_time
+
+    def get_time_for_date(self, date_obj):
+        """Return the scheduled time for the weekday of the given date."""
+        return self.get_time_for_day(date_obj.strftime('%A').lower())
 
 
 class GroupEnrollment(models.Model):

@@ -521,7 +521,7 @@ def parent_sessions_calendar(request):
         tutoring_class = enrollment.tutoring_class
 
         # Skip if class doesn't have schedule configured
-        if not tutoring_class.schedule_days or not tutoring_class.schedule_time:
+        if not tutoring_class.schedule_days:
             continue
 
         # Get class date range
@@ -536,7 +536,10 @@ def parent_sessions_calendar(request):
 
             if day_name in [d.lower() for d in tutoring_class.schedule_days]:
                 # Calculate end time based on duration
-                start_time = tutoring_class.schedule_time
+                start_time = tutoring_class.get_time_for_day(day_name)
+                if not start_time:
+                    current_date += timedelta(days=1)
+                    continue
                 duration = timedelta(minutes=tutoring_class.duration_minutes)
 
                 # Create a datetime to calculate end time
@@ -622,7 +625,7 @@ def admin_class_parent_view_sessions(request, class_id):
     session_data = []
 
     # Skip if class doesn't have schedule configured
-    if not tutoring_class.schedule_days or not tutoring_class.schedule_time:
+    if not tutoring_class.schedule_days:
         return Response(session_data)
 
     # Get class date range
@@ -637,7 +640,10 @@ def admin_class_parent_view_sessions(request, class_id):
 
         if day_name in [d.lower() for d in tutoring_class.schedule_days]:
             # Calculate end time based on duration
-            start_time = tutoring_class.schedule_time
+            start_time = tutoring_class.get_time_for_day(day_name)
+            if not start_time:
+                current_date += timedelta(days=1)
+                continue
             duration = timedelta(minutes=tutoring_class.duration_minutes)
 
             # Create a datetime to calculate end time
@@ -787,7 +793,7 @@ def admin_get_class_sessions(request, class_id):
     # Get or generate sessions
     sessions = []
 
-    if tutoring_class.schedule_days and tutoring_class.schedule_time:
+    if tutoring_class.schedule_days:
         current_date = tutoring_class.start_date
         end_date = tutoring_class.end_date
 
@@ -812,7 +818,10 @@ def admin_get_class_sessions(request, class_id):
                     })
                 except ClassSession.DoesNotExist:
                     # Generate session info
-                    start_time = tutoring_class.schedule_time
+                    start_time = tutoring_class.get_time_for_day(day_name)
+                    if not start_time:
+                        current_date += td(days=1)
+                        continue
                     duration = td(minutes=tutoring_class.duration_minutes)
                     end_datetime = datetime.combine(current_date, start_time) + duration
 
@@ -857,15 +866,23 @@ def admin_session_attendance(request, class_id, session_date):
     except ValueError:
         return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Resolve the scheduled time for this date's weekday (per-day time, falling back to legacy schedule_time)
+    resolved_time = tutoring_class.get_time_for_date(session_date_obj)
+    if not resolved_time:
+        return Response(
+            {'error': 'This class has no scheduled time configured. Set a class time before marking attendance.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # Get or create the session
     session, created = ClassSession.objects.get_or_create(
         tutoring_class=tutoring_class,
         session_date=session_date_obj,
         defaults={
             'title': tutoring_class.title,
-            'start_time': tutoring_class.schedule_time,
+            'start_time': resolved_time,
             'end_time': (
-                datetime.combine(session_date_obj, tutoring_class.schedule_time) +
+                datetime.combine(session_date_obj, resolved_time) +
                 timedelta(minutes=tutoring_class.duration_minutes)
             ).time()
         }
@@ -1183,15 +1200,23 @@ def admin_update_session(request, class_id, session_date):
     except ValueError:
         return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Resolve the scheduled time for this date's weekday (per-day time, falling back to legacy schedule_time)
+    original_resolved_time = tutoring_class.get_time_for_date(original_date)
+    if not original_resolved_time:
+        return Response(
+            {'error': 'This class has no scheduled time configured. Set a class time before editing sessions.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # Get or create the session
     session, created = ClassSession.objects.get_or_create(
         tutoring_class=tutoring_class,
         session_date=original_date,
         defaults={
             'title': tutoring_class.title,
-            'start_time': tutoring_class.schedule_time,
+            'start_time': original_resolved_time,
             'end_time': (
-                datetime.combine(original_date, tutoring_class.schedule_time) +
+                datetime.combine(original_date, original_resolved_time) +
                 timedelta(minutes=tutoring_class.duration_minutes)
             ).time()
         }
@@ -1222,19 +1247,26 @@ def admin_update_session(request, class_id, session_date):
         # 1. Mark the original session as cancelled with a note
         # 2. Create a new session for the new date
         if new_date_obj != original_date:
-            # Mark original as cancelled
-            session.is_cancelled = True
-            session.cancellation_reason = f'Rescheduled to {new_date}'
-            session.save()
-
-            # Calculate times for new session
+            # Calculate times for new session before mutating the original session,
+            # so a missing time doesn't leave the original cancelled with nothing to replace it
             if new_time:
                 try:
                     start_time = datetime.strptime(new_time, '%H:%M').time()
                 except ValueError:
-                    start_time = tutoring_class.schedule_time
+                    start_time = tutoring_class.get_time_for_date(new_date_obj)
             else:
-                start_time = tutoring_class.schedule_time
+                start_time = tutoring_class.get_time_for_date(new_date_obj)
+
+            if not start_time:
+                return Response(
+                    {'error': 'No time was provided and this class has no scheduled time configured for the new date.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Mark original as cancelled
+            session.is_cancelled = True
+            session.cancellation_reason = f'Rescheduled to {new_date}'
+            session.save()
 
             if new_end_time:
                 try:
@@ -1393,14 +1425,20 @@ def cancel_session_attendance(request, session_id):
 
             # Get or create the session
             tutoring_class = enrollment.tutoring_class
+            resolved_time = tutoring_class.get_time_for_date(session_date)
+            if not resolved_time:
+                return Response(
+                    {'error': 'This class has no scheduled time configured for this session.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             session, created = ClassSession.objects.get_or_create(
                 tutoring_class=tutoring_class,
                 session_date=session_date,
                 defaults={
                     'title': f"{tutoring_class.title}",
-                    'start_time': tutoring_class.schedule_time,
+                    'start_time': resolved_time,
                     'end_time': (
-                        datetime.combine(session_date, tutoring_class.schedule_time) +
+                        datetime.combine(session_date, resolved_time) +
                         timedelta(minutes=tutoring_class.duration_minutes)
                     ).time()
                 }

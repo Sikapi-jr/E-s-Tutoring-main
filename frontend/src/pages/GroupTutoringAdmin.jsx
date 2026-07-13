@@ -4,6 +4,34 @@ import { useTranslation } from 'react-i18next';
 import { useUser } from '../components/UserProvider';
 import api from '../api';
 
+const WEEK_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const hour = parseInt(h, 10);
+  if (Number.isNaN(hour)) return timeStr;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${m} ${period}`;
+};
+
+// Builds a per-day schedule summary (e.g. "Mon at 3:00 PM, Wed at 4:30 PM"),
+// falling back to the legacy single schedule_time for classes created before
+// per-day times existed.
+const formatClassSchedule = (classItem) => {
+  const days = classItem?.schedule_days || [];
+  if (days.length === 0) return 'TBD';
+  return WEEK_ORDER
+    .filter(day => days.includes(day))
+    .map(day => {
+      const time = classItem.schedule_times?.[day] || classItem.schedule_time;
+      const label = day.charAt(0).toUpperCase() + day.slice(1);
+      return time ? `${label} at ${formatTime12h(time)}` : label;
+    })
+    .join(', ');
+};
+
 const GroupTutoringAdmin = () => {
   const { t } = useTranslation();
   const { user } = useUser();
@@ -13,6 +41,8 @@ const GroupTutoringAdmin = () => {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [tutors, setTutors] = useState([]);
+  const [createFormErrors, setCreateFormErrors] = useState([]);
+  const [creatingClass, setCreatingClass] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,7 +52,7 @@ const GroupTutoringAdmin = () => {
     start_date: '',
     end_date: '',
     schedule_days: [],
-    schedule_time: '',
+    schedule_times: {},
     duration_minutes: 60,
     location: '',
     location_link: '',
@@ -126,10 +156,82 @@ const GroupTutoringAdmin = () => {
     }
   };
 
+  const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  const FIELD_LABELS = {
+    title: 'Class title',
+    subject: 'Subject',
+    difficulty: 'Difficulty',
+    start_date: 'Start date',
+    end_date: 'End date',
+    schedule_days: 'Class days',
+    schedule_times: 'Class times',
+    duration_minutes: 'Duration',
+    max_students: 'Max students',
+    tutors: 'Tutors',
+    header_image: 'Header image'
+  };
+
+  const parseApiErrors = (err) => {
+    const data = err.response?.data;
+    if (!data) {
+      return ['Could not reach the server. Check your connection and try again.'];
+    }
+    if (typeof data === 'string') return [data];
+    if (data.error) return [data.error];
+    if (data.detail) return [Array.isArray(data.detail) ? data.detail.join(' ') : data.detail];
+
+    const messages = [];
+    Object.entries(data).forEach(([field, value]) => {
+      const label = FIELD_LABELS[field] || field;
+      const values = Array.isArray(value) ? value : [value];
+      values.forEach(v => {
+        const text = typeof v === 'string' ? v : JSON.stringify(v);
+        messages.push(field === 'non_field_errors' ? text : `${label}: ${text}`);
+      });
+    });
+
+    return messages.length > 0 ? messages : ['Failed to create class. Please try again.'];
+  };
+
+  const validateClassForm = () => {
+    const errors = [];
+
+    if (!formData.title.trim()) errors.push('Class title is required.');
+    if (!formData.subject.trim()) errors.push('Subject is required.');
+    if (!formData.tutors || formData.tutors.length === 0) errors.push('Select at least one tutor.');
+    if (!formData.start_date) errors.push('Start date is required.');
+    if (!formData.end_date) errors.push('End date is required.');
+    if (formData.start_date && formData.end_date && formData.end_date < formData.start_date) {
+      errors.push('End date must be on or after the start date.');
+    }
+
+    if (formData.schedule_days.length === 0) {
+      errors.push('Select at least one class day.');
+    } else {
+      const missingTimes = formData.schedule_days.filter(day => !formData.schedule_times[day]);
+      if (missingTimes.length > 0) {
+        errors.push(
+          `Set a class time for: ${missingTimes.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}.`
+        );
+      }
+    }
+
+    if (!formData.duration_minutes || formData.duration_minutes < 15) {
+      errors.push('Duration must be at least 15 minutes.');
+    }
+    if (!formData.max_students || formData.max_students < 1) {
+      errors.push('Max students must be at least 1.');
+    }
+
+    return errors;
+  };
+
   const handleOpenCreateModal = async () => {
     try {
       const response = await api.get('/api/group-tutoring/classes/available_tutors/');
       setTutors(response.data);
+      setCreateFormErrors([]);
       setShowCreateModal(true);
     } catch (err) {
       console.error('Error fetching tutors:', err);
@@ -139,6 +241,7 @@ const GroupTutoringAdmin = () => {
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
+    setCreateFormErrors([]);
     setFormData({
       title: '',
       description: '',
@@ -148,7 +251,7 @@ const GroupTutoringAdmin = () => {
       start_date: '',
       end_date: '',
       schedule_days: [],
-      schedule_time: '',
+      schedule_times: {},
       duration_minutes: 60,
       location: '',
       location_link: '',
@@ -164,17 +267,42 @@ const GroupTutoringAdmin = () => {
   };
 
   const handleDayToggle = (day) => {
+    setFormData(prev => {
+      if (prev.schedule_days.includes(day)) {
+        const remainingTimes = { ...prev.schedule_times };
+        delete remainingTimes[day];
+        return {
+          ...prev,
+          schedule_days: prev.schedule_days.filter(d => d !== day),
+          schedule_times: remainingTimes
+        };
+      }
+      return {
+        ...prev,
+        schedule_days: [...prev.schedule_days, day],
+        schedule_times: { ...prev.schedule_times, [day]: prev.schedule_times[day] || '' }
+      };
+    });
+  };
+
+  const handleDayTimeChange = (day, value) => {
     setFormData(prev => ({
       ...prev,
-      schedule_days: prev.schedule_days.includes(day)
-        ? prev.schedule_days.filter(d => d !== day)
-        : [...prev.schedule_days, day]
+      schedule_times: { ...prev.schedule_times, [day]: value }
     }));
   };
 
   const handleSubmitClass = async (e) => {
     e.preventDefault();
+    setCreateFormErrors([]);
 
+    const validationErrors = validateClassForm();
+    if (validationErrors.length > 0) {
+      setCreateFormErrors(validationErrors);
+      return;
+    }
+
+    setCreatingClass(true);
     try {
       // Use FormData if there's an image to upload
       if (formData.header_image) {
@@ -182,9 +310,13 @@ const GroupTutoringAdmin = () => {
         Object.keys(formData).forEach(key => {
           if (key === 'header_image' && formData[key]) {
             submitData.append('header_image', formData[key]);
-          } else if (key === 'tutors' || key === 'schedule_days') {
-            // Handle arrays
+          } else if (key === 'tutors') {
+            // Many-relation field: DRF reads repeated values via getlist
             formData[key].forEach(item => submitData.append(key, item));
+          } else if (key === 'schedule_days' || key === 'schedule_times') {
+            // Plain JSONField: DRF only reads the last value for a repeated
+            // multipart key, so these must be sent as a single JSON string
+            submitData.append(key, JSON.stringify(formData[key]));
           } else if (formData[key] !== null && formData[key] !== '') {
             submitData.append(key, formData[key]);
           }
@@ -202,7 +334,9 @@ const GroupTutoringAdmin = () => {
       fetchData(); // Refresh data
     } catch (err) {
       console.error('Error creating class:', err);
-      alert('Failed to create class: ' + (err.response?.data?.error || 'Unknown error'));
+      setCreateFormErrors(parseApiErrors(err));
+    } finally {
+      setCreatingClass(false);
     }
   };
 
@@ -755,8 +889,7 @@ const GroupTutoringAdmin = () => {
               </div>
               {classItem.schedule_days && classItem.schedule_days.length > 0 && (
                 <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <strong>Schedule:</strong> {classItem.schedule_days.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
-                  {classItem.schedule_time && ` at ${classItem.schedule_time}`}
+                  <strong>Schedule:</strong> {formatClassSchedule(classItem)}
                 </div>
               )}
               {classItem.location && (
@@ -1090,6 +1223,24 @@ const GroupTutoringAdmin = () => {
           }}>
             <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Create New Class</h2>
 
+            {createFormErrors.length > 0 && (
+              <div style={{
+                backgroundColor: '#fdecea',
+                border: '1px solid #f5c2c0',
+                borderRadius: '4px',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+                color: '#a12622'
+              }}>
+                <strong>Please fix the following:</strong>
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
+                  {createFormErrors.map((msg, idx) => (
+                    <li key={idx}>{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <form onSubmit={handleSubmitClass}>
               {/* Basic Information */}
               <div style={{ marginBottom: '2rem' }}>
@@ -1179,7 +1330,7 @@ const GroupTutoringAdmin = () => {
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                    Assigned Tutors
+                    Assigned Tutors *
                   </label>
                   <select
                     multiple
@@ -1250,10 +1401,10 @@ const GroupTutoringAdmin = () => {
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                    Class Days
+                    Class Days *
                   </label>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
+                    {DAYS_OF_WEEK.map(day => (
                       <label key={day} style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1274,47 +1425,59 @@ const GroupTutoringAdmin = () => {
                       </label>
                     ))}
                   </div>
+                  <small style={{ color: '#666' }}>Select every day this class meets each week</small>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                  <div>
+                {formData.schedule_days.length > 0 && (
+                  <div style={{ marginBottom: '1rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                      Class Time
+                      Class Time for Each Day *
                     </label>
-                    <input
-                      type="time"
-                      value={formData.schedule_time}
-                      onChange={(e) => handleFormChange('schedule_time', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '1rem'
-                      }}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {DAYS_OF_WEEK.filter(day => formData.schedule_days.includes(day)).map(day => (
+                        <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{ width: '110px', fontWeight: 600 }}>
+                            {day.charAt(0).toUpperCase() + day.slice(1)}
+                          </span>
+                          <input
+                            type="time"
+                            required
+                            value={formData.schedule_times[day] || ''}
+                            onChange={(e) => handleDayTimeChange(day, e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '0.5rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '1rem'
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                      Duration (minutes) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="15"
-                      step="15"
-                      value={formData.duration_minutes}
-                      onChange={(e) => handleFormChange('duration_minutes', parseInt(e.target.value))}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '1rem'
-                      }}
-                    />
-                  </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    Duration (minutes) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="15"
+                    step="15"
+                    value={formData.duration_minutes}
+                    onChange={(e) => handleFormChange('duration_minutes', parseInt(e.target.value))}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                  <small style={{ color: '#666' }}>Applies to every scheduled day</small>
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -1446,32 +1609,36 @@ const GroupTutoringAdmin = () => {
                 <button
                   type="button"
                   onClick={handleCloseCreateModal}
+                  disabled={creatingClass}
                   style={{
                     padding: '0.75rem 1.5rem',
                     backgroundColor: '#6c757d',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
+                    cursor: creatingClass ? 'not-allowed' : 'pointer',
+                    fontSize: '1rem',
+                    opacity: creatingClass ? 0.7 : 1
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={creatingClass}
                   style={{
                     padding: '0.75rem 1.5rem',
                     backgroundColor: '#28a745',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer',
+                    cursor: creatingClass ? 'not-allowed' : 'pointer',
                     fontSize: '1rem',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    opacity: creatingClass ? 0.7 : 1
                   }}
                 >
-                  Create Class
+                  {creatingClass ? 'Creating...' : 'Create Class'}
                 </button>
               </div>
             </form>
@@ -2484,8 +2651,7 @@ const GroupTutoringAdmin = () => {
                 <h3 style={{ margin: '0 0 1rem 0', color: '#192A88' }}>Class Information</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                   <div>
-                    <strong>Schedule:</strong> {selectedClass.schedule_days?.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ') || 'TBD'}
-                    {selectedClass.schedule_time && ` at ${selectedClass.schedule_time}`}
+                    <strong>Schedule:</strong> {formatClassSchedule(selectedClass)}
                   </div>
                   <div>
                     <strong>Duration:</strong> {new Date(selectedClass.start_date).toLocaleDateString()} - {new Date(selectedClass.end_date).toLocaleDateString()}

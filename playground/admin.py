@@ -59,7 +59,7 @@ class GroupTutoringClassAdmin(admin.ModelAdmin):
             'fields': ('title', 'description', 'difficulty', 'subject', 'tutors')
         }),
         ('Schedule & Location', {
-            'fields': ('start_date', 'end_date', 'schedule_days', 'schedule_time', 'duration_minutes', 'location', 'location_link')
+            'fields': ('start_date', 'end_date', 'schedule_days', 'schedule_time', 'schedule_times', 'duration_minutes', 'location', 'location_link')
         }),
         ('Capacity & Assessment', {
             'fields': ('max_students', 'num_quizzes', 'is_active')
