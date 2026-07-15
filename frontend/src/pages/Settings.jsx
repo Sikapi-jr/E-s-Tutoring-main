@@ -3,11 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useUser } from "../components/UserProvider";
-import { ACCESS_TOKEN } from "../constants";
+import { ACCESS_TOKEN, ONTARIO_CITIES } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import NotificationSettings from "../components/NotificationSettings";
 import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
+import { describeApiError } from "../utils/errorHandler";
 // Using standard media URLs served by Django
 import "../styles/Settings.css";
 
@@ -49,9 +50,9 @@ export default function Settings() {
   const [addStudentForm, setAddStudentForm] = useState({
     firstName: "",
     lastName: "",
-    username: "",
-    password: "",
-    confirmPassword: ""
+    livesWithParent: true,
+    city: "",
+    birthYear: ""
   });
   const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
@@ -216,18 +217,13 @@ export default function Settings() {
       return;
     }
 
-    if (!addStudentForm.username.trim() || addStudentForm.username.length < 3) {
-      alert(t('students.usernameRequired') || 'Username must be at least 3 characters.');
+    if (!addStudentForm.livesWithParent && !addStudentForm.city.trim()) {
+      alert(t('students.cityRequired') || 'Please specify which city the student lives in.');
       return;
     }
 
-    if (!addStudentForm.password.trim() || addStudentForm.password.length < 6) {
-      alert(t('students.passwordMinLength') || 'Password must be at least 6 characters.');
-      return;
-    }
-
-    if (addStudentForm.password !== addStudentForm.confirmPassword) {
-      alert(t('students.passwordsMustMatch') || 'Passwords do not match.');
+    if (!addStudentForm.birthYear) {
+      alert(t('students.birthYearRequired') || 'Please provide the student\'s birth year.');
       return;
     }
 
@@ -235,8 +231,11 @@ export default function Settings() {
       const formData = new FormData();
       formData.append("firstName", addStudentForm.firstName.trim());
       formData.append("lastName", addStudentForm.lastName.trim());
-      formData.append("username", addStudentForm.username.trim());
-      formData.append("password", addStudentForm.password);
+      formData.append("livesWithParent", addStudentForm.livesWithParent);
+      if (!addStudentForm.livesWithParent) {
+        formData.append("city", addStudentForm.city);
+      }
+      formData.append("birthYear", addStudentForm.birthYear);
 
       if (addStudentProfilePicture) {
         formData.append("profile_picture", addStudentProfilePicture);
@@ -255,10 +254,7 @@ export default function Settings() {
 
     } catch (error) {
       console.error("Error adding student:", error);
-      const errorMessage = error.response?.data?.error ||
-                           error.response?.data?.message ||
-                           t('errors.studentAddFailed') || 'Failed to add student. Please try again.';
-      alert(errorMessage);
+      alert(describeApiError(error, t('errors.studentAddFailed') || 'Failed to add student. Please try again.'));
     }
   };
 
@@ -702,13 +698,15 @@ export default function Settings() {
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                {t('common.username')} *
+                {t('students.birthYear') || 'Birth Year'} *
               </label>
               <input
-                type="text"
-                value={addStudentForm.username}
-                onChange={(e) => setAddStudentForm({...addStudentForm, username: e.target.value})}
-                placeholder={t('students.enterUsername')}
+                type="number"
+                value={addStudentForm.birthYear}
+                onChange={(e) => setAddStudentForm({...addStudentForm, birthYear: e.target.value})}
+                placeholder={t('students.enterBirthYear') || 'e.g. 2012'}
+                min={new Date().getFullYear() - 100}
+                max={new Date().getFullYear()}
                 required
                 style={{
                   width: '100%',
@@ -718,20 +716,19 @@ export default function Settings() {
                   fontSize: '1rem'
                 }}
               />
-              <small style={{ color: "#666", fontSize: "0.8rem", display: 'block', marginTop: '0.25rem' }}>
-                {t('students.usernameHelp')}
-              </small>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                {t('common.password')} *
+                {t('students.livesWithParent') || 'Does this student live with you?'} *
               </label>
-              <input
-                type="password"
-                value={addStudentForm.password}
-                onChange={(e) => setAddStudentForm({...addStudentForm, password: e.target.value})}
-                placeholder={t('students.enterPassword')}
+              <select
+                value={addStudentForm.livesWithParent ? 'yes' : 'no'}
+                onChange={(e) => setAddStudentForm({
+                  ...addStudentForm,
+                  livesWithParent: e.target.value === 'yes',
+                  city: e.target.value === 'yes' ? '' : addStudentForm.city
+                })}
                 required
                 style={{
                   width: '100%',
@@ -740,31 +737,39 @@ export default function Settings() {
                   borderRadius: '4px',
                   fontSize: '1rem'
                 }}
-              />
-              <small style={{ color: "#666", fontSize: "0.8rem", display: 'block', marginTop: '0.25rem' }}>
-                {t('students.passwordHelp')}
-              </small>
+              >
+                <option value="yes">{t('common.yes') || 'Yes'}</option>
+                <option value="no">{t('common.no') || 'No'}</option>
+              </select>
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                {t('students.confirmPassword')} *
-              </label>
-              <input
-                type="password"
-                value={addStudentForm.confirmPassword}
-                onChange={(e) => setAddStudentForm({...addStudentForm, confirmPassword: e.target.value})}
-                placeholder={t('students.confirmPasswordPlaceholder')}
-                required
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
-              />
-            </div>
+            {!addStudentForm.livesWithParent && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                  {t('students.studentCity') || 'City'} *
+                </label>
+                <select
+                  value={addStudentForm.city}
+                  onChange={(e) => setAddStudentForm({...addStudentForm, city: e.target.value})}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <option value="">{t('requests.selectCity') || 'Select a city'}</option>
+                  {ONTARIO_CITIES.map(cityName => (
+                    <option key={cityName} value={cityName}>{cityName}</option>
+                  ))}
+                </select>
+                <small style={{ color: "#666", fontSize: "0.8rem", display: 'block', marginTop: '0.25rem' }}>
+                  {t('students.cityHelp') || "This city will be used as the student's address for tutoring requests."}
+                </small>
+              </div>
+            )}
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
@@ -792,7 +797,9 @@ export default function Settings() {
             }}>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "#192A88" }}>
                 <strong>{t('students.autoFillNotice')}</strong><br/>
-                {t('students.autoFillDescription')}
+                {addStudentForm.livesWithParent
+                  ? (t('students.autoFillDescription') || "The student's address will match your own.")
+                  : (t('students.autoFillDescriptionAway') || "The city you select will be used as the student's address.")}
               </p>
             </div>
 
@@ -804,9 +811,9 @@ export default function Settings() {
                   setAddStudentForm({
                     firstName: "",
                     lastName: "",
-                    username: "",
-                    password: "",
-                    confirmPassword: ""
+                    livesWithParent: true,
+                    city: "",
+                    birthYear: ""
                   });
                   setAddStudentProfilePicture(null);
                 }}

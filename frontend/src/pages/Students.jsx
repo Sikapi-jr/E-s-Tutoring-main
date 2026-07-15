@@ -3,48 +3,11 @@ import api from "../api";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
+import { ONTARIO_CITIES } from "../constants";
+import { describeApiError } from "../utils/errorHandler";
 import "../styles/Students.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-const ONTARIO_CITIES = [
-  'Ajax', 'Aurora', 'Barrie', 'Belleville', 'Brampton', 'Brantford', 'Burlington', 'Cambridge',
-  'Chatham-Kent', 'Clarington', 'Collingwood', 'Cornwall', 'Dryden', 'Georgina', 'Grimsby', 'Guelph',
-  'Hamilton', 'Huntsville', 'Innisfil', 'Kawartha Lakes', 'Kenora', 'Kingston', 'Kitchener', 'Leamington',
-  'London', 'Markham', 'Midland', 'Milton', 'Mississauga', 'Newmarket', 'Niagara Falls',
-  'Niagara-on-the-Lake', 'North Bay', 'Oakville', 'Orangeville', 'Orillia', 'Oshawa', 'Ottawa',
-  'Peterborough', 'Pickering', 'Quinte West', 'Richmond Hill', 'Sarnia', 'St. Catharines', 'St. Thomas',
-  'Stratford', 'Sudbury', 'Tecumseh', 'Thunder Bay', 'Timmins', 'Toronto', 'Vaughan', 'Wasaga Beach',
-  'Waterloo', 'Welland', 'Whitby', 'Windsor', 'Woodstock'
-].sort();
-
-// Turns an axios error into a specific, actionable message instead of a
-// generic "please try again" - prefers whatever detail the backend sent.
-const describeApiError = (err, fallback) => {
-  if (!err?.response) {
-    return 'Could not reach the server. Check your internet connection and try again.';
-  }
-
-  const { status, data } = err.response;
-  const backendMessage = typeof data === 'string'
-    ? data
-    : (data?.error || data?.detail || data?.message);
-
-  // Unhandled server errors can come back as an HTML error page rather than
-  // JSON - never show that raw markup to the user.
-  const looksLikeHtml = typeof backendMessage === 'string' && backendMessage.trim().startsWith('<');
-
-  if (backendMessage && typeof backendMessage === 'string' && !looksLikeHtml) {
-    return backendMessage;
-  }
-
-  if (status === 401) return 'Your session has expired. Please log in again.';
-  if (status === 403) return "You don't have permission to do that.";
-  if (status === 404) return 'The requested information could not be found.';
-  if (status >= 500) return 'The server ran into a problem. Please try again in a moment.';
-
-  return fallback;
-};
 
 const Students = () => {
   const { t } = useTranslation();
