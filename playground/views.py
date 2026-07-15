@@ -319,7 +319,13 @@ def change_settings_parent(request, pk):
         return Response({"error": "Only parents can change these settings."}, status=403)
 
     if not requester.is_superuser and requester.id != pk:
-        return Response({"error": "Cannot edit another user's profile."}, status=403)
+        # Parents may also edit the profiles of their own children
+        is_own_child = (
+            requester.roles == "parent"
+            and User.objects.filter(pk=pk, parent_id=requester.id, roles="student").exists()
+        )
+        if not is_own_child:
+            return Response({"error": "Cannot edit another user's profile."}, status=403)
 
     profile = get_object_or_404(User, pk=pk)
 

@@ -733,6 +733,7 @@
     "leavingStudentFailed": "Impossible d'arrêter le tutorat de cet étudiant. Veuillez réessayer.",
     "acceptReplyFailed": "Impossible d'accepter la réponse. Veuillez réessayer.",
     "studentUpdateFailed": "Échec de la mise à jour de l'étudiant. Veuillez réessayer.",
+    "studentAddFailed": "Échec de l'ajout de l'étudiant. Veuillez réessayer.",
     "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer.",
     "accessDenied": "Accès refusé"
   },

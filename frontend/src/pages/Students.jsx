@@ -18,6 +18,34 @@ const ONTARIO_CITIES = [
   'Waterloo', 'Welland', 'Whitby', 'Windsor', 'Woodstock'
 ].sort();
 
+// Turns an axios error into a specific, actionable message instead of a
+// generic "please try again" - prefers whatever detail the backend sent.
+const describeApiError = (err, fallback) => {
+  if (!err?.response) {
+    return 'Could not reach the server. Check your internet connection and try again.';
+  }
+
+  const { status, data } = err.response;
+  const backendMessage = typeof data === 'string'
+    ? data
+    : (data?.error || data?.detail || data?.message);
+
+  // Unhandled server errors can come back as an HTML error page rather than
+  // JSON - never show that raw markup to the user.
+  const looksLikeHtml = typeof backendMessage === 'string' && backendMessage.trim().startsWith('<');
+
+  if (backendMessage && typeof backendMessage === 'string' && !looksLikeHtml) {
+    return backendMessage;
+  }
+
+  if (status === 401) return 'Your session has expired. Please log in again.';
+  if (status === 403) return "You don't have permission to do that.";
+  if (status === 404) return 'The requested information could not be found.';
+  if (status >= 500) return 'The server ran into a problem. Please try again in a moment.';
+
+  return fallback;
+};
+
 const Students = () => {
   const { t } = useTranslation();
   const { user } = useUser();
@@ -59,26 +87,35 @@ const Students = () => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
+        setError("");
         let studentsData = [];
-        
-        if (user.is_superuser) {
-          // For admins, we need to get all students across all parents
-          // Since the API is parent-specific, we'll use the admin user's ID to try to get some data
-          // This is a temporary solution - ideally there should be an admin-specific endpoint
-          const res = await api.get(`/api/homeParent/?id=${user.account_id}`);
-          studentsData = Array.isArray(res.data.students) ? res.data.students : [];
-        } else {
-          // For parents, fetch their students
-          const res = await api.get(`/api/homeParent/?id=${parent}`);
-          studentsData = Array.isArray(res.data.students) ? res.data.students : [];
+
+        try {
+          if (user.is_superuser) {
+            // For admins, we need to get all students across all parents
+            // Since the API is parent-specific, we'll use the admin user's ID to try to get some data
+            // This is a temporary solution - ideally there should be an admin-specific endpoint
+            const res = await api.get(`/api/homeParent/?id=${user.account_id}`);
+            studentsData = Array.isArray(res.data.students) ? res.data.students : [];
+          } else {
+            // For parents, fetch their students
+            const res = await api.get(`/api/homeParent/?id=${parent}`);
+            studentsData = Array.isArray(res.data.students) ? res.data.students : [];
+          }
+        } catch (err) {
+          console.error("Error fetching students:", err);
+          setError(describeApiError(err, t('errors.couldNotLoadStudents')));
+          setStudents([]);
+          return;
         }
-        
+
         // Fetch additional student details (tutors only, since user details API is not available)
+        let tutorFetchFailedFor = [];
         const enhancedStudents = await Promise.all(
           studentsData.map(async (student) => {
             try {
               const studentTutorsRes = await api.get(`/api/student-tutors/${student.id}/`);
-              
+
               return {
                 ...student,
                 // Use existing student data or defaults since /api/users/ is not available
@@ -89,21 +126,27 @@ const Students = () => {
               };
             } catch (error) {
               console.error(`Error fetching tutors for student ${student.id}:`, error);
+              tutorFetchFailedFor.push(student.student_firstName || `#${student.id}`);
               return {
                 ...student,
                 profile_picture: student.profile_picture || null,
                 address: student.address || t('common.notProvided'),
-                city: student.city || t('common.notProvided'), 
+                city: student.city || t('common.notProvided'),
                 tutors: []
               };
             }
           })
         );
-        
+
         setStudents(enhancedStudents);
+        if (tutorFetchFailedFor.length > 0) {
+          setError(
+            `Couldn't load tutor information for: ${tutorFetchFailedFor.join(', ')}. The rest of the list loaded normally - try refreshing to retry.`
+          );
+        }
       } catch (err) {
         console.error("Error fetching students:", err);
-        setError(t('errors.couldNotLoadStudents'));
+        setError(describeApiError(err, t('errors.couldNotLoadStudents')));
         setStudents([]); // Set empty array to prevent undefined issues
       } finally {
         setLoading(false);
@@ -129,7 +172,7 @@ const Students = () => {
       setShowChangeTutorModal(true);
     } catch (error) {
       console.error("Error fetching available tutors:", error);
-      setError(t('errors.couldNotLoadTutors'));
+      setError(describeApiError(error, t('errors.couldNotLoadTutors')));
     }
   };
 
@@ -155,7 +198,7 @@ const Students = () => {
       window.location.reload();
     } catch (error) {
       console.error("Error submitting tutor change request:", error);
-      alert(t('errors.tutorChangeRequestFailed') || 'Failed to submit tutor change request. Please try again.');
+      alert(describeApiError(error, t('errors.tutorChangeRequestFailed') || 'Failed to submit tutor change request. Please try again.'));
     }
   };
 
@@ -207,7 +250,7 @@ const Students = () => {
 
     } catch (error) {
       console.error("Error updating student:", error);
-      alert(t('errors.studentUpdateFailed') || 'Failed to update student. Please try again.');
+      alert(describeApiError(error, t('errors.studentUpdateFailed') || 'Failed to update student. Please try again.'));
     }
   };
 
@@ -256,10 +299,7 @@ const Students = () => {
 
     } catch (error) {
       console.error("Error adding student:", error);
-      const errorMessage = error.response?.data?.error ||
-                           error.response?.data?.message ||
-                           t('errors.studentAddFailed') || 'Failed to add student. Please try again.';
-      alert(errorMessage);
+      alert(describeApiError(error, t('errors.studentAddFailed') || 'Failed to add student. Please try again.'));
     }
   };
 

@@ -741,6 +741,7 @@
     "leavingStudentFailed": "Failed to leave student. Please try again.",
     "acceptReplyFailed": "Failed to accept reply. Please try again.",
     "studentUpdateFailed": "Failed to update student. Please try again.",
+    "studentAddFailed": "Failed to add student. Please try again.",
     "deleteRequestFailed": "Failed to delete request. Please try again.",
     "accessDenied": "Access denied"
   },
