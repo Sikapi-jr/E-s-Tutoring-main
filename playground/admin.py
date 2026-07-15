@@ -8,8 +8,6 @@ from .models import (
     AcceptedTutor,
     Hours,
     WeeklyHours,
-    AiChatSession,
-    AiRequest,
     DiscountRegistration,
     GroupTutoringClass,
     GroupEnrollment,
@@ -121,8 +119,6 @@ admin.site.register(TutorResponse)
 admin.site.register(AcceptedTutor)
 admin.site.register(Hours)
 admin.site.register(WeeklyHours)
-admin.site.register(AiChatSession)
-admin.site.register(AiRequest)
 admin.site.register(DiscountRegistration)
 admin.site.register(DiagnosticTest)
 admin.site.register(ClassFile)

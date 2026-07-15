@@ -7,30 +7,23 @@ import "../styles/Students.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+const ONTARIO_CITIES = [
+  'Ajax', 'Aurora', 'Barrie', 'Belleville', 'Brampton', 'Brantford', 'Burlington', 'Cambridge',
+  'Chatham-Kent', 'Clarington', 'Collingwood', 'Cornwall', 'Dryden', 'Georgina', 'Grimsby', 'Guelph',
+  'Hamilton', 'Huntsville', 'Innisfil', 'Kawartha Lakes', 'Kenora', 'Kingston', 'Kitchener', 'Leamington',
+  'London', 'Markham', 'Midland', 'Milton', 'Mississauga', 'Newmarket', 'Niagara Falls',
+  'Niagara-on-the-Lake', 'North Bay', 'Oakville', 'Orangeville', 'Orillia', 'Oshawa', 'Ottawa',
+  'Peterborough', 'Pickering', 'Quinte West', 'Richmond Hill', 'Sarnia', 'St. Catharines', 'St. Thomas',
+  'Stratford', 'Sudbury', 'Tecumseh', 'Thunder Bay', 'Timmins', 'Toronto', 'Vaughan', 'Wasaga Beach',
+  'Waterloo', 'Welland', 'Whitby', 'Windsor', 'Woodstock'
+].sort();
+
 const Students = () => {
   const { t } = useTranslation();
   const { user } = useUser();
   const navigate = useNavigate();
 
-  // Early return if user is not loaded yet
-  if (!user) {
-    return (
-      <div className="students-wrapper">
-        <div className="students-card">
-          <h1>{t('students.title')}</h1>
-          <p>{t('common.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const parent = user.account_id;
-
-  /* redirect non-parents and non-admins */
-  if (user.roles !== "parent" && !user.is_superuser) {
-    navigate("/login");
-    return null;
-  }
+  const parent = user?.account_id;
 
   /* state */
   const [students, setStudents] = useState([]);
@@ -54,9 +47,9 @@ const Students = () => {
   const [addStudentForm, setAddStudentForm] = useState({
     firstName: "",
     lastName: "",
-    username: "",
-    password: "",
-    confirmPassword: ""
+    livesWithParent: true,
+    city: "",
+    birthYear: ""
   });
   const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
@@ -118,6 +111,13 @@ const Students = () => {
     };
     fetchStudents();
   }, [user, parent, t]);
+
+  /* redirect non-parents and non-admins */
+  useEffect(() => {
+    if (user && user.roles !== "parent" && !user.is_superuser) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   /* handle change tutor functionality */
   const handleChangeTutor = async (student) => {
@@ -219,18 +219,13 @@ const Students = () => {
       return;
     }
 
-    if (!addStudentForm.username.trim() || addStudentForm.username.length < 3) {
-      alert(t('students.usernameRequired') || 'Username must be at least 3 characters.');
+    if (!addStudentForm.livesWithParent && !addStudentForm.city.trim()) {
+      alert(t('students.cityRequired') || 'Please specify which city the student lives in.');
       return;
     }
 
-    if (!addStudentForm.password.trim() || addStudentForm.password.length < 6) {
-      alert(t('students.passwordMinLength') || 'Password must be at least 6 characters.');
-      return;
-    }
-
-    if (addStudentForm.password !== addStudentForm.confirmPassword) {
-      alert(t('students.passwordsMustMatch') || 'Passwords do not match.');
+    if (!addStudentForm.birthYear) {
+      alert(t('students.birthYearRequired') || 'Please provide the student\'s birth year.');
       return;
     }
 
@@ -238,14 +233,17 @@ const Students = () => {
       const formData = new FormData();
       formData.append("firstName", addStudentForm.firstName.trim());
       formData.append("lastName", addStudentForm.lastName.trim());
-      formData.append("username", addStudentForm.username.trim());
-      formData.append("password", addStudentForm.password);
+      formData.append("livesWithParent", addStudentForm.livesWithParent);
+      if (!addStudentForm.livesWithParent) {
+        formData.append("city", addStudentForm.city);
+      }
+      formData.append("birthYear", addStudentForm.birthYear);
 
       if (addStudentProfilePicture) {
         formData.append("profile_picture", addStudentProfilePicture);
       }
 
-      const response = await api.post(`/api/students/create/`, formData, {
+      await api.post(`/api/students/create/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -264,6 +262,23 @@ const Students = () => {
       alert(errorMessage);
     }
   };
+
+  // Wait for user to load
+  if (!user) {
+    return (
+      <div className="students-wrapper">
+        <div className="students-card">
+          <h1>{t('students.title')}</h1>
+          <p>{t('common.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-parents/non-admins are redirected by the effect above
+  if (user.roles !== "parent" && !user.is_superuser) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -388,22 +403,6 @@ const Students = () => {
                           onClick={() => handleChangeTutor(student)}
                         >
                           {t('students.changeTutor')}
-                        </button>
-                        <button
-                          className="view-reports-btn"
-                          onClick={() => navigate('/monthly-reports')}
-                          style={{
-                            backgroundColor: '#192A88',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.6rem 1rem',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: '500'
-                          }}
-                        >
-                          📊 View Reports
                         </button>
                       </div>
                     </div>
@@ -548,43 +547,52 @@ const Students = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>{t('common.username')} *</label>
+                  <label>{t('students.birthYear') || 'Birth Year'} *</label>
                   <input
-                    type="text"
-                    value={addStudentForm.username}
-                    onChange={(e) => setAddStudentForm({...addStudentForm, username: e.target.value})}
-                    placeholder={t('students.enterUsername')}
+                    type="number"
+                    value={addStudentForm.birthYear}
+                    onChange={(e) => setAddStudentForm({...addStudentForm, birthYear: e.target.value})}
+                    placeholder={t('students.enterBirthYear') || 'e.g. 2012'}
+                    min={new Date().getFullYear() - 100}
+                    max={new Date().getFullYear()}
                     required
                   />
-                  <small style={{ color: "#666", fontSize: "0.8rem" }}>
-                    {t('students.usernameHelp')}
-                  </small>
                 </div>
 
                 <div className="form-group">
-                  <label>{t('common.password')} *</label>
-                  <input
-                    type="password"
-                    value={addStudentForm.password}
-                    onChange={(e) => setAddStudentForm({...addStudentForm, password: e.target.value})}
-                    placeholder={t('students.enterPassword')}
+                  <label>{t('students.livesWithParent') || 'Does this student live with you?'} *</label>
+                  <select
+                    value={addStudentForm.livesWithParent ? 'yes' : 'no'}
+                    onChange={(e) => setAddStudentForm({
+                      ...addStudentForm,
+                      livesWithParent: e.target.value === 'yes',
+                      city: e.target.value === 'yes' ? '' : addStudentForm.city
+                    })}
                     required
-                  />
-                  <small style={{ color: "#666", fontSize: "0.8rem" }}>
-                    {t('students.passwordHelp')}
-                  </small>
+                  >
+                    <option value="yes">{t('common.yes') || 'Yes'}</option>
+                    <option value="no">{t('common.no') || 'No'}</option>
+                  </select>
                 </div>
 
-                <div className="form-group">
-                  <label>{t('students.confirmPassword')} *</label>
-                  <input
-                    type="password"
-                    value={addStudentForm.confirmPassword}
-                    onChange={(e) => setAddStudentForm({...addStudentForm, confirmPassword: e.target.value})}
-                    placeholder={t('students.confirmPasswordPlaceholder')}
-                    required
-                  />
-                </div>
+                {!addStudentForm.livesWithParent && (
+                  <div className="form-group">
+                    <label>{t('students.studentCity') || 'City'} *</label>
+                    <select
+                      value={addStudentForm.city}
+                      onChange={(e) => setAddStudentForm({...addStudentForm, city: e.target.value})}
+                      required
+                    >
+                      <option value="">{t('requests.selectCity') || 'Select a city'}</option>
+                      {ONTARIO_CITIES.map(cityName => (
+                        <option key={cityName} value={cityName}>{cityName}</option>
+                      ))}
+                    </select>
+                    <small style={{ color: "#666", fontSize: "0.8rem" }}>
+                      {t('students.cityHelp') || "This city will be used as the student's address for tutoring requests."}
+                    </small>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label>{t('students.profilePicture')} ({t('common.optional')})</label>
@@ -604,7 +612,9 @@ const Students = () => {
                 }}>
                   <p style={{ margin: 0, fontSize: "0.85rem", color: "#192A88" }}>
                     <strong>{t('students.autoFillNotice')}</strong><br/>
-                    {t('students.autoFillDescription')}
+                    {addStudentForm.livesWithParent
+                      ? (t('students.autoFillDescription') || "The student's address will match your own.")
+                      : (t('students.autoFillDescriptionAway') || "The city you select will be used as the student's address.")}
                   </p>
                 </div>
               </div>
@@ -617,9 +627,9 @@ const Students = () => {
                     setAddStudentForm({
                       firstName: "",
                       lastName: "",
-                      username: "",
-                      password: "",
-                      confirmPassword: ""
+                      livesWithParent: true,
+                      city: "",
+                      birthYear: ""
                     });
                     setAddStudentProfilePicture(null);
                   }}

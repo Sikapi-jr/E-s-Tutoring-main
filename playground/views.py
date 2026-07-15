@@ -2,7 +2,7 @@ from zoneinfo import ZoneInfo
 
 from django.dispatch import receiver
 from .models import UserDocument
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models.signals import post_save
 from django.shortcuts import render
 from django.db.models import Exists, OuterRef, Q
@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -32,8 +32,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
-from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer, HourDisputeSerializer
+from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
+from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer, UserDocumentSerializer, HourDisputeSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1318,21 +1318,19 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
             hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
             responseHours = HoursSerializer(hours, many=True, context={'request': request}).data
             
-            # Get invoices from Stripe if customer exists
-            resultStripe = stripe.Customer.list(email=user_email)
-            if not resultStripe.data:
-                # If no Stripe customer, return empty invoices but include students and hours
-                return Response({
-                    "invoices": [],
-                    "students": students_with_tutors,
-                    "hours": responseHours
-                })
-
-            customer = resultStripe.data[0]
-            invoices = stripe.Invoice.list(customer=customer.id, limit=55)
+            # Get invoices from Stripe if customer exists. Stripe failures
+            # shouldn't prevent the parent's student/hours list from loading.
+            invoicesData = []
+            try:
+                resultStripe = stripe.Customer.list(email=user_email)
+                if resultStripe.data:
+                    customer = resultStripe.data[0]
+                    invoicesData = stripe.Invoice.list(customer=customer.id, limit=55).data
+            except Exception as e:
+                logger.error(f"Stripe invoice lookup failed for user {user_id}: {e}")
 
             return Response({
-                "invoices": invoices.data,
+                "invoices": invoicesData,
                 "students": students_with_tutors,
                 "hours": responseHours
             })
@@ -1374,246 +1372,6 @@ class AnnouncementCreateView(APIView):
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class MonthlyReportCreateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        """Create or update a monthly report for a tutor-student pair"""
-        from datetime import datetime, timedelta
-
-        data = request.data.copy()
-        data['tutor'] = request.user.id
-
-        # Validate minimum hours (4+ hours required)
-        student_id = data.get('student')
-        month = int(data.get('month'))
-        year = int(data.get('year'))
-
-        # Calculate date range for the month
-        start_date = datetime(year, month, 1).date()
-        if month == 12:
-            end_date = datetime(year + 1, 1, 1).date()
-        else:
-            end_date = datetime(year, month + 1, 1).date()
-
-        # Get total hours for validation
-        hours = Hours.objects.filter(
-            tutor_id=request.user.id,
-            student_id=student_id,
-            date__gte=start_date,
-            date__lt=end_date,
-            status='Accepted'
-        )
-        total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-
-        if total_hours < 4:
-            return Response(
-                {"error": f"Insufficient hours. Need 4+ hours, but only {total_hours} hours logged."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check if report already exists
-        try:
-            existing_report = MonthlyReport.objects.get(
-                tutor_id=request.user.id,
-                student_id=student_id,
-                month=month,
-                year=year
-            )
-            # Update existing report
-            data['status'] = 'submitted'
-            data['submitted_at'] = timezone.now()
-            serializer = MonthlyReportSerializer(existing_report, data=data, partial=False)
-        except MonthlyReport.DoesNotExist:
-            # Create new report
-            data['status'] = 'submitted'
-            data['submitted_at'] = timezone.now()
-            # Calculate due date (1st of next month)
-            if month == 12:
-                due_date = datetime(year + 1, 1, 1).date()
-            else:
-                due_date = datetime(year, month + 1, 1).date()
-            data['due_date'] = due_date
-            serializer = MonthlyReportSerializer(data=data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class MonthlyReportListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Get monthly reports based on user role"""
-        user = request.user
-        
-        if user.roles == 'tutor':
-            # Tutors see reports they've created
-            reports = MonthlyReport.objects.filter(tutor=user).order_by('-year', '-month', '-created_at')
-        elif user.roles == 'parent':
-            # Parents see reports for their children
-            children = User.objects.filter(parent=user)
-            reports = MonthlyReport.objects.filter(student__in=children).order_by('-year', '-month', '-created_at')
-        else:
-            return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-        
-        serializer = MonthlyReportSerializer(reports, many=True)
-        return Response(serializer.data)
-
-
-class MonthlyReportDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, report_id):
-        """Get a specific monthly report"""
-        try:
-            report = MonthlyReport.objects.get(id=report_id)
-            user = request.user
-            
-            # Check permissions
-            if user.roles == 'tutor' and report.tutor != user:
-                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-            elif user.roles == 'parent' and report.student.parent != user:
-                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-            
-            serializer = MonthlyReportSerializer(report)
-            return Response(serializer.data)
-            
-        except MonthlyReport.DoesNotExist:
-            return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-class TutorStudentHoursView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Get tutoring hours for validation before report submission"""
-        tutor_id = request.query_params.get('tutor_id')
-        student_id = request.query_params.get('student_id')
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
-        
-        if not all([tutor_id, student_id, month, year]):
-            return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            month = int(month)
-            year = int(year)
-            
-            # Calculate date range for the month
-            from datetime import datetime
-            start_date = datetime(year, month, 1).date()
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1).date()
-            else:
-                end_date = datetime(year, month + 1, 1).date()
-            
-            # Get total hours for this tutor-student pair in the given month
-            hours = Hours.objects.filter(
-                tutor_id=tutor_id,
-                student_id=student_id,
-                date__gte=start_date,
-                date__lt=end_date,
-                status='Accepted'
-            )
-            
-            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-            
-            return Response({
-                'total_hours': float(total_hours),
-                'eligible_for_report': total_hours >= 4,
-                'sessions_count': hours.count(),
-                'month': month,
-                'year': year
-            })
-            
-        except ValueError:
-            return Response({"error": "Invalid month or year"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TutorStudentsReportStatusView(APIView):
-    """Get all students for a tutor with their monthly report statuses"""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from datetime import datetime
-        from dateutil.relativedelta import relativedelta
-
-        tutor = request.user
-        if tutor.roles != 'tutor':
-            return Response({"error": "Only tutors can access this endpoint"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Get the previous month (reports are due for previous month on the 1st)
-        today = datetime.now().date()
-        previous_month_date = today - relativedelta(months=1)
-        target_month = previous_month_date.month
-        target_year = previous_month_date.year
-
-        # Get all students for this tutor
-        from .models import AcceptedTutor
-        accepted_tutors = AcceptedTutor.objects.filter(tutor=tutor, status='Accepted').select_related('student')
-
-        students_data = []
-        for at in accepted_tutors:
-            student = at.student
-
-            # Calculate date range for the previous month
-            start_date = datetime(target_year, target_month, 1).date()
-            if target_month == 12:
-                end_date = datetime(target_year + 1, 1, 1).date()
-            else:
-                end_date = datetime(target_year, target_month + 1, 1).date()
-
-            # Get total hours for this student in the previous month
-            hours = Hours.objects.filter(
-                tutor=tutor,
-                student=student,
-                date__gte=start_date,
-                date__lt=end_date,
-                status='Accepted'
-            )
-            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-
-            # Check if report exists
-            try:
-                report = MonthlyReport.objects.get(
-                    tutor=tutor,
-                    student=student,
-                    month=target_month,
-                    year=target_year
-                )
-                report_status = report.status
-                report_id = report.id
-            except MonthlyReport.DoesNotExist:
-                # Report is needed if 4+ hours
-                if total_hours >= 4:
-                    report_status = 'pending'
-                else:
-                    report_status = 'not_required'
-                report_id = None
-
-            students_data.append({
-                'student_id': student.id,
-                'student_name': f"{student.firstName} {student.lastName}",
-                'student_username': student.username,
-                'hours_logged': float(total_hours),
-                'report_month': target_month,
-                'report_year': target_year,
-                'report_status': report_status,
-                'report_id': report_id,
-                'requires_report': total_hours >= 4
-            })
-
-        return Response({
-            'students': students_data,
-            'target_month': target_month,
-            'target_year': target_year,
-            'month_name': datetime(target_year, target_month, 1).strftime('%B %Y')
-        })
-
 
 class AnnouncementListView(APIView):
     permission_classes=[AllowAny]
@@ -2217,46 +1975,75 @@ class StudentsListView(APIView):
 
 class StudentCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def post(self, request):
+        import re
+
         # Only parents can create students
         if request.user.roles != 'parent':
             return Response({"error": "Only parents can create student accounts."}, status=403)
 
         # Extract data from request
-        first_name = request.data.get('firstName', '').strip()
-        last_name = request.data.get('lastName', '').strip()
-        username = request.data.get('username', '').strip()
-        password = request.data.get('password', '')
+        first_name = (request.data.get('firstName') or '').strip()
+        last_name = (request.data.get('lastName') or '').strip()
+        lives_with_parent_raw = request.data.get('livesWithParent', True)
+        city = (request.data.get('city') or '').strip()
+        birth_year_raw = request.data.get('birthYear')
         profile_picture = request.FILES.get('profile_picture', None)
 
         # Validation
         if not first_name or not last_name:
             return Response({"error": "First name and last name are required."}, status=400)
 
-        if not username or len(username) < 3:
-            return Response({"error": "Username must be at least 3 characters."}, status=400)
+        if isinstance(lives_with_parent_raw, str):
+            lives_with_parent = lives_with_parent_raw.strip().lower() in ('true', '1', 'yes')
+        else:
+            lives_with_parent = bool(lives_with_parent_raw)
 
-        if not password or len(password) < 6:
-            return Response({"error": "Password must be at least 6 characters."}, status=400)
+        if not lives_with_parent:
+            valid_cities = dict(User.CITY_CHOICES)
+            if not city:
+                return Response({"error": "Please specify which city the student lives in."}, status=400)
+            if city not in valid_cities:
+                return Response({"error": "Please select a valid city."}, status=400)
 
-        # Check username uniqueness
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "Username already exists. Please choose another."}, status=400)
+        if birth_year_raw in (None, ''):
+            return Response({"error": "Birth year is required."}, status=400)
+        try:
+            birth_year = int(birth_year_raw)
+        except (TypeError, ValueError):
+            return Response({"error": "Birth year must be a valid number."}, status=400)
+
+        current_year = timezone.now().year
+        if birth_year < current_year - 100 or birth_year > current_year:
+            return Response({"error": "Please provide a valid birth year."}, status=400)
+
+        # Students no longer pick their own username/password - generate a unique one
+        base_username = re.sub(r'[^a-zA-Z0-9]', '', f"{first_name}{last_name}").lower() or "student"
+        username = base_username
+        suffix = 1
+        while User.objects.filter(username=username).exists():
+            suffix += 1
+            username = f"{base_username}{suffix}"
+
+        # Address is the parent's own address when living together, otherwise the given city
+        student_address = request.user.address if lives_with_parent else city
+        student_city = request.user.city if lives_with_parent else city
 
         try:
             # Create student account with parent's information auto-filled
             student = User.objects.create_user(
                 username=username,
-                password=password,
+                password=None,
                 firstName=first_name,
                 lastName=last_name,
                 roles='student',
                 parent=request.user,
-                # Auto-fill from parent
-                address=request.user.address,
-                city=request.user.city,
+                lives_with_parent=lives_with_parent,
+                birth_year=birth_year,
+                address=student_address,
+                city=student_city,
                 phone_number=request.user.phone_number,
                 email='',  # Email is not unique, so leave blank for students
                 is_active=True,  # Students created by parents are immediately active
@@ -2292,6 +2079,9 @@ class StudentCreateView(APIView):
                     "username": student.username,
                     "firstName": student.firstName,
                     "lastName": student.lastName,
+                    "livesWithParent": student.lives_with_parent,
+                    "city": student.city,
+                    "birthYear": student.birth_year,
                 }
             }, status=201)
 
@@ -3859,62 +3649,6 @@ class BatchMonthlyHoursPayoutView(APIView):
                 "skipped": skipped
             })
     
-def get_client_ip(request):
-    """Get the client's IP address from request headers"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def create_chat_session(request):
-    ip_address = get_client_ip(request)
-    
-    # Check if IP has too many recent sessions
-    from django.utils import timezone
-    from datetime import timedelta
-    
-    recent_sessions = AiChatSession.objects.filter(
-        ip_address=ip_address,
-        created_at__gte=timezone.now() - timedelta(hours=1)
-    ).count()
-    
-    if recent_sessions >= 5:  # Max 5 sessions per hour per IP
-        return Response({
-            'error': 'Too many chat sessions. Please wait before starting a new session.'
-        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-    
-    session = AiChatSession.objects.create(ip_address=ip_address)
-    serializer = AiChatSessionSerializer(session)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-def chat_session(request, session_id):
-    session = get_object_or_404(AiChatSession, id=session_id)
-    serializer = AiChatSessionSerializer(session)
-
-    if request.method == 'POST':
-        message = request.data.get('message')
-        if not message:
-            return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            session.send(message)
-        except ValueError as e:
-            # Rate limiting error
-            return Response({
-                'error': str(e),
-                'rate_limited': True
-            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-    return Response(serializer.data)
-
-
 # API endpoint to serve media files as base64 or redirect
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -4128,20 +3862,8 @@ class StudentTutorsDetailView(APIView):
             return Response({'error': 'Student not found'}, status=404)
 
         # If user is a parent, verify they are the parent of this student
-        if request.user.roles == 'parent':
-            # Check if this parent has this student
-            try:
-                from django.db.models import Q
-                # Check if student exists with this parent's email
-                parent_students = User.objects.filter(
-                    roles='student',
-                    parent_email=request.user.email,
-                    id=student_id
-                )
-                if not parent_students.exists():
-                    return Response({'error': 'Access denied'}, status=403)
-            except:
-                return Response({'error': 'Access denied'}, status=403)
+        if request.user.roles == 'parent' and student.parent_id != request.user.id:
+            return Response({'error': 'Access denied'}, status=403)
 
         # Get all accepted tutors for this student
         accepted_tutors = AcceptedTutor.objects.filter(

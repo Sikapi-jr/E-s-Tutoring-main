@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from playground.views import create_chat_session, chat_session, stripe_reauth_token, create_event, google_status, list_egs_tutoring_events, list_egs_tutoring_events_unfiltered, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
+from playground.views import stripe_reauth_token, create_event, google_status, list_egs_tutoring_events, list_egs_tutoring_events_unfiltered, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
 from playground import group_tutoring_views
 
 # Router for group tutoring viewsets
@@ -38,11 +38,6 @@ urlpatterns = [
     path("resendVerification/", views.ResendVerificationView.as_view(), name="resendVerification"),
     path("admin/resendVerification/", views.AdminResendVerificationView.as_view(), name="adminResendVerification"),
     path("parentHours/", views.ParentHoursListView.as_view(), name="ParentCalendar"),
-    path('monthly-reports/create/', views.MonthlyReportCreateView.as_view(), name='monthly-report-create'),
-    path('monthly-reports/', views.MonthlyReportListView.as_view(), name='monthly-reports-list'),
-    path('monthly-reports/<int:report_id>/', views.MonthlyReportDetailView.as_view(), name='monthly-report-detail'),
-    path('monthly-reports/students-status/', views.TutorStudentsReportStatusView.as_view(), name='tutor-students-report-status'),
-    path('tutor-student-hours/', views.TutorStudentHoursView.as_view(), name='tutor-student-hours'),
     path("weeklyHours/", views.WeeklyHoursListView.as_view(), name="weeklyHours"),
     path("calculateHours/", views.calculateTotal.as_view(), name="calculateHours"),
     path("monthlyHours/", views.MonthlyHoursListView.as_view(), name="monthlyHours"),
@@ -53,8 +48,6 @@ urlpatterns = [
     path("dispute/", views.DisputeHours.as_view(), name="dispute"),
     path("hours/<int:hour_id>/edit/", views.EditHoursView.as_view(), name="edit-hours"),
     path("hours/<int:hour_id>/tutor-reply/", views.TutorReplyView.as_view(), name="tutor-reply"),
-    path("chat/sessions/", create_chat_session),
-    path("chat/sessions/<str:session_id>/", chat_session),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
     path('password-reset-username/', views.UsernamePasswordResetView.as_view(), name='password-reset-username'),
     path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),

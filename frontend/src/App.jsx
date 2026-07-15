@@ -16,7 +16,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import UnauthNavbar from "./components/UnauthNavBar";
 import Footer from "./components/Footer.jsx";
-import FloatingChat from "./components/FloatingChat.jsx";
 
 // Lazy load all other components
 const Home = lazy(() => import("./pages/Home"));
@@ -40,7 +39,6 @@ const CalendarApp = lazy(() => import("./components/CalendarApp"));
 const StripeReauth = lazy(() => import("./pages/stripeComplete"));
 const LoggedHoursPage = lazy(() => import("./components/LoggedHoursPage"));
 const EventsPage = lazy(() => import("./components/EventsPage"));
-const MonthlyReports = lazy(() => import("./pages/MonthlyReports"));
 const GroupTutoring = lazy(() => import("./pages/GroupTutoring"));
 const GroupTutoringEnrollmentDetail = lazy(() => import("./pages/GroupTutoringEnrollmentDetail"));
 const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
@@ -167,7 +165,6 @@ function AppRoutes() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/hours" element={<ProtectedRoute><LoggedHoursPage /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
-            <Route path="/monthly-reports" element={<ProtectedRoute><MonthlyReports /></ProtectedRoute>} />
             <Route path="/group-tutoring" element={<ProtectedRoute><GroupTutoring /></ProtectedRoute>} />
             <Route path="/group-tutoring/class/:classId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />
             <Route path="/group-tutoring/enrollment/:enrollmentId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />
@@ -205,9 +202,6 @@ function AppRoutes() {
       {!showUnauthNavbar && !isNoNavbarPage && (
         <Footer />
       )}
-
-      {/* Floating Chat - Available on all authenticated pages */}
-      {!showUnauthNavbar && !isNoNavbarPage && <FloatingChat />}
     </div>
   );
 }

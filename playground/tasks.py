@@ -19,10 +19,6 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 def hello_task(name):
     print(f"Hello {name}. You have {len(name)} characters in your name")
 
-@shared_task
-def handle_ai_request_job(ai_request_id):
-    models.AiRequest.objects.get(id=ai_request_id).handle() #Ensures the handle method in models will be ran in the background
-
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def create_stripe_account_async(self, user_id):
     """

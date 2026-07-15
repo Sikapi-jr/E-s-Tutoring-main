@@ -132,11 +132,6 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       content: t('tour.invoices'),
       placement: 'bottom',
     },
-    {
-      target: 'nav.nav a[href="/monthly-reports"]',
-      content: t('tour.monthlyReports'),
-      placement: 'bottom',
-    },
   ];
 
   const getParentSteps = () => [
@@ -209,11 +204,6 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.viewInvoices'),
-      placement: 'bottom',
-    },
-    {
-      target: 'nav.nav a[href="/monthly-reports"]',
-      content: t('tour.reportsParent'),
       placement: 'bottom',
     },
   ];

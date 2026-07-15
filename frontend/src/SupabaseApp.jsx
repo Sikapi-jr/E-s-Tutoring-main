@@ -27,7 +27,6 @@ const ParentDashboard = lazy(() => import("./pages/ParentDashboard"));
 const ViewReply = lazy(() => import("./pages/ViewReply"));
 const Profile = lazy(() => import("./components/Profile"));
 const Announcement = lazy(() => import("./pages/CreateAnnouncement"));
-const Chatgpt = lazy(() => import("./components/Chatgpt"));
 const LogHours = lazy(() => import("./pages/LogHours"));
 const Settings = lazy(() => import("./pages/Settings"));
 const SendWeekly = lazy(() => import("./pages/SendWeekly"));
@@ -37,7 +36,6 @@ const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const PasswordResetConfirm = lazy(() => import("./pages/PasswordResetConfirm"));
 const StripeComplete = lazy(() => import("./pages/stripeComplete"));
 const VerifyEmail = lazy(() => import("./components/VerifyEmail"));
-const MonthlyReports = lazy(() => import("./pages/MonthlyReports"));
 
 // Navigation component that shows appropriate navbar
 function NavigationWrapper() {
@@ -148,24 +146,10 @@ function AppRoutes() {
               </SupabaseProtectedRoute>
             } />
 
-            <Route path="/monthly-reports" element={
-              <SupabaseProtectedRoute requiredRole="tutor">
-                <MonthlyReports />
-              </SupabaseProtectedRoute>
-            } />
-
-
             {/* Admin-specific routes */}
             <Route path="/create-announcement" element={
               <SupabaseProtectedRoute requiredRole="admin">
                 <Announcement />
-              </SupabaseProtectedRoute>
-            } />
-
-            {/* AI Chat - available to all authenticated users */}
-            <Route path="/chat" element={
-              <SupabaseProtectedRoute>
-                <Chatgpt />
               </SupabaseProtectedRoute>
             } />
 

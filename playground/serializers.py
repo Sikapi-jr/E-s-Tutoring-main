@@ -10,14 +10,13 @@ from rest_framework import serializers
 from .models import TutoringRequest  # Import the Request model from models.py
 from .models import (
     TutorResponse, AcceptedTutor, Hours, WeeklyHours, Announcements, UserDocument,
-    ErrorTicket, MonthlyReport, Referral, HourDispute, TutorComplaint, TutorReferralRequest,
+    ErrorTicket, Referral, HourDispute, TutorComplaint, TutorReferralRequest,
     Popup, PopupDismissal, DiscountRegistration,
     GroupTutoringClass, GroupEnrollment, DiagnosticTest, DiagnosticTestSubmission,
     ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission,
     EmailLog,
 )
 from datetime import datetime, timedelta
-from playground.models import AiChatSession
 
 
 User = get_user_model()  # Move this outside the class definition for better performance
@@ -232,70 +231,6 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcements
         fields = '__all__'
 
-class MonthlyReportSerializer(serializers.ModelSerializer):
-    tutor_name = serializers.CharField(source='tutor.firstName', read_only=True)
-    student_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MonthlyReport
-        fields = [
-            'id', 'tutor', 'tutor_name', 'student', 'student_name', 'month', 'year',
-            'status', 'due_date', 'submitted_at',
-            'overall_progress', 'strengths', 'challenges', 'work_habits',
-            'confidence_attitude', 'homework_practice', 'parent_support', 'looking_ahead',
-            'created_at'
-        ]
-        extra_kwargs = {
-            'tutor': {'required': True},
-            'student': {'required': True},
-            'month': {'required': True},
-            'year': {'required': True},
-            'overall_progress': {'required': True},
-            'strengths': {'required': True},
-            'challenges': {'required': True},
-            'work_habits': {'required': True},
-            'confidence_attitude': {'required': True},
-            'homework_practice': {'required': True},
-            'parent_support': {'required': True},
-            'looking_ahead': {'required': True},
-        }
-    
-    def get_student_name(self, obj):
-        return f"{obj.student.firstName} {obj.student.lastName}"
-    
-    def validate(self, attrs):
-        # Validate that tutor has taught this student for at least 3 hours in the given month
-        tutor = attrs.get('tutor')
-        student = attrs.get('student')
-        month = attrs.get('month')
-        year = attrs.get('year')
-        
-        if tutor and student and month and year:
-            from datetime import datetime
-            from django.db.models import Sum
-            
-            # Calculate total hours for this tutor-student pair in the given month
-            start_date = datetime(year, month, 1).date()
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1).date()
-            else:
-                end_date = datetime(year, month + 1, 1).date()
-            
-            total_hours = Hours.objects.filter(
-                tutor=tutor,
-                student=student,
-                date__gte=start_date,
-                date__lt=end_date,
-                status='Accepted'
-            ).aggregate(total=Sum('totalTime'))['total']
-            
-            if not total_hours or total_hours < 3:
-                raise serializers.ValidationError({
-                    'non_field_errors': ['Tutor must have at least 3 hours with this student in the specified month to submit a report.']
-                })
-        
-        return attrs
-    
 class RequestSerializer(serializers.ModelSerializer):
     accepted_tutor_id = serializers.SerializerMethodField()
     accepted_tutor_name = serializers.SerializerMethodField()
@@ -485,27 +420,6 @@ class WeeklyHoursSerializer(serializers.ModelSerializer):
     class Meta:
         model = WeeklyHours
         fields = '__all__'
-
-class AiChatSessionMessagesSerializer(serializers.Serializer):
-    role = serializers.CharField()
-    content = serializers.CharField()
-
-class AiChatSessionSerializer(serializers.ModelSerializer): #Model Serializer, auto-generates serializer class based on model, fields, validation, methods included
-
-    messages = AiChatSessionMessagesSerializer(many=True)
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance) #to_representation is native to DRF, method controling how model instance is turned into JSON when sending API responses
-        representation['messages'] = [
-            msg for msg in representation["messages"]   #List of messages only returns non system messages.
-            if msg['role'] != 'system'
-        ]
-        return representation
-
-    class Meta:
-        model = AiChatSession
-        fields = ['id', 'messages']
-        read_only_fields=['messages'] #Dont want users to be able to write data from serializer
 
 class HourDisputeSerializer(serializers.ModelSerializer):
     complainer_name = serializers.CharField(source='complainer.firstName', read_only=True)

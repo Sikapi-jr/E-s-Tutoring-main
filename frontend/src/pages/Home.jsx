@@ -38,7 +38,6 @@ export default function Home() {
   // Tutor-specific state
   const [tutorStudents, setTutorStudents] = useState([]);
   const [tutorDocuments, setTutorDocuments] = useState([]);
-  const [tutorMonthlyReports, setTutorMonthlyReports] = useState([]);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [recentParentRequests, setRecentParentRequests] = useState([]);
   const [paymentTransfers, setPaymentTransfers] = useState([]);
@@ -85,6 +84,7 @@ export default function Home() {
         
         // Separate the API calls to handle errors independently
         let parentData = null;
+        let studentHoursData = [];
 
         // Fetch data based on user role
         if (user.roles === 'parent') {
@@ -141,11 +141,6 @@ export default function Home() {
               setEvents([]);
             }
             
-            // Get tutor's monthly reports due
-            const monthlyReportsRes = await api.get('/api/monthly-reports/');
-            const dueReports = monthlyReportsRes.data.filter(report => report.tutor === user.account_id && !report.submitted);
-            setTutorMonthlyReports(dueReports || []);
-
             // Get recent parent requests for tutors
             try {
               const requestsRes = await api.get('/api/requests/list/');
@@ -166,7 +161,8 @@ export default function Home() {
           try {
             // Get student's hours
             const hoursRes = await api.get('/api/parentHours/', { params: { id: user.account_id } });
-            setHours(hoursRes.data || []);
+            studentHoursData = hoursRes.data || [];
+            setHours(studentHoursData);
             
             // Get student's tutors (from hours data)
             const uniqueTutors = [];
@@ -251,11 +247,7 @@ export default function Home() {
             // Get all hours for admin view
             const allHoursRes = await api.get('/api/allHours/'); // Assuming this endpoint exists
             setHours(allHoursRes.data || []);
-            
-            // Get all monthly reports for admin
-            const allReportsRes = await api.get('/api/monthly-reports/');
-            setTutorMonthlyReports(allReportsRes.data || []);
-            
+
           } catch (adminError) {
             console.error("Admin data fetch failed:", adminError);
           }
@@ -273,9 +265,10 @@ export default function Home() {
           setInvoices(invoicesData);
 
           // Calculate totals
+          // Stripe invoice objects expose `status` ('paid', 'open', etc.), not a `paid` boolean
           let paid = 0, unpaid = 0;
           invoicesData.forEach((i) =>
-            i.paid
+            i.status === 'paid'
               ? (paid += i.amount_paid / 100)
               : (unpaid += i.amount_due / 100)
           );
@@ -311,7 +304,7 @@ export default function Home() {
             // For parents, show recent invoice payments
             if (parentData && parentData.invoices) {
               const recentPayments = parentData.invoices
-                .filter(invoice => invoice.paid)
+                .filter(invoice => invoice.status === 'paid')
                 .slice(0, 5)
                 .map(invoice => ({
                   id: invoice.id,
@@ -353,8 +346,11 @@ export default function Home() {
           const generatedNotifications = [];
           
           if (user.roles === 'parent') {
+            const hoursData = Array.isArray(parentData?.hours) ? parentData.hours : [];
+            const invoicesData = Array.isArray(parentData?.invoices) ? parentData.invoices : [];
+
             // Check for recent sessions
-            if (hoursData && hoursData.length > 0) {
+            if (hoursData.length > 0) {
               const recentSession = hoursData[0];
               generatedNotifications.push({
                 id: `session-${recentSession.id}`,
@@ -366,10 +362,10 @@ export default function Home() {
                 icon: '📚'
               });
             }
-            
+
             // Check for unpaid invoices
-            if (invoicesData && invoicesData.some(i => !i.paid)) {
-              const unpaidCount = invoicesData.filter(i => !i.paid).length;
+            if (invoicesData.some(i => i.status !== 'paid')) {
+              const unpaidCount = invoicesData.filter(i => i.status !== 'paid').length;
               generatedNotifications.push({
                 id: 'unpaid-invoices',
                 type: 'payment_due',
@@ -380,10 +376,10 @@ export default function Home() {
                 icon: '💳'
               });
             }
-            
+
             // Check for recent payments
-            if (invoicesData && invoicesData.some(i => i.paid)) {
-              const recentPayment = invoicesData.find(i => i.paid);
+            if (invoicesData.some(i => i.status === 'paid')) {
+              const recentPayment = invoicesData.find(i => i.status === 'paid');
               if (recentPayment) {
                 generatedNotifications.push({
                   id: `payment-${recentPayment.id}`,
@@ -397,19 +393,6 @@ export default function Home() {
               }
             }
           } else if (user.roles === 'tutor') {
-            // Check for monthly reports due
-            if (tutorMonthlyReports && tutorMonthlyReports.length > 0) {
-              generatedNotifications.push({
-                id: 'reports-due',
-                type: 'report_due',
-                title: 'Monthly Reports Due',
-                message: `You have ${tutorMonthlyReports.length} monthly report${tutorMonthlyReports.length > 1 ? 's' : ''} due`,
-                created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
-                read: false,
-                icon: '📝'
-              });
-            }
-
             // Check for upcoming sessions today
             if (events && events.length > 0) {
               const today = new Date();
@@ -532,8 +515,8 @@ export default function Home() {
             }
           } else if (user.roles === 'student') {
             // Check for completed sessions
-            if (hoursData && hoursData.length > 0) {
-              const recentSession = hoursData[0];
+            if (studentHoursData && studentHoursData.length > 0) {
+              const recentSession = studentHoursData[0];
               generatedNotifications.push({
                 id: `session-complete-${recentSession.id}`,
                 type: 'session_complete',
@@ -1422,45 +1405,6 @@ export default function Home() {
                 )}
               </div>
 
-
-              {/* Monthly Reports Due - aligned with scheduled events */}
-              <div
-                style={{
-                  background: "#fff",
-                  border: "3px solid #E1E1E1",
-                  borderRadius: 12,
-                  padding: "1rem",
-                  height: 225,
-                  maxHeight: 225,
-                  minHeight: 225,
-                  overflowY: "auto",
-                }}
-              >
-                <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.monthlyReportsDue')}</h4>
-                {tutorMonthlyReports.length > 0 ? (
-                  <>
-                    <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center", marginBottom: "0.5rem" }}>
-                      {t('home.reportsOverdue', { count: tutorMonthlyReports.length })}
-                    </div>
-                    <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", display: "flex", justifyContent: "space-between", borderBottom: "1px solid #eee", paddingBottom: "0.25rem" }}>
-                      <span>{t('common.date')}</span>
-                      <span>{t('home.month')}</span>
-                      <span>{t('home.student')}</span>
-                    </div>
-                    {tutorMonthlyReports.map((report, index) => (
-                      <div key={report.id || index} style={{ margin: "0.25rem 0", fontSize: "0.8rem", display: "flex", justifyContent: "space-between", padding: "0.25rem", backgroundColor: "#fff3cd", borderRadius: "4px" }}>
-                        <span>{new Date(report.due_date || Date.now()).toLocaleDateString()}</span>
-                        <span>{new Date(report.year, report.month - 1).toLocaleDateString('en', { month: 'short', year: 'numeric' })}</span>
-                        <span>{report.student_firstName || 'Unknown'} {report.student_lastName || ''}</span>
-                      </div>
-                    ))}
-                  </>
-                ) : (
-                  <p style={{ fontSize: "0.9rem", color: "#666", textAlign: "center" }}>
-                    {t('home.noReportsDue')}
-                  </p>
-                )}
-              </div>
             </>
           ) : user?.is_superuser ? (
             // ADMIN VIEW
@@ -1707,11 +1651,11 @@ export default function Home() {
               >
                 <h4 style={{ textAlign: "center", marginTop: 0 }}>{t('home.paidInvoices')}</h4>
                 <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-                  {t('home.invoicesSummary', { total: invoices.length, paid: invoices.filter((i) => i.paid).length })}
+                  {t('home.invoicesSummary', { total: invoices.length, paid: invoices.filter((i) => i.status === 'paid').length })}
                 </div>
-                {invoices.filter((i) => i.paid).length > 0 ? (
+                {invoices.filter((i) => i.status === 'paid').length > 0 ? (
                   invoices
-                    .filter((i) => i.paid)
+                    .filter((i) => i.status === 'paid')
                     .map((i) => (
                       <a
                         key={i.id}
@@ -1758,11 +1702,11 @@ export default function Home() {
                   {t('home.unpaidInvoices')}
                 </h4>
                 <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-                  {invoices.filter((i) => !i.paid).length} total
+                  {invoices.filter((i) => i.status !== 'paid').length} total
                 </div>
-                {invoices.filter((i) => !i.paid).length ? (
+                {invoices.filter((i) => i.status !== 'paid').length ? (
                   invoices
-                    .filter((i) => !i.paid)
+                    .filter((i) => i.status !== 'paid')
                     .map((i) => (
                       <a
                         key={i.id}

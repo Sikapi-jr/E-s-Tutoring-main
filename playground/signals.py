@@ -1,6 +1,5 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from playground.models import AiRequest
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.dispatch import receiver
@@ -16,14 +15,6 @@ from django_rest_passwordreset.signals import reset_password_token_created
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
-
-@receiver(post_save, sender=AiRequest) #This function is ran anytimes a new AiRequest object is saved
-def queue_ai_request_job(sender, instance, created, **kwargs):
-    if created: #Prevents duplicates, will only run once, when the object is created (not updated)
-        print("Signal: queuing job for new AiRequest")
-        # Import at runtime to avoid circular imports
-        from playground.tasks import handle_ai_request_job
-        handle_ai_request_job.delay(instance.id)
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):

@@ -11,7 +11,6 @@ psycopg2-binary
 python-dotenv
 django-rest-passwordreset
 stripe
-openai==1.16.1
 celery==5.4.0
 redis==5.0.1
 requests==2.31.0
