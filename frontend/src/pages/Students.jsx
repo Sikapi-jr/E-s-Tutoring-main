@@ -368,6 +368,13 @@ const Students = () => {
                     </h2>
                     <div className="student-details">
                       <p><strong>{t('students.totalHours')}:</strong> {student.totalHours || 0} {t('common.hours')}</p>
+                      {student.birth_year && (
+                        <p><strong>{t('students.birthYear')}:</strong> {student.birth_year}</p>
+                      )}
+                      <p>
+                        <strong>{t('students.livesWithParent')}:</strong>{' '}
+                        {student.lives_with_parent ? t('common.yes') : `${t('common.no')} (${student.city})`}
+                      </p>
                     </div>
                   </div>
                   {user.roles === "parent" && (

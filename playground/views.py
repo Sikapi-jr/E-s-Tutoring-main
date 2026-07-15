@@ -1296,36 +1296,35 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
             for student in all_students:
                 # Find if this student has an accepted tutor
                 tutor_relation = accepted_tutors.filter(student=student.id).first()
-                if tutor_relation:
-                    students_with_tutors.append({
-                        'id': student.id,
-                        'student_firstName': student.firstName,
-                        'student_lastName': student.lastName,
-                        'tutor_firstName': tutor_relation.tutor.firstName,
-                        'tutor_lastName': tutor_relation.tutor.lastName,
-                        'has_tutor': True
-                    })
-                else:
-                    students_with_tutors.append({
-                        'id': student.id,
-                        'student_firstName': student.firstName,
-                        'student_lastName': student.lastName,
-                        'tutor_firstName': None,
-                        'tutor_lastName': None,
-                        'has_tutor': False
-                    })
-            
+                student_data = {
+                    'id': student.id,
+                    'student_firstName': student.firstName,
+                    'student_lastName': student.lastName,
+                    'lives_with_parent': student.lives_with_parent,
+                    'birth_year': student.birth_year,
+                    'address': student.address,
+                    'city': student.city,
+                    'has_tutor': bool(tutor_relation),
+                    'tutor_firstName': tutor_relation.tutor.firstName if tutor_relation else None,
+                    'tutor_lastName': tutor_relation.tutor.lastName if tutor_relation else None,
+                }
+                students_with_tutors.append(student_data)
+
             hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
             responseHours = HoursSerializer(hours, many=True, context={'request': request}).data
-            
-            # Get invoices from Stripe if customer exists. Stripe failures
+
+            # Get invoices from Stripe if a customer exists. Stripe failures
             # shouldn't prevent the parent's student/hours list from loading.
+            # A parent's email can match more than one Stripe Customer record
+            # (e.g. re-onboarding created a new one) - aggregate invoices
+            # across all of them so older invoices aren't dropped.
             invoicesData = []
             try:
-                resultStripe = stripe.Customer.list(email=user_email)
-                if resultStripe.data:
-                    customer = resultStripe.data[0]
-                    invoicesData = stripe.Invoice.list(customer=customer.id, limit=55).data
+                resultStripe = stripe.Customer.list(email=user_email, limit=100)
+                for customer in resultStripe.data:
+                    customer_invoices = stripe.Invoice.list(customer=customer.id, limit=100)
+                    invoicesData.extend(customer_invoices.auto_paging_iter())
+                invoicesData.sort(key=lambda inv: inv.created, reverse=True)
             except Exception as e:
                 logger.error(f"Stripe invoice lookup failed for user {user_id}: {e}")
 
@@ -3212,28 +3211,31 @@ class InvoiceListView(APIView):
         if not customer_email:
             return Response({"error": "Missing 'email' query parameter"}, status=400)
 
-        result = stripe.Customer.list(email=customer_email)
+        # A customer's email can match more than one Stripe Customer record
+        # (e.g. re-onboarding created a new one) - aggregate invoices across
+        # all of them so older invoices aren't dropped.
+        result = stripe.Customer.list(email=customer_email, limit=100)
         if not result.data:
             # Return empty list instead of 404 error - customer may not have invoices yet
             return Response([])
 
-        customer = result.data[0]
-        invoices = stripe.Invoice.list(customer=customer.id, limit=55)
-
         response = []
-        for invoice in invoices.auto_paging_iter():
-            created_dt = datetime.fromtimestamp(invoice.created)
-            due_dt = datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None
+        for customer in result.data:
+            invoices = stripe.Invoice.list(customer=customer.id, limit=100)
+            for invoice in invoices.auto_paging_iter():
+                created_dt = datetime.fromtimestamp(invoice.created)
+                due_dt = datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None
 
-            response.append({
-                "id": invoice.id,
-                "date": created_dt,
-                "amount": invoice.amount_due,
-                "due_date": due_dt,
-                "status": invoice.status,
-                "link": invoice.hosted_invoice_url,
-            })
+                response.append({
+                    "id": invoice.id,
+                    "date": created_dt,
+                    "amount": invoice.amount_due,
+                    "due_date": due_dt,
+                    "status": invoice.status,
+                    "link": invoice.hosted_invoice_url,
+                })
 
+        response.sort(key=lambda inv: inv["date"], reverse=True)
         return Response(response)
 
 
