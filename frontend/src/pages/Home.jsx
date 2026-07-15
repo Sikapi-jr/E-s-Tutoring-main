@@ -1565,35 +1565,41 @@ export default function Home() {
                   padding: "1rem",
                   minHeight: 122,
                   height: 200,
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.students')}</h3>
                 <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
                   {t('home.activeStudentsCount', { count: students.length })}
                 </div>
-                {students.length > 0 ? (
-                  students.map((s, index) => {
-                    const tutorName = s.has_tutor
-                      ? `T: ${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
-                      : t('common.noTutor');
-                    return (
-                    <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "center" }}>
-                      <strong>{s.student_firstName || t('common.unknown')} {s.student_lastName || ''}</strong> - {tutorName}
-                    </div>
-                    );
-                  })
-                ) : (
-                  <Link to="/students" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
-                    {t('home.noStudentsYet')} {t('home.registerStudentText')}
-                  </Link>
-                )}
+                <div style={{ flex: 1, overflowY: "auto" }}>
+                  {students.length > 0 ? (
+                    students.map((s, index) => {
+                      const tutorName = s.has_tutor
+                        ? `T: ${s.tutor_firstName || ''} ${s.tutor_lastName || ''}`.trim()
+                        : t('common.noTutor');
+                      return (
+                      <div key={s.id || index} style={{ margin: "0.5rem 0", textAlign: "center" }}>
+                        <strong>{s.student_firstName || t('common.unknown')} {s.student_lastName || ''}</strong> - {tutorName}
+                      </div>
+                      );
+                    })
+                  ) : (
+                    <Link to="/students" style={{ color: "#192A88", textAlign: "center", display: "block" }}>
+                      {t('home.noStudentsYet')} {t('home.registerStudentText')}
+                    </Link>
+                  )}
+                </div>
                 {students.length > 0 && (
-                  <div style={{ textAlign: "center", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e1e1e1" }}>
-                    <Link 
-                      to="/students" 
-                      style={{ 
-                        color: "#192A88", 
-                        textDecoration: "none", 
+                  <div style={{ textAlign: "center", marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid #e1e1e1", flexShrink: 0 }}>
+                    <Link
+                      to="/students"
+                      style={{
+                        color: "#192A88",
+                        textDecoration: "none",
                         fontSize: "0.9rem",
                         fontWeight: "500"
                       }}
