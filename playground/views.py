@@ -1324,13 +1324,26 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
             # A parent's email can match more than one Stripe Customer record
             # (e.g. re-onboarding created a new one) - aggregate invoices
             # across all of them so older invoices aren't dropped.
+            # Build plain dicts rather than returning SDK objects directly -
+            # their JSON-serializability isn't guaranteed across stripe versions.
             invoicesData = []
             try:
                 resultStripe = stripe.Customer.list(email=user_email, limit=100)
                 for customer in resultStripe.data:
                     customer_invoices = stripe.Invoice.list(customer=customer.id, limit=100)
-                    invoicesData.extend(customer_invoices.auto_paging_iter())
-                invoicesData.sort(key=lambda inv: inv.created, reverse=True)
+                    for invoice in customer_invoices.auto_paging_iter():
+                        invoicesData.append({
+                            'id': invoice.id,
+                            'status': invoice.status,
+                            'amount_due': invoice.amount_due,
+                            'amount_paid': invoice.amount_paid,
+                            'amount_remaining': invoice.amount_remaining,
+                            'created': invoice.created,
+                            'due_date': invoice.due_date,
+                            'invoice_pdf': invoice.invoice_pdf,
+                            'hosted_invoice_url': invoice.hosted_invoice_url,
+                        })
+                invoicesData.sort(key=lambda inv: inv['created'], reverse=True)
             except Exception as e:
                 logger.error(f"Stripe invoice lookup failed for user {user_id}: {e}")
 
@@ -1966,16 +1979,52 @@ class RequestResponseCreateView(generics.ListCreateAPIView):
         )
 
 class StudentsListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        requester = request.user
         parent_id = request.query_params.get('parent', None)
-        if not parent_id:
+        is_admin = requester.is_superuser or requester.roles == 'admin'
+
+        if parent_id:
+            if not is_admin and str(requester.id) != str(parent_id):
+                return Response({"error": "You don't have permission to view these students."}, status=403)
+            students = User.objects.filter(roles='student', parent_id=parent_id)
+        elif is_admin:
+            # Admins with no parent filter see every student
+            students = User.objects.filter(roles='student')
+        else:
             return Response({"error": "Missing 'parent' query parameter."}, status=400)
 
-        students = User.objects.filter(roles='student', parent=parent_id)
-        serializer = UserSerializer(students, many=True)
-        return Response(serializer.data)
+        students = students.order_by('firstName', 'lastName')
+        serializer = UserSerializer(students, many=True, context={'request': request})
+        data = serializer.data
+
+        # Attach each student's accepted tutors in one query instead of
+        # making a separate per-student request.
+        student_ids = [entry['id'] for entry in data]
+        accepted_tutors = AcceptedTutor.objects.filter(
+            student_id__in=student_ids, status='Accepted'
+        ).select_related('tutor', 'request')
+
+        tutors_by_student = {}
+        for at in accepted_tutors:
+            tutors_by_student.setdefault(at.student_id, []).append({
+                'tutor_id': at.tutor.id,
+                'firstName': at.tutor.firstName,
+                'lastName': at.tutor.lastName,
+                'email': at.tutor.email,
+                'phone_number': at.tutor.phone_number,
+                'subject': at.request.subject,
+                'accepted_at': at.accepted_at,
+            })
+
+        for entry in data:
+            student_tutors = tutors_by_student.get(entry['id'], [])
+            entry['tutors'] = student_tutors
+            entry['has_tutor'] = len(student_tutors) > 0
+
+        return Response(data)
 
 
 class StudentCreateView(APIView):

@@ -81,69 +81,26 @@ const Students = () => {
   });
   const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
-  /* fetch students for parent or all students for admin */
+  /* fetch students for parent or all students for admin - same single-query
+     pattern Settings.jsx uses (GET /api/students/) rather than piggybacking
+     on the heavier /api/homeParent/ endpoint plus a per-student fan-out */
   useEffect(() => {
     if (!user) return;
     const fetchStudents = async () => {
       try {
         setLoading(true);
         setError("");
-        let studentsData = [];
 
-        try {
-          if (user.is_superuser) {
-            // For admins, we need to get all students across all parents
-            // Since the API is parent-specific, we'll use the admin user's ID to try to get some data
-            // This is a temporary solution - ideally there should be an admin-specific endpoint
-            const res = await api.get(`/api/homeParent/?id=${user.account_id}`);
-            studentsData = Array.isArray(res.data.students) ? res.data.students : [];
-          } else {
-            // For parents, fetch their students
-            const res = await api.get(`/api/homeParent/?id=${parent}`);
-            studentsData = Array.isArray(res.data.students) ? res.data.students : [];
-          }
-        } catch (err) {
-          console.error("Error fetching students:", err);
-          setError(describeApiError(err, t('errors.couldNotLoadStudents')));
-          setStudents([]);
-          return;
-        }
+        // Admins with no parent filter get every student; parents get their own
+        const params = user.is_superuser ? {} : { parent };
+        const res = await api.get('/api/students/', { params });
+        const studentsData = Array.isArray(res.data) ? res.data : [];
 
-        // Fetch additional student details (tutors only, since user details API is not available)
-        let tutorFetchFailedFor = [];
-        const enhancedStudents = await Promise.all(
-          studentsData.map(async (student) => {
-            try {
-              const studentTutorsRes = await api.get(`/api/student-tutors/${student.id}/`);
-
-              return {
-                ...student,
-                // Use existing student data or defaults since /api/users/ is not available
-                profile_picture: student.profile_picture || null,
-                address: student.address || t('common.notProvided'),
-                city: student.city || t('common.notProvided'),
-                tutors: studentTutorsRes.data || []
-              };
-            } catch (error) {
-              console.error(`Error fetching tutors for student ${student.id}:`, error);
-              tutorFetchFailedFor.push(student.student_firstName || `#${student.id}`);
-              return {
-                ...student,
-                profile_picture: student.profile_picture || null,
-                address: student.address || t('common.notProvided'),
-                city: student.city || t('common.notProvided'),
-                tutors: []
-              };
-            }
-          })
-        );
-
-        setStudents(enhancedStudents);
-        if (tutorFetchFailedFor.length > 0) {
-          setError(
-            `Couldn't load tutor information for: ${tutorFetchFailedFor.join(', ')}. The rest of the list loaded normally - try refreshing to retry.`
-          );
-        }
+        setStudents(studentsData.map((student) => ({
+          ...student,
+          address: student.address || t('common.notProvided'),
+          city: student.city || t('common.notProvided'),
+        })));
       } catch (err) {
         console.error("Error fetching students:", err);
         setError(describeApiError(err, t('errors.couldNotLoadStudents')));
@@ -206,8 +163,8 @@ const Students = () => {
   const handleEditStudent = (student) => {
     setSelectedStudentForEdit(student);
     setEditStudentForm({
-      firstName: student.student_firstName || "",
-      lastName: student.student_lastName || ""
+      firstName: student.firstName || "",
+      lastName: student.lastName || ""
     });
     setProfilePicture(null);
     setShowEditStudentModal(true);
@@ -237,8 +194,8 @@ const Students = () => {
           student.id === selectedStudentForEdit.id
             ? {
                 ...student,
-                student_firstName: editStudentForm.firstName,
-                student_lastName: editStudentForm.lastName
+                firstName: editStudentForm.firstName,
+                lastName: editStudentForm.lastName
               }
             : student
         )
@@ -393,18 +350,18 @@ const Students = () => {
                     {student.profile_picture && !student.profile_picture.includes('default-profile-picture.jpeg') ? (
                       <img
                         src={student.profile_picture}
-                        alt={`${student.student_firstName} ${student.student_lastName}`}
+                        alt={`${student.firstName} ${student.lastName}`}
                         className="profile-picture"
                       />
                     ) : (
                       <div className="default-avatar">
-                        {student.student_firstName?.charAt(0)}{student.student_lastName?.charAt(0)}
+                        {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
                       </div>
                     )}
                   </div>
                   <div className="student-info">
                     <h2 className="student-name">
-                      {student.student_firstName} {student.student_lastName}
+                      {student.firstName} {student.lastName}
                     </h2>
                     <div className="student-details">
                       <p><strong>{t('students.totalHours')}:</strong> {student.totalHours || 0} {t('common.hours')}</p>
@@ -435,12 +392,12 @@ const Students = () => {
                       {student.tutors.map((tutorRelation, index) => (
                         <div key={index} className="tutor-item">
                           <div className="tutor-info">
-                            <strong>{tutorRelation.tutor_firstName} {tutorRelation.tutor_lastName}</strong>
+                            <strong>{tutorRelation.firstName} {tutorRelation.lastName}</strong>
                             <span className="tutor-subject">{tutorRelation.subject}</span>
                           </div>
                           <div className="tutor-contact">
-                            <p>{t('common.email')}: {tutorRelation.tutor_email || 'N/A'}</p>
-                            <p>{t('common.phone')}: {tutorRelation.tutor_phone || 'N/A'}</p>
+                            <p>{t('common.email')}: {tutorRelation.email || 'N/A'}</p>
+                            <p>{t('common.phone')}: {tutorRelation.phone_number || 'N/A'}</p>
                           </div>
                         </div>
                       ))}
@@ -471,7 +428,7 @@ const Students = () => {
         {showChangeTutorModal && (
           <div className="modal-backdrop" onClick={() => setShowChangeTutorModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>{t('students.changeTutorFor')} {selectedStudentForChange?.student_firstName}</h2>
+              <h2>{t('students.changeTutorFor')} {selectedStudentForChange?.firstName}</h2>
               <div className="available-tutors">
                 <h3>{t('students.availableTutors')}</h3>
                 {availableTutors.length > 0 ? (
@@ -510,7 +467,7 @@ const Students = () => {
         {showEditStudentModal && (
           <div className="modal-backdrop" onClick={() => setShowEditStudentModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>{t('students.editStudentInfo')} {selectedStudentForEdit?.student_firstName}</h2>
+              <h2>{t('students.editStudentInfo')} {selectedStudentForEdit?.firstName}</h2>
 
               <div className="edit-form">
                 <div className="form-group">
