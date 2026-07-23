@@ -271,8 +271,7 @@ const GroupTutoringTutor = () => {
                           <td style={{ padding: '0.75rem' }}>
                             <a
                               href={file.file}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              download
                               style={{
                                 color: '#192A88',
                                 textDecoration: 'none',

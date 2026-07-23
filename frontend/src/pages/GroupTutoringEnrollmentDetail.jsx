@@ -836,8 +836,7 @@ const GroupTutoringEnrollmentDetail = () => {
                               </div>
                               <a
                                 href={file.file}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                download
                                 style={{
                                   padding: '0.5rem 1rem',
                                   backgroundColor: '#192A88',
@@ -896,8 +895,7 @@ const GroupTutoringEnrollmentDetail = () => {
                               </div>
                               <a
                                 href={file.file}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                download
                                 style={{
                                   padding: '0.5rem 1rem',
                                   backgroundColor: '#192A88',

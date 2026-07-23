@@ -2894,8 +2894,7 @@ const GroupTutoringAdmin = () => {
                                     </div>
                                     <a
                                       href={file.file}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                      download
                                       style={{
                                         padding: '0.4rem 0.8rem',
                                         backgroundColor: '#192A88',
@@ -2964,8 +2963,7 @@ const GroupTutoringAdmin = () => {
                                     </div>
                                     <a
                                       href={file.file}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                      download
                                       style={{
                                         padding: '0.4rem 0.8rem',
                                         backgroundColor: '#192A88',
