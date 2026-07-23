@@ -1039,7 +1039,7 @@ const GroupTutoringAdmin = () => {
             </thead>
             <tbody>
               {enrollments
-                .filter(e => ['pending_diagnostic', 'diagnostic_submitted'].includes(e.status))
+                .filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'approved'].includes(e.status))
                 .map(enrollment => (
                   <tr key={enrollment.id} style={{ borderBottom: '1px solid #dee2e6' }}>
                     <td style={{ padding: '1rem' }}>{enrollment.student_name}</td>
@@ -1050,7 +1050,7 @@ const GroupTutoringAdmin = () => {
                         padding: '0.25rem 0.5rem',
                         borderRadius: '4px',
                         fontSize: '0.85rem',
-                        backgroundColor: enrollment.status === 'diagnostic_submitted' ? '#ffc107' : '#6c757d',
+                        backgroundColor: enrollment.status === 'diagnostic_submitted' || enrollment.status === 'approved' ? '#ffc107' : '#6c757d',
                         color: 'white'
                       }}>
                         {enrollment.status.replace('_', ' ').toUpperCase()}
@@ -1063,7 +1063,7 @@ const GroupTutoringAdmin = () => {
                       {new Date(enrollment.created_at).toLocaleDateString()}
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      {enrollment.status === 'diagnostic_submitted' && (
+                      {(enrollment.status === 'diagnostic_submitted' || enrollment.status === 'approved') && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button
                             onClick={() => handleApproveEnrollment(enrollment.id)}
@@ -1107,7 +1107,7 @@ const GroupTutoringAdmin = () => {
           </table>
         </div>
 
-        {enrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted'].includes(e.status)).length === 0 && (
+        {enrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'approved'].includes(e.status)).length === 0 && (
           <p style={{ color: '#666', textAlign: 'center', padding: '2rem', backgroundColor: 'white' }}>
             No pending enrollments.
           </p>
