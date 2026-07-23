@@ -317,6 +317,8 @@ const GroupTutoringParent = () => {
   };
 
   const getAttendanceColor = (session) => {
+    if (session.is_cancelled) return '#f8d7da';
+
     const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
     const now = new Date();
     const isPast = sessionDateTime < now;
@@ -331,6 +333,7 @@ const GroupTutoringParent = () => {
   };
 
   const getAttendanceIcon = (session) => {
+    if (session.is_cancelled) return '✗';
     if (session.attendance_status === 'attended') return '✓';
     if (session.attendance_status === 'absent') return '✗';
     if (session.attendance_status === 'cancelled_advance') return '⊗';
@@ -821,8 +824,8 @@ const GroupTutoringParent = () => {
               <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.85rem' }}>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#e3f2fd', border: '1px solid #ddd', marginRight: '5px' }}></span>Upcoming</span>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#d4edda', border: '1px solid #ddd', marginRight: '5px' }}></span>Attended</span>
-                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Missed</span>
-                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#fff3cd', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled</span>
+                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#f8d7da', border: '1px solid #ddd', marginRight: '5px' }}></span>Missed / Class Cancelled</span>
+                <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#fff3cd', border: '1px solid #ddd', marginRight: '5px' }}></span>Cancelled by You</span>
                 <span><span style={{ display: 'inline-block', width: '15px', height: '15px', backgroundColor: '#ffb74d', border: '2px solid #ff9800', marginRight: '5px' }}></span>Today</span>
               </div>
 
@@ -924,7 +927,7 @@ const GroupTutoringParent = () => {
                               {daySessions.map(session => {
                                 const sessionDateTime = new Date(`${session.session_date}T${session.start_time}`);
                                 const now = new Date();
-                                const canCancel = sessionDateTime > now && !session.attendance_status;
+                                const canCancel = sessionDateTime > now && !session.attendance_status && !session.is_cancelled;
 
                                 return (
                                   <div

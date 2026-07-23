@@ -553,6 +553,8 @@ def parent_sessions_calendar(request):
                 # Check if there's an attendance record
                 attendance_status = None
                 existing_session_id = None
+                is_cancelled = False
+                cancellation_reason = ''
                 try:
                     # Try to find existing session
                     existing_session = ClassSession.objects.get(
@@ -560,6 +562,8 @@ def parent_sessions_calendar(request):
                         session_date=current_date
                     )
                     existing_session_id = existing_session.id
+                    is_cancelled = existing_session.is_cancelled
+                    cancellation_reason = existing_session.cancellation_reason
                     # Check attendance
                     try:
                         attendance = ClassAttendance.objects.get(
@@ -589,7 +593,9 @@ def parent_sessions_calendar(request):
                     'description': tutoring_class.description or '',
                     'location': tutoring_class.location or '',
                     'location_link': tutoring_class.location_link or '',
-                    'attendance_status': attendance_status
+                    'attendance_status': attendance_status,
+                    'is_cancelled': is_cancelled,
+                    'cancellation_reason': cancellation_reason
                 })
 
             current_date += timedelta(days=1)
