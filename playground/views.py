@@ -19,7 +19,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog, School, StudentSchoolCredit
+from .hours_utils import create_hours_with_credit_split
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -29,11 +30,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import json
 import logging
 from django.core.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
 from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
 from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer, UserDocumentSerializer, HourDisputeSerializer
+from .serializers import SchoolSerializer, SchoolAdminSerializer, StudentSchoolCreditSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -1313,6 +1316,8 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
                     'has_tutor': bool(tutor_relation),
                     'tutor_firstName': tutor_relation.tutor.firstName if tutor_relation else None,
                     'tutor_lastName': tutor_relation.tutor.lastName if tutor_relation else None,
+                    'credit_balance': student.credit_balance,
+                    'school_name': student.school.name if student.school_id else (student.school_other_name or None),
                 }
                 students_with_tutors.append(student_data)
 
@@ -2045,6 +2050,8 @@ class StudentCreateView(APIView):
         city = (request.data.get('city') or '').strip()
         birth_year_raw = request.data.get('birthYear')
         profile_picture = request.FILES.get('profile_picture', None)
+        school_id_raw = (request.data.get('school_id') or '').strip()
+        school_other_name = (request.data.get('school_other_name') or '').strip()
 
         # Validation
         if not first_name or not last_name:
@@ -2072,6 +2079,21 @@ class StudentCreateView(APIView):
         current_year = timezone.now().year
         if birth_year < current_year - 100 or birth_year > current_year:
             return Response({"error": "Please provide a valid birth year."}, status=400)
+
+        # School validation
+        selected_school = None
+        if not school_id_raw:
+            return Response({"error": "Please select the student's school."}, status=400)
+        if school_id_raw == 'other':
+            school_other_name = school_other_name[:200]
+            if not school_other_name:
+                return Response({"error": "Please enter the student's school name."}, status=400)
+        else:
+            try:
+                selected_school = School.objects.get(id=school_id_raw, is_active=True)
+            except (School.DoesNotExist, ValueError):
+                return Response({"error": "Please select a valid school."}, status=400)
+            school_other_name = ''
 
         # Students no longer pick their own username/password - generate a unique one
         base_username = re.sub(r'[^a-zA-Z0-9]', '', f"{first_name}{last_name}").lower() or "student"
@@ -2110,7 +2132,25 @@ class StudentCreateView(APIView):
 
             # Set default rates for student (should be 0)
             student.set_default_rates_by_role()
+
+            # Assign school and, if it grants credit hours, queue the student
+            # for admin verification before any credit balance is applied.
+            student.school = selected_school
+            student.school_other_name = school_other_name
             student.save()
+
+            if selected_school and selected_school.gives_credits and selected_school.credit_hours > 0:
+                try:
+                    credit_request = StudentSchoolCredit.objects.create(
+                        student=student,
+                        parent=request.user,
+                        school=selected_school,
+                        credit_hours_snapshot=selected_school.credit_hours,
+                    )
+                    from playground.tasks import send_school_credit_admin_alert_async
+                    send_school_credit_admin_alert_async.delay(credit_request.id)
+                except Exception as credit_error:
+                    logger.error(f"Failed to queue school credit request: {credit_error}")
 
             # Send confirmation email to parent
             try:
@@ -2136,6 +2176,8 @@ class StudentCreateView(APIView):
                     "livesWithParent": student.lives_with_parent,
                     "city": student.city,
                     "birthYear": student.birth_year,
+                    "school": student.school_id,
+                    "schoolOtherName": student.school_other_name,
                 }
             }, status=201)
 
@@ -2158,6 +2200,115 @@ class TutorStudentsListView(APIView):
             if student.student not in unique_students:
                 unique_students[student.student] = student
         serializer = AcceptedTutorSerializer(unique_students.values(), many=True)
+        return Response(serializer.data)
+
+
+class SchoolListView(generics.ListAPIView):
+    """Public (any authenticated user) minimal school list, for the
+    student-creation dropdowns. Excludes gives_credits/credit_hours."""
+    serializer_class = SchoolSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return School.objects.filter(is_active=True).order_by('name')
+
+
+class SchoolAdminListCreateView(generics.ListCreateAPIView):
+    """Admin CRUD (list all + create) for the school management page."""
+    serializer_class = SchoolAdminSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return School.objects.all().order_by('name')
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            raise PermissionDenied('Admin access required')
+
+
+class SchoolAdminDetailView(generics.RetrieveUpdateAPIView):
+    """Admin edit for a single school. No delete route - schools are
+    soft-deleted via is_active so existing student references stay intact."""
+    serializer_class = SchoolAdminSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = School.objects.all()
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            raise PermissionDenied('Admin access required')
+
+
+class AdminSchoolCreditQueueListView(generics.ListAPIView):
+    """Admin's school-credit verification queue."""
+    serializer_class = StudentSchoolCreditSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        status_filter = self.request.query_params.get('status', 'pending')
+        qs = StudentSchoolCredit.objects.select_related('student', 'parent', 'school')
+        if status_filter and status_filter != 'all':
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            raise PermissionDenied('Admin access required')
+
+
+class AdminSchoolCreditManageView(generics.RetrieveUpdateAPIView):
+    """Approve/decline a pending school-credit request, with an optional
+    school correction applied first (per admin's judgment before deciding)."""
+    serializer_class = StudentSchoolCreditSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = StudentSchoolCredit.objects.select_related('student', 'parent', 'school')
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            raise PermissionDenied('Admin access required')
+
+    @transaction.atomic
+    def patch(self, request, *args, **kwargs):
+        credit = self.get_object()
+        action = request.data.get('action')
+        new_school_id = request.data.get('school')
+        admin_notes = request.data.get('admin_notes', credit.admin_notes)
+
+        if action not in ('approve', 'decline'):
+            return Response({'error': "action must be 'approve' or 'decline'"}, status=400)
+        if credit.status != 'pending':
+            return Response({'error': f'This request has already been {credit.status}.'}, status=400)
+
+        # Optional school correction before deciding
+        if new_school_id and str(new_school_id) != str(credit.school_id):
+            try:
+                new_school = School.objects.get(id=new_school_id)
+            except School.DoesNotExist:
+                return Response({'error': 'Invalid school selected.'}, status=400)
+            credit.school = new_school
+            credit.credit_hours_snapshot = new_school.credit_hours
+            # Reflect the correction on the student's live record too
+            student = User.objects.select_for_update().get(pk=credit.student_id)
+            student.school = new_school
+            student.save(update_fields=['school'])
+
+        credit.admin_notes = admin_notes
+        credit.reviewed_by = request.user
+        credit.reviewed_at = timezone.now()
+
+        if action == 'approve':
+            student = User.objects.select_for_update().get(pk=credit.student_id)
+            student.credit_balance = (student.credit_balance or Decimal('0')) + credit.credit_hours_snapshot
+            student.save(update_fields=['credit_balance'])
+            credit.status = 'approved'
+        else:
+            credit.status = 'declined'
+
+        credit.save()
+        serializer = self.get_serializer(credit)
         return Response(serializer.data)
 
 
@@ -2448,21 +2599,35 @@ class LogHoursCreateView(APIView):
         # Set eligibility status based on current week
         is_eligible = cur_ws <= session_date <= cur_we
         eligible_status = "Eligible" if is_eligible else "Late"
-            
-        data.update({
-            "parent": parent,
-            "student": student_id,
-            "eligible": eligible_status,
-            "date": date_str,
-            "startTime": start_time_str,
-            "endTime": end_time_str
-        })
 
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        total_time_raw = data.get("totalTime")
+        if not total_time_raw:
+            raise ValidationError("Missing 'totalTime' field")
+        try:
+            total_time = Decimal(str(total_time_raw))
+        except (InvalidOperation, ValueError):
+            raise ValidationError("Invalid 'totalTime' value")
+
+        # Consumes any remaining school-credit balance, splitting into a
+        # 'credited' + 'normal' pair of Hours rows if the balance only
+        # partially covers this session. Invisible to the tutor - the
+        # business process is identical either way.
+        created_hours = create_hours_with_credit_split(
+            student_id=student_id,
+            parent_id=parent,
+            tutor_id=tutor_id,
+            date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            total_time=total_time,
+            location=data.get("location"),
+            subject=data.get("subject"),
+            notes=data.get("notes"),
+            eligible=eligible_status,
+        )
+        serializer = self.serializer_class(created_hours, many=True)
         return Response(serializer.data, status=201)
-    
+
 @receiver(post_save, sender=Hours)
 def maybe_issue_referral_credit(sender, instance, created, **kwargs):
     if instance.status not in ("Accepted", "accepted"):
@@ -2537,7 +2702,13 @@ class ParentHoursListView(APIView):
             records = Hours.objects.none()  # Return empty queryset for unknown roles
             
         serializer = HoursSerializer(records, many=True, context={'request': request})
-        return Response(serializer.data)
+        data = serializer.data
+        if user.roles == 'tutor':
+            # Tutors must never see/interact with the credited/normal billing
+            # split - strip it so their hours list looks like it always has.
+            for row in data:
+                row.pop('billing_status', None)
+        return Response(data)
 
 class EditHoursView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2700,11 +2871,12 @@ class WeeklyHoursListView(APIView):
 
         # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
         # Late hours can only be created by admins via batch add
+        # Credited hours are excluded - they're paid by school credit, not the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        ).order_by('date')
+        ).exclude(billing_status='credited').order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -2822,12 +2994,13 @@ class WeeklyHoursListView(APIView):
                 week_end = week_start + timedelta(days=6)
 
                 # Fetch detailed hours for this parent within the week (only pending, not yet invoiced)
+                # Credited hours excluded - not billed to the parent.
                 hours_details = Hours.objects.filter(
                     parent=parent,
                     date__range=[week_start, week_end],
                     eligible__in=['Eligible', 'Late'],
                     invoice_status='pending'
-                ).order_by('date', 'startTime')
+                ).exclude(billing_status='credited').order_by('date', 'startTime')
 
                 # Summary totals
                 total_online = sum(float(e['online_hours']) for e in entries)
@@ -3088,11 +3261,12 @@ class calculateTotal(APIView):
 
         # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
         # Late hours can only be created by admins via batch add
+        # Credited hours excluded - not billed to the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        )
+        ).exclude(billing_status='credited')
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson')
@@ -3168,11 +3342,12 @@ class CreateInvoiceView(APIView):
         # Calculate totals from actual hours data (same logic as calculateTotal view)
         # Include both Eligible and Late hours (Late hours are admin-added via batch add)
         # Only include hours that haven't been invoiced yet to prevent duplicates
+        # Credited hours are NEVER invoiced - they're covered by school credit, not the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        )
+        ).exclude(billing_status='credited')
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = list(User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email', 'firstName', 'lastName'))
@@ -3309,6 +3484,8 @@ class MonthlyHoursListView(APIView):
 
         # Include both Eligible and Late hours for tutor payouts
         # Late hours can only be created by admins via batch add
+        # Credited hours are intentionally NOT excluded here - tutors are
+        # still paid in full for credited sessions, only the parent isn't billed.
         monthly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late']
@@ -3422,6 +3599,9 @@ class MonthlyHoursListView(APIView):
 
             try:
                 # Fetch detailed hours for this tutor within the date range
+                # Not filtered on billing_status - credited sessions are still
+                # paid out in full to the tutor and appear here like any other
+                # session (no 'credited' label is ever shown to the tutor).
                 hours_details = Hours.objects.filter(
                     tutor=tutor,
                     date__range=[start_date, end_date],
@@ -4617,6 +4797,8 @@ class AdminUserHoursView(APIView):
             'tutor_referral_code': user.tutor_referral_code if user.roles == 'tutor' else None,
             'parent_id': user.parent.id if user.parent else None,
             'parent_name': f"{user.parent.firstName} {user.parent.lastName}" if user.parent else None,
+            'school_name': (user.school.name if user.school_id else (user.school_other_name or None)) if user.roles == 'student' else None,
+            'credit_balance': user.credit_balance if user.roles == 'student' else None,
         }
 
         # Add Google Calendar status for non-students
@@ -5401,31 +5583,35 @@ class AdminBatchAddHoursView(APIView):
                 is_within_current_week = cur_ws <= session_date <= cur_we
                 eligible_status = "Eligible" if is_within_current_week else "Late"
 
-                # Create the hours entry
-                hours_obj = Hours.objects.create(
-                    tutor=tutor,
-                    student=student,
-                    parent=parent,
+                # Create the hours entry - consumes any remaining school-credit
+                # balance the student has, splitting into 'credited' + 'normal'
+                # rows if the balance only partially covers this session.
+                created_hours = create_hours_with_credit_split(
+                    student_id=student.id,
+                    parent_id=parent.id,
+                    tutor_id=tutor.id,
                     date=session_date,
-                    startTime=start_time,
-                    endTime=end_time,
-                    totalTime=total_time_decimal,
+                    start_time=start_time,
+                    end_time=end_time,
+                    total_time=total_time_decimal,
                     location=location,
                     subject=subject,
                     notes=notes,
                     status='Accepted',  # Admin-added hours are auto-accepted
-                    eligible=eligible_status
+                    eligible=eligible_status,
                 )
 
-                results['successful'].append({
-                    'index': idx,
-                    'hour_id': hours_obj.id,
-                    'tutor': f"{tutor.firstName} {tutor.lastName}",
-                    'student': f"{student.firstName} {student.lastName}",
-                    'date': date_str,
-                    'total_time': str(total_time_decimal),
-                    'eligible': eligible_status
-                })
+                for hours_obj in created_hours:
+                    results['successful'].append({
+                        'index': idx,
+                        'hour_id': hours_obj.id,
+                        'tutor': f"{tutor.firstName} {tutor.lastName}",
+                        'student': f"{student.firstName} {student.lastName}",
+                        'date': date_str,
+                        'total_time': str(hours_obj.totalTime),
+                        'billing_status': hours_obj.billing_status,
+                        'eligible': eligible_status
+                    })
 
             except Exception as e:
                 results['failed'].append({
@@ -5480,6 +5666,7 @@ class AdminAllHoursView(APIView):
         late_hours = hours.filter(eligible='Late').count()
         pending_hours = hours.filter(invoice_status='pending').count()
         invoiced_hours = hours.filter(invoice_status='invoiced').count()
+        credited_hours = hours.filter(billing_status='credited').count()
 
         return Response({
             'hours': serializer.data,
@@ -5488,7 +5675,8 @@ class AdminAllHoursView(APIView):
                 'eligible': eligible_hours,
                 'late': late_hours,
                 'pending': pending_hours,
-                'invoiced': invoiced_hours
+                'invoiced': invoiced_hours,
+                'credited': credited_hours
             }
         })
 

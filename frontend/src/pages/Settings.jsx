@@ -7,6 +7,7 @@ import { ACCESS_TOKEN, ONTARIO_CITIES } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import NotificationSettings from "../components/NotificationSettings";
+import SchoolSelect from "../components/SchoolSelect";
 import { refreshUserDataIfNeeded } from "../utils/refreshUserData";
 import { describeApiError } from "../utils/errorHandler";
 // Using standard media URLs served by Django
@@ -52,7 +53,9 @@ export default function Settings() {
     lastName: "",
     livesWithParent: true,
     city: "",
-    birthYear: ""
+    birthYear: "",
+    school: "",
+    schoolOtherName: ""
   });
   const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
@@ -227,6 +230,16 @@ export default function Settings() {
       return;
     }
 
+    if (!addStudentForm.school) {
+      alert(t('students.schoolRequired') || "Please select the student's school.");
+      return;
+    }
+
+    if (addStudentForm.school === 'other' && !addStudentForm.schoolOtherName.trim()) {
+      alert(t('students.schoolNameRequired') || "Please enter the student's school name.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("firstName", addStudentForm.firstName.trim());
@@ -236,6 +249,10 @@ export default function Settings() {
         formData.append("city", addStudentForm.city);
       }
       formData.append("birthYear", addStudentForm.birthYear);
+      formData.append("school_id", addStudentForm.school);
+      if (addStudentForm.school === 'other') {
+        formData.append("school_other_name", addStudentForm.schoolOtherName.trim());
+      }
 
       if (addStudentProfilePicture) {
         formData.append("profile_picture", addStudentProfilePicture);
@@ -771,6 +788,18 @@ export default function Settings() {
               </div>
             )}
 
+            <SchoolSelect
+              value={addStudentForm.school}
+              otherValue={addStudentForm.schoolOtherName}
+              onChange={(school) => setAddStudentForm({ ...addStudentForm, school })}
+              onOtherChange={(schoolOtherName) => setAddStudentForm({ ...addStudentForm, schoolOtherName })}
+              containerClassName=""
+              containerStyle={{ marginBottom: '1rem' }}
+              labelStyle={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}
+              selectStyle={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' }}
+              inputStyle={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }}
+            />
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
                 {t('students.profilePicture')} ({t('common.optional')})
@@ -813,7 +842,9 @@ export default function Settings() {
                     lastName: "",
                     livesWithParent: true,
                     city: "",
-                    birthYear: ""
+                    birthYear: "",
+                    school: "",
+                    schoolOtherName: ""
                   });
                   setAddStudentProfilePicture(null);
                 }}

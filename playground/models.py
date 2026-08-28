@@ -89,6 +89,16 @@ class User(AbstractUser):
         on_delete=models.CASCADE,
         related_name='children'
     )
+    school = models.ForeignKey(
+        'School',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='students',
+        help_text="Student's school (students only)"
+    )
+    school_other_name = models.CharField(max_length=200, blank=True, help_text="Free-text school name when 'Other' is selected (students only)")
+    credit_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0, help_text="Remaining school-credit tutoring hours for this student (students only)")
     rateOnline = models.DecimalField(max_digits=10, decimal_places=2, default=35.00, blank=False, null=False)
     rateInPerson = models.DecimalField(max_digits=10, decimal_places=2, default=60.00, blank=False, null=False)
     stripe_account_id = models.CharField(max_length=100, blank=True, null=True)
@@ -192,6 +202,87 @@ class Referral(models.Model):
     def generate_code(self):
         import secrets
         self.code = secrets.token_urlsafe(8)
+
+
+class School(models.Model):
+    """Admin-managed list of schools students can be associated with.
+    Some schools grant new students a one-time tutoring credit-hours balance,
+    subject to admin verification (see StudentSchoolCredit)."""
+
+    SCHOOL_TYPE_CHOICES = [
+        ('elementary', 'Elementary'),
+        ('high', 'High School'),
+        ('other', 'Other/K-12'),
+    ]
+    LANGUAGE_STREAM_CHOICES = [
+        ('english', 'English'),
+        ('french', 'French'),
+        ('french_immersion', 'French Immersion'),
+    ]
+
+    name = models.CharField(max_length=200, unique=True)
+    city = models.CharField(max_length=30, choices=User.CITY_CHOICES, blank=True)
+    school_type = models.CharField(max_length=15, choices=SCHOOL_TYPE_CHOICES, blank=True)
+    language_stream = models.CharField(max_length=20, choices=LANGUAGE_STREAM_CHOICES, blank=True)
+    board_name = models.CharField(max_length=150, blank=True, help_text="e.g. TDSB, Durham DSB, Conseil scolaire Viamonde")
+    gives_credits = models.BooleanField(default=False, help_text="If true, new students from this school are queued for admin credit-hour verification")
+    credit_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0, help_text="Tutoring credit hours granted to a verified student from this school")
+    is_active = models.BooleanField(default=True, help_text="Inactive schools are hidden from student-facing dropdowns but preserved for existing student references/history")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class StudentSchoolCredit(models.Model):
+    """Admin approval queue + audit trail for a student's school-based credit-hours grant."""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('declined', 'Declined'),
+    ]
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='school_credit_requests',
+        limit_choices_to={'roles': 'student'}
+    )
+    parent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='school_credit_requests_for_children',
+        limit_choices_to={'roles': 'parent'}
+    )
+    school = models.ForeignKey(
+        'School',
+        on_delete=models.PROTECT,
+        related_name='credit_requests'
+    )
+    credit_hours_snapshot = models.DecimalField(max_digits=6, decimal_places=2, help_text="School's credit_hours value captured when this request was created or last corrected")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='school_credits_reviewed'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.student.firstName} {self.student.lastName} - {self.school.name} ({self.status})"
+
 
 class UserDocument(models.Model):
         user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='documents')
@@ -395,6 +486,10 @@ class Hours(models.Model):
         ('pending', 'Pending'),
         ('invoiced', 'Invoiced'),
     ]
+    BILLING_STATUS_CHOICES = [
+        ('normal', 'Normal'),
+        ('credited', 'Credited'),
+    ]
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -420,6 +515,12 @@ class Hours(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Accepted')
     eligible = models.CharField(max_length=15, choices=ELIGIBLE_CHOICES, default='Eligible')
     invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS_CHOICES, default='pending')
+    billing_status = models.CharField(
+        max_length=10,
+        choices=BILLING_STATUS_CHOICES,
+        default='normal',
+        help_text="'credited' hours are paid by school credit, not the parent - excluded from weekly parent billing/invoices but still counted toward monthly tutor payouts. Never shown to tutors."
+    )
     invoice_id = models.CharField(max_length=100, blank=True, null=True, help_text='Stripe invoice ID if invoiced')
     created_at = models.DateTimeField(auto_now_add=True)
     edited_at = models.DateTimeField(null=True, blank=True)
@@ -1169,6 +1270,7 @@ class EmailLog(models.Model):
         ('bulk_tutor',           'Bulk Tutor Email'),
         ('bulk_custom',          'Bulk Custom Email'),
         ('hours_reminder',       'Hours Reminder'),
+        ('school_credit_admin',  'School Credit Admin Alert'),
         ('test',                 'Test Email'),
         ('other',                'Other'),
     ]

@@ -31,6 +31,7 @@ const TYPE_LABELS = {
   bulk_tutor:          'Bulk (Tutors)',
   bulk_custom:         'Bulk (Custom)',
   hours_reminder:      'Hours Reminder',
+  school_credit_admin: 'School Credit (Admin)',
   test:                'Test',
   other:               'Other',
 };

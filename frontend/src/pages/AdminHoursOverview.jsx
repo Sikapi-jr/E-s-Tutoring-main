@@ -19,6 +19,7 @@ export default function AdminHoursOverview() {
   // Filter states
   const [statusFilter, setStatusFilter] = useState("all"); // all, Eligible, Late
   const [invoiceFilter, setInvoiceFilter] = useState("all"); // all, pending, invoiced
+  const [billingFilter, setBillingFilter] = useState("all"); // all, normal, credited
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -28,7 +29,8 @@ export default function AdminHoursOverview() {
     eligible: 0,
     late: 0,
     pending: 0,
-    invoiced: 0
+    invoiced: 0,
+    credited: 0
   });
 
   // Early return if user is not loaded yet
@@ -62,7 +64,8 @@ export default function AdminHoursOverview() {
         eligible: 0,
         late: 0,
         pending: 0,
-        invoiced: 0
+        invoiced: 0,
+        credited: 0
       });
     } catch (err) {
       console.error("Error fetching hours:", err);
@@ -90,8 +93,13 @@ export default function AdminHoursOverview() {
       filtered = filtered.filter(h => h.invoice_status === invoiceFilter);
     }
 
+    // Billing status filter (credited hours from school-credit balances)
+    if (billingFilter !== "all") {
+      filtered = filtered.filter(h => (h.billing_status || 'normal') === billingFilter);
+    }
+
     setFilteredHours(filtered);
-  }, [hours, statusFilter, invoiceFilter]);
+  }, [hours, statusFilter, invoiceFilter, billingFilter]);
 
   const handleSearch = () => {
     fetchHours();
@@ -100,6 +108,7 @@ export default function AdminHoursOverview() {
   const clearFilters = () => {
     setStatusFilter("all");
     setInvoiceFilter("all");
+    setBillingFilter("all");
     setStartDate("");
     setEndDate("");
   };
@@ -166,6 +175,11 @@ export default function AdminHoursOverview() {
           <div className="stat-label">Invoiced</div>
           <div className="stat-sublabel">(Already billed)</div>
         </div>
+        <div className="stat-card stat-credited">
+          <div className="stat-number">{stats.credited}</div>
+          <div className="stat-label">Credited</div>
+          <div className="stat-sublabel">(Paid by school credit)</div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -184,6 +198,14 @@ export default function AdminHoursOverview() {
             <option value="all">All</option>
             <option value="pending">Pending (Not invoiced)</option>
             <option value="invoiced">Invoiced (Already billed)</option>
+          </select>
+        </div>
+        <div className="filter-group">
+          <label>Billing Status:</label>
+          <select value={billingFilter} onChange={(e) => setBillingFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="normal">Normal (Billed to parent)</option>
+            <option value="credited">Credited (School credit)</option>
           </select>
         </div>
         <div className="filter-summary">
@@ -216,6 +238,7 @@ export default function AdminHoursOverview() {
                   <th>Status</th>
                   <th>Eligibility</th>
                   <th>Invoice Status</th>
+                  <th>Billing</th>
                   <th>Created</th>
                 </tr>
               </thead>
@@ -245,6 +268,13 @@ export default function AdminHoursOverview() {
                       <span className={`badge badge-${hour.invoice_status}`}>
                         {hour.invoice_status}
                       </span>
+                    </td>
+                    <td>
+                      {hour.billing_status === 'credited' ? (
+                        <span className="badge" style={{ backgroundColor: '#6610f2', color: 'white' }}>Credited</span>
+                      ) : (
+                        <span className="badge" style={{ backgroundColor: '#e9ecef', color: '#495057' }}>Normal</span>
+                      )}
                     </td>
                     <td style={{ fontSize: '0.85rem', color: '#666' }}>
                       {new Date(hour.created_at).toLocaleDateString()}

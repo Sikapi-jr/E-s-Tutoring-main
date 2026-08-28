@@ -1470,6 +1470,38 @@ export default function Home() {
                     {t('admin.manageDisputes', 'Manage Disputes')}
                   </button>
                   <button
+                    onClick={() => window.location.href = '/admin-schools'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#20c997",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.manageSchools', 'Manage Schools')}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/admin-school-credits'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#6610f2",
+                      color: "white",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.manageSchoolCredits', 'School Credit Requests')}
+                  </button>
+                  <button
                     onClick={() => window.location.href = '/admin-complaints'}
                     style={{
                       width: "100%",
@@ -1642,6 +1674,33 @@ export default function Home() {
                   {t('home.paidPercentage', { percent: paidPct.toFixed(1) })}
                 </p>
               </div>
+
+              {students.some((s) => Number(s.credit_balance) > 0) && (
+                <div
+                  className="mobile-section credit-balance-section"
+                  style={{
+                    background: "#fff",
+                    border: "3px solid #E1E1E1",
+                    borderRadius: 12,
+                    padding: "1rem",
+                  }}
+                >
+                  <h4 style={{ textAlign: "center", margin: "0 0 0.75rem 0" }}>
+                    {t('home.creditBalance', 'Credits Remaining')}
+                  </h4>
+                  {students
+                    .filter((s) => Number(s.credit_balance) > 0)
+                    .map((s) => (
+                      <div key={s.id} style={{ textAlign: "center", margin: "0.35rem 0" }}>
+                        <strong>{s.student_firstName} {s.student_lastName}</strong>
+                        {": "}
+                        <span style={{ color: "#28a745", fontWeight: 600 }}>
+                          {t('home.creditHoursValue', '{{count}} hrs', { count: Number(s.credit_balance) })}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
 
               <div
                 className="mobile-section paid-invoices-section"

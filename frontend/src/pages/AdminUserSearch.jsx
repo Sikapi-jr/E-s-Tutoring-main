@@ -16,6 +16,7 @@ export default function AdminUserSearch() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [userHours, setUserHours] = useState([]);
+  const [billingStatusFilter, setBillingStatusFilter] = useState("all"); // all, normal, credited
   const [userStats, setUserStats] = useState(null);
   const [relationships, setRelationships] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -466,6 +467,20 @@ export default function AdminUserSearch() {
                   <span>{userInfo.parent_name}</span>
                 </div>
               )}
+              {userInfo.roles === 'student' && (
+                <>
+                  <div className="info-item">
+                    <label>{t('students.school', 'School')}:</label>
+                    <span>{userInfo.school_name || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <label>{t('home.creditBalance', 'Credits Remaining')}:</label>
+                    <span style={{ color: Number(userInfo.credit_balance) > 0 ? '#28a745' : undefined, fontWeight: Number(userInfo.credit_balance) > 0 ? 600 : undefined }}>
+                      {userInfo.credit_balance ?? 0} hrs
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="info-item">
                 <label>{t('admin.memberSince')}:</label>
                 <span>{new Date(userInfo.created_at).toLocaleDateString()}</span>
@@ -817,14 +832,33 @@ export default function AdminUserSearch() {
           <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
             Showing all sessions involving this user as student, parent, or tutor
           </p>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ marginRight: '0.5rem', fontWeight: 500 }}>Billing:</label>
+            <select
+              value={billingStatusFilter}
+              onChange={(e) => setBillingStatusFilter(e.target.value)}
+              style={{ padding: '0.4rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            >
+              <option value="all">All</option>
+              <option value="normal">Normal (Billed to parent)</option>
+              <option value="credited">Credited (School credit)</option>
+            </select>
+          </div>
           <div className="hours-list">
-            {userHours.map((hour) => (
+            {userHours
+              .filter((hour) => billingStatusFilter === 'all' || (hour.billing_status || 'normal') === billingStatusFilter)
+              .map((hour) => (
               <div key={hour.id} className="hour-card">
                 <div className="hour-header">
                   <div className="hour-date">{hour.date}</div>
                   <div className="hour-time">
                     {hour.startTime} - {hour.endTime} ({hour.totalTime}h)
                   </div>
+                  {hour.billing_status === 'credited' && (
+                    <span style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', backgroundColor: '#6610f2', color: 'white' }}>
+                      Credited
+                    </span>
+                  )}
                 </div>
                 <div className="hour-details">
                   <div className="hour-participants">

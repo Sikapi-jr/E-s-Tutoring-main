@@ -21,6 +21,13 @@ urlpatterns = [
     path('students/', views.StudentsListView.as_view(), name='students-list'),
     path('students/create/', views.StudentCreateView.as_view(), name='student-create'),
     path('TutorStudents/', views.TutorStudentsListView.as_view(), name='TutorStudents-list'),
+
+    # School list + credit-hours program
+    path('schools/', views.SchoolListView.as_view(), name='school-list'),
+    path('admin/schools/', views.SchoolAdminListCreateView.as_view(), name='admin-school-list-create'),
+    path('admin/schools/<int:pk>/', views.SchoolAdminDetailView.as_view(), name='admin-school-detail'),
+    path('admin/school-credits/', views.AdminSchoolCreditQueueListView.as_view(), name='admin-school-credit-list'),
+    path('admin/school-credits/<int:pk>/manage/', views.AdminSchoolCreditManageView.as_view(), name='admin-school-credit-manage'),
     path('referral/create/', views.ReferralCreateView.as_view(), name='referral-create'),
     path('referral/list/', views.ReferralListView.as_view(), name='referral-list'),
     path('referral/admin/all/', views.AdminReferralListView.as_view(), name='admin-referral-list'),

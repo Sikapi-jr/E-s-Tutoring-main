@@ -48,7 +48,7 @@
         "description": "Register an account for yourself, then create student accounts for your children through your parent dashboard."
       },
       "step2": {
-        "title": "Request a Tutor", 
+        "title": "Request a Tutor",
         "description": "Submit a tutoring request specifying your child's grade, subject needs, and preferred learning format (online or in-person)."
       },
       "step3": {
@@ -189,13 +189,12 @@
     "studentRegistrationNote": "You are creating an account for your child. You must have a parent account first before registering a student account.",
     "registerAsStudent": "Register as Student",
     "registerAsParent": "Register as Parent",
-    "verificationEmailSent": "Verification email sent to {{email}}",
+    "verificationEmailSent": "Verification email sent! Please check your inbox.",
     "parentVerificationEmailSent": "Thank you for registering! Verification email sent to {{email}}. Register your child's account as well to get started!",
     "registerAs": "Register as {{role}}",
     "noUserLoggedIn": "No user is logged in.",
     "verificationFailed": "Verification failed.",
     "verifyingEmail": "Verifying your email...",
-    "verificationEmailSent": "Verification email sent! Please check your inbox.",
     "verificationEmailError": "Error sending verification email. Please try again.",
     "passwordResetSuccess": "Password reset successful!",
     "usernamePlaceholder": "Username",
@@ -258,7 +257,6 @@
     "monthlyReportsDue": "Monthly Reports Due",
     "reportsOverdue": "{{count}} reports overdue",
     "month": "Month",
-    "student": "Student",
     "noReportsDue": "No reports due",
     "childrenWorkedHours": "Your children have worked {{hours}} hour(s) this week!",
     "studentWorkedHours": "You have worked {{hours}} hour(s) this week!",
@@ -279,7 +277,6 @@
     "notifications": "Notifications",
     "viewAll": "View All",
     "googleAccountNotConnected": "Google account isn't connected, connect now?",
-    "connectGoogleCalendar": "Connect Google Calendar",
     "monthlyPayout": "Monthly payout",
     "thisMonth": "month",
     "thisWeek": "week",
@@ -290,7 +287,9 @@
     "parentNotifiedCannotAttend": "Parent has been notified that you cannot attend this event.",
     "failedToNotifyParent": "Failed to notify parent. Please contact them directly.",
     "failedToLoadTutors": "Failed to load tutors",
-    "noTutorsAssigned": "No tutors assigned yet"
+    "noTutorsAssigned": "No tutors assigned yet",
+    "creditBalance": "Credits Remaining",
+    "creditHoursValue": "{{count}} hrs"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",
@@ -312,7 +311,7 @@
     "accepted": "Accepted",
     "rejected": "Rejected",
     "allSubjects": "All Subjects",
-    "allGrades": "All Grades", 
+    "allGrades": "All Grades",
     "allServices": "All Services",
     "allCities": "All Cities",
     "allStatuses": "All statuses",
@@ -343,13 +342,12 @@
     "tutorMessage": "Tutor's Message"
   },
   "logHours": {
-    "title": "Log Hours",
+    "title": "Log Tutoring Hours",
     "cannotLogFuture": "Cannot log hours for future dates or times. Please select a past date and time.",
     "endTimeCannotBeFuture": "The session end time cannot be in the future. Please check your date and end time.",
     "duplicateEntry": "You have already logged hours for this student at this exact date and time. Please check your existing entries or select a different time.",
     "failedToLog": "Failed to log hours. Please check all fields and try again.",
-    "title": "Log Tutoring Hours",
-    "selectStudent": "Select Student",
+    "selectStudent": "-- Select Student --",
     "startTime": "Start Time",
     "endTime": "End Time",
     "subject": "Subject",
@@ -360,7 +358,6 @@
     "invalidTimeRange": "End time must be after start time.",
     "totalHours": "Total Hours: {{hours}}",
     "sessionTitle": "Finished a session? Log your hours",
-    "selectStudent": "-- Select Student --",
     "selectLocation": "Select Location",
     "online": "Online",
     "inPerson": "In-Person",
@@ -399,14 +396,14 @@
     "timePeriod": "Time Period",
     "allTime": "All Time",
     "thisWeek": "This Week",
-    "thisMonth": "This Month", 
+    "thisMonth": "This Month",
     "thisYear": "This Year",
     "totalSessions": "Total per Session",
     "avgPerSession": "Avg per Session",
     "allEligible": "All Eligible",
     "allLocations": "All Locations",
     "statusAccepted": "Accepted",
-    "statusDisputed": "Disputed", 
+    "statusDisputed": "Disputed",
     "statusResolved": "Resolved",
     "statusVoid": "Void",
     "allStatuses": "All Statuses",
@@ -431,7 +428,7 @@
     "repeat": "Repeat",
     "location": "Location",
     "attendees": "Attendees",
-    "attendee": "Attendee", 
+    "attendee": "Attendee",
     "tutor": "Tutor",
     "status": "Status",
     "eventCreated": "Event created successfully!",
@@ -540,8 +537,7 @@
     "unassignError": "Error unassigning tutor. Please try again.",
     "requestActionTitle": "What would you like to do with the request?",
     "requestActionPrompt": "You can keep the request active so other tutors can respond, or delete it completely.",
-    "keepRequestActive": "Keep Request Active",
-    "deleteRequest": "Delete Request"
+    "keepRequestActive": "Keep Request Active"
   },
   "referral": {
     "tutorReferralRequest": "Tutor Referral Request",
@@ -696,7 +692,6 @@
     "noEventsMatchFilters": "No events match your filters.",
     "canAttend": "Can Attend",
     "sessionDetails": "Session Details",
-    "cancelSession": "Cancel Session",
     "cancelConfirmation": "Are you sure you want to cancel this session?",
     "cancelReason": "Cancellation Reason",
     "cancelReasonRequired": "Please provide a reason for cancellation",
@@ -822,11 +817,23 @@
     "submitConcern": "Submit Concern 📝"
   },
   "replies": {
+    "title": "View Replies",
+    "reply": "Reply",
     "message": "Message",
+    "sentBy": "Sent by",
     "sentAt": "Sent at",
-    "emailQuestions": "Email (questions)",
+    "dateSent": "Date Sent",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "reject": "Reject",
+    "noReplies": "No replies available",
+    "replyAccepted": "Reply accepted successfully!",
+    "replyRejected": "Reply rejected successfully!",
+    "errorAccepting": "Error accepting reply",
+    "errorRejecting": "Error rejecting reply",
+    "noRepliesYet": "No replies yet. Tutors will respond to your request soon.",
+    "tutorDocuments": "Tutor Documents",
+    "noDocuments": "No documents available"
   },
   "weekly": {
     "datePlaceholder": "Date today (Monday)",
@@ -869,25 +876,6 @@
     "pendingReferrals": "Pending Referrals",
     "completedReferrals": "Completed Referrals"
   },
-  "replies": {
-    "title": "View Replies",
-    "reply": "Reply",
-    "message": "Message",
-    "sentBy": "Sent by",
-    "sentAt": "Sent at",
-    "dateSent": "Date Sent",
-    "accept": "Accept",
-    "decline": "Decline",
-    "reject": "Reject",
-    "noReplies": "No replies available",
-    "replyAccepted": "Reply accepted successfully!",
-    "replyRejected": "Reply rejected successfully!",
-    "errorAccepting": "Error accepting reply",
-    "errorRejecting": "Error rejecting reply",
-    "noRepliesYet": "No replies yet. Tutors will respond to your request soon.",
-    "tutorDocuments": "Tutor Documents",
-    "noDocuments": "No documents available"
-  },
   "verification": {
     "verifying": "Verifying your email...",
     "verified": "Email verified successfully!",
@@ -898,7 +886,7 @@
   "grades": {
     "kindergarten": "Kindergarten",
     "grade1": "Grade 1",
-    "grade2": "Grade 2", 
+    "grade2": "Grade 2",
     "grade3": "Grade 3",
     "grade4": "Grade 4",
     "grade5": "Grade 5",
@@ -914,7 +902,7 @@
   },
   "services": {
     "homework": "Homework Help",
-    "testPrep": "Test Preparation", 
+    "testPrep": "Test Preparation",
     "examPrep": "Exam Preparation",
     "enrichment": "Enrichment",
     "remedial": "Remedial Support"
@@ -1159,7 +1147,18 @@
     "referralCodeUsed": "Referral Code Used",
     "acceptedAt": "Accepted At",
     "respondedAt": "Responded At",
-    "acceptedStatus": "Relationship Status"
+    "acceptedStatus": "Relationship Status",
+    "manageSchools": "Manage Schools",
+    "manageSchoolCredits": "School Credit Requests",
+    "schools": "Schools",
+    "schoolCredits": "School Credits",
+    "addSchool": "Add School",
+    "givesCredits": "Gives Free Hours",
+    "creditHours": "Credit Hours",
+    "schoolName": "Name",
+    "schoolCity": "City",
+    "schoolBoard": "Board",
+    "showInactiveSchools": "Show inactive schools"
   },
   "discount": {
     "title": "Receive Permanent 10% Discount",
@@ -1217,7 +1216,13 @@
     "autoFillDescriptionAway": "The city you select will be used as the student's address. Their phone number will still match yours.",
     "pleaseProvideNames": "Please provide first and last name.",
     "studentAddedSuccessfully": "Student added successfully!",
-    "totalHours": "Total Hours"
+    "totalHours": "Total Hours",
+    "school": "School",
+    "otherSchool": "Other",
+    "selectSchool": "Select a school",
+    "enterSchoolName": "Enter the student's school name",
+    "schoolRequired": "Please select the student's school.",
+    "schoolNameRequired": "Please enter the student's school name."
   },
   "legal": {
     "privacyPolicy": "Privacy Policy",

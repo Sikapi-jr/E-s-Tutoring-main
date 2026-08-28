@@ -14,7 +14,7 @@ from .models import (
     Popup, PopupDismissal, DiscountRegistration,
     GroupTutoringClass, GroupEnrollment, DiagnosticTest, DiagnosticTestSubmission,
     ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission,
-    EmailLog,
+    EmailLog, School, StudentSchoolCredit,
 )
 from datetime import datetime, timedelta
 
@@ -109,6 +109,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     documents = UserDocumentSerializer(many=True, read_only=True)
     profile_picture = serializers.SerializerMethodField()
+    school_name = serializers.SerializerMethodField()
 
     class Meta:
         model  = User
@@ -124,6 +125,7 @@ class UserSerializer(serializers.ModelSerializer):
             "documents",
             "profile_picture",
             "tutor_referral_code",
+            "school", "school_other_name", "school_name", "credit_balance",
         ]
         extra_kwargs = {
             "password": {"write_only": True, "min_length": 8},
@@ -143,7 +145,12 @@ class UserSerializer(serializers.ModelSerializer):
             base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
             return base_url + obj.profile_picture.url
         return None
-    
+
+    def get_school_name(self, obj):
+        if obj.school_id:
+            return obj.school.name
+        return obj.school_other_name or None
+
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already in use.")
@@ -368,7 +375,7 @@ class HoursSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Hours
-        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'invoice_status', 'invoice_id', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'parent_firstName', 'parent_lastName', 'has_disputes', 'dispute_id']
+        fields = ['id', 'student','parent', 'tutor', 'date', 'startTime', 'endTime', 'totalTime', 'location', 'subject', 'notes', 'status', 'eligible', 'invoice_status', 'invoice_id', 'billing_status', 'created_at', 'edited_at', 'edit_history', 'tutor_reply', 'student_firstName', 'student_lastName', 'student_username', 'tutor_firstName', 'tutor_lastName', 'parent_firstName', 'parent_lastName', 'has_disputes', 'dispute_id']
         extra_kwargs = {
             "student": {"required": True},
             "parent": {"required": False},
@@ -380,6 +387,7 @@ class HoursSerializer(serializers.ModelSerializer):
             "location": {"required": True},
             "subject": {"required": True},
             "notes": {"required": True},
+            "billing_status": {"required": False},
         }
     
     def get_has_disputes(self, obj):
@@ -840,3 +848,55 @@ class EmailLogSerializer(serializers.ModelSerializer):
             'status', 'status_display',
             'from_email', 'error_message', 'sent_at',
         ]
+
+
+class SchoolSerializer(serializers.ModelSerializer):
+    """Minimal, public-facing serializer for the student-creation dropdown.
+    Deliberately excludes gives_credits/credit_hours so parents can't infer
+    which schools grant credit and game the "Other" vs real-school choice."""
+
+    class Meta:
+        model = School
+        fields = ['id', 'name']
+
+
+class SchoolAdminSerializer(serializers.ModelSerializer):
+    """Full serializer for the admin School management page."""
+
+    class Meta:
+        model = School
+        fields = [
+            'id', 'name', 'city', 'school_type', 'language_stream', 'board_name',
+            'gives_credits', 'credit_hours', 'is_active', 'created_at', 'updated_at',
+        ]
+        extra_kwargs = {
+            'name': {'required': True},
+        }
+
+
+class StudentSchoolCreditSerializer(serializers.ModelSerializer):
+    """Admin credit-approval queue serializer."""
+    student_firstName = serializers.CharField(source='student.firstName', read_only=True)
+    student_lastName = serializers.CharField(source='student.lastName', read_only=True)
+    parent_firstName = serializers.CharField(source='parent.firstName', read_only=True)
+    parent_lastName = serializers.CharField(source='parent.lastName', read_only=True)
+    parent_email = serializers.CharField(source='parent.email', read_only=True)
+    school_name = serializers.CharField(source='school.name', read_only=True)
+    reviewed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentSchoolCredit
+        fields = [
+            'id', 'student', 'student_firstName', 'student_lastName',
+            'parent', 'parent_firstName', 'parent_lastName', 'parent_email',
+            'school', 'school_name', 'credit_hours_snapshot', 'status',
+            'admin_notes', 'reviewed_by', 'reviewed_by_name', 'created_at', 'reviewed_at',
+        ]
+        extra_kwargs = {
+            'admin_notes': {'required': False},
+        }
+
+    def get_reviewed_by_name(self, obj):
+        if obj.reviewed_by:
+            return f"{obj.reviewed_by.firstName} {obj.reviewed_by.lastName}"
+        return None

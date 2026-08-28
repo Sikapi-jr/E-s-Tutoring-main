@@ -45,6 +45,8 @@ const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
 const AdminDisputes = lazy(() => import("./pages/AdminDisputes"));
 const AdminStaleRequests = lazy(() => import("./pages/AdminStaleRequests"));
 const AdminReferrals = lazy(() => import("./pages/AdminReferrals"));
+const AdminSchools = lazy(() => import("./pages/AdminSchools"));
+const AdminSchoolCredits = lazy(() => import("./pages/AdminSchoolCredits"));
 const Contact = lazy(() => import("./pages/Contact"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
@@ -172,6 +174,8 @@ function AppRoutes() {
             <Route path="/admin-disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
             <Route path="/admin-stale-requests" element={<ProtectedRoute><AdminStaleRequests /></ProtectedRoute>} />
             <Route path="/admin-referrals" element={<ProtectedRoute><AdminReferrals /></ProtectedRoute>} />
+            <Route path="/admin-schools" element={<ProtectedRoute><AdminSchools /></ProtectedRoute>} />
+            <Route path="/admin-school-credits" element={<ProtectedRoute><AdminSchoolCredits /></ProtectedRoute>} />
             <Route path="/admin-user-search" element={<ProtectedRoute><AdminUserSearch /></ProtectedRoute>} />
             <Route path="/admin-batch-add-hours" element={<ProtectedRoute><AdminBatchAddHours /></ProtectedRoute>} />
             <Route path="/admin-hours-overview" element={<ProtectedRoute><AdminHoursOverview /></ProtectedRoute>} />

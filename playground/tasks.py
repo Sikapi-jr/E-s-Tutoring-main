@@ -1655,6 +1655,48 @@ EGS Tutoring Team
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
 
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_school_credit_admin_alert_async(self, student_school_credit_id):
+    """
+    Alert admin (elvissikapi@gmail.com) that a newly-created student's school
+    grants tutoring credit hours and needs verification before the credit is
+    applied. See StudentSchoolCredit / the admin School Credits queue page.
+    """
+    try:
+        from playground.models import StudentSchoolCredit
+
+        credit = StudentSchoolCredit.objects.select_related('student', 'parent', 'school').get(
+            pk=student_school_credit_id
+        )
+        subject = f"Action needed: verify school credit for {credit.student.firstName} {credit.student.lastName}"
+        message = f"""
+A new student was created whose selected school offers tutoring credit hours and needs admin verification.
+
+Student: {credit.student.firstName} {credit.student.lastName}
+Parent: {credit.parent.firstName} {credit.parent.lastName} ({credit.parent.email})
+School: {credit.school.name}
+Credit hours to be granted (if approved): {credit.credit_hours_snapshot}
+
+Please verify the student actually attends this school, then review and approve/decline here:
+{settings.FRONTEND_URL}/admin-school-credits
+        """
+
+        send_mailgun_email(
+            to_emails=['elvissikapi@gmail.com'],
+            subject=subject,
+            text_content=message,
+            email_type='school_credit_admin',
+            recipient_name='EGS Admin',
+        )
+
+        logger.info(f"School credit admin alert sent for StudentSchoolCredit #{student_school_credit_id}")
+        return {'success': True, 'student_school_credit_id': student_school_credit_id}
+
+    except Exception as e:
+        logger.error(f"Error sending school credit admin alert for #{student_school_credit_id}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
+
 @shared_task
 def send_daily_health_check():
     """

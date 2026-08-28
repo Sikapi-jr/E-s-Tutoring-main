@@ -19,6 +19,8 @@ from .models import (
     Quiz,
     QuizQuestion,
     QuizSubmission,
+    School,
+    StudentSchoolCredit,
 )
 
 # If you want to customize admin interface per model, you can define ModelAdmin classes here.
@@ -110,6 +112,19 @@ class QuizSubmissionAdmin(admin.ModelAdmin):
     list_filter = ('quiz', 'passed')
     search_fields = ('enrollment__student__firstName', 'enrollment__student__lastName')
     readonly_fields = ('started_at',)
+
+@admin.register(School)
+class SchoolAdmin(admin.ModelAdmin):
+    list_display = ('name', 'city', 'school_type', 'language_stream', 'gives_credits', 'credit_hours', 'is_active')
+    list_filter = ('gives_credits', 'is_active', 'city', 'school_type', 'language_stream')
+    search_fields = ('name', 'board_name')
+
+@admin.register(StudentSchoolCredit)
+class StudentSchoolCreditAdmin(admin.ModelAdmin):
+    list_display = ('student', 'school', 'credit_hours_snapshot', 'status', 'reviewed_by', 'created_at')
+    list_filter = ('status', 'school')
+    search_fields = ('student__firstName', 'student__lastName', 'parent__firstName', 'parent__lastName')
+    readonly_fields = ('created_at',)
 
 admin.site.register(User)
 admin.site.register(Session)

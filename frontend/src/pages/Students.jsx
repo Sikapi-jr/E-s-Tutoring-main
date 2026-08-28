@@ -5,6 +5,7 @@ import { useUser } from "../components/UserProvider";
 import { useNavigate } from "react-router-dom";
 import { ONTARIO_CITIES } from "../constants";
 import { describeApiError } from "../utils/errorHandler";
+import SchoolSelect from "../components/SchoolSelect";
 import "../styles/Students.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -40,7 +41,9 @@ const Students = () => {
     lastName: "",
     livesWithParent: true,
     city: "",
-    birthYear: ""
+    birthYear: "",
+    school: "",
+    schoolOtherName: ""
   });
   const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
@@ -192,6 +195,16 @@ const Students = () => {
       return;
     }
 
+    if (!addStudentForm.school) {
+      alert(t('students.schoolRequired') || "Please select the student's school.");
+      return;
+    }
+
+    if (addStudentForm.school === 'other' && !addStudentForm.schoolOtherName.trim()) {
+      alert(t('students.schoolNameRequired') || "Please enter the student's school name.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("firstName", addStudentForm.firstName.trim());
@@ -201,6 +214,10 @@ const Students = () => {
         formData.append("city", addStudentForm.city);
       }
       formData.append("birthYear", addStudentForm.birthYear);
+      formData.append("school_id", addStudentForm.school);
+      if (addStudentForm.school === 'other') {
+        formData.append("school_other_name", addStudentForm.schoolOtherName.trim());
+      }
 
       if (addStudentProfilePicture) {
         formData.append("profile_picture", addStudentProfilePicture);
@@ -561,6 +578,13 @@ const Students = () => {
                   </div>
                 )}
 
+                <SchoolSelect
+                  value={addStudentForm.school}
+                  otherValue={addStudentForm.schoolOtherName}
+                  onChange={(school) => setAddStudentForm({ ...addStudentForm, school })}
+                  onOtherChange={(schoolOtherName) => setAddStudentForm({ ...addStudentForm, schoolOtherName })}
+                />
+
                 <div className="form-group">
                   <label>{t('students.profilePicture')} ({t('common.optional')})</label>
                   <input
@@ -596,7 +620,9 @@ const Students = () => {
                       lastName: "",
                       livesWithParent: true,
                       city: "",
-                      birthYear: ""
+                      birthYear: "",
+                      school: "",
+                      schoolOtherName: ""
                     });
                     setAddStudentProfilePicture(null);
                   }}
