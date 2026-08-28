@@ -289,7 +289,10 @@
     "failedToLoadTutors": "Failed to load tutors",
     "noTutorsAssigned": "No tutors assigned yet",
     "creditBalance": "Credits Remaining",
-    "creditHoursValue": "{{count}} hrs"
+    "creditHoursValue": "{{count}} hrs",
+    "currentRequests": "Current Requests",
+    "requestFulfilled": "FILLED",
+    "requestNotFulfilled": "OPEN"
   },
   "dashboard": {
     "parentDashboard": "Parent Dashboard",
@@ -537,7 +540,8 @@
     "unassignError": "Error unassigning tutor. Please try again.",
     "requestActionTitle": "What would you like to do with the request?",
     "requestActionPrompt": "You can keep the request active so other tutors can respond, or delete it completely.",
-    "keepRequestActive": "Keep Request Active"
+    "keepRequestActive": "Keep Request Active",
+    "grade": "Grade"
   },
   "referral": {
     "tutorReferralRequest": "Tutor Referral Request",
@@ -1158,7 +1162,48 @@
     "schoolName": "Name",
     "schoolCity": "City",
     "schoolBoard": "Board",
-    "showInactiveSchools": "Show inactive schools"
+    "showInactiveSchools": "Show inactive schools",
+    "schoolTypeElementary": "Elementary",
+    "schoolTypeHigh": "High School",
+    "schoolTypeOther": "Other/K-12",
+    "languageEnglish": "English",
+    "languageFrench": "French",
+    "languageFrenchImmersion": "French Immersion",
+    "schoolsLoadFailed": "Failed to load schools.",
+    "schoolUpdateFailed": "Failed to update school.",
+    "schoolNamePrompt": "Please enter a school name.",
+    "schoolCreateFailed": "Failed to create school.",
+    "schoolNamePlaceholder": "School name",
+    "selectCityOptional": "Select a city (optional)",
+    "boardNamePlaceholder": "Board name (optional, e.g. TDSB)",
+    "filterPending": "Pending",
+    "filterApproved": "Approved",
+    "filterDeclined": "Declined",
+    "filterAll": "All",
+    "schoolCreditsFetchFailed": "Failed to fetch school credit requests.",
+    "schoolCreditActionFailed": "Failed to process this request.",
+    "noSchoolCreditRequests": "No school credit requests found for this filter.",
+    "requestedAt": "Requested",
+    "creditHoursIfApproved": "Credit hours if approved",
+    "reviewedByOn": "Reviewed by {{name}} on {{date}}",
+    "correctSchoolLabel": "Correct the school first if needed (optional):",
+    "keepCurrentSchool": "Keep current: {{school}}",
+    "notesOptionalPlaceholder": "Notes (optional)...",
+    "approve": "Approve",
+    "review": "Review",
+    "billingLabel": "Billing:",
+    "billingColumn": "Billing",
+    "hoursOverview": {
+      "title": "Hours Overview",
+      "subtitle": "View and filter all hours in the system",
+      "credited": "Credited",
+      "creditedSublabel": "(Paid by school credit)",
+      "billingStatus": "Billing Status:",
+      "all": "All",
+      "billingNormal": "Normal (Billed to parent)",
+      "billingCredited": "Credited (School credit)",
+      "normal": "Normal"
+    }
   },
   "discount": {
     "title": "Receive Permanent 10% Discount",

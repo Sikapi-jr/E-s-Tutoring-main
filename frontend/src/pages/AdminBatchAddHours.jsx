@@ -223,7 +223,7 @@ export default function AdminBatchAddHours() {
                       <th>Date</th>
                       <th>Hours</th>
                       <th>Status</th>
-                      <th>Billing</th>
+                      <th>{t('admin.billingColumn', 'Billing')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -235,7 +235,7 @@ export default function AdminBatchAddHours() {
                         <td>{item.date}</td>
                         <td>{item.total_time}</td>
                         <td className={`status-${item.eligible.toLowerCase()}`}>{item.eligible}</td>
-                        <td>{item.billing_status === 'credited' ? 'Credited' : 'Normal'}</td>
+                        <td>{item.billing_status === 'credited' ? t('admin.hoursOverview.credited', 'Credited') : t('admin.hoursOverview.normal', 'Normal')}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -833,15 +833,15 @@ export default function AdminUserSearch() {
             Showing all sessions involving this user as student, parent, or tutor
           </p>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ marginRight: '0.5rem', fontWeight: 500 }}>Billing:</label>
+            <label style={{ marginRight: '0.5rem', fontWeight: 500 }}>{t('admin.billingLabel', 'Billing:')}</label>
             <select
               value={billingStatusFilter}
               onChange={(e) => setBillingStatusFilter(e.target.value)}
               style={{ padding: '0.4rem', border: '1px solid #ccc', borderRadius: '4px' }}
             >
-              <option value="all">All</option>
-              <option value="normal">Normal (Billed to parent)</option>
-              <option value="credited">Credited (School credit)</option>
+              <option value="all">{t('admin.hoursOverview.all', 'All')}</option>
+              <option value="normal">{t('admin.hoursOverview.billingNormal', 'Normal (Billed to parent)')}</option>
+              <option value="credited">{t('admin.hoursOverview.billingCredited', 'Credited (School credit)')}</option>
             </select>
           </div>
           <div className="hours-list">
@@ -856,7 +856,7 @@ export default function AdminUserSearch() {
                   </div>
                   {hour.billing_status === 'credited' && (
                     <span style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', backgroundColor: '#6610f2', color: 'white' }}>
-                      Credited
+                      {t('admin.hoursOverview.credited', 'Credited')}
                     </span>
                   )}
                 </div>

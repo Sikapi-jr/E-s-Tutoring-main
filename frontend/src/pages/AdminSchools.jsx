@@ -8,20 +8,6 @@ import api from "../api";
 import { useUser } from "../components/UserProvider";
 import { ONTARIO_CITIES } from "../constants";
 
-const SCHOOL_TYPES = [
-  { value: "", label: "—" },
-  { value: "elementary", label: "Elementary" },
-  { value: "high", label: "High School" },
-  { value: "other", label: "Other/K-12" },
-];
-
-const LANGUAGE_STREAMS = [
-  { value: "", label: "—" },
-  { value: "english", label: "English" },
-  { value: "french", label: "French" },
-  { value: "french_immersion", label: "French Immersion" },
-];
-
 const emptyForm = {
   name: "", city: "", school_type: "", language_stream: "", board_name: "",
   gives_credits: false, credit_hours: "0",
@@ -31,6 +17,20 @@ const AdminSchools = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
+
+  const SCHOOL_TYPES = [
+    { value: "", label: "—" },
+    { value: "elementary", label: t('admin.schoolTypeElementary', 'Elementary') },
+    { value: "high", label: t('admin.schoolTypeHigh', 'High School') },
+    { value: "other", label: t('admin.schoolTypeOther', 'Other/K-12') },
+  ];
+
+  const LANGUAGE_STREAMS = [
+    { value: "", label: "—" },
+    { value: "english", label: t('admin.languageEnglish', 'English') },
+    { value: "french", label: t('admin.languageFrench', 'French') },
+    { value: "french_immersion", label: t('admin.languageFrenchImmersion', 'French Immersion') },
+  ];
 
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ const AdminSchools = () => {
       setSchools(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching schools:", err);
-      setError(t('common.error', 'Error') + ": failed to load schools");
+      setError(t('admin.schoolsLoadFailed', 'Failed to load schools.'));
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ const AdminSchools = () => {
       setSchools((prev) => prev.map((s) => (s.id === id ? res.data : s)));
     } catch (err) {
       console.error("Error updating school:", err);
-      alert("Failed to update school.");
+      alert(t('admin.schoolUpdateFailed', 'Failed to update school.'));
     } finally {
       setSavingId(null);
     }
@@ -78,7 +78,7 @@ const AdminSchools = () => {
 
   const handleAddSchool = async () => {
     if (!addForm.name.trim()) {
-      alert("Please enter a school name.");
+      alert(t('admin.schoolNamePrompt', 'Please enter a school name.'));
       return;
     }
     try {
@@ -91,7 +91,7 @@ const AdminSchools = () => {
       setAddForm(emptyForm);
     } catch (err) {
       console.error("Error creating school:", err);
-      alert(err?.response?.data?.name?.[0] || "Failed to create school.");
+      alert(err?.response?.data?.name?.[0] || t('admin.schoolCreateFailed', 'Failed to create school.'));
     }
   };
 
@@ -198,7 +198,7 @@ const AdminSchools = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
               <input
                 type="text"
-                placeholder="School name"
+                placeholder={t('admin.schoolNamePlaceholder', 'School name')}
                 value={addForm.name}
                 onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
                 style={{ padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px' }}
@@ -208,7 +208,7 @@ const AdminSchools = () => {
                 onChange={(e) => setAddForm({ ...addForm, city: e.target.value })}
                 style={{ padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px' }}
               >
-                <option value="">Select a city (optional)</option>
+                <option value="">{t('admin.selectCityOptional', 'Select a city (optional)')}</option>
                 {ONTARIO_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select
@@ -227,7 +227,7 @@ const AdminSchools = () => {
               </select>
               <input
                 type="text"
-                placeholder="Board name (optional, e.g. TDSB)"
+                placeholder={t('admin.boardNamePlaceholder', 'Board name (optional, e.g. TDSB)')}
                 value={addForm.board_name}
                 onChange={(e) => setAddForm({ ...addForm, board_name: e.target.value })}
                 style={{ padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px' }}

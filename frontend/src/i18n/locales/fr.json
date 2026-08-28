@@ -281,7 +281,10 @@
     "noTutorsAssigned": "Aucun tuteur assigné pour le moment",
     "myTutors": "Mes Tuteurs",
     "creditBalance": "Crédits restants",
-    "creditHoursValue": "{{count}} h"
+    "creditHoursValue": "{{count}} h",
+    "currentRequests": "Demandes actuelles",
+    "requestFulfilled": "COMBLÉE",
+    "requestNotFulfilled": "OUVERTE"
   },
   "dashboard": {
     "parentDashboard": "Tableau de bord parent",
@@ -529,7 +532,8 @@
     "unassignError": "Erreur lors de la désaffectation du tuteur. Veuillez réessayer.",
     "requestActionTitle": "Que souhaitez-vous faire avec la demande?",
     "requestActionPrompt": "Vous pouvez garder la demande active pour que d'autres tuteurs puissent répondre, ou la supprimer complètement.",
-    "keepRequestActive": "Garder la Demande Active"
+    "keepRequestActive": "Garder la Demande Active",
+    "grade": "Année"
   },
   "referral": {
     "tutorReferralRequest": "Demande de Référence de Tuteur",
@@ -1139,7 +1143,48 @@
     "schoolName": "Nom",
     "schoolCity": "Ville",
     "schoolBoard": "Conseil scolaire",
-    "showInactiveSchools": "Afficher les écoles inactives"
+    "showInactiveSchools": "Afficher les écoles inactives",
+    "schoolTypeElementary": "Primaire",
+    "schoolTypeHigh": "Secondaire",
+    "schoolTypeOther": "Autre/M à 12e",
+    "languageEnglish": "Anglais",
+    "languageFrench": "Français",
+    "languageFrenchImmersion": "Immersion française",
+    "schoolsLoadFailed": "Échec du chargement des écoles.",
+    "schoolUpdateFailed": "Échec de la mise à jour de l'école.",
+    "schoolNamePrompt": "Veuillez entrer le nom de l'école.",
+    "schoolCreateFailed": "Échec de la création de l'école.",
+    "schoolNamePlaceholder": "Nom de l'école",
+    "selectCityOptional": "Sélectionner une ville (facultatif)",
+    "boardNamePlaceholder": "Nom du conseil scolaire (facultatif, ex. TDSB)",
+    "filterPending": "En attente",
+    "filterApproved": "Approuvée",
+    "filterDeclined": "Refusée",
+    "filterAll": "Toutes",
+    "schoolCreditsFetchFailed": "Échec de la récupération des demandes de crédit scolaire.",
+    "schoolCreditActionFailed": "Échec du traitement de cette demande.",
+    "noSchoolCreditRequests": "Aucune demande de crédit scolaire trouvée pour ce filtre.",
+    "requestedAt": "Demandé",
+    "creditHoursIfApproved": "Heures de crédit si approuvée",
+    "reviewedByOn": "Examinée par {{name}} le {{date}}",
+    "correctSchoolLabel": "Corriger l'école d'abord si nécessaire (facultatif) :",
+    "keepCurrentSchool": "Conserver l'école actuelle : {{school}}",
+    "notesOptionalPlaceholder": "Notes (facultatif)...",
+    "approve": "Approuver",
+    "review": "Examiner",
+    "billingLabel": "Facturation :",
+    "billingColumn": "Facturation",
+    "hoursOverview": {
+      "title": "Aperçu des heures",
+      "subtitle": "Consulter et filtrer toutes les heures du système",
+      "credited": "Créditée",
+      "creditedSublabel": "(Payée par crédit scolaire)",
+      "billingStatus": "Statut de facturation :",
+      "all": "Toutes",
+      "billingNormal": "Normale (facturée au parent)",
+      "billingCredited": "Créditée (crédit scolaire)",
+      "normal": "Normale"
+    }
   },
   "discount": {
     "title": "Recevez un Rabais Permanent de 10%",

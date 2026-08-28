@@ -1406,8 +1406,10 @@ class AnnouncementListView(APIView):
         except User.DoesNotExist:
             user_role = None
 
-        # Get all announcements first
-        all_announcements = Announcements.objects.all().order_by('-created_at')[:20]  # Get more to filter
+        # Get all non-expired announcements first
+        all_announcements = Announcements.objects.filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        ).order_by('-created_at')[:20]  # Get more to filter
 
         # Filter announcements based on user role using the model method
         visible_announcements = []

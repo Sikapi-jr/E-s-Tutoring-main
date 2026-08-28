@@ -85,6 +85,54 @@
 }
 .events-table td { border-bottom: 1px solid #e1e1e1; color: var(--color-dark); }
 
+/* ───────── home page "Logged Hours" table (middle column) ───────── */
+.home-hours-table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  table-layout: fixed;
+}
+
+.home-hours-table thead {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.home-hours-table th {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.home-hours-table th,
+.home-hours-table td {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-hours-table tbody tr:nth-child(even) td {
+  background: var(--color-light);
+}
+
+.home-hours-table tbody tr:hover td {
+  background: rgba(255, 179, 27, 0.15) !important;
+}
+
+.home-hours-table td { border-bottom: 1px solid #e1e1e1; color: var(--color-dark); }
+
+.home-hours-table td[data-status="accepted"] { color: #059669; font-weight: 600; }
+.home-hours-table td[data-status="resolved"] { color: #059669; font-weight: 600; }
+.home-hours-table td[data-status="disputed"] { color: #dc2626; font-weight: 600; }
+.home-hours-table td[data-status="void"] { color: #ea580c; font-weight: 600; }
+.home-hours-table td[data-status="pending"] { color: #d97706; font-weight: 600; }
+
 /* ───────── “What’s New?” card — unchanged ───────── */
 .egs-box { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-top: 0; max-width: 500px; font-family: "Segoe UI", sans-serif; }
 .egs-box__title { font-weight: bold; border-bottom: 1px solid #aaa; margin-bottom: 1rem; }

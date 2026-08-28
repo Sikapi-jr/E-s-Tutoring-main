@@ -177,8 +177,8 @@ export default function AdminHoursOverview() {
         </div>
         <div className="stat-card stat-credited">
           <div className="stat-number">{stats.credited}</div>
-          <div className="stat-label">Credited</div>
-          <div className="stat-sublabel">(Paid by school credit)</div>
+          <div className="stat-label">{t('admin.hoursOverview.credited', 'Credited')}</div>
+          <div className="stat-sublabel">{t('admin.hoursOverview.creditedSublabel', '(Paid by school credit)')}</div>
         </div>
       </div>
 
@@ -201,11 +201,11 @@ export default function AdminHoursOverview() {
           </select>
         </div>
         <div className="filter-group">
-          <label>Billing Status:</label>
+          <label>{t('admin.hoursOverview.billingStatus', 'Billing Status:')}</label>
           <select value={billingFilter} onChange={(e) => setBillingFilter(e.target.value)}>
-            <option value="all">All</option>
-            <option value="normal">Normal (Billed to parent)</option>
-            <option value="credited">Credited (School credit)</option>
+            <option value="all">{t('admin.hoursOverview.all', 'All')}</option>
+            <option value="normal">{t('admin.hoursOverview.billingNormal', 'Normal (Billed to parent)')}</option>
+            <option value="credited">{t('admin.hoursOverview.billingCredited', 'Credited (School credit)')}</option>
           </select>
         </div>
         <div className="filter-summary">
@@ -271,9 +271,9 @@ export default function AdminHoursOverview() {
                     </td>
                     <td>
                       {hour.billing_status === 'credited' ? (
-                        <span className="badge" style={{ backgroundColor: '#6610f2', color: 'white' }}>Credited</span>
+                        <span className="badge" style={{ backgroundColor: '#6610f2', color: 'white' }}>{t('admin.hoursOverview.credited', 'Credited')}</span>
                       ) : (
-                        <span className="badge" style={{ backgroundColor: '#e9ecef', color: '#495057' }}>Normal</span>
+                        <span className="badge" style={{ backgroundColor: '#e9ecef', color: '#495057' }}>{t('admin.hoursOverview.normal', 'Normal')}</span>
                       )}
                     </td>
                     <td style={{ fontSize: '0.85rem', color: '#666' }}>

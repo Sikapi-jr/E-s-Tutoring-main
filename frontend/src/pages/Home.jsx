@@ -616,6 +616,18 @@ export default function Home() {
       });
   }, [events]);
 
+  // Requests for the home page's "Current Requests" widget: requests that
+  // have NOT been fulfilled (no accepted tutor yet) listed first, then
+  // requests that have been filled - each group keeping its original
+  // (most-recent-first) order from the API.
+  const sortedHomeRequests = useMemo(() => {
+    return [...recentParentRequests].sort((a, b) => {
+      const aFulfilled = a.is_accepted === 'Accepted' ? 1 : 0;
+      const bFulfilled = b.is_accepted === 'Accepted' ? 1 : 0;
+      return aFulfilled - bFulfilled;
+    });
+  }, [recentParentRequests]);
+
   /* mark "can't attend" (declined) on Google Calendar */
   const markCantAttend = useCallback(async (id) => {
     try {
@@ -951,7 +963,7 @@ export default function Home() {
           className="home-left-column"
         >
           <div
-            className="mobile-section logged-hours-section"
+            className="mobile-section current-requests-section"
             style={{
               background: "#fff",
               border: "3px solid #E1E1E1",
@@ -963,94 +975,54 @@ export default function Home() {
               overflow: "auto",
             }}
           >
-            <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.loggedHours')}</h3>
+            <h3 style={{ textAlign: "center", margin: 0 }}>{t('home.currentRequests', 'Current Requests')}</h3>
             <div style={{ fontSize: "0.8rem", color: "#888", textAlign: "center" }}>
-              {hours.length} total
+              {sortedHomeRequests.length} total
             </div>
-            {hours.length ? (
-              hours.map((h, index) => {
+            {sortedHomeRequests.length ? (
+              sortedHomeRequests.map((req, index) => {
+                const fulfilled = req.is_accepted === 'Accepted';
                 return (
-                <div 
-                  key={h.id} 
-                  style={{ 
-                    fontSize: "0.85rem", 
-                    margin: "8px 0",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    backgroundColor: h.status === 'Disputed' ? "#f8d7da" : 
-                                   h.status === 'Resolved' ? "#e2e3e5" :
-                                   (h.last_edited_at && h.last_edited_at !== h.created_at) ? "#fff3cd" : 
-                                   "#d1ecf1",
-                    border: h.status === 'Disputed' ? "1px solid #f5c6cb" : 
-                           h.status === 'Resolved' ? "1px solid #6c757d" :
-                           (h.last_edited_at && h.last_edited_at !== h.created_at) ? "1px solid #ff8c00" : 
-                           "1px solid #bee5eb"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ flex: 1 }}>
-                      <strong>{h.student_firstName && h.student_lastName ? `${h.student_firstName} ${h.student_lastName}` : h.studentName || h.student_name || h.student || t('common.unknownStudent')}</strong>
-                      {(h.last_edited_at && h.last_edited_at !== h.created_at) && (
-                        <span style={{ 
-                          marginLeft: "8px", 
-                          fontSize: "0.7rem", 
-                          color: "#ff8c00",
-                          fontWeight: "bold"
-                        }}>
-                          EDITED
-                        </span>
-                      )}
-                  <br />
-                  {h.totalTime} hrs — {h.subject}
-                  <br />
-                      {h.date}
-                      {h.status === 'Disputed' && (
-                        <span style={{ 
-                          marginLeft: "8px", 
-                          fontSize: "0.7rem", 
-                          color: "#721c24",
-                          fontWeight: "bold"
-                        }}>
-                          DISPUTED
-                        </span>
-                      )}
-                      {h.status === 'Resolved' && (
-                        <span style={{ 
-                          marginLeft: "8px", 
-                          fontSize: "0.7rem", 
-                          color: "#6c757d",
-                          fontWeight: "bold"
-                        }}>
-                          RESOLVED
-                        </span>
-                      )}
+                  <div
+                    key={req.id || index}
+                    style={{
+                      fontSize: "0.85rem",
+                      margin: "8px 0",
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      backgroundColor: fulfilled ? "#d4edda" : "#fff3cd",
+                      border: fulfilled ? "1px solid #c3e6cb" : "1px solid #ffeaa7",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <strong>{req.subject || t('common.unknown')}</strong>
+                      <span
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "0.7rem",
+                          fontWeight: "bold",
+                          color: fulfilled ? "#155724" : "#856404",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {fulfilled ? t('home.requestFulfilled', 'FILLED') : t('home.requestNotFulfilled', 'OPEN')}
+                      </span>
                     </div>
-                    <button
-                      onClick={() => h.dispute_id ? handleCancelDispute(h.dispute_id) : handleDisputeClick(h)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#dc3545",
-                        padding: "0.25rem",
-                        fontSize: "0.9rem",
-                        cursor: "pointer",
-                        marginLeft: "0.5rem",
-                        height: "fit-content"
-                      }}
-                      title={h.dispute_id ? t('disputes.cancelDispute') : t('disputes.disputeSession')}
-                    >
-                      {h.dispute_id ? "✕" : "⚠️"}
-                    </button>
+                    <div style={{ color: "#555" }}>
+                      {req.city || ''}{req.city && req.grade ? ' · ' : ''}{req.grade ? `${t('requests.grade', 'Grade')} ${req.grade}` : ''}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "#888" }}>
+                      {new Date(req.created_at || Date.now()).toLocaleDateString()}
+                    </div>
                   </div>
-                </div>
                 );
               })
             ) : (
               <Link
-                to={user?.roles === 'tutor' ? '/log' : '/request-reply'}
+                to="/request-reply"
                 style={{ color: "#192A88", textAlign: "center", display: "block" }}
               >
-                {t('home.noHoursYet')} {user?.roles === 'tutor' ? t('home.startLoggingHours') : t('home.requestTutorText')}
+                {user?.roles === 'parent' ? t('home.noTutoringRequests') : t('home.noRecentRequests')}
               </Link>
             )}
           </div>
@@ -1062,7 +1034,7 @@ export default function Home() {
         {/* MIDDLE COL */}
         <div style={{ width: "55%", padding: "1rem 0", paddingTop: "14.05rem" }} className="home-middle-column">
           <div
-            className="table-wrapper mobile-section scheduled-events-section"
+            className="table-wrapper mobile-section home-hours-section"
             style={{
               background: "#fff",
               border: "3px solid #E1E1E1",
@@ -1075,113 +1047,77 @@ export default function Home() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "1rem 0", padding: "0 1rem" }}>
               <h3 style={{ margin: 0 }}>
-                {t('home.scheduledEvents')}
+                {t('home.loggedHours')}
               </h3>
-              <a 
-                href="/events" 
-                style={{ 
-                  color: "#192A88", 
-                  textDecoration: "none", 
+              <a
+                href="/hours"
+                style={{
+                  color: "#192A88",
+                  textDecoration: "none",
                   fontSize: "0.9rem",
                   fontWeight: "500"
                 }}
                 onMouseOver={(e) => e.target.style.textDecoration = "underline"}
                 onMouseOut={(e) => e.target.style.textDecoration = "none"}
               >
-                {t('home.viewMoreUpdateRsvp')}
+                {t('home.viewMore')}
               </a>
             </div>
-            {processedEvents.length ? (
-              <table className="events-table">
+            {hours.length ? (
+              <table className="home-hours-table">
                 <thead>
                   <tr>
-                    <th>{t('common.title')}</th>
-                    <th>{t('calendar.tutor')}</th>
-                    <th>{t('calendar.attendee')}</th>
                     <th>{t('common.date')}</th>
+                    <th>{t('dashboard.student')}</th>
+                    {user?.roles !== 'tutor' && <th>{t('dashboard.tutor')}</th>}
+                    <th>{t('logHours.subject')}</th>
                     <th>{t('events.startTime')}</th>
                     <th>{t('events.endTime')}</th>
+                    <th>{t('loggedHours.totalHours')}</th>
+                    <th>{t('requests.location')}</th>
+                    <th>{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {processedEvents.map((ev) => {
-                    // ev already contains the original event data, no need to find it
-                    // Get organizer info - show organizer email
-                    const creator = ev?.organizer?.email || "Unknown";
-
-                    // Get attendee info - show attendee email
-                    const attendee = ev?.attendees?.find(att => att.email !== ev?.organizer?.email);
-                    const attendeeName = attendee?.email || "-";
-
-                    // Get user's status for this event
-                    const getMyStatus = (event) => {
-                      const me = user?.email?.toLowerCase();
-                      if (!me) return "needsAction";
-                      const att = (event.attendees || []).find(
-                        (a) => a.email?.toLowerCase() === me
-                      );
-                      return att?.responseStatus || "needsAction";
-                    };
-
-                    const myStatus = getMyStatus(ev);
-                    const isDeclined = myStatus === 'declined';
-                    const cancelledByOther = ev.extendedProperties?.private?.cancelled_by &&
-                                           ev.extendedProperties.private.cancelled_by.toLowerCase() !== user?.email?.toLowerCase();
-
-                    // Determine if anyone has cancelled this session - if so, it's completely read-only
-                    const isAnybodyCancelled = cancelledByOther || isDeclined ||
-                                              ev.extendedProperties?.private?.cant_attend === "true";
-
-                    // Set row background color - red for cancelled, green for active
-                    const getRowStyle = () => {
-                      if (isAnybodyCancelled) {
-                        return { backgroundColor: '#ffebee' }; // Red for any cancellation
-                      } else {
-                        return { backgroundColor: '#e8f5e8' }; // Green for attending
-                      }
-                    };
-
-                    return (
-                      <tr key={ev.id} style={getRowStyle()}>
-                        <td>{ev.title}</td>
-                        <td>{creator}</td>
-                        <td>{attendeeName}</td>
-                        <td>{ev.date}</td>
-                        <td>{ev.startTime}</td>
-                        <td>{ev.endTime}</td>
-                      </tr>
-                    );
-                  })}
+                  {hours.map((h) => (
+                    <tr key={h.id}>
+                      <td>{new Date(h.date).toLocaleDateString()}</td>
+                      <td>
+                        {h.student_firstName && h.student_lastName
+                          ? `${h.student_firstName} ${h.student_lastName}`
+                          : h.studentName || h.student_name || h.student || t('common.unknownStudent')}
+                      </td>
+                      {user?.roles !== 'tutor' && (
+                        <td>
+                          {h.tutor_firstName && h.tutor_lastName
+                            ? `${h.tutor_firstName} ${h.tutor_lastName}`
+                            : h.tutor || h.tutor_name || "-"}
+                        </td>
+                      )}
+                      <td>{h.subject || "-"}</td>
+                      <td>{h.startTime || h.start_time || "-"}</td>
+                      <td>{h.endTime || h.end_time || "-"}</td>
+                      <td>{h.totalTime || h.total_hours || "-"}</td>
+                      <td>{h.location || "-"}</td>
+                      <td data-status={h.status?.toLowerCase() || "pending"}>
+                        {h.status === "Accepted" && t("loggedHours.statusAccepted")}
+                        {h.status === "Disputed" && t("loggedHours.statusDisputed")}
+                        {h.status === "Resolved" && t("loggedHours.statusResolved")}
+                        {h.status === "Void" && t("loggedHours.statusVoid")}
+                        {!["Accepted", "Disputed", "Resolved", "Void"].includes(h.status) && (h.status || t("common.unknown"))}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             ) : (
               <div style={{ textAlign: "center", padding: "2rem" }}>
-                {((user?.roles === 'parent' && !parentGoogleConnected) || (user?.roles !== 'parent' && !googleConnected)) ? (
-                  <div>
-                    <p style={{ color: "#666", marginBottom: "1rem" }}>
-                      {t('home.googleAccountNotConnected')}
-                    </p>
-                    <button
-                      onClick={user?.roles === 'parent' ? handleParentGoogleConnect : handleGoogleConnect}
-                      style={{
-                        backgroundColor: "#192A88",
-                        color: "#fff",
-                        border: "none",
-                        padding: "0.75rem 1.5rem",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontSize: "0.9rem",
-                        fontWeight: "bold"
-                      }}
-                    >
-                      {t('home.connectGoogleCalendar')}
-                    </button>
-                  </div>
-                ) : (
-                  <p style={{ color: "#888" }}>
-                    {t('home.noScheduledEvents')}
-                  </p>
-                )}
+                <Link
+                  to={user?.roles === 'tutor' ? '/hours' : '/request-reply'}
+                  style={{ color: "#192A88" }}
+                >
+                  {t('home.noHoursYet')} {user?.roles === 'tutor' ? t('home.startLoggingHours') : t('home.requestTutorText')}
+                </Link>
               </div>
             )}
           </div>

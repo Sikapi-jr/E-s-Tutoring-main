@@ -317,9 +317,15 @@ class Announcements(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
 
+    def is_visible_to_role(self, user_role):
+        """Check if this announcement should be visible to a specific user role"""
+        if self.audience == 'all':
+            return True
+        return self.audience == user_role
+
     def __str__(self):
         return self.name or f"Announcement #{self.id}"
-        
+
 class Session(models.Model):
     STATUS_CHOICES = [
         ('completed', 'Completed'),
