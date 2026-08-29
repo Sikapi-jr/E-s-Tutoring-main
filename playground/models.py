@@ -795,10 +795,10 @@ class Popup(models.Model):
     audience_choices = [
         ('all', 'Everyone'),
         ('parent', 'Parents'),
-        ('student', 'Students'),
         ('tutor', 'Tutors'),
+        ('admin', 'Admins'),
     ]
-    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,student" or "all"')
+    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,tutor" or "all"')
 
     # Activation/Deactivation
     is_active = models.BooleanField(default=True, help_text="Whether popup is currently active")
@@ -813,13 +813,17 @@ class Popup(models.Model):
     def __str__(self):
         return f"{self.title} (Active: {self.is_active})"
 
-    def is_visible_to_role(self, user_role):
-        """Check if popup should be visible to a specific user role"""
+    def is_visible_to_role(self, user_role, is_superuser=False):
+        """Check if popup should be visible to a specific user role.
+        is_superuser is checked against the 'admin' audience separately,
+        since admin accounts don't always have roles == 'admin'."""
         if self.audience == 'all':
             return True
 
         # Parse comma-separated roles
         target_roles = [role.strip() for role in self.audience.split(',')]
+        if is_superuser and 'admin' in target_roles:
+            return True
         return user_role in target_roles
 
 

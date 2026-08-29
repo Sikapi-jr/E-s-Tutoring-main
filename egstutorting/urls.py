@@ -4,7 +4,7 @@ from playground.views import CreateUserView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from playground.views import RequestListView, RequestResponseCreateView
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve as static_serve
 from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 import os
@@ -26,8 +26,14 @@ urlpatterns = [
     path("api/", include("playground.urls")), 
 ]
 
-# Serve media files in all environments (including production)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files in all environments (including production).
+# django.conf.urls.static.static() only registers a route when DEBUG=True
+# (it's a no-op otherwise), which silently broke media serving (announcement/
+# popup images, profile pictures, uploaded documents, etc.) whenever
+# DEBUG=False - wire the view directly so it works regardless of DEBUG.
+urlpatterns += [
+    re_path(r'^%s(?P<path>.*)$' % settings.MEDIA_URL.lstrip('/'), static_serve, {'document_root': settings.MEDIA_ROOT}),
+]
 
 
 def serve_spa(request, path=''):

@@ -995,7 +995,10 @@ export default function Home() {
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <strong>{req.subject || t('common.unknown')}</strong>
+                      <strong>
+                        {req.subject || t('common.unknown')}
+                        {req.student_firstName ? ` — ${req.student_firstName}` : ''}
+                      </strong>
                       <span
                         style={{
                           marginLeft: "8px",

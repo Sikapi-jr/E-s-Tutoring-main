@@ -1480,7 +1480,7 @@ class PopupListView(APIView):
         # Filter by user role
         visible_popups = []
         for popup in active_popups:
-            if popup.is_visible_to_role(user_role):
+            if popup.is_visible_to_role(user_role, is_superuser=user.is_superuser):
                 # Check if user has dismissed this popup
                 has_dismissed = PopupDismissal.objects.filter(
                     popup=popup,

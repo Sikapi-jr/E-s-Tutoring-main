@@ -636,7 +636,8 @@
     "image": "Image",
     "linkOptional": "Lien (optionnel)",
     "imageOptional": "Image (optionnel)",
-    "audienceSelectOneOrMore": "Audience (sélectionner un ou plusieurs)"
+    "audienceSelectOneOrMore": "Audience (sélectionner un ou plusieurs)",
+    "admins": "Administrateurs"
   },
   "popups": {
     "createPopup": "Créer une Fenêtre Contextuelle",
