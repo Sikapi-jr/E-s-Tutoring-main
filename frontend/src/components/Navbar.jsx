@@ -50,9 +50,6 @@ const getRoutes = (t) => ({
   EmailLogs:  { to: "/admin-email-logs",  label: 'Email Logs' },
   Schools: { to: "/admin-schools", label: t('admin.schools', 'Schools') },
   SchoolCredits: { to: "/admin-school-credits", label: t('admin.schoolCredits', 'School Credits') },
-  Cal:     { to: "/calendar",          label: t('navigation.calendar') },
-  Events:  { to: "/events",            label: t('navigation.events') },
-  CalCon:  { to: "/events",   label: t('navigation.scheduleSession') },
   Inv:     { to: "/ViewInvoices",      label: t('navigation.invoices') },
   Dash:    { to: "/parent-dashboard",  label: t('navigation.dashboard') },
   Set:     { to: "/settings",          label: t('navigation.settings') },
@@ -64,31 +61,27 @@ const getRoutes = (t) => ({
 // Role config now uses route keys instead of BASE objects
 const getRoleConfig = (BASE) => ({
   superuser: {
-    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Events, BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
+    main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
     tutor:  [],
     sessions: [],
-    cal:    [],
     single: [BASE.Inv, BASE.GroupTutoring, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg, BASE.BulkEmails, BASE.EmailLogs, BASE.Schools, BASE.SchoolCredits],
   },
   parent: {
-    main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Events, BASE.Inv],
+    main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Inv],
     tutor:  [],
     sessions: [],
-    cal:    [],
     single: [],
   },
   tutor: {
-    main:   [BASE.Home, BASE.MyStudents, BASE.Dash, BASE.Hours, BASE.Events],
+    main:   [BASE.Home, BASE.MyStudents, BASE.Dash, BASE.Hours],
     tutor:  [],
     sessions: [],
-    cal:    [],
     single: [],
   },
   student: {
-    main:   [BASE.Home, BASE.Hours, BASE.Events],
+    main:   [BASE.Home, BASE.Hours],
     tutor:  [],
     sessions: [],
-    cal:    [],
     single: [],
   },
 });
@@ -296,7 +289,6 @@ function NavbarContent() {
     const flatten = (r) => [
       ...(r.main || []),
       ...(r.tutor || []),
-      ...(r.cal || []),
       ...(r.single || []),
     ];
 
@@ -320,7 +312,6 @@ function NavbarContent() {
   const mainLinks = roleKey === "superuser" ? filt(cfg.main) : cfg.main;
   const tutorLinks = roleKey === "superuser" ? filt(cfg.tutor) : cfg.tutor;
   const sessionsLinks = roleKey === "superuser" ? filt(cfg.sessions) : cfg.sessions;
-  const calLinks = roleKey === "superuser" ? filt(cfg.cal) : cfg.cal;
   const singleLinks = roleKey === "superuser" ? filt(cfg.single) : cfg.single;
 
   return (
@@ -345,16 +336,6 @@ function NavbarContent() {
             {label}
           </NavLink>
         ))}
-
-        {calLinks.length > 1 ? (
-          <Dropdown dropdownId="calendar" label={t('navigation.calendar')} items={calLinks} onItemClick={() => setMob(false)} />
-        ) : (
-          calLinks.map(({ to, label }) => (
-            <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>
-              {label}
-            </NavLink>
-          ))
-        )}
 
         {singleLinks.map(({ to, label }) => (
           <NavLink key={to} to={to} className="nav__link" onClick={() => setMob(false)}>

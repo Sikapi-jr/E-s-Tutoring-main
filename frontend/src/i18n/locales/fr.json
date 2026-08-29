@@ -1293,7 +1293,8 @@
     "tutorStudents": "Consultez des informations détaillées sur vos étudiants actuels. Cliquez sur le nom d'un étudiant pour voir son profil.",
     "paymentProgress": "Suivez votre progression de paiement ici. La barre verte montre combien de vos factures ont été payées. Cliquez pour voir toutes les factures dans la page Factures.",
     "paidInvoices": "Consultez vos factures payées ici. Cliquez sur une facture pour télécharger le PDF. Cliquez sur 'Voir Plus' pour voir toutes les factures dans la page Factures.",
-    "unpaidInvoices": "Consultez les factures impayées ici. Cliquez sur une facture pour la payer en ligne. Cliquez sur 'Voir Plus' pour voir toutes les factures dans la page Factures."
+    "unpaidInvoices": "Consultez les factures impayées ici. Cliquez sur une facture pour la payer en ligne. Cliquez sur 'Voir Plus' pour voir toutes les factures dans la page Factures.",
+    "currentRequests": "Consultez vos demandes de tutorat ici : les demandes ouvertes qui ont encore besoin d'un tuteur apparaissent en premier, suivies de celles qui ont déjà été comblées."
   },
   "groupTutoring": {
     "title": "Cours de Français en Groupe",

@@ -73,18 +73,8 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       placement: 'bottom',
     },
     {
-      target: '.logged-hours-section',
-      content: t('tour.loggedHours'),
-      placement: 'bottom',
-    },
-    {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'bottom',
-    },
-    {
-      target: '.scheduled-events-section',
-      content: t('tour.scheduledEvents'),
       placement: 'bottom',
     },
     {
@@ -100,6 +90,16 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: '.recent-requests-section',
       content: t('tour.recentRequests'),
+      placement: 'bottom',
+    },
+    {
+      target: '.current-requests-section',
+      content: t('tour.currentRequests'),
+      placement: 'bottom',
+    },
+    {
+      target: '.home-hours-section',
+      content: t('tour.loggedHours'),
       placement: 'bottom',
     },
     {
@@ -123,11 +123,6 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       placement: 'bottom',
     },
     {
-      target: 'nav.nav a[href="/events"]',
-      content: t('tour.upcomingSessions'),
-      placement: 'bottom',
-    },
-    {
       target: 'nav.nav a[href="/ViewInvoices"]',
       content: t('tour.invoices'),
       placement: 'bottom',
@@ -147,18 +142,8 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       placement: 'bottom',
     },
     {
-      target: '.logged-hours-section',
-      content: t('tour.loggedHours'),
-      placement: 'bottom',
-    },
-    {
       target: '.announcements-section',
       content: t('tour.announcements'),
-      placement: 'bottom',
-    },
-    {
-      target: '.scheduled-events-section',
-      content: t('tour.scheduledEvents'),
       placement: 'bottom',
     },
     {
@@ -182,6 +167,16 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       placement: 'bottom',
     },
     {
+      target: '.current-requests-section',
+      content: t('tour.currentRequests'),
+      placement: 'bottom',
+    },
+    {
+      target: '.home-hours-section',
+      content: t('tour.loggedHours'),
+      placement: 'bottom',
+    },
+    {
       target: 'nav.nav a[href="/students"]',
       content: t('tour.students'),
       placement: 'bottom',
@@ -194,11 +189,6 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
     {
       target: 'nav.nav a[href="/hours"]',
       content: t('tour.myHours'),
-      placement: 'bottom',
-    },
-    {
-      target: 'nav.nav a[href="/events"]',
-      content: t('tour.upcomingSessions'),
       placement: 'bottom',
     },
     {
@@ -221,28 +211,23 @@ function HomeTour({ userRole, manualStart = false, onManualStartComplete }) {
       placement: 'bottom',
     },
     {
-      target: '.logged-hours-section',
-      content: t('tour.loggedHours'),
-      placement: 'bottom',
-    },
-    {
       target: '.announcements-section',
       content: t('tour.announcements'),
       placement: 'bottom',
     },
     {
-      target: '.scheduled-events-section',
-      content: t('tour.studentScheduledEvents'),
+      target: '.current-requests-section',
+      content: t('tour.currentRequests'),
+      placement: 'bottom',
+    },
+    {
+      target: '.home-hours-section',
+      content: t('tour.loggedHours'),
       placement: 'bottom',
     },
     {
       target: '.students-section',
       content: t('tour.tutorStudents'),
-      placement: 'bottom',
-    },
-    {
-      target: 'nav.nav a[href="/events"]',
-      content: t('tour.studentEvents'),
       placement: 'bottom',
     },
   ];

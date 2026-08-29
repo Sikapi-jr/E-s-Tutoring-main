@@ -35,10 +35,8 @@ const ViewInvoices = lazy(() => import("./pages/ViewInvoices"));
 const PasswordResetConfirm = lazy(() => import("./pages/PasswordResetConfirm"));
 const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const VerifyEmail = lazy(() => import("./components/VerifyEmail"));
-const CalendarApp = lazy(() => import("./components/CalendarApp"));
 const StripeReauth = lazy(() => import("./pages/stripeComplete"));
 const LoggedHoursPage = lazy(() => import("./components/LoggedHoursPage"));
-const EventsPage = lazy(() => import("./components/EventsPage"));
 const GroupTutoring = lazy(() => import("./pages/GroupTutoring"));
 const GroupTutoringEnrollmentDetail = lazy(() => import("./pages/GroupTutoringEnrollmentDetail"));
 const AdminComplaints = lazy(() => import("./pages/AdminComplaints"));
@@ -86,8 +84,7 @@ import "./i18n";
 import "./styles/App.css";
 import "./styles/UnauthNavbar.css";
 import "./styles/Navbar.css";
-import "./components/CalendarApp.css";
-import "./styles/Footer.css"; 
+import "./styles/Footer.css";
 
 function Logout() {
   localStorage.clear();
@@ -160,13 +157,11 @@ function AppRoutes() {
             <Route path="/request-reply" element={<ProtectedRoute><ViewReply /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
             <Route path="/my-students" element={<ProtectedRoute><MyStudents /></ProtectedRoute>} />
-            <Route path="/calendar" element={<ProtectedRoute><CalendarApp /></ProtectedRoute>} />
             <Route path="/weeklyhours" element={<ProtectedRoute><SendWeekly /></ProtectedRoute>} />
             <Route path="/monthlyhours" element={<ProtectedRoute><SendMonthly /></ProtectedRoute>} />
             <Route path="/viewinvoices" element={<ProtectedRoute><ViewInvoices /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/hours" element={<ProtectedRoute><LoggedHoursPage /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
             <Route path="/group-tutoring" element={<ProtectedRoute><GroupTutoring /></ProtectedRoute>} />
             <Route path="/group-tutoring/class/:classId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />
             <Route path="/group-tutoring/enrollment/:enrollmentId" element={<ProtectedRoute><GroupTutoringEnrollmentDetail /></ProtectedRoute>} />

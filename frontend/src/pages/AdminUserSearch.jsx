@@ -370,20 +370,6 @@ export default function AdminUserSearch() {
         <div className="user-info-section">
           {/* Status Information (Top Priority) */}
           <div className="user-status-section">
-            {/* Google Calendar Status */}
-            {userInfo.roles !== "student" && (
-              <div className="status-card google-status">
-                <h3>📅 {t('calendar.googleCalendar')}</h3>
-                <div className="status-indicator">
-                  {userInfo.google_calendar_connected ? (
-                    <span className="status-connected">✅ {t('calendar.connected')}</span>
-                  ) : (
-                    <span className="status-disconnected">🔌 {t('calendar.notLinked')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Stripe Payment Status */}
             {userInfo.roles === "tutor" && (
               <div className="status-card stripe-status">

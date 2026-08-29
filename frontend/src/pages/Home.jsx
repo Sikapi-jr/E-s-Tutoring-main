@@ -33,18 +33,13 @@ export default function Home() {
   const [invoices, setInvoices] = useState([]);
   const [paidTotal, setPaidTotal] = useState(0);
   const [unpaidTotal, setUnpaidTotal] = useState(0);
-  const [events, setEvents] = useState([]);
-  
+
   // Tutor-specific state
   const [tutorStudents, setTutorStudents] = useState([]);
   const [tutorDocuments, setTutorDocuments] = useState([]);
-  const [googleConnected, setGoogleConnected] = useState(false);
   const [recentParentRequests, setRecentParentRequests] = useState([]);
   const [paymentTransfers, setPaymentTransfers] = useState([]);
-  
-  // Parent Google Calendar state
-  const [parentGoogleConnected, setParentGoogleConnected] = useState(false);
-  
+
   // Admin state
   const [showTutorForm, setShowTutorForm] = useState(false);
   const [showNotificationTool, setShowNotificationTool] = useState(false);
@@ -92,22 +87,6 @@ export default function Home() {
           try {
             const parentRes = await api.get('/api/homeParent/', { params: { id: user.account_id } });
             parentData = parentRes.data;
-            
-            // Check Google connection status for parent
-            const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
-            const isConnected = googleStatusRes.data?.connected || false;
-            setParentGoogleConnected(isConnected);
-            
-            // Fetch events directly (same logic as EventsPage)
-            try {
-              const eventsRes = await api.get(`/api/google/events/all?id=${user.account_id}`);
-              const events = eventsRes.data?.items || eventsRes.data || [];
-              setEvents(Array.isArray(events) ? events : []);
-            } catch (eventsError) {
-              console.error("Events fetch failed:", eventsError);
-              setEvents([]);
-            }
-            
           } catch (parentError) {
             console.error("Parent data fetch failed:", parentError);
           }
@@ -117,30 +96,15 @@ export default function Home() {
             // Get tutor's students
             const studentsRes = await api.get('/api/TutorStudents/', { params: { tutor: user.account_id } });
             setTutorStudents(studentsRes.data || []);
-            
+
             // Get tutor's documents
             const documentsRes = await api.get('/api/tutor/documents/', { params: { id: user.account_id } });
             setTutorDocuments(documentsRes.data || []);
-            
+
             // Get tutor's hours
             const hoursRes = await api.get('/api/parentHours/', { params: { id: user.account_id } });
             setHours(hoursRes.data || []);
-            
-            // Check Google connection status
-            const googleStatusRes = await api.get('/api/google/status/', { params: { id: user.account_id } });
-            const isConnected = googleStatusRes.data?.connected || false;
-            setGoogleConnected(isConnected);
-            
-            // Fetch events directly (same logic as EventsPage)
-            try {
-              const eventsRes = await api.get(`/api/google/events/all?id=${user.account_id}`);
-              const events = eventsRes.data?.items || eventsRes.data || [];
-              setEvents(Array.isArray(events) ? events : []);
-            } catch (eventsError) {
-              console.error("Events fetch failed:", eventsError);
-              setEvents([]);
-            }
-            
+
             // Get recent parent requests for tutors
             try {
               const requestsRes = await api.get('/api/requests/list/');
@@ -221,23 +185,7 @@ export default function Home() {
                 setStudentTutors(uniqueTutors); // Use basic info
               }
             }
-            
-            // Check Google connection status - for students, use their email instead of account_id
-            const calendarUserId = user.email;  // Students use their email for calendar access
-            const googleStatusRes = await api.get('/api/google/status/', { params: { id: calendarUserId } });
-            const isConnected = googleStatusRes.data?.connected || false;
-            setGoogleConnected(isConnected);
-            
-            // Fetch events directly (same logic as EventsPage)
-            try {
-              const eventsRes = await api.get(`/api/google/events/all?id=${calendarUserId}`);
-              const events = eventsRes.data?.items || eventsRes.data || [];
-              setEvents(Array.isArray(events) ? events : []);
-            } catch (eventsError) {
-              console.error("Events fetch failed:", eventsError);
-              setEvents([]);
-            }
-            
+
           } catch (studentError) {
             console.error("Student data fetch failed:", studentError);
           }
@@ -393,31 +341,6 @@ export default function Home() {
               }
             }
           } else if (user.roles === 'tutor') {
-            // Check for upcoming sessions today
-            if (events && events.length > 0) {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const tomorrow = new Date(today);
-              tomorrow.setDate(today.getDate() + 1);
-
-              const todaysSessions = events.filter(ev => {
-                const eventDate = new Date(ev.start?.dateTime || ev.start?.date);
-                return eventDate >= today && eventDate < tomorrow;
-              });
-
-              if (todaysSessions.length > 0) {
-                generatedNotifications.push({
-                  id: 'sessions-today',
-                  type: 'upcoming_session',
-                  title: 'Sessions Today',
-                  message: `You have ${todaysSessions.length} tutoring session${todaysSessions.length > 1 ? 's' : ''} scheduled for today`,
-                  created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-                  read: false,
-                  icon: '📅'
-                });
-              }
-            }
-
             // Check for recent parent requests
             if (recentParentRequests && recentParentRequests.length > 0) {
               const pendingRequests = recentParentRequests.filter(req => req.is_accepted === 'Pending' || !req.is_accepted);
@@ -493,26 +416,6 @@ export default function Home() {
               }
             }
 
-            // Check for session changes/cancellations
-            if (events && events.length > 0) {
-              const cancelledSessions = events.filter(ev =>
-                ev.extendedProperties?.private?.cant_attend === "true" ||
-                ev.extendedProperties?.private?.cancelled_by
-              );
-
-              if (cancelledSessions.length > 0) {
-                const latestCancellation = cancelledSessions[0];
-                generatedNotifications.push({
-                  id: `cancelled-${latestCancellation.id}`,
-                  type: 'session_cancelled',
-                  title: 'Session Cancelled',
-                  message: `A tutoring session has been cancelled: ${latestCancellation.summary || 'Untitled Session'}`,
-                  created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
-                  read: false,
-                  icon: '❌'
-                });
-              }
-            }
           } else if (user.roles === 'student') {
             // Check for completed sessions
             if (studentHoursData && studentHoursData.length > 0) {
@@ -589,33 +492,6 @@ export default function Home() {
   const paidPct =
     paidTotal + unpaidTotal ? (paidTotal / (paidTotal + unpaidTotal)) * 100 : 0;
 
-  // Memoize processed events to avoid recalculating dates on every render
-  // Filter to show only events in the next 10 days
-  const processedEvents = useMemo(() => {
-    const now = new Date();
-    const tenDaysFromNow = new Date(now.getTime() + (10 * 24 * 60 * 60 * 1000)); // 10 days from now
-    
-    return events
-      .filter((ev) => {
-        const startDate = new Date(ev.start?.dateTime || ev.start?.date);
-        return startDate >= now && startDate <= tenDaysFromNow;
-      })
-      .map((ev) => {
-        const startDate = new Date(ev.start?.dateTime || ev.start?.date);
-        const endDate = new Date(ev.end?.dateTime || ev.end?.date);
-        
-        return {
-          ...ev, // Preserve all original event data
-          id: ev.id,
-          title: ev.summary || t('events.noTitle'),
-          date: startDate.toLocaleDateString(),
-          startTime: startDate.toLocaleTimeString(),
-          endTime: endDate.toLocaleTimeString(),
-          description: ev.description || ""
-        };
-      });
-  }, [events]);
-
   // Requests for the home page's "Current Requests" widget: requests that
   // have NOT been fulfilled (no accepted tutor yet) listed first, then
   // requests that have been filled - each group keeping its original
@@ -628,42 +504,6 @@ export default function Home() {
     });
   }, [recentParentRequests]);
 
-  /* mark "can't attend" (declined) on Google Calendar */
-  const markCantAttend = useCallback(async (id) => {
-    try {
-      const calendarUserId = user?.roles === 'student' ? user.email : user.account_id;
-      await api.get(`/api/google/update-rsvp/`, {
-        params: { event_id: id, status: "cant_attend", user_id: calendarUserId }
-      });
-      // Invalidate events cache to force refresh
-      api.invalidateCache('/api/google/events', { id: calendarUserId });
-      // Update local state immediately for better UX
-      setEvents((prev) => prev.filter((ev) => ev.id !== id));
-    } catch (e) {
-      console.error("RSVP update failed:", e);
-    }
-  }, [user?.account_id, user?.email, user?.roles]);
-
-  /* student can't attend - sends email to parent */
-  const studentCantAttend = useCallback(async (eventData, tutorName) => {
-    try {
-      await api.post(`/api/student-cant-attend/`, {
-        event_id: eventData.id,
-        student_name: user.first_name + " " + user.last_name,
-        event_title: eventData.title,
-        event_date: eventData.date,
-        event_start_time: eventData.startTime,
-        event_end_time: eventData.endTime,
-        event_description: eventData.description,
-        tutor_name: tutorName
-      });
-      alert(t('home.parentNotifiedCannotAttend'));
-    } catch (err) {
-      console.error("Error sending student can't attend notification:", err);
-      alert(t('home.failedToNotifyParent'));
-    }
-  }, [user.first_name, user.last_name]);
-
   /* handle document upload for tutors */
   const handleDocumentUpload = useCallback(() => {
     // Open the document upload modal
@@ -675,23 +515,6 @@ export default function Home() {
     // Add the new document to the list and close modal
     setTutorDocuments(prev => [...prev, newDoc]);
     setShowDocumentUploadModal(false);
-  }, []);
-
-  /* handle Google Calendar connection */
-  const handleGoogleConnect = useCallback(async () => {
-    try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const token = localStorage.getItem('access_token');
-      window.location.href = `${API_BASE_URL}/api/google/oauth/init?token=${token}`;
-    } catch (error) {
-      console.error("Google connect failed:", error);
-      alert(t('calendar.connectFailed'));
-    }
-  }, []);
-
-  /* handle parent Google Calendar connection redirect */
-  const handleParentGoogleConnect = useCallback(() => {
-    window.location.href = '/events';
   }, []);
 
   /* handle document deletion */
@@ -1206,7 +1029,7 @@ export default function Home() {
           ) : user?.roles === 'tutor' ? (
             // TUTOR VIEW
             <>
-              {/* Tutor's Current Students - aligned with scheduled events */}
+              {/* Tutor's Current Students - aligned with the logged hours table */}
               <div
                 className="mobile-section students-section"
                 style={{
@@ -1893,7 +1716,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Recent Parent Requests - Same width as scheduled events */}
+          {/* Recent Parent Requests - Same width as the logged hours table */}
           <div
             style={{
               width: "55%",

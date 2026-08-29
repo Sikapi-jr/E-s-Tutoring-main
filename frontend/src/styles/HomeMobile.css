@@ -111,22 +111,22 @@
     display: contents !important; /* This makes the children act as direct grid items */
   }
 
-  /* PERFECT ORDER: Hello → Students → Scheduled → Logged → Payments → Announcements */
-  
+  /* PERFECT ORDER: Hello → Students → Logged Hours → Current Requests → Payments → Announcements */
+
   /* 1. Students section */
   .students-section {
     order: 1 !important;
     grid-row: 1 !important;
   }
 
-  /* 2. Scheduled events section */  
-  .scheduled-events-section {
+  /* 2. Logged hours section (middle column table) */
+  .home-hours-section {
     order: 2 !important;
     grid-row: 2 !important;
   }
 
-  /* 3. Logged hours section */
-  .logged-hours-section {
+  /* 3. Current requests section (left column widget) */
+  .current-requests-section {
     order: 3 !important;
     grid-row: 3 !important;
   }
@@ -180,19 +180,19 @@
     max-width: 100% !important;
   }
 
-  /* Sticky header for scheduled events table on mobile */
-  .scheduled-events-section .table-wrapper {
+  /* Sticky header for the logged hours table on mobile */
+  .home-hours-section .table-wrapper {
     position: relative !important;
   }
 
-  .scheduled-events-section .events-table thead {
+  .home-hours-section .home-hours-table thead {
     position: sticky !important;
     top: 0 !important;
     z-index: 10 !important;
     background: var(--color-primary) !important;
   }
 
-  .scheduled-events-section .events-table thead th {
+  .home-hours-section .home-hours-table thead th {
     position: sticky !important;
     top: 0 !important;
     background: var(--color-primary) !important;

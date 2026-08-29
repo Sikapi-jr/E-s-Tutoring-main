@@ -1312,7 +1312,8 @@
     "tutorStudents": "View detailed information about your current students. Click a student name to see their profile.",
     "paymentProgress": "Track your payment progress here. The green bar shows how much of your invoices have been paid. Click to see all invoices in the Invoices page.",
     "paidInvoices": "View your paid invoices here. Click on an invoice to download the PDF. Click 'View More' to see all invoices in the Invoices page.",
-    "unpaidInvoices": "View unpaid invoices here. Click on an invoice to pay it online. Click 'View More' to see all invoices in the Invoices page."
+    "unpaidInvoices": "View unpaid invoices here. Click on an invoice to pay it online. Click 'View More' to see all invoices in the Invoices page.",
+    "currentRequests": "See your tutoring requests here - open requests that still need a tutor appear first, followed by ones that have already been filled."
   },
   "groupTutoring": {
     "title": "Group French Classes",

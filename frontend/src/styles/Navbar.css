@@ -56,9 +56,8 @@
 /* links row */
 .nav__links {
   display: flex;
-  gap: 2rem;
-  margin-left: auto;             /* push all nav links to the right */
-  margin-right: 2rem;            /* add space between nav links and profile */
+  gap: 2.75rem;                  /* spread links out more */
+  margin-left: 2.5rem;           /* sit closer to the logo, further left */
   flex-wrap: wrap;               /* wrap instead of clipping at zoom */
   overflow: visible;
   white-space: normal;           /* allow wrapping */
@@ -124,6 +123,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;             /* push profile/language controls to the far right */
   overflow: visible;             /* don't clip the menu */
 }
 

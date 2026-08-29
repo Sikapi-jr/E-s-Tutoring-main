@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useUser } from "../components/UserProvider";
-import { ACCESS_TOKEN, ONTARIO_CITIES } from "../constants";
+import { ONTARIO_CITIES } from "../constants";
 import api from "../api";
 import TutorDocumentUpload from "../components/TutorDocumentUpload";
 import NotificationSettings from "../components/NotificationSettings";
@@ -30,7 +30,6 @@ export default function Settings() {
 
   const [children, setChildren] = useState([]);
   const [referrals, setReferrals] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [documents, setDocuments] = useState([]);
   // No longer need separate state for image src since it's served directly
@@ -63,21 +62,6 @@ export default function Settings() {
   useEffect(() => {
     refreshUserDataIfNeeded(user, setUser);
   }, [user, setUser]);
-
-  useEffect(() => {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    if (user.roles !== "student" && token) {
-      api
-        .get(`/api/google/status/?id=${user.account_id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => setIsConnected(res.data.connected))
-        .catch((err) => {
-          console.error("Google status check failed:", err);
-          setIsConnected(false);
-        });
-    }
-  }, [user.roles, user.account_id]);
 
   useEffect(() => {
     if (user.roles === "parent") {
@@ -178,11 +162,6 @@ export default function Settings() {
       console.error("Referral creation failed", err);
       alert(t('settings.referralFailed', 'Failed to send referral'));
     }
-  };
-
-  const handleGoogleConnect = () => {
-    const token = localStorage.getItem(ACCESS_TOKEN);
-    window.location.href = `${API_BASE_URL}/api/google/oauth/init?token=${token}`;
   };
 
   const handleDocumentUpload = (uploadedDoc) => {
@@ -448,24 +427,6 @@ export default function Settings() {
           EDIT PROFILE
         </button>
       </section>
-
-
-      {/* ===== Google Calendar Status ===== */}
-      {user.roles !== "student" && (
-        <section className="google-status-box">
-          <h3>Google Account</h3>
-          {!isConnected ? (
-            <>
-              <p>🔌 You haven't linked your Google Calendar.</p>
-              <button className="form-button" onClick={handleGoogleConnect}>
-                Connect Google Account
-              </button>
-            </>
-          ) : (
-            <p>✅ Google Calendar is connected!</p>
-          )}
-        </section>
-      )}
 
       {/* ===== Password Reset ===== */}
       <section className="password-reset-section">
