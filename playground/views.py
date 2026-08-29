@@ -1401,8 +1401,11 @@ class AnnouncementListView(APIView):
     def get(self, request):
         user_id = request.query_params.get('id', None)
         user_role = None
+        is_superuser = False
         try:
-            user_role = User.objects.get(id=user_id).roles
+            lookup_user = User.objects.get(id=user_id)
+            user_role = lookup_user.roles
+            is_superuser = lookup_user.is_superuser
         except User.DoesNotExist:
             user_role = None
 
@@ -1414,7 +1417,7 @@ class AnnouncementListView(APIView):
         # Filter announcements based on user role using the model method
         visible_announcements = []
         for announcement in all_announcements:
-            if announcement.is_visible_to_role(user_role or 'guest'):
+            if announcement.is_visible_to_role(user_role or 'guest', is_superuser=is_superuser):
                 visible_announcements.append(announcement)
                 if len(visible_announcements) >= 7:  # Limit to 7 results
                     break

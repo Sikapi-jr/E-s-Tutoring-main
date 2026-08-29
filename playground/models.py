@@ -309,8 +309,8 @@ class Announcements(models.Model):
     audience_choices = [
         ('all', 'Everyone'),
         ('parent', 'Parents'),
-        ('student', 'Students'),
         ('tutor', 'Tutors'),
+        ('admin', 'Admins'),
     ]
     # No choices= here: audience can be a comma-separated combination of the
     # above (e.g. "parent,tutor") for multi-role targeting, which a strict
@@ -320,11 +320,15 @@ class Announcements(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
 
-    def is_visible_to_role(self, user_role):
-        """Check if this announcement should be visible to a specific user role"""
+    def is_visible_to_role(self, user_role, is_superuser=False):
+        """Check if this announcement should be visible to a specific user role.
+        is_superuser is checked against the 'admin' audience separately,
+        since admin accounts don't always have roles == 'admin'."""
         if self.audience == 'all':
             return True
         target_roles = [role.strip() for role in self.audience.split(',')]
+        if is_superuser and 'admin' in target_roles:
+            return True
         return user_role in target_roles
 
     def __str__(self):

@@ -182,18 +182,18 @@ function CreateAnnouncement() {
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <input
                             type="checkbox"
-                            checked={selectedRoles.includes('student')}
-                            onChange={() => handleRoleChange('student')}
-                        />
-                        {t('announcements.students')}
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <input
-                            type="checkbox"
                             checked={selectedRoles.includes('tutor')}
                             onChange={() => handleRoleChange('tutor')}
                         />
                         {t('announcements.tutors')}
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRoles.includes('admin')}
+                            onChange={() => handleRoleChange('admin')}
+                        />
+                        {t('announcements.admins', 'Admins')}
                     </label>
                 </div>
                 <p style={{ fontSize: '0.9rem', color: '#666', margin: '0.5rem 0' }}>
