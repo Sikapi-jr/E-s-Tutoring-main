@@ -144,11 +144,6 @@ def current_user_view(request):
             "rateInPerson": float(request.user.rateInPerson),
             "availableReferralCredit": float(request.user.available_referral_credit),
             "stripe_account_id": request.user.stripe_account_id,
-            "profile_picture": (
-                request.build_absolute_uri(request.user.profile_picture.url)
-                if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
-                else None
-            ),
             "tutor_referral_code": request.user.tutor_referral_code,
             "has_seen_tour": request.user.has_seen_tour
         }
@@ -340,26 +335,12 @@ def change_settings_parent(request, pk):
                 setattr(profile, attr, new_val)
                 update_fields.append(attr)
 
-    if "profile_picture" in request.FILES:
-        new_picture = request.FILES["profile_picture"]
-        if profile.profile_picture != new_picture:
-            profile.profile_picture = new_picture
-            update_fields.append("profile_picture")
-
     if not update_fields:
         return Response({"message": "Nothing to update."}, status=200)
 
     profile.save(update_fields=update_fields)
-    
-    # Return updated user data including profile picture URL
-    response_data = {"message": "Settings updated successfully."}
-    if "profile_picture" in update_fields:
-        if profile.profile_picture:
-            response_data["profile_picture"] = request.build_absolute_uri(profile.profile_picture.url)
-        else:
-            response_data["profile_picture"] = None
-    
-    return Response(response_data, status=200)
+
+    return Response({"message": "Settings updated successfully."}, status=200)
 
 
 @api_view(['POST'])
@@ -2085,7 +2066,6 @@ class StudentCreateView(APIView):
         lives_with_parent_raw = request.data.get('livesWithParent', True)
         city = (request.data.get('city') or '').strip()
         birth_year_raw = request.data.get('birthYear')
-        profile_picture = request.FILES.get('profile_picture', None)
         school_id_raw = (request.data.get('school_id') or '').strip()
         school_other_name = (request.data.get('school_other_name') or '').strip()
 
@@ -2160,11 +2140,6 @@ class StudentCreateView(APIView):
                 email='',  # Email is not unique, so leave blank for students
                 is_active=True,  # Students created by parents are immediately active
             )
-
-            # Handle profile picture if provided
-            if profile_picture:
-                student.profile_picture = profile_picture
-                student.save()
 
             # Set default rates for student (should be 0)
             student.set_default_rates_by_role()
@@ -4828,7 +4803,6 @@ class AdminUserHoursView(APIView):
             'is_active': user.is_active,
             'is_superuser': user.is_superuser,
             'last_login': user.last_login,
-            'profile_picture': user.profile_picture.url if user.profile_picture else None,
             'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None,
             'tutor_referral_code': user.tutor_referral_code if user.roles == 'tutor' else None,
             'parent_id': user.parent.id if user.parent else None,

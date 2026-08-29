@@ -152,17 +152,9 @@ const MyStudents = () => {
               <div key={studentRelation.tutorStudentId} className="student-card">
                 <div className="student-header">
                   <div className="student-avatar">
-                    {studentRelation.profile_picture && !studentRelation.profile_picture.includes('default-profile-picture.jpeg') ? (
-                      <img
-                        src={studentRelation.profile_picture}
-                        alt={`${studentRelation.student_firstName} ${studentRelation.student_lastName}`}
-                        className="profile-picture"
-                      />
-                    ) : (
-                      <div className="default-avatar">
-                        {studentRelation.student_firstName?.charAt(0)}{studentRelation.student_lastName?.charAt(0)}
-                      </div>
-                    )}
+                    <div className="default-avatar">
+                      {studentRelation.student_firstName?.charAt(0)}{studentRelation.student_lastName?.charAt(0)}
+                    </div>
                   </div>
                   <div className="student-info">
                     <h2 className="student-name">

@@ -59,8 +59,11 @@
     <link rel="prefetch" href="/request" />
     
     <!-- Security headers -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- X-Content-Type-Options and X-Frame-Options are not honoured from a
+         <meta> tag (browsers require a real HTTP response header for those,
+         and log a console warning otherwise) - Django's own
+         XFrameOptionsMiddleware already sends X-Frame-Options on every
+         response, so it isn't duplicated here. -->
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     

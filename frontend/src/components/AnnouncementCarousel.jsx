@@ -4,7 +4,9 @@ import api from "../api";
 import { useUser } from "./UserProvider";
 // Using standard media URLs served by Django
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Same-origin by default in production (frontend and API share one domain);
+// only override via VITE_API_URL when they're genuinely different (local dev).
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 const AnnouncementCarousel = memo(() => {
   const { t } = useTranslation();

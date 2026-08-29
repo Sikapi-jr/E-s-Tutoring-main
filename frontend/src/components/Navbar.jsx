@@ -197,18 +197,10 @@ function ProfileMenu({ user, BASE, onMobileClose }) {
         aria-expanded={open}
         onClick={handleToggle}
       >
-        {user.profile_picture && !user.profile_picture.includes('default-profile-picture.jpeg') ? (
-          <img
-            src={user.profile_picture}
-            alt="Profile"
-            className="profile__avatar profile__avatar--image"
-          />
-        ) : (
-          <svg className="profile__avatar" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
-        )}
+        <svg className="profile__avatar" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+        </svg>
       </button>
 
       {open && (

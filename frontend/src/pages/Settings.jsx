@@ -13,7 +13,9 @@ import { describeApiError } from "../utils/errorHandler";
 // Using standard media URLs served by Django
 import "../styles/Settings.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Same-origin by default in production (frontend and API share one domain);
+// only override via VITE_API_URL when they're genuinely different (local dev).
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -30,9 +32,7 @@ export default function Settings() {
 
   const [children, setChildren] = useState([]);
   const [referrals, setReferrals] = useState([]);
-  const [profilePicture, setProfilePicture] = useState(null);
   const [documents, setDocuments] = useState([]);
-  // No longer need separate state for image src since it's served directly
 
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -56,7 +56,6 @@ export default function Settings() {
     school: "",
     schoolOtherName: ""
   });
-  const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
   // Refresh user data if needed (e.g., missing tutor_referral_code for tutors)
   useEffect(() => {
@@ -119,24 +118,16 @@ export default function Settings() {
       formData.append("lastName", editForm.lastName.trim());
       formData.append("address", editForm.address.trim());
       formData.append("city", editForm.city.trim());
-      if (profilePicture) {
-        formData.append("profile_picture", profilePicture);
-      }
 
-      const response = await api.patch(`/api/profile/${user.account_id}/`, formData, {
+      await api.patch(`/api/profile/${user.account_id}/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
       const updatedUser = { ...user, ...editForm };
-      // Update profile picture if response contains it
-      if (response.data?.profile_picture) {
-        updatedUser.profile_picture = response.data.profile_picture;
-      }
       setUser?.(updatedUser);
       setShowEdit(false);
-      setProfilePicture(null); // Reset file input
     } catch (err) {
       console.error("Profile update failed", err);
     }
@@ -233,10 +224,6 @@ export default function Settings() {
         formData.append("school_other_name", addStudentForm.schoolOtherName.trim());
       }
 
-      if (addStudentProfilePicture) {
-        formData.append("profile_picture", addStudentProfilePicture);
-      }
-
       await api.post(`/api/students/create/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -268,45 +255,31 @@ export default function Settings() {
             gap: "1rem",
           }}
         >
-          {user.profile_picture ? (
-            <img
-              src={user.profile_picture}
-              alt="Profile"
+          <div
+            style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              backgroundColor: "#f0f0f0",
+              border: "2px solid #ccc",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
               style={{
-                width: "80px",
-                height: "80px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "2px solid #ccc",
+                width: "50px",
+                height: "50px",
+                fill: "#666"
               }}
-            />
-          ) : (
-            <div
-              style={{
-                width: "80px",
-                height: "80px",
-                borderRadius: "50%",
-                backgroundColor: "#f0f0f0",
-                border: "2px solid #ccc",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                style={{
-                  width: "50px",
-                  height: "50px",
-                  fill: "#666"
-                }}
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-              </svg>
-            </div>
-          )}
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+            </svg>
+          </div>
 
           <div>
             <h2 className="profile-name">
@@ -571,15 +544,6 @@ export default function Settings() {
               </label>
             ))}
 
-            <label>
-              Profile Picture
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProfilePicture(e.target.files[0])}
-              />
-            </label>
-
             <div className="modal-actions">
               <button className="cancel" onClick={() => setShowEdit(false)}>
                 Cancel
@@ -761,23 +725,6 @@ export default function Settings() {
               inputStyle={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem', boxSizing: 'border-box' }}
             />
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                {t('students.profilePicture')} ({t('common.optional')})
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setAddStudentProfilePicture(e.target.files[0])}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
-
             <div style={{
               backgroundColor: "#f0f4ff",
               padding: "1rem",
@@ -807,7 +754,6 @@ export default function Settings() {
                     school: "",
                     schoolOtherName: ""
                   });
-                  setAddStudentProfilePicture(null);
                 }}
                 style={{
                   padding: '0.75rem 1.5rem',

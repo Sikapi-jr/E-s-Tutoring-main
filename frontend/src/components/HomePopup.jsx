@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Same-origin by default in production (frontend and API share one domain);
+// only override via VITE_API_URL when they're genuinely different (local dev).
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 const HomePopup = () => {
     const { t } = useTranslation();

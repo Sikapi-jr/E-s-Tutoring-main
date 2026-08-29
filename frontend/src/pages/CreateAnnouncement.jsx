@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useUser } from '../components/UserProvider';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Same-origin by default in production (frontend and API share one domain);
+// only override via VITE_API_URL when they're genuinely different (local dev).
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 function CreateAnnouncement() {
     const { t } = useTranslation();

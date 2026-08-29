@@ -8,8 +8,6 @@ import { describeApiError } from "../utils/errorHandler";
 import SchoolSelect from "../components/SchoolSelect";
 import "../styles/Students.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
 const Students = () => {
   const { t } = useTranslation();
   const { user } = useUser();
@@ -32,7 +30,6 @@ const Students = () => {
     firstName: "",
     lastName: ""
   });
-  const [profilePicture, setProfilePicture] = useState(null);
 
   /* add student state */
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
@@ -45,7 +42,6 @@ const Students = () => {
     school: "",
     schoolOtherName: ""
   });
-  const [addStudentProfilePicture, setAddStudentProfilePicture] = useState(null);
 
   /* fetch students for parent or all students for admin - same single-query
      pattern Settings.jsx uses (GET /api/students/) rather than piggybacking
@@ -132,7 +128,6 @@ const Students = () => {
       firstName: student.firstName || "",
       lastName: student.lastName || ""
     });
-    setProfilePicture(null);
     setShowEditStudentModal(true);
   };
 
@@ -143,10 +138,6 @@ const Students = () => {
       const formData = new FormData();
       formData.append("firstName", editStudentForm.firstName.trim());
       formData.append("lastName", editStudentForm.lastName.trim());
-
-      if (profilePicture) {
-        formData.append("profile_picture", profilePicture);
-      }
 
       await api.patch(`/api/profile/${selectedStudentForEdit.id}/`, formData, {
         headers: {
@@ -217,10 +208,6 @@ const Students = () => {
       formData.append("school_id", addStudentForm.school);
       if (addStudentForm.school === 'other') {
         formData.append("school_other_name", addStudentForm.schoolOtherName.trim());
-      }
-
-      if (addStudentProfilePicture) {
-        formData.append("profile_picture", addStudentProfilePicture);
       }
 
       await api.post(`/api/students/create/`, formData, {
@@ -327,17 +314,9 @@ const Students = () => {
               <div key={student.id} className="student-card">
                 <div className="student-header">
                   <div className="student-avatar">
-                    {student.profile_picture && !student.profile_picture.includes('default-profile-picture.jpeg') ? (
-                      <img
-                        src={student.profile_picture}
-                        alt={`${student.firstName} ${student.lastName}`}
-                        className="profile-picture"
-                      />
-                    ) : (
-                      <div className="default-avatar">
-                        {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
-                      </div>
-                    )}
+                    <div className="default-avatar">
+                      {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
+                    </div>
                   </div>
                   <div className="student-info">
                     <h2 className="student-name">
@@ -467,17 +446,6 @@ const Students = () => {
                     onChange={(e) => setEditStudentForm({...editStudentForm, lastName: e.target.value})}
                   />
                 </div>
-
-
-
-                <div className="form-group">
-                  <label>{t('students.profilePicture')}</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setProfilePicture(e.target.files[0])}
-                  />
-                </div>
               </div>
 
               <div className="modal-actions">
@@ -585,15 +553,6 @@ const Students = () => {
                   onOtherChange={(schoolOtherName) => setAddStudentForm({ ...addStudentForm, schoolOtherName })}
                 />
 
-                <div className="form-group">
-                  <label>{t('students.profilePicture')} ({t('common.optional')})</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setAddStudentProfilePicture(e.target.files[0])}
-                  />
-                </div>
-
                 <div style={{
                   backgroundColor: "#f0f4ff",
                   padding: "1rem",
@@ -624,7 +583,6 @@ const Students = () => {
                       school: "",
                       schoolOtherName: ""
                     });
-                    setAddStudentProfilePicture(null);
                   }}
                   style={{
                     padding: '0.75rem 1.5rem',

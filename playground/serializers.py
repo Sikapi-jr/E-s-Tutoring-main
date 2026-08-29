@@ -108,7 +108,6 @@ class UserSerializer(serializers.ModelSerializer):
     )
 
     documents = UserDocumentSerializer(many=True, read_only=True)
-    profile_picture = serializers.SerializerMethodField()
     school_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -123,7 +122,6 @@ class UserSerializer(serializers.ModelSerializer):
             "rateOnline", "rateInPerson",
             "stripe_account_id", "is_active", "is_superuser", "is_staff",
             "documents",
-            "profile_picture",
             "tutor_referral_code",
             "school", "school_other_name", "school_name", "credit_balance",
         ]
@@ -133,18 +131,6 @@ class UserSerializer(serializers.ModelSerializer):
             "username": {"required": True},
             "roles":    {"required": False},
         }
-
-
-    def get_profile_picture(self, obj):
-        if obj.profile_picture and hasattr(obj.profile_picture, 'url'):
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.profile_picture.url)
-            # Fallback for when request context is not available
-            from django.conf import settings
-            base_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-            return base_url + obj.profile_picture.url
-        return None
 
     def get_school_name(self, obj):
         if obj.school_id:

@@ -1116,7 +1116,7 @@ export default function Home() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div>
                             <a 
-                              href={`${import.meta.env.VITE_API_URL || "http://localhost:8000"}${doc.file}`}
+                              href={`${import.meta.env.VITE_API_URL || ""}${doc.file}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "#192A88", textDecoration: "none", fontWeight: "bold" }}
