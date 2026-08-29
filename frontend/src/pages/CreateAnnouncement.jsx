@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { useUser } from '../components/UserProvider';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 function CreateAnnouncement() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { user } = useUser();
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -16,6 +23,50 @@ function CreateAnnouncement() {
     });
 
     const [selectedRoles, setSelectedRoles] = useState(['all']);
+
+    const [pastAnnouncements, setPastAnnouncements] = useState([]);
+    const [loadingPast, setLoadingPast] = useState(true);
+    const [deletingId, setDeletingId] = useState(null);
+
+    useEffect(() => {
+        if (user && !user.is_superuser && user.roles !== 'admin') {
+            navigate('/login');
+        }
+    }, [user, navigate]);
+
+    useEffect(() => {
+        fetchPastAnnouncements();
+    }, []);
+
+    const fetchPastAnnouncements = async () => {
+        try {
+            setLoadingPast(true);
+            const res = await api.get('/api/announcements/admin/all/');
+            setPastAnnouncements(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error('Error fetching past announcements:', err);
+        } finally {
+            setLoadingPast(false);
+        }
+    };
+
+    const handleDelete = async (announcement) => {
+        if (!window.confirm(t('announcements.confirmDelete', 'Delete "{{name}}"? This cannot be undone.', { name: announcement.name || `#${announcement.id}` }))) {
+            return;
+        }
+        try {
+            setDeletingId(announcement.id);
+            await api.delete(`/api/announcements/${announcement.id}/delete/`);
+            setPastAnnouncements((prev) => prev.filter((a) => a.id !== announcement.id));
+        } catch (err) {
+            console.error('Error deleting announcement:', err);
+            alert(t('announcements.deleteFailed', 'Failed to delete announcement.'));
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const isExpired = (announcement) => announcement.expires_at && new Date(announcement.expires_at) < new Date();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,7 +116,7 @@ function CreateAnnouncement() {
         });
 
         try {
-            const res = await api.post('/api/announcements/create/', data, {
+            await api.post('/api/announcements/create/', data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             alert(t('admin.announcementCreatedSuccess'));
@@ -80,6 +131,7 @@ function CreateAnnouncement() {
                 image: null
             });
             setSelectedRoles(['all']);
+            fetchPastAnnouncements();
         } catch (err) {
             console.error(err);
             alert(t('admin.announcementCreatedFailed'));
@@ -153,6 +205,75 @@ function CreateAnnouncement() {
 
                 <button type="submit">{t('common.submit')}</button>
             </form>
+
+            <hr style={{ margin: '2rem 0' }} />
+
+            <h3>{t('announcements.pastAnnouncements', 'Past Announcements')}</h3>
+            {loadingPast ? (
+                <p>{t('common.loading')}</p>
+            ) : pastAnnouncements.length === 0 ? (
+                <p style={{ color: '#666' }}>{t('announcements.noPastAnnouncements', 'No announcements yet.')}</p>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {pastAnnouncements.map((announcement) => {
+                        const expired = isExpired(announcement);
+                        return (
+                            <div
+                                key={announcement.id}
+                                style={{
+                                    border: '1px solid #ddd',
+                                    borderRadius: '6px',
+                                    padding: '0.75rem 1rem',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    backgroundColor: expired ? '#f8f9fa' : 'white',
+                                    opacity: expired ? 0.75 : 1,
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                    {announcement.image && (
+                                        <img
+                                            src={`${API_BASE_URL}${announcement.image}`}
+                                            alt=""
+                                            style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }}
+                                        />
+                                    )}
+                                    <div style={{ minWidth: 0 }}>
+                                        <strong>{announcement.name || `#${announcement.id}`}</strong>
+                                        {expired && (
+                                            <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', fontWeight: 'bold', color: '#856404' }}>
+                                                {t('announcements.expired', 'EXPIRED')}
+                                            </span>
+                                        )}
+                                        <div style={{ fontSize: '0.8rem', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {announcement.audience === 'all' ? t('announcements.everyone') : announcement.audience}
+                                            {' · '}
+                                            {new Date(announcement.created_at).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDelete(announcement)}
+                                    disabled={deletingId === announcement.id}
+                                    style={{
+                                        padding: '0.4rem 0.8rem',
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: deletingId === announcement.id ? 'not-allowed' : 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {deletingId === announcement.id ? t('admin.processing', 'Processing...') : t('common.delete', 'Delete')}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

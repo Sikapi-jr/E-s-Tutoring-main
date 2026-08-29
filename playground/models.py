@@ -312,7 +312,10 @@ class Announcements(models.Model):
         ('student', 'Students'),
         ('tutor', 'Tutors'),
     ]
-    audience = models.CharField(max_length=20, choices=audience_choices, default='all')
+    # No choices= here: audience can be a comma-separated combination of the
+    # above (e.g. "parent,tutor") for multi-role targeting, which a strict
+    # ChoiceField would reject outright at the serializer level.
+    audience = models.CharField(max_length=100, default='all', help_text='Comma-separated roles: e.g., "parent,tutor" or "all"')
 
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
@@ -321,7 +324,8 @@ class Announcements(models.Model):
         """Check if this announcement should be visible to a specific user role"""
         if self.audience == 'all':
             return True
-        return self.audience == user_role
+        target_roles = [role.strip() for role in self.audience.split(',')]
+        return user_role in target_roles
 
     def __str__(self):
         return self.name or f"Announcement #{self.id}"

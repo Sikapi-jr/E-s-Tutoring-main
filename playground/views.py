@@ -1423,6 +1423,37 @@ class AnnouncementListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class AnnouncementAdminListView(APIView):
+    """Admin view of ALL announcements (past, expired, or upcoming),
+    unfiltered by audience/expiry - used by the announcement management page."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        announcements = Announcements.objects.all().order_by('-created_at')
+        serializer = AnnouncementSerializer(announcements, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AnnouncementDeleteView(APIView):
+    """Admin-only delete for a single announcement."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, announcement_id):
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({'error': 'Admin access required'}, status=403)
+
+        try:
+            announcement = Announcements.objects.get(id=announcement_id)
+        except Announcements.DoesNotExist:
+            return Response({'error': 'Announcement not found'}, status=404)
+
+        announcement.delete()
+        return Response({'message': 'Announcement deleted'}, status=status.HTTP_200_OK)
+
+
 class PopupCreateView(APIView):
     """Admin-only view to create popups"""
     permission_classes = [IsAuthenticated]

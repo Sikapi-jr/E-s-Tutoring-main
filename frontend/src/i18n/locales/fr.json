@@ -637,7 +637,12 @@
     "linkOptional": "Lien (optionnel)",
     "imageOptional": "Image (optionnel)",
     "audienceSelectOneOrMore": "Audience (sélectionner un ou plusieurs)",
-    "admins": "Administrateurs"
+    "admins": "Administrateurs",
+    "confirmDelete": "Supprimer « {{name}} » ? Cette action est irréversible.",
+    "deleteFailed": "Échec de la suppression de l'annonce.",
+    "pastAnnouncements": "Annonces passées",
+    "noPastAnnouncements": "Aucune annonce pour le moment.",
+    "expired": "EXPIRÉE"
   },
   "popups": {
     "createPopup": "Créer une Fenêtre Contextuelle",

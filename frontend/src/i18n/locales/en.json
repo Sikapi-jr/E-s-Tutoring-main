@@ -645,7 +645,12 @@
     "linkOptional": "Link (optional)",
     "imageOptional": "Image (optional)",
     "audienceSelectOneOrMore": "Audience (select one or more)",
-    "admins": "Admins"
+    "admins": "Admins",
+    "confirmDelete": "Delete \"{{name}}\"? This cannot be undone.",
+    "deleteFailed": "Failed to delete announcement.",
+    "pastAnnouncements": "Past Announcements",
+    "noPastAnnouncements": "No announcements yet.",
+    "expired": "EXPIRED"
   },
   "popups": {
     "createPopup": "Create Popup",

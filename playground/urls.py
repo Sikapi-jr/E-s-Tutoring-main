@@ -60,6 +60,8 @@ urlpatterns = [
     path('stripe/reauth/<uidb64>/<token>/', stripe_reauth_token),
     path('announcements/create/', views.AnnouncementCreateView.as_view(), name='create-announcement'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcement-list'),
+    path('announcements/admin/all/', views.AnnouncementAdminListView.as_view(), name='announcement-admin-list'),
+    path('announcements/<int:announcement_id>/delete/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),
 
     # Popup endpoints
     path('popups/create/', views.PopupCreateView.as_view(), name='create-popup'),
