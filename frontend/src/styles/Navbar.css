@@ -57,7 +57,7 @@
 .nav__links {
   display: flex;
   gap: 4rem;                     /* spread links out more - pushes everything after Home to the right */
-  margin-left: 2.5rem;           /* Home sits close to the logo */
+  margin-left: 4rem;              /* Home sits a bit further from the logo */
   flex-wrap: wrap;               /* wrap instead of clipping at zoom */
   overflow: visible;
   white-space: normal;           /* allow wrapping */
