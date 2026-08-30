@@ -334,7 +334,11 @@
     "typeReply": "Tapez votre réponse ici...",
     "submitReply": "Soumettre la réponse",
     "acceptedTutor": "Tuteur accepté",
-    "tutorMessage": "Message du tuteur"
+    "tutorMessage": "Message du tuteur",
+    "clickToViewDetails": "Cliquez pour voir tous les détails",
+    "documentsRecommended": "Documents recommandés",
+    "documentsRecommendationText": "Nous vous recommandons de téléverser vos diplômes et certifications avant de répondre aux demandes de tutorat. Cela aide les parents à prendre une décision éclairée et augmente vos chances d'être sélectionné.",
+    "uploadDocuments": "Téléverser des documents"
   },
   "logHours": {
     "title": "Enregistrer les heures de tutorat",

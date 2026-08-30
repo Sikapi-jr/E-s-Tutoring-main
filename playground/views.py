@@ -2262,31 +2262,15 @@ class PersonalRequestListView(APIView):
         if not parent_id:
             return Response({"error": "Missing 'parent_id' or 'parent' query parameter."}, status=400)
 
-        # Get all requests for this parent
+        # Get all requests for this parent. Tutor-code-targeted requests are
+        # hidden from the general marketplace while pending (see
+        # RequestListView), but the parent who made the request should
+        # always see it in their own list regardless of its referral status.
         request_qs = TutoringRequest.objects.filter(
             parent=parent_id
         ).order_by('-created_at')
 
-        # Filter out tutor-specific requests that are still pending
-        # (waiting for tutor to accept/decline via email)
-        # Only show if: no referral_request OR referral_request status is 'declined' or 'accepted'
-        filtered_requests = []
-        for tutoring_request in request_qs:
-            # Check if this request has a related tutor referral request
-            referral_request = TutorReferralRequest.objects.filter(
-                tutoring_request=tutoring_request
-            ).first()
-
-            if referral_request is None:
-                # Regular request (not tutor-specific) - always show
-                filtered_requests.append(tutoring_request)
-            elif referral_request.status != 'pending':
-                # Tutor-specific request where tutor has responded - show it
-                # (Either 'declined' so parent can see rejection, or 'accepted' meaning it's linked)
-                filtered_requests.append(tutoring_request)
-            # If status is 'pending', don't add to filtered_requests (hide from parent)
-
-        serializer = RequestSerializer(filtered_requests, many=True)
+        serializer = RequestSerializer(request_qs, many=True)
         return Response(serializer.data)
     
     def delete(self, request):
@@ -2366,6 +2350,15 @@ class RequestListView(APIView):
 
         # everyone else: only "not accepted"
         qs = qs.filter(Q(is_accepted=False) | Q(is_accepted="Not Accepted"))
+
+        # Requests made with a tutor's referral code are meant exclusively
+        # for that tutor to review via their private approval link - keep
+        # them off the general dashboard until that tutor declines, at
+        # which point they open up to every tutor like a normal request.
+        active_referral = TutorReferralRequest.objects.filter(
+            tutoring_request=OuterRef("pk")
+        ).exclude(status='declined')
+        qs = qs.annotate(has_active_referral=Exists(active_referral)).filter(has_active_referral=False)
 
         # tutor: exclude requests already replied to by THIS tutor
         if user.is_authenticated and getattr(user, "roles", None) == "tutor":

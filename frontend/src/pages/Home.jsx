@@ -805,9 +805,12 @@ export default function Home() {
             {sortedHomeRequests.length ? (
               sortedHomeRequests.map((req, index) => {
                 const fulfilled = req.is_accepted === 'Accepted';
+                const requestDestination = user?.roles === 'parent' ? '/request-reply' : '/parent-dashboard';
                 return (
                   <div
                     key={req.id || index}
+                    onClick={() => (window.location.href = requestDestination)}
+                    title={t('dashboard.clickToViewDetails', 'Click to view full details')}
                     style={{
                       fontSize: "0.85rem",
                       margin: "8px 0",
@@ -815,6 +818,7 @@ export default function Home() {
                       borderRadius: "6px",
                       backgroundColor: fulfilled ? "#d4edda" : "#fff3cd",
                       border: fulfilled ? "1px solid #c3e6cb" : "1px solid #ffeaa7",
+                      cursor: "pointer",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -1744,7 +1748,7 @@ export default function Home() {
                   {user?.roles === 'parent' ? t('home.myRequests') : user?.roles === 'tutor' ? t('home.recentParentRequests') : t('home.recentRequests')}
                 </h4>
                 <button
-                  onClick={() => window.location.href = user?.roles === 'parent' ? '/replies' : 'https://egstutoring-portal.ca/parent-dashboard'}
+                  onClick={() => window.location.href = user?.roles === 'parent' ? '/request-reply' : '/parent-dashboard'}
                   style={{
                     backgroundColor: "#192A88",
                     color: "#fff",

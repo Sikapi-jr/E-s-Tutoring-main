@@ -342,7 +342,11 @@
     "typeReply": "Type your reply here...",
     "submitReply": "Submit Reply",
     "acceptedTutor": "Accepted Tutor",
-    "tutorMessage": "Tutor's Message"
+    "tutorMessage": "Tutor's Message",
+    "clickToViewDetails": "Click to view full details",
+    "documentsRecommended": "Documents Recommended",
+    "documentsRecommendationText": "We recommend uploading your credentials and certifications before replying to tutoring requests. This helps parents make informed decisions and increases your chances of being selected.",
+    "uploadDocuments": "Upload Documents"
   },
   "logHours": {
     "title": "Log Tutoring Hours",
