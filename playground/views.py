@@ -1629,6 +1629,25 @@ class RequestListCreateView(generics.ListCreateAPIView):
                     tutoring_request=tutoring_request  # Link to the TutoringRequest
                 )
 
+                # Notify admin that a tutoring request was created (tutor-code path)
+                try:
+                    from playground.email_backends import send_admin_new_request_notification
+                    send_admin_new_request_notification(
+                        admin_email='egstutor@gmail.com',
+                        parent_name=f"{parent.firstName} {parent.lastName}",
+                        parent_email=parent.email,
+                        student_name=f"{student.firstName} {student.lastName}",
+                        subject=referral_request.subject,
+                        grade=referral_request.grade,
+                        service=referral_request.service,
+                        city=referral_request.city,
+                        description=referral_request.description,
+                        tutor_code=tutor_code.upper(),
+                        referred_tutor_name=f"{tutor.firstName} {tutor.lastName}",
+                    )
+                except Exception as e:
+                    print(f"Failed to send admin new-request notification: {e}")
+
                 # Send email notification to tutor with approval link
                 try:
                     from playground.email_utils import send_mailgun_email
@@ -1846,6 +1865,24 @@ The EGS Tutoring Team
     def perform_create(self, serializer):
         # Normal request creation
         request_obj = serializer.save()
+
+        # Notify admin that a tutoring request was created (regular path,
+        # no tutor code)
+        try:
+            from playground.email_backends import send_admin_new_request_notification
+            send_admin_new_request_notification(
+                admin_email='egstutor@gmail.com',
+                parent_name=f"{request_obj.parent.firstName} {request_obj.parent.lastName}",
+                parent_email=request_obj.parent.email,
+                student_name=f"{request_obj.student.firstName} {request_obj.student.lastName}",
+                subject=request_obj.subject,
+                grade=request_obj.grade,
+                service=request_obj.service,
+                city=request_obj.city,
+                description=request_obj.description,
+            )
+        except Exception as e:
+            print(f"Failed to send admin new-request notification: {e}")
 
         # Send email notifications to tutors about new requests
         try:

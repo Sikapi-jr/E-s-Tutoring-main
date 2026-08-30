@@ -323,6 +323,77 @@ def send_admin_referral_notification(admin_email, sender_name, sender_email, rec
                               email_type='referral_admin')
 
 
+def send_admin_new_request_notification(admin_email, parent_name, parent_email, student_name,
+                                         subject, grade, service, city, description='',
+                                         tutor_code=None, referred_tutor_name=None):
+    """
+    Notify admin whenever a tutoring request is created - whether it's a
+    regular request or one submitted using a tutor's referral code.
+    """
+    from_email = "support@egstutoring-portal.ca"
+    email_subject = "📋 New Tutoring Request Created - EGS Tutoring"
+
+    referral_html = ""
+    referral_text = ""
+    if tutor_code:
+        referral_html = f"""
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+            <strong>Tutor Referral Code Used:</strong> {tutor_code}<br>
+            <strong>Targeted Tutor:</strong> {referred_tutor_name or 'Unknown'}
+        </div>
+        """
+        referral_text = f"\nTutor Referral Code Used: {tutor_code}\nTargeted Tutor: {referred_tutor_name or 'Unknown'}\n"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #192A88; margin-bottom: 10px;">📋 New Tutoring Request</h1>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #192A88; margin-top: 0;">Parent</h3>
+            <p>{parent_name} ({parent_email})</p>
+
+            <h3 style="color: #192A88;">Student</h3>
+            <p>{student_name}</p>
+
+            <h3 style="color: #192A88;">Request Details</h3>
+            <p>
+                <strong>Subject:</strong> {subject}<br>
+                <strong>Grade:</strong> {grade}<br>
+                <strong>Service:</strong> {service}<br>
+                <strong>City:</strong> {city}
+            </p>
+            {f'<p><strong>Description:</strong> {description}</p>' if description else ''}
+        </div>
+
+        {referral_html}
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+            <p>EGS Tutoring Admin Notifications</p>
+        </div>
+    </div>
+    """
+
+    text_content = f"""
+    New Tutoring Request Created - EGS Tutoring
+
+    Parent: {parent_name} ({parent_email})
+    Student: {student_name}
+
+    Subject: {subject}
+    Grade: {grade}
+    Service: {service}
+    City: {city}
+    {f'Description: {description}' if description else ''}
+    {referral_text}
+    This is an automated notification from the EGS Tutoring platform.
+    """
+
+    return send_mailgun_email(from_email, admin_email, email_subject, html_content, text_content,
+                              email_type='new_request')
+
+
 def send_health_check_email(to_email, checks, timestamp):
     """
     Send a daily system health summary to the admin.
