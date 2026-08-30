@@ -176,33 +176,18 @@ class CreateUserView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         from django.db import transaction
-        from django.core.exceptions import ValidationError
-        
+
         role = serializer.validated_data.get('roles')
-        email = serializer.validated_data.get('email')
-        parent = serializer.validated_data.get('parent')
         ref_code = self.request.query_params.get("ref")
-        
+
         print("validated data", serializer.validated_data)
-        
-        # Pre-validate all data before creating anything
-        parentUser = None
+
         ref = None
-        
-        if role == 'student':
-            try:
-                parentUser = User.objects.get(email=email, username=parent)
-            except User.DoesNotExist:
-                raise ValidationError(f"Parent user with email {email} and username {parent} not found")
-        
         if ref_code:
             ref = Referral.objects.filter(code=ref_code, referred__isnull=True).first()
-        
+
         # Use atomic transaction to ensure all database operations succeed or none do
         with transaction.atomic():
-            if parentUser:
-                serializer.validated_data['parent'] = parentUser
-                
             user = serializer.save(is_active=False)
             
             # Set default rates based on user role
@@ -233,26 +218,8 @@ class CreateUserView(generics.CreateAPIView):
                 send_verification_email_async.delay(user.id, verify_url)
             except OperationalError:
                 # Fallback to synchronous email sending if Celery broker is unavailable
-                subject = 'Verify Your EGS Tutoring Account'
-                message = f"""
-        Hello {user.firstName},
-        
-        Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
-        
-        {verify_url}
-        
-        If you didn't create this account, please ignore this email.
-        
-        Best regards,
-        EGS Tutoring Team
-        """
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=True,  # Don't fail registration if email fails
-                )
+                from playground.email_utils import send_verification_email_sync
+                send_verification_email_sync(user, verify_url, fail_silently=True)
         except Exception as e:
             # Log error but don't fail registration
             print(f"Email sending failed: {e}")
@@ -1120,16 +1087,16 @@ class ResendVerificationView(APIView):
             # Generate new verification token and send email
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
-            domain = get_current_site(request).domain
             verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
-            
-            send_mail(
-                "Verify your EGS Tutoring Account",
-                f"Click the link to verify your account: {verify_url}",
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email]
-            )
-            
+
+            from playground.tasks import send_verification_email_async
+            from kombu.exceptions import OperationalError
+            try:
+                send_verification_email_async.delay(user.id, verify_url)
+            except OperationalError:
+                from playground.email_utils import send_verification_email_sync
+                send_verification_email_sync(user, verify_url, fail_silently=True)
+
             return Response({"message": "Verification email resent successfully"}, status=200)
             
         except User.DoesNotExist:
@@ -1180,9 +1147,8 @@ class AdminResendVerificationView(APIView):
                     
             except OperationalError:
                 # Fallback to direct email sending if Celery is unavailable
-                from django.core.mail import send_mail
-                
                 if user.roles == 'tutor':
+                    from django.core.mail import send_mail
                     subject = 'Welcome to EGS Tutoring - Verify Your Account'
                     message = f"""Hello {user.firstName},
 
@@ -1192,55 +1158,19 @@ Welcome to EGS Tutoring! Please click the link below to verify your email addres
 
 Best regards,
 EGS Tutoring Team"""
-                elif user.roles == 'parent':
-                    subject = 'Verify Your EGS Tutoring Account'
-                    message = f"""Hello {user.firstName},
-
-Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
-
-{verify_url}
-
-📋 GETTING STARTED - PARENT ONBOARDING GUIDE:
-
-Welcome to EGS Tutoring! Here's how to get started as a parent:
-
-1. REGISTER YOUR CHILDREN
-   Visit the registration page to create accounts for your children:
-   {settings.FRONTEND_URL}/register
-
-2. SUBMIT A TUTORING REQUEST
-   Once verified, submit a request specifying your child's tutoring needs:
-   {settings.FRONTEND_URL}/request
-
-3. REVIEW TUTORING REPLIES
-   Check and accept tutor responses to your requests:
-   {settings.FRONTEND_URL}/request-reply
-
-Additional Resources:
-• Access your dashboard: {settings.FRONTEND_URL}/home
-• View invoices and billing: {settings.FRONTEND_URL}/viewinvoices
-• Manage your profile: {settings.FRONTEND_URL}/profile
-
-Best regards,
-EGS Tutoring Team"""
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
                 else:
-                    subject = 'Verify Your EGS Tutoring Account'
-                    message = f"""Hello {user.firstName},
-
-Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
-
-{verify_url}
-
-Best regards,
-EGS Tutoring Team"""
-                
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=False,
-                )
+                    # Parents and students get the shared HTML+text builder so
+                    # every link (verification link, and the parent onboarding
+                    # links) renders as a real clickable hyperlink.
+                    from playground.email_utils import send_verification_email_sync
+                    send_verification_email_sync(user, verify_url, fail_silently=False)
             
             return Response({
                 "message": f"Verification email resent successfully to {user.email}",

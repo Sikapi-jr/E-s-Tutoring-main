@@ -64,6 +64,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         email = attrs.get("email")
         roles = attrs.get("roles", "parent")
 
+        # Students don't self-register - their accounts are created by their
+        # parent from the Students page, which auto-generates a username and
+        # never asks for a password/email. Reject any attempt to submit
+        # roles="student" here so a stray/old client can't create a
+        # broken, orphaned "self-registered" student account.
+        if roles == "student":
+            raise serializers.ValidationError(
+                {"roles": "Student accounts are created by a parent from the Students page, not through registration."}
+            )
+
         try:
             validate_email(email)
         except DjangoValidationError:
@@ -72,13 +82,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if roles in ("parent", "tutor") and User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "E-mail already in use."})
 
-        # For student: cross-check that the parent username's e-mail matches
-        if roles == "student" and attrs.get("parent"):
-            parent = User.objects.get(username=attrs["parent"])
-            if parent.email != email:
-                raise serializers.ValidationError(
-                    {"parent": "Parent username and e-mail do not match."}
-                )
         return attrs
 
     def create(self, validated):

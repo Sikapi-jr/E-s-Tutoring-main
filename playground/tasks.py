@@ -87,70 +87,25 @@ def create_stripe_account_async(self, user_id):
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def send_verification_email_async(self, user_id, verification_link):
     """
-    Send user verification email asynchronously
+    Send user verification email asynchronously. Sends both a plain-text
+    and an HTML version (built by build_verification_email_content, shared
+    with the synchronous fallback paths) so every link - the verification
+    link and the parent onboarding links - renders as a real clickable
+    hyperlink regardless of how the recipient's email client handles plain
+    text.
     """
     try:
         user = User.objects.get(id=user_id)
-        
-        subject = 'Verify Your EGS Tutoring Account'
-        
-        # Different message based on user role
-        if user.roles == 'parent':
-            subject = 'Verify Your EGS Tutoring Account - Onboarding Guide'
-            message = f"""
-Hello {user.firstName},
+        from playground.email_utils import build_verification_email_content
+        subject, message, html_content = build_verification_email_content(user, verification_link)
 
-Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
-
-{verification_link}
-
-📋 GETTING STARTED - PARENT ONBOARDING GUIDE:
-
-Welcome to EGS Tutoring! Here's how to get started as a parent:
-
-1. REGISTER YOUR CHILDREN
-   Visit the registration page to create accounts for your children:
-   {settings.FRONTEND_URL}/register
-
-2. SUBMIT A TUTORING REQUEST
-   Once verified, submit a request specifying your child's tutoring needs:
-   {settings.FRONTEND_URL}/request
-
-3. REVIEW TUTORING REPLIES
-   Check and accept tutor responses to your requests:
-   {settings.FRONTEND_URL}/request-reply
-
-Additional Resources:
-• Access your dashboard: {settings.FRONTEND_URL}/home
-• View invoices and billing: {settings.FRONTEND_URL}/viewinvoices
-• Manage your profile: {settings.FRONTEND_URL}/profile
-
-Our tutoring platform connects you with qualified tutors in your area. After verification, you can create student accounts for your children, submit specific tutoring requests, and review responses from available tutors.
-
-If you didn't create this account, please ignore this email.
-
-Best regards,
-EGS Tutoring Team
-            """
-        else:
-            message = f"""
-Hello {user.firstName},
-        
-Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
-        
-{verification_link}
-        
-If you didn't create this account, please ignore this email.
-        
-Best regards,
-EGS Tutoring Team
-            """
-
-        # Use Mailgun API
+        # Use Mailgun API - send both text and HTML alternatives so links
+        # are always real hyperlinks in clients that render the HTML part.
         send_mailgun_email(
             to_emails=[user.email],
             subject=subject,
             text_content=message,
+            html_content=html_content,
             email_type='verification',
             recipient_name=f"{user.firstName} {user.lastName}",
         )

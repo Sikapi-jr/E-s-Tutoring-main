@@ -190,7 +190,7 @@
     "registerAsStudent": "Register as Student",
     "registerAsParent": "Register as Parent",
     "verificationEmailSent": "Verification email sent! Please check your inbox.",
-    "parentVerificationEmailSent": "Thank you for registering! Verification email sent to {{email}}. Register your child's account as well to get started!",
+    "parentVerificationEmailSent": "Thank you for registering! Verification email sent to {{email}}.",
     "registerAs": "Register as {{role}}",
     "noUserLoggedIn": "No user is logged in.",
     "verificationFailed": "Verification failed.",

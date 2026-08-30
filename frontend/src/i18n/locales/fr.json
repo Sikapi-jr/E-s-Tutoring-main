@@ -182,7 +182,7 @@
     "privateInformation": "Vos informations privées",
     "studentPrivateInformation": "Informations privées de l'étudiant",
     "verificationEmailSent": "Courriel de vérification envoyé ! Veuillez vérifier votre boîte de réception.",
-    "parentVerificationEmailSent": "Merci de vous être inscrit! Courriel de vérification envoyé à {{email}}. Inscrivez également le compte de votre enfant pour commencer!",
+    "parentVerificationEmailSent": "Merci de vous être inscrit! Courriel de vérification envoyé à {{email}}.",
     "registerAs": "S'inscrire en tant que {{role}}",
     "noUserLoggedIn": "Aucun utilisateur n'est connecté.",
     "verificationFailed": "Échec de la vérification.",

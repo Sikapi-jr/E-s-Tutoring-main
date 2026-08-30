@@ -36,7 +36,6 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [showChildRegisterLink, setShowChildRegisterLink] = useState(false);
   const [clicked, setClicked] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -133,7 +132,6 @@ function RegisterForm() {
       // Show different success messages based on role
       if (roles === 'parent') {
         setSuccess(t('auth.parentVerificationEmailSent', { email }));
-        setShowChildRegisterLink(true);
         // Navigate after 5 seconds to give time to read the message
         setTimeout(() => navigate("/login"), 5000);
       } else {
@@ -262,21 +260,6 @@ function RegisterForm() {
       {success && (
         <div className="success-message">
           <p>{success}</p>
-          {showChildRegisterLink && (
-            <p>
-              <span 
-                style={{ 
-                  textDecoration: 'underline', 
-                  cursor: 'pointer', 
-                  color: '#28a745',
-                  fontWeight: 'bold'
-                }}
-                onClick={() => navigate("/register")}
-              >
-                {t('auth.registerChildAccount')}
-              </span>
-            </p>
-          )}
         </div>
       )}
       
