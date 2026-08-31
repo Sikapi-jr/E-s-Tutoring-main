@@ -1213,7 +1213,13 @@
       "billingNormal": "Normal (Billed to parent)",
       "billingCredited": "Credited (School credit)",
       "normal": "Normal"
-    }
+    },
+    "hiddenBadge": "HIDDEN",
+    "hideFromDashboard": "Hide",
+    "unhideFromDashboard": "Unhide",
+    "hideRequestFailed": "Failed to update the request. Please try again.",
+    "confirmDeleteRequest": "Are you sure you want to permanently delete this request? This cannot be undone.",
+    "deleteRequestFailed": "Failed to delete the request. Please try again."
   },
   "discount": {
     "title": "Receive Permanent 10% Discount",

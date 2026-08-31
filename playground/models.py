@@ -426,6 +426,10 @@ class TutoringRequest(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.CharField(max_length=15, choices=ACCEPTED_CHOICES, default='Not Accepted')
+    hidden_from_dashboard = models.BooleanField(
+        default=False,
+        help_text="Admin-hidden from the general tutor dashboard. The request itself is preserved, just not shown to tutors browsing for open requests."
+    )
 
 
 class TutorResponse(models.Model):

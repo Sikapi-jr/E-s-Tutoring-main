@@ -33,6 +33,7 @@ urlpatterns = [
     path('referral/admin/all/', views.AdminReferralListView.as_view(), name='admin-referral-list'),
     path("requests/create/", views.RequestListCreateView.as_view(), name="referral-create"),
     path("requests/list/", views.RequestListView.as_view(), name="request-list"),
+    path("admin/requests/<int:request_id>/manage/", views.AdminRequestManageView.as_view(), name="admin-request-manage"),
     path('requests/RejectReply/', views.RejectUpdateView.as_view(), name='request-RejectReply'),
     path("requests/reply/", views.RequestResponseCreateView.as_view(), name="request-reply"),
     path("requests/ViewReply/", views.ReplyListView.as_view(), name="request-ViewReply"),

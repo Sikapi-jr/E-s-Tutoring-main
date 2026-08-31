@@ -283,7 +283,7 @@ class RequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TutoringRequest
-        fields = ['id', 'parent', 'student', 'student_details', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'created_at', 'accepted_tutor_id', 'accepted_tutor_name', 'accepted_tutor_message', 'parent_email', 'parent_firstName', 'parent_lastName', 'parent_phone_number', 'student_firstName', 'student_lastName']
+        fields = ['id', 'parent', 'student', 'student_details', 'subject', 'grade', 'service', 'city', 'description', 'is_accepted', 'hidden_from_dashboard', 'created_at', 'accepted_tutor_id', 'accepted_tutor_name', 'accepted_tutor_message', 'parent_email', 'parent_firstName', 'parent_lastName', 'parent_phone_number', 'student_firstName', 'student_lastName']
         extra_kwargs = {
             "parent": {"required": True},
             "subject": {"required": True},

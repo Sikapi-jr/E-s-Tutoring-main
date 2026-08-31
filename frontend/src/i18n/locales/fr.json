@@ -1194,7 +1194,13 @@
       "billingNormal": "Normale (facturée au parent)",
       "billingCredited": "Créditée (crédit scolaire)",
       "normal": "Normale"
-    }
+    },
+    "hiddenBadge": "MASQUÉE",
+    "hideFromDashboard": "Masquer",
+    "unhideFromDashboard": "Afficher",
+    "hideRequestFailed": "Échec de la mise à jour de la demande. Veuillez réessayer.",
+    "confirmDeleteRequest": "Êtes-vous sûr de vouloir supprimer définitivement cette demande? Cette action est irréversible.",
+    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
   },
   "discount": {
     "title": "Recevez un Rabais Permanent de 10%",

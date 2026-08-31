@@ -2388,6 +2388,11 @@ class RequestListView(APIView):
         # everyone else: only "not accepted"
         qs = qs.filter(Q(is_accepted=False) | Q(is_accepted="Not Accepted"))
 
+        # Admin-hidden requests stay off the general dashboard entirely -
+        # the request itself is untouched, it's just not shown to tutors
+        # browsing for open requests.
+        qs = qs.filter(hidden_from_dashboard=False)
+
         # Requests made with a tutor's referral code are meant exclusively
         # for that tutor to review via their private approval link - keep
         # them off the general dashboard until that tutor declines, at
@@ -2408,6 +2413,67 @@ class RequestListView(APIView):
         serializer = RequestSerializer(qs, many=True, context={"request": request})
         return Response(serializer.data)
 
+
+class AdminRequestManageView(APIView):
+    """
+    Admin-only management of a single TutoringRequest from the Stale
+    Requests page:
+      - PATCH: toggle hidden_from_dashboard (hides it from the general
+        tutor dashboard without touching the request, any replies, hours,
+        or tutor-parent pairing tied to it).
+      - DELETE: permanently remove the request. Refuses if an AcceptedTutor
+        pairing exists for it, since AcceptedTutor.request cascades on
+        delete and deleting it would silently break that tutor-parent
+        relationship. Hours never reference TutoringRequest directly, so
+        logged hours are never affected either way.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _check_admin(self, request):
+        return request.user.is_authenticated and (request.user.is_superuser or getattr(request.user, "roles", None) == "admin")
+
+    def get_object(self, request_id):
+        try:
+            return TutoringRequest.objects.get(id=request_id)
+        except TutoringRequest.DoesNotExist:
+            return None
+
+    def patch(self, request, request_id):
+        if not self._check_admin(request):
+            return Response({"error": "Admin access required"}, status=403)
+
+        tutoring_request = self.get_object(request_id)
+        if tutoring_request is None:
+            return Response({"error": "Request not found"}, status=404)
+
+        hidden = request.data.get('hidden')
+        if hidden is None:
+            return Response({"error": "Missing 'hidden' field"}, status=400)
+
+        tutoring_request.hidden_from_dashboard = bool(hidden)
+        tutoring_request.save(update_fields=['hidden_from_dashboard'])
+
+        serializer = RequestSerializer(tutoring_request, context={"request": request})
+        return Response(serializer.data, status=200)
+
+    def delete(self, request, request_id):
+        if not self._check_admin(request):
+            return Response({"error": "Admin access required"}, status=403)
+
+        tutoring_request = self.get_object(request_id)
+        if tutoring_request is None:
+            return Response({"error": "Request not found"}, status=404)
+
+        # Never delete a request that already has an accepted tutor pairing -
+        # AcceptedTutor.request cascades on delete, which would silently
+        # sever that parent/tutor relationship.
+        if AcceptedTutor.objects.filter(request=tutoring_request).exists():
+            return Response({
+                "error": "This request has an active tutor pairing and can't be deleted. Hide it instead, or remove the pairing separately first."
+            }, status=400)
+
+        tutoring_request.delete()
+        return Response({"message": "Request deleted successfully."}, status=200)
 
 
 class AcceptReplyCreateView(generics.CreateAPIView):

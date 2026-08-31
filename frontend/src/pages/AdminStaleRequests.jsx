@@ -11,6 +11,7 @@ const AdminStaleRequests = () => {
   const [requestsWithoutAcceptance, setRequestsWithoutAcceptance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actioningId, setActioningId] = useState(null);
 
   useEffect(() => {
     fetchStaleRequests();
@@ -53,6 +54,55 @@ const AdminStaleRequests = () => {
       setError('Failed to load stale requests. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const removeFromLocalLists = (requestId) => {
+    setRequestsWithoutReplies((prev) => prev.filter((r) => r.id !== requestId));
+    setRequestsWithoutAcceptance((prev) => prev.filter((r) => r.id !== requestId));
+  };
+
+  const handleToggleHidden = async (request) => {
+    const nextHidden = !request.hidden_from_dashboard;
+    setActioningId(request.id);
+    try {
+      await api.patch(`/api/admin/requests/${request.id}/manage/`, { hidden: nextHidden });
+      const patchLocal = (list) =>
+        list.map((r) => (r.id === request.id ? { ...r, hidden_from_dashboard: nextHidden } : r));
+      setRequestsWithoutReplies(patchLocal);
+      setRequestsWithoutAcceptance(patchLocal);
+    } catch (error) {
+      console.error('Error toggling hidden state:', error);
+      alert(
+        error.response?.data?.error ||
+        t('admin.hideRequestFailed', 'Failed to update the request. Please try again.')
+      );
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const handleDeleteRequest = async (request) => {
+    const confirmMessage = t(
+      'admin.confirmDeleteRequest',
+      'Are you sure you want to permanently delete this request? This cannot be undone.'
+    );
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setActioningId(request.id);
+    try {
+      await api.delete(`/api/admin/requests/${request.id}/manage/`);
+      removeFromLocalLists(request.id);
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      alert(
+        error.response?.data?.error ||
+        t('admin.deleteRequestFailed', 'Failed to delete the request. Please try again.')
+      );
+    } finally {
+      setActioningId(null);
     }
   };
 
@@ -226,6 +276,20 @@ const AdminStaleRequests = () => {
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
                         <div style={{ fontWeight: 'bold', color: '#192A88', marginBottom: '0.25rem' }}>
                           {request.subject || 'N/A'}
+                          {request.hidden_from_dashboard && (
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              color: '#6c757d',
+                              backgroundColor: '#e9ecef',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '10px',
+                              verticalAlign: 'middle'
+                            }}>
+                              {t('admin.hiddenBadge', 'HIDDEN')}
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
                           <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
@@ -293,6 +357,40 @@ const AdminStaleRequests = () => {
                             }}
                           >
                             📧 Email
+                          </button>
+                          <button
+                            onClick={() => handleToggleHidden(request)}
+                            disabled={actioningId === request.id}
+                            style={{
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: 'none',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: actioningId === request.id ? 'default' : 'pointer',
+                              fontSize: '0.7rem',
+                              opacity: actioningId === request.id ? 0.6 : 1
+                            }}
+                          >
+                            {request.hidden_from_dashboard
+                              ? `👁️ ${t('admin.unhideFromDashboard', 'Unhide')}`
+                              : `🙈 ${t('admin.hideFromDashboard', 'Hide')}`}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRequest(request)}
+                            disabled={actioningId === request.id}
+                            style={{
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: actioningId === request.id ? 'default' : 'pointer',
+                              fontSize: '0.7rem',
+                              opacity: actioningId === request.id ? 0.6 : 1
+                            }}
+                          >
+                            🗑️ {t('common.delete', 'Delete')}
                           </button>
                         </div>
                       </td>
@@ -377,6 +475,20 @@ const AdminStaleRequests = () => {
                       <td style={{ padding: '0.75rem', verticalAlign: 'top' }}>
                         <div style={{ fontWeight: 'bold', color: '#192A88', marginBottom: '0.25rem' }}>
                           {request.subject || 'N/A'}
+                          {request.hidden_from_dashboard && (
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              color: '#6c757d',
+                              backgroundColor: '#e9ecef',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '10px',
+                              verticalAlign: 'middle'
+                            }}>
+                              {t('admin.hiddenBadge', 'HIDDEN')}
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
                           <strong>Student:</strong> {request.student_firstName || request.student || 'N/A'} {request.student_lastName || ''}
@@ -458,6 +570,40 @@ const AdminStaleRequests = () => {
                             }}
                           >
                             👁️ View
+                          </button>
+                          <button
+                            onClick={() => handleToggleHidden(request)}
+                            disabled={actioningId === request.id}
+                            style={{
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: 'none',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: actioningId === request.id ? 'default' : 'pointer',
+                              fontSize: '0.7rem',
+                              opacity: actioningId === request.id ? 0.6 : 1
+                            }}
+                          >
+                            {request.hidden_from_dashboard
+                              ? `👁️ ${t('admin.unhideFromDashboard', 'Unhide')}`
+                              : `🙈 ${t('admin.hideFromDashboard', 'Hide')}`}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRequest(request)}
+                            disabled={actioningId === request.id}
+                            style={{
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: actioningId === request.id ? 'default' : 'pointer',
+                              fontSize: '0.7rem',
+                              opacity: actioningId === request.id ? 0.6 : 1
+                            }}
+                          >
+                            🗑️ {t('common.delete', 'Delete')}
                           </button>
                         </div>
                       </td>
