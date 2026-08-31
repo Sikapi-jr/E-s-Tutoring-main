@@ -4934,16 +4934,17 @@ class AdminUserHoursView(APIView):
                 for child in children
             ]
 
-        # Get user documents
+        # Get user documents. UserDocument only has user/file/uploaded_at -
+        # there's no title or document_type field on the model - derive a
+        # display name from the uploaded filename instead.
         documents = UserDocument.objects.filter(user=user).order_by('-uploaded_at')
         user_documents = [
             {
                 'id': doc.id,
-                'title': doc.title,
-                'document_type': doc.document_type,
-                'file_url': doc.document.url if doc.document else None,
+                'title': doc.file.name.split('/')[-1] if doc.file else 'Document',
+                'file_url': doc.file.url if doc.file else None,
                 'uploaded_at': doc.uploaded_at,
-                'file_name': doc.document.name.split('/')[-1] if doc.document else None
+                'file_name': doc.file.name.split('/')[-1] if doc.file else None
             }
             for doc in documents
         ]

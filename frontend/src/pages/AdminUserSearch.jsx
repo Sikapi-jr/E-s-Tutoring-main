@@ -786,12 +786,10 @@ export default function AdminUserSearch() {
                     <div className="document-details">
                       <div className="document-title">{doc.title}</div>
                       <div className="document-meta">
-                        <span className="document-type">{doc.document_type}</span>
                         <span className="document-date">
                           {new Date(doc.uploaded_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <div className="document-filename">{doc.file_name}</div>
                     </div>
                     {doc.file_url && (
                       <a
