@@ -5226,13 +5226,20 @@ class AdminRecentUsersView(APIView):
             return Response({'error': 'Admin access required'}, status=403)
 
         role = request.GET.get('role', '').lower()
-        limit = int(request.GET.get('limit', 10))
+        limit_param = request.GET.get('limit', 'all')
 
         if role not in ['tutor', 'parent', 'student']:
             return Response({'error': 'Invalid role. Must be tutor, parent, or student.'}, status=400)
 
-        # Get recent users by role - check both lowercase and as-is
-        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')[:limit]
+        # Get users by role, newest first. 'all' (the default) returns every
+        # matching user - pass a numeric limit to cap the result instead.
+        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')
+        if str(limit_param).lower() != 'all':
+            try:
+                limit = int(limit_param)
+            except (TypeError, ValueError):
+                return Response({'error': "'limit' must be an integer or 'all'"}, status=400)
+            users = users[:limit]
 
         print(f"Searching for role: {role}, found {users.count()} users")
 

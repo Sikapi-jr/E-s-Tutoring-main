@@ -1200,7 +1200,10 @@
     "unhideFromDashboard": "Afficher",
     "hideRequestFailed": "Échec de la mise à jour de la demande. Veuillez réessayer.",
     "confirmDeleteRequest": "Êtes-vous sûr de vouloir supprimer définitivement cette demande? Cette action est irréversible.",
-    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer."
+    "deleteRequestFailed": "Échec de la suppression de la demande. Veuillez réessayer.",
+    "allTutors": "Tous les tuteurs",
+    "allParents": "Tous les parents",
+    "allStudents": "Tous les élèves"
   },
   "discount": {
     "title": "Recevez un Rabais Permanent de 10%",

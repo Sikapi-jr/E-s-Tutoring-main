@@ -56,18 +56,18 @@ export default function AdminUserSearch() {
       setLoadingRecent(true);
       setRecentUsersError("");
       try {
-        // Fetch recent tutors
-        const tutorsRes = await api.get('/api/admin/recent-users/?role=tutor&limit=10');
+        // Fetch all tutors (newest first)
+        const tutorsRes = await api.get('/api/admin/recent-users/?role=tutor&limit=all');
         console.log('Tutors response:', tutorsRes.data);
         setRecentTutors(Array.isArray(tutorsRes.data) ? tutorsRes.data : []);
 
-        // Fetch recent parents
-        const parentsRes = await api.get('/api/admin/recent-users/?role=parent&limit=10');
+        // Fetch all parents (newest first)
+        const parentsRes = await api.get('/api/admin/recent-users/?role=parent&limit=all');
         console.log('Parents response:', parentsRes.data);
         setRecentParents(Array.isArray(parentsRes.data) ? parentsRes.data : []);
 
-        // Fetch recent students
-        const studentsRes = await api.get('/api/admin/recent-users/?role=student&limit=10');
+        // Fetch all students (newest first)
+        const studentsRes = await api.get('/api/admin/recent-users/?role=student&limit=all');
         console.log('Students response:', studentsRes.data);
         setRecentStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
       } catch (err) {
@@ -200,7 +200,7 @@ export default function AdminUserSearch() {
         <div className="recent-users-section">
           {/* Recent Tutors */}
           <div className="recent-users-table-container">
-            <h3>👨‍🏫 {t('admin.recentTutors', 'Recent Tutors')} ({recentTutors.length})</h3>
+            <h3>👨‍🏫 {t('admin.allTutors', 'All Tutors')} ({recentTutors.length})</h3>
             <div className="table-wrapper">
               <table className="recent-users-table">
                 <thead>
@@ -237,7 +237,7 @@ export default function AdminUserSearch() {
 
           {/* Recent Parents */}
           <div className="recent-users-table-container">
-            <h3>👨‍👩‍👧‍👦 {t('admin.recentParents', 'Recent Parents')} ({recentParents.length})</h3>
+            <h3>👨‍👩‍👧‍👦 {t('admin.allParents', 'All Parents')} ({recentParents.length})</h3>
             <div className="table-wrapper">
               <table className="recent-users-table">
                 <thead>
@@ -274,7 +274,7 @@ export default function AdminUserSearch() {
 
           {/* Recent Students */}
           <div className="recent-users-table-container">
-            <h3>👨‍🎓 {t('admin.recentStudents', 'Recent Students')} ({recentStudents.length})</h3>
+            <h3>👨‍🎓 {t('admin.allStudents', 'All Students')} ({recentStudents.length})</h3>
             <div className="table-wrapper">
               <table className="recent-users-table">
                 <thead>

@@ -82,8 +82,17 @@
 
 .table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 500px;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+}
+
+.table-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 1;
 }
 
 /* Search Section */
