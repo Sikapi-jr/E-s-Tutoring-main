@@ -203,7 +203,7 @@ class CreateUserView(generics.CreateAPIView):
                 ref.referrer.save(update_fields=["pending_rewards"])
 
         # Post-creation actions (outside transaction to avoid rollback on email failures)
-        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_parent_registration_notification_async
+        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_parent_registration_notification_async, send_tutor_registration_notification_async
         from kombu.exceptions import OperationalError
         from django.core.mail import send_mail
         
@@ -231,27 +231,39 @@ class CreateUserView(generics.CreateAPIView):
             except (OperationalError, Exception) as e:
                 # Log error but don't fail registration
                 print(f"Stripe account creation failed: {e}")
-        
+
         # Note: Stripe customers for parents are created on-demand during invoice generation
-        
-        # Send admin notification when parent registers (don't fail if this fails)
-        if role == 'parent':
+
+        # Ping the admin inbox (egstutor@gmail.com) whenever a new account is
+        # created, so new customers/tutors don't go unnoticed (don't fail
+        # registration if this fails)
+        if role in ('parent', 'tutor'):
+            account_info = {
+                'firstName': user.firstName,
+                'lastName': user.lastName,
+                'username': user.username,
+                'email': user.email,
+                'phone': getattr(user, 'phone_number', 'N/A'),
+                'address': getattr(user, 'address', 'N/A'),
+                'city': getattr(user, 'city', 'N/A'),
+                'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A'
+            }
             try:
-                # Prepare complete parent information for admin notification
-                parent_info = {
-                    'firstName': user.firstName,
-                    'lastName': user.lastName,
-                    'username': user.username,
-                    'email': user.email,
-                    'phone': getattr(user, 'phone', 'N/A'),
-                    'address': getattr(user, 'address', 'N/A'),
-                    'city': getattr(user, 'city', 'N/A'),
-                    'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A'
-                }
-                send_parent_registration_notification_async.delay(parent_info)
-            except (OperationalError, Exception) as e:
+                if role == 'parent':
+                    send_parent_registration_notification_async.delay(account_info)
+                else:
+                    send_tutor_registration_notification_async.delay(account_info)
+            except OperationalError:
+                # Fallback to synchronous send if the Celery broker is
+                # unavailable, so the admin ping is never silently dropped
+                try:
+                    from playground.tasks import send_new_account_notification_sync
+                    send_new_account_notification_sync(role, account_info)
+                except Exception as fallback_error:
+                    print(f"{role.capitalize()} registration notification fallback failed: {fallback_error}")
+            except Exception as e:
                 # Log error but don't fail registration
-                print(f"Parent registration notification failed: {e}")
+                print(f"{role.capitalize()} registration notification failed: {e}")
 
     
 

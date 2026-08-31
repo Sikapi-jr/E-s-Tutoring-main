@@ -1287,6 +1287,7 @@ class EmailLog(models.Model):
         ('referral_admin',       'Referral Admin Notification'),
         ('tutor_transfer',       'Tutor Transfer'),
         ('parent_registration',  'Parent Registration'),
+        ('tutor_registration',   'Tutor Registration'),
         ('health_check',         'Health Check'),
         ('bulk_parent',          'Bulk Parent Email'),
         ('bulk_tutor',           'Bulk Tutor Email'),

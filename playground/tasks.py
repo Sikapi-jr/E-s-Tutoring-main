@@ -1437,31 +1437,29 @@ EGS Tutoring Team
         logger.error(f"Error sending system notification emails: {str(e)}")
         raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_parent_registration_notification_async(self, parent_info):
-    """
-    Send email notification to admins when a parent registers
-    """
-    try:
-        admin_emails = ['egstutor@gmail.com', 'elvissikapi@gmail.com']
-        subject = 'New Parent Registration - EGS Tutoring'
+ADMIN_NOTIFICATION_EMAILS = ['egstutor@gmail.com', 'elvissikapi@gmail.com']
 
-        # Extract all parent information
-        parent_name = f"{parent_info.get('firstName', '')} {parent_info.get('lastName', '')}"
-        username = parent_info.get('username', 'N/A')
-        email = parent_info.get('email', 'N/A')
-        phone = parent_info.get('phone', 'N/A')
-        address = parent_info.get('address', 'N/A')
-        city = parent_info.get('city', 'N/A')
-        registration_date = parent_info.get('date_joined', 'N/A')
 
-        message = f"""
+def _new_account_notification_content(role_label, info):
+    """Shared HTML+text builder for the "new account created" admin ping,
+    used for both parent and tutor registrations."""
+    name = f"{info.get('firstName', '')} {info.get('lastName', '')}"
+    username = info.get('username', 'N/A')
+    email = info.get('email', 'N/A')
+    phone = info.get('phone', 'N/A')
+    address = info.get('address', 'N/A')
+    city = info.get('city', 'N/A')
+    registration_date = info.get('date_joined', 'N/A')
+
+    subject = f'New {role_label} Registration - EGS Tutoring'
+
+    text_content = f"""
 Hello,
 
-A new parent has registered on the EGS Tutoring platform:
+A new {role_label.lower()} has registered on the EGS Tutoring platform:
 
-PARENT DETAILS:
-Name: {parent_name}
+{role_label.upper()} DETAILS:
+Name: {name}
 Username: {username}
 Email: {email}
 Phone: {phone}
@@ -1471,18 +1469,73 @@ Registration Date: {registration_date}
 
 Please review their account and provide any necessary assistance.
 
-You can access the admin panel to view more details or contact the parent directly if needed.
-
 Best regards,
 EGS Tutoring System
-        """
+    """
 
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            admin_emails,
-            fail_silently=False,
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #192A88; margin-bottom: 10px;">🆕 New {role_label} Registration</h1>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="color: #192A88; margin-top: 0;">{role_label} Details</h3>
+            <p>
+                <strong>Name:</strong> {name}<br>
+                <strong>Username:</strong> {username}<br>
+                <strong>Email:</strong> {email}<br>
+                <strong>Phone:</strong> {phone}<br>
+                <strong>Address:</strong> {address}<br>
+                <strong>City:</strong> {city}<br>
+                <strong>Registration Date:</strong> {registration_date}
+            </p>
+        </div>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 14px;">
+            <p>EGS Tutoring Admin Notifications</p>
+        </div>
+    </div>
+    """
+
+    return subject, text_content.strip(), html_content, name, email, city
+
+
+def send_new_account_notification_sync(role, account_info):
+    """
+    Synchronous fallback for the new-account admin ping, used when the
+    Celery broker is unreachable so egstutor@gmail.com still gets pinged
+    for every new parent/tutor account instead of the notification being
+    silently dropped.
+    """
+    role_label = 'Parent' if role == 'parent' else 'Tutor'
+    subject, text_content, html_content, name, email, city = _new_account_notification_content(role_label, account_info)
+    send_mailgun_email(
+        to_emails=ADMIN_NOTIFICATION_EMAILS,
+        subject=subject,
+        text_content=text_content,
+        html_content=html_content,
+        email_type=f'{role}_registration',
+        recipient_name='EGS Tutoring Admin',
+    )
+    return {'success': True, 'name': name, 'email': email, 'city': city}
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_parent_registration_notification_async(self, parent_info):
+    """
+    Ping the admin inbox whenever a new parent (customer) account is created.
+    """
+    try:
+        subject, text_content, html_content, parent_name, email, city = _new_account_notification_content(
+            'Parent', parent_info
+        )
+
+        send_mailgun_email(
+            to_emails=ADMIN_NOTIFICATION_EMAILS,
+            subject=subject,
+            text_content=text_content,
+            html_content=html_content,
+            email_type='parent_registration',
+            recipient_name='EGS Tutoring Admin',
         )
 
         logger.info(f"Parent registration notification sent for: {parent_name} ({email}) from {city}")
@@ -1490,6 +1543,33 @@ EGS Tutoring System
 
     except Exception as e:
         logger.error(f"Error sending parent registration notification: {str(e)}")
+        raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_tutor_registration_notification_async(self, tutor_info):
+    """
+    Ping the admin inbox whenever a new tutor account is created.
+    """
+    try:
+        subject, text_content, html_content, tutor_name, email, city = _new_account_notification_content(
+            'Tutor', tutor_info
+        )
+
+        send_mailgun_email(
+            to_emails=ADMIN_NOTIFICATION_EMAILS,
+            subject=subject,
+            text_content=text_content,
+            html_content=html_content,
+            email_type='tutor_registration',
+            recipient_name='EGS Tutoring Admin',
+        )
+
+        logger.info(f"Tutor registration notification sent for: {tutor_name} ({email}) from {city}")
+        return {'success': True, 'tutor_name': tutor_name, 'tutor_email': email, 'tutor_city': city}
+
+    except Exception as e:
+        logger.error(f"Error sending tutor registration notification: {str(e)}")
         raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
