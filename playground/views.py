@@ -4975,16 +4975,14 @@ class AdminUserHoursView(APIView):
 
                     # Get accepted tutor if exists
                     accepted_tutor_info = None
-                    try:
-                        accepted = AcceptedTutor.objects.get(request=request)
+                    accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
+                    if accepted_for_request:
                         accepted_tutor_info = {
-                            'id': accepted.tutor.id,
-                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
-                            'email': accepted.tutor.email,
-                            'accepted_at': accepted.accepted_at
+                            'id': accepted_for_request.tutor.id,
+                            'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
+                            'email': accepted_for_request.tutor.email,
+                            'accepted_at': accepted_for_request.accepted_at
                         }
-                    except AcceptedTutor.DoesNotExist:
-                        pass
 
                     current_requests.append({
                         'id': request.id,
@@ -5023,58 +5021,66 @@ class AdminUserHoursView(APIView):
 
         # For tutors: get requests they've responded to, referral requests, and accepted requests
         elif user.roles == 'tutor':
+            # Track entries by request id (not just a seen-set) so step 3
+            # can upgrade an entry already added in step 1 in place, instead
+            # of being skipped - previously an accepted reply stayed
+            # labeled as a plain 'response' forever and never showed the
+            # ACCEPTED badge or relationship details.
+            entries_by_request_id = {}
+
             # 1. Get requests the tutor has responded to
             tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
             for response in tutor_responses:
                 request = response.request
-                if request.id not in seen_request_ids:
-                    seen_request_ids.add(request.id)
+                if request.id in seen_request_ids:
+                    continue
+                seen_request_ids.add(request.id)
 
-                    # Get all replies for this specific request
-                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                    replies_list = [
-                        {
-                            'id': reply.id,
-                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                            'tutor_id': reply.tutor.id,
-                            'message': reply.message,
-                            'created_at': reply.created_at
-                        }
-                        for reply in tutor_replies
-                    ]
+                # Get all replies for this specific request
+                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                replies_list = [
+                    {
+                        'id': reply.id,
+                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                        'tutor_id': reply.tutor.id,
+                        'message': reply.message,
+                        'created_at': reply.created_at
+                    }
+                    for reply in tutor_replies
+                ]
 
-                    # Get accepted tutor if exists
-                    accepted_tutor_info = None
-                    try:
-                        accepted = AcceptedTutor.objects.get(request=request)
-                        accepted_tutor_info = {
-                            'id': accepted.tutor.id,
-                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
-                            'email': accepted.tutor.email,
-                            'accepted_at': accepted.accepted_at
-                        }
-                    except AcceptedTutor.DoesNotExist:
-                        pass
+                # Get accepted tutor if exists
+                accepted_tutor_info = None
+                accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
+                if accepted_for_request:
+                    accepted_tutor_info = {
+                        'id': accepted_for_request.tutor.id,
+                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
+                        'email': accepted_for_request.tutor.email,
+                        'accepted_at': accepted_for_request.accepted_at
+                    }
 
-                    current_requests.append({
-                        'id': request.id,
-                        'type': 'response',
-                        'student_name': f"{request.student.firstName} {request.student.lastName}",
-                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
-                        'subject': request.subject,
-                        'grade': request.grade,
-                        'service': request.service,
-                        'city': request.city,
-                        'status': request.is_accepted,
-                        'reply_count': len(replies_list),
-                        'replies': replies_list,
-                        'accepted_tutor': accepted_tutor_info,
-                        'created_at': request.created_at,
-                        'description': request.description,
-                        'tutor_response': response.message,
-                        'response_date': response.created_at,
-                        'response_rejected': response.rejected
-                    })
+                entry = {
+                    'id': request.id,
+                    'type': 'response',
+                    'student_name': f"{request.student.firstName} {request.student.lastName}",
+                    'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                    'subject': request.subject,
+                    'grade': request.grade,
+                    'service': request.service,
+                    'city': request.city,
+                    'status': request.is_accepted,
+                    'reply_count': len(replies_list),
+                    'replies': replies_list,
+                    'accepted_tutor': accepted_tutor_info,
+                    'created_at': request.created_at,
+                    'description': request.description,
+                    'tutor_response': response.message,
+                    'response_date': response.created_at,
+                    'response_rejected': response.rejected
+                }
+                current_requests.append(entry)
+                entries_by_request_id[request.id] = entry
 
             # 2. Get referral requests received by this tutor
             referral_requests = TutorReferralRequest.objects.filter(tutor=user).select_related('parent', 'student', 'tutoring_request').order_by('-created_at')
@@ -5099,48 +5105,63 @@ class AdminUserHoursView(APIView):
             accepted_tutors = AcceptedTutor.objects.filter(tutor=user).select_related('request', 'student', 'parent')
             for accepted in accepted_tutors:
                 request = accepted.request
-                if request.id not in seen_request_ids:
-                    seen_request_ids.add(request.id)
 
-                    # Get all replies for this specific request
-                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                    replies_list = [
-                        {
-                            'id': reply.id,
-                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                            'tutor_id': reply.tutor.id,
-                            'message': reply.message,
-                            'created_at': reply.created_at
-                        }
-                        for reply in tutor_replies
-                    ]
+                # Accepted tutor info (this tutor)
+                accepted_tutor_info = {
+                    'id': accepted.tutor.id,
+                    'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                    'email': accepted.tutor.email,
+                    'accepted_at': accepted.accepted_at
+                }
 
-                    # Accepted tutor info (this tutor)
-                    accepted_tutor_info = {
-                        'id': accepted.tutor.id,
-                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
-                        'email': accepted.tutor.email,
-                        'accepted_at': accepted.accepted_at
+                existing_entry = entries_by_request_id.get(request.id)
+                if existing_entry is not None:
+                    # Upgrade the entry already added in step 1 so it shows
+                    # as accepted, without losing its reply details.
+                    existing_entry['type'] = 'accepted'
+                    existing_entry['status'] = 'Accepted'
+                    existing_entry['accepted_status'] = accepted.status
+                    existing_entry['accepted_tutor'] = accepted_tutor_info
+                    existing_entry['accepted_at'] = accepted.accepted_at
+                    continue
+
+                if request.id in seen_request_ids:
+                    continue
+                seen_request_ids.add(request.id)
+
+                # Get all replies for this specific request
+                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                replies_list = [
+                    {
+                        'id': reply.id,
+                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                        'tutor_id': reply.tutor.id,
+                        'message': reply.message,
+                        'created_at': reply.created_at
                     }
+                    for reply in tutor_replies
+                ]
 
-                    current_requests.append({
-                        'id': request.id,
-                        'type': 'accepted',
-                        'student_name': f"{request.student.firstName} {request.student.lastName}",
-                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
-                        'subject': request.subject,
-                        'grade': request.grade,
-                        'service': request.service,
-                        'city': request.city,
-                        'status': 'Accepted',
-                        'accepted_status': accepted.status,
-                        'reply_count': len(replies_list),
-                        'replies': replies_list,
-                        'accepted_tutor': accepted_tutor_info,
-                        'created_at': request.created_at,
-                        'accepted_at': accepted.accepted_at,
-                        'description': request.description
-                    })
+                entry = {
+                    'id': request.id,
+                    'type': 'accepted',
+                    'student_name': f"{request.student.firstName} {request.student.lastName}",
+                    'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                    'subject': request.subject,
+                    'grade': request.grade,
+                    'service': request.service,
+                    'city': request.city,
+                    'status': 'Accepted',
+                    'accepted_status': accepted.status,
+                    'reply_count': len(replies_list),
+                    'replies': replies_list,
+                    'accepted_tutor': accepted_tutor_info,
+                    'created_at': request.created_at,
+                    'accepted_at': accepted.accepted_at,
+                    'description': request.description
+                }
+                current_requests.append(entry)
+                entries_by_request_id[request.id] = entry
 
         # For students: get requests made for them
         elif user.roles == 'student':
@@ -5161,16 +5182,14 @@ class AdminUserHoursView(APIView):
 
                 # Get accepted tutor if exists
                 accepted_tutor_info = None
-                try:
-                    accepted = AcceptedTutor.objects.get(request=request)
+                accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
+                if accepted_for_request:
                     accepted_tutor_info = {
-                        'id': accepted.tutor.id,
-                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
-                        'email': accepted.tutor.email,
-                        'accepted_at': accepted.accepted_at
+                        'id': accepted_for_request.tutor.id,
+                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
+                        'email': accepted_for_request.tutor.email,
+                        'accepted_at': accepted_for_request.accepted_at
                     }
-                except AcceptedTutor.DoesNotExist:
-                    pass
 
                 current_requests.append({
                     'id': request.id,
