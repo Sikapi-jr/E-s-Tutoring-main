@@ -4859,10 +4859,14 @@ class AdminUserHoursView(APIView):
 
         user_info['google_calendar_connected'] = google_connected
 
-        # Get all hours where user is involved (as student, parent, or tutor)
+        # Get all hours where user is involved (as student, parent, or tutor).
+        # select_related/prefetch_related avoid a query per row for the
+        # serializer's student/parent/tutor name fields and dispute lookup -
+        # without them, a user with hundreds of logged sessions could turn
+        # this into thousands of queries and time out the admin page.
         hours = Hours.objects.filter(
             Q(student=user) | Q(parent=user) | Q(tutor=user)
-        ).order_by('-date', '-startTime')
+        ).select_related('student', 'parent', 'tutor').prefetch_related('disputes').order_by('-date', '-startTime')
 
         # Use the existing HoursSerializer to get formatted data with names
         serializer = HoursSerializer(hours, many=True, context={'request': request})
@@ -4949,57 +4953,85 @@ class AdminUserHoursView(APIView):
             for doc in documents
         ]
 
-        # Get current tutoring requests based on role
+        # Get current tutoring requests based on role.
+        #
+        # All three branches below batch-fetch replies/accepted-tutor rows
+        # for every relevant request in a couple of queries up front
+        # (_bulk_replies_and_accepted), instead of issuing two extra
+        # queries per request inside the loop. That per-request pattern
+        # used to mean 1000+ queries and multi-second responses for a
+        # user with a large request history - long enough to blow past
+        # the frontend's request timeout and show up as "failed to load"
+        # for exactly the busiest/longest-tenured tutors.
+        def _bulk_replies_and_accepted(request_ids):
+            replies_by_request = {}
+            accepted_by_request = {}
+            if not request_ids:
+                return replies_by_request, accepted_by_request
+
+            all_replies = TutorResponse.objects.filter(
+                request_id__in=request_ids, rejected=False
+            ).select_related('tutor').order_by('request_id', '-created_at')
+            for reply in all_replies:
+                replies_by_request.setdefault(reply.request_id, []).append({
+                    'id': reply.id,
+                    'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                    'tutor_id': reply.tutor.id,
+                    'message': reply.message,
+                    'created_at': reply.created_at
+                })
+
+            all_accepted = AcceptedTutor.objects.filter(
+                request_id__in=request_ids
+            ).select_related('tutor').order_by('request_id', '-accepted_at')
+            for accepted in all_accepted:
+                # Keep the most recently accepted row if a request somehow
+                # ended up with more than one (e.g. after a tutor swap).
+                accepted_by_request.setdefault(accepted.request_id, accepted)
+
+            return replies_by_request, accepted_by_request
+
         current_requests = []
         seen_request_ids = set()  # Track all request IDs to avoid duplicates
 
         # For parents: get their tutoring requests + referral requests
         if user.roles == 'parent':
             # Regular tutoring requests
-            parent_requests = TutoringRequest.objects.filter(parent=user).order_by('-created_at')
+            parent_requests = list(TutoringRequest.objects.filter(parent=user).select_related('student').order_by('-created_at'))
+            replies_by_request, accepted_by_request = _bulk_replies_and_accepted([r.id for r in parent_requests])
+
             for request in parent_requests:
-                if request.id not in seen_request_ids:
-                    seen_request_ids.add(request.id)
+                if request.id in seen_request_ids:
+                    continue
+                seen_request_ids.add(request.id)
 
-                    # Get all replies for this specific request
-                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                    replies_list = [
-                        {
-                            'id': reply.id,
-                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                            'tutor_id': reply.tutor.id,
-                            'message': reply.message,
-                            'created_at': reply.created_at
-                        }
-                        for reply in tutor_replies
-                    ]
+                replies_list = replies_by_request.get(request.id, [])
 
-                    # Get accepted tutor if exists
-                    accepted_tutor_info = None
-                    accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
-                    if accepted_for_request:
-                        accepted_tutor_info = {
-                            'id': accepted_for_request.tutor.id,
-                            'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
-                            'email': accepted_for_request.tutor.email,
-                            'accepted_at': accepted_for_request.accepted_at
-                        }
+                accepted_tutor_info = None
+                accepted_for_request = accepted_by_request.get(request.id)
+                if accepted_for_request:
+                    accepted_tutor_info = {
+                        'id': accepted_for_request.tutor.id,
+                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
+                        'email': accepted_for_request.tutor.email,
+                        'accepted_at': accepted_for_request.accepted_at
+                    }
 
-                    current_requests.append({
-                        'id': request.id,
-                        'type': 'regular',
-                        'student_name': f"{request.student.firstName} {request.student.lastName}",
-                        'subject': request.subject,
-                        'grade': request.grade,
-                        'service': request.service,
-                        'city': request.city,
-                        'status': request.is_accepted,
-                        'reply_count': len(replies_list),
-                        'replies': replies_list,
-                        'accepted_tutor': accepted_tutor_info,
-                        'created_at': request.created_at,
-                        'description': request.description
-                    })
+                current_requests.append({
+                    'id': request.id,
+                    'type': 'regular',
+                    'student_name': f"{request.student.firstName} {request.student.lastName}",
+                    'subject': request.subject,
+                    'grade': request.grade,
+                    'service': request.service,
+                    'city': request.city,
+                    'status': request.is_accepted,
+                    'reply_count': len(replies_list),
+                    'replies': replies_list,
+                    'accepted_tutor': accepted_tutor_info,
+                    'created_at': request.created_at,
+                    'description': request.description
+                })
 
             # Referral requests sent by this parent
             referral_requests = TutorReferralRequest.objects.filter(parent=user).select_related('tutor', 'student', 'tutoring_request').order_by('-created_at')
@@ -5029,30 +5061,23 @@ class AdminUserHoursView(APIView):
             # ACCEPTED badge or relationship details.
             entries_by_request_id = {}
 
+            tutor_responses = list(TutorResponse.objects.filter(tutor=user).select_related('request', 'request__student', 'request__parent'))
+            accepted_tutors = list(AcceptedTutor.objects.filter(tutor=user).select_related('request', 'request__student', 'request__parent', 'tutor'))
+
+            all_request_ids = {r.request_id for r in tutor_responses} | {a.request_id for a in accepted_tutors}
+            replies_by_request, accepted_by_request = _bulk_replies_and_accepted(all_request_ids)
+
             # 1. Get requests the tutor has responded to
-            tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
             for response in tutor_responses:
                 request = response.request
                 if request.id in seen_request_ids:
                     continue
                 seen_request_ids.add(request.id)
 
-                # Get all replies for this specific request
-                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                replies_list = [
-                    {
-                        'id': reply.id,
-                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                        'tutor_id': reply.tutor.id,
-                        'message': reply.message,
-                        'created_at': reply.created_at
-                    }
-                    for reply in tutor_replies
-                ]
+                replies_list = replies_by_request.get(request.id, [])
 
-                # Get accepted tutor if exists
                 accepted_tutor_info = None
-                accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
+                accepted_for_request = accepted_by_request.get(request.id)
                 if accepted_for_request:
                     accepted_tutor_info = {
                         'id': accepted_for_request.tutor.id,
@@ -5103,7 +5128,6 @@ class AdminUserHoursView(APIView):
                 })
 
             # 3. Get accepted tutoring relationships (requests that were accepted)
-            accepted_tutors = AcceptedTutor.objects.filter(tutor=user).select_related('request', 'student', 'parent')
             for accepted in accepted_tutors:
                 request = accepted.request
 
@@ -5130,18 +5154,7 @@ class AdminUserHoursView(APIView):
                     continue
                 seen_request_ids.add(request.id)
 
-                # Get all replies for this specific request
-                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                replies_list = [
-                    {
-                        'id': reply.id,
-                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                        'tutor_id': reply.tutor.id,
-                        'message': reply.message,
-                        'created_at': reply.created_at
-                    }
-                    for reply in tutor_replies
-                ]
+                replies_list = replies_by_request.get(request.id, [])
 
                 entry = {
                     'id': request.id,
@@ -5166,24 +5179,14 @@ class AdminUserHoursView(APIView):
 
         # For students: get requests made for them
         elif user.roles == 'student':
-            student_requests = TutoringRequest.objects.filter(student=user).order_by('-created_at')
-            for request in student_requests:
-                # Get all replies for this specific request
-                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
-                replies_list = [
-                    {
-                        'id': reply.id,
-                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                        'tutor_id': reply.tutor.id,
-                        'message': reply.message,
-                        'created_at': reply.created_at
-                    }
-                    for reply in tutor_replies
-                ]
+            student_requests = list(TutoringRequest.objects.filter(student=user).select_related('parent').order_by('-created_at'))
+            replies_by_request, accepted_by_request = _bulk_replies_and_accepted([r.id for r in student_requests])
 
-                # Get accepted tutor if exists
+            for request in student_requests:
+                replies_list = replies_by_request.get(request.id, [])
+
                 accepted_tutor_info = None
-                accepted_for_request = AcceptedTutor.objects.filter(request=request).select_related('tutor').first()
+                accepted_for_request = accepted_by_request.get(request.id)
                 if accepted_for_request:
                     accepted_tutor_info = {
                         'id': accepted_for_request.tutor.id,
