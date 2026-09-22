@@ -84,7 +84,14 @@ function RequestTutorModal({ isOpen, onClose, onSuccess }) {
             onClose();
         } catch (error) {
             if (error.response) {
-                setError(t('errors.serverError'));
+                const data = error.response.data;
+                const backendMessage =
+                    data?.error ||
+                    data?.detail ||
+                    (data && typeof data === 'object'
+                        ? Object.values(data).flat().join(' ')
+                        : null);
+                setError(backendMessage || t('errors.serverError'));
             } else if (error.request) {
                 setError(t('errors.networkError'));
             } else {

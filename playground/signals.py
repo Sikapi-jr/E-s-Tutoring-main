@@ -64,9 +64,10 @@ def generate_tutor_referral_code(sender, instance, created, **kwargs):
     Generate unique referral code for tutors when they are created
     """
     if created and instance.roles == 'tutor' and not instance.tutor_referral_code:
-        # Generate unique 6-digit alphanumeric code
+        # Generate unique 6-digit numeric code (matches the "6-digit tutor
+        # code" copy shown to parents on the request form)
         while True:
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            code = ''.join(random.choices(string.digits, k=6))
             if not User.objects.filter(tutor_referral_code=code).exists():
                 instance.tutor_referral_code = code
                 instance.save(update_fields=['tutor_referral_code'])

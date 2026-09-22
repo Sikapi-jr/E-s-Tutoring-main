@@ -1600,140 +1600,183 @@ class RequestListCreateView(generics.ListCreateAPIView):
 
         if tutor_code:
             # Handle tutor referral - create TutoringRequest AND TutorReferralRequest
+            tutor_code = str(tutor_code).strip().upper()
+
+            # Find the tutor with this referral code. Do NOT silently fall
+            # back to a public request here - a parent who typed a code
+            # expects their request to go ONLY to that tutor, so an invalid
+            # code must be reported back to them instead of quietly posting
+            # the request to the general dashboard.
             try:
-                # Find the tutor with this referral code
-                tutor = User.objects.get(tutor_referral_code=tutor_code.upper(), roles='tutor')
+                tutor = User.objects.get(tutor_referral_code=tutor_code, roles='tutor')
+            except User.DoesNotExist:
+                return Response(
+                    {"error": f"We couldn't find a tutor with the code \"{tutor_code}\". Please double-check the code with your tutor, or leave the field blank to send your request to all available tutors."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-                # Generate unique token for approval link
-                import secrets
-                token = secrets.token_urlsafe(32)
-
+            try:
                 parent = User.objects.get(id=request.data.get('parent'))
+            except (User.DoesNotExist, ValueError, TypeError):
+                return Response(
+                    {"error": "We couldn't verify your parent account. Please log out and back in, then try again."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
                 student = User.objects.get(id=request.data.get('student'))
-
-                # FIRST: Create the TutoringRequest
-                from playground.models import TutoringRequest, TutorReferralRequest
-
-                tutoring_request = TutoringRequest.objects.create(
-                    parent=parent,
-                    student=student,
-                    subject=request.data.get('subject'),
-                    grade=request.data.get('grade'),
-                    service=request.data.get('service'),
-                    city=request.data.get('city'),
-                    description=request.data.get('description'),
-                    is_accepted='Not Accepted'  # Will be changed to Accepted if tutor accepts
+            except (User.DoesNotExist, ValueError, TypeError):
+                return Response(
+                    {"error": "Please select a student before submitting your request."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-                # SECOND: Create TutorReferralRequest linked to the TutoringRequest
-                referral_request = TutorReferralRequest.objects.create(
-                    parent=parent,
-                    student=student,
-                    tutor=tutor,
-                    subject=request.data.get('subject'),
-                    grade=request.data.get('grade'),
-                    service=request.data.get('service'),
-                    city=request.data.get('city'),
-                    description=request.data.get('description'),
-                    referral_code_used=tutor_code.upper(),
-                    status='pending',
-                    token=token,
-                    tutoring_request=tutoring_request  # Link to the TutoringRequest
-                )
+            # Create the TutoringRequest and the linked TutorReferralRequest
+            # together, atomically. If anything fails partway through, the
+            # whole thing is rolled back - otherwise a partial failure could
+            # leave behind a TutoringRequest with no linked referral, which
+            # would immediately (and incorrectly) show up on the public
+            # dashboard for every tutor instead of only the one referenced
+            # by the code.
+            try:
+                with transaction.atomic():
+                    # Generate unique token for approval link
+                    import secrets
+                    token = secrets.token_urlsafe(32)
 
-                # Notify admin that a tutoring request was created (tutor-code path)
-                try:
-                    from playground.email_backends import send_admin_new_request_notification
-                    send_admin_new_request_notification(
-                        admin_email='egstutor@gmail.com',
-                        parent_name=f"{parent.firstName} {parent.lastName}",
-                        parent_email=parent.email,
-                        student_name=f"{student.firstName} {student.lastName}",
-                        subject=referral_request.subject,
-                        grade=referral_request.grade,
-                        service=referral_request.service,
-                        city=referral_request.city,
-                        description=referral_request.description,
-                        tutor_code=tutor_code.upper(),
-                        referred_tutor_name=f"{tutor.firstName} {tutor.lastName}",
+                    from playground.models import TutoringRequest, TutorReferralRequest
+
+                    tutoring_request = TutoringRequest.objects.create(
+                        parent=parent,
+                        student=student,
+                        subject=request.data.get('subject'),
+                        grade=request.data.get('grade'),
+                        service=request.data.get('service'),
+                        city=request.data.get('city'),
+                        description=request.data.get('description'),
+                        is_accepted='Not Accepted'  # Will be changed to Accepted if tutor accepts
                     )
-                except Exception as e:
-                    print(f"Failed to send admin new-request notification: {e}")
 
-                # Send email notification to tutor with approval link
-                try:
-                    from playground.email_utils import send_mailgun_email
-                    from django.conf import settings
+                    # Create TutorReferralRequest linked to the TutoringRequest
+                    referral_request = TutorReferralRequest.objects.create(
+                        parent=parent,
+                        student=student,
+                        tutor=tutor,
+                        subject=request.data.get('subject'),
+                        grade=request.data.get('grade'),
+                        service=request.data.get('service'),
+                        city=request.data.get('city'),
+                        description=request.data.get('description'),
+                        referral_code_used=tutor_code,
+                        status='pending',
+                        token=token,
+                        tutoring_request=tutoring_request  # Link to the TutoringRequest
+                    )
+            except Exception as e:
+                logger.error(f"Error creating referral request for tutor code {tutor_code}: {e}")
+                return Response(
+                    {"error": "Something went wrong while sending your request to the tutor. Please try again in a moment."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-                    if tutor.email:
-                        # Create approval URL
-                        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
-                        approval_url = f"{frontend_url}/tutor-referral-approval/{token}"
+            # From here on, the request has been created and is safely
+            # hidden from the public dashboard (see RequestListView). The
+            # remaining steps are best-effort notifications - failures here
+            # must never undo the request or surface as a scary 500 to the
+            # parent, since their request already succeeded.
+            # Notify admin that a tutoring request was created (tutor-code path)
+            try:
+                from playground.email_backends import send_admin_new_request_notification
+                send_admin_new_request_notification(
+                    admin_email='egstutor@gmail.com',
+                    parent_name=f"{parent.firstName} {parent.lastName}",
+                    parent_email=parent.email,
+                    student_name=f"{student.firstName} {student.lastName}",
+                    subject=referral_request.subject,
+                    grade=referral_request.grade,
+                    service=referral_request.service,
+                    city=referral_request.city,
+                    description=referral_request.description,
+                    tutor_code=tutor_code.upper(),
+                    referred_tutor_name=f"{tutor.firstName} {tutor.lastName}",
+                )
+            except Exception as e:
+                print(f"Failed to send admin new-request notification: {e}")
 
-                        subject = f"New Referral Request: {student.firstName} {student.lastName}"
+            # Send email notification to tutor with approval link
+            try:
+                from playground.email_utils import send_mailgun_email
+                from django.conf import settings
 
-                        html_message = f"""
+                if tutor.email:
+                    # Create approval URL
+                    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+                    approval_url = f"{frontend_url}/tutor-referral-approval/{token}"
+
+                    subject = f"New Referral Request: {student.firstName} {student.lastName}"
+
+                    html_message = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
-        .button {{ display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
-        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
-    </style>
+<style>
+    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+    .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+    .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+    .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
+    .button {{ display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
+    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>New Referral Request!</h1>
-        </div>
-        <div class="content">
-            <p>Dear {tutor.firstName},</p>
-            <p>Great news! A parent has requested you as their tutor using your referral code!</p>
-
-            <div class="info-box">
-                <h3>Parent Information</h3>
-                <p><strong>Name:</strong> {parent.firstName} {parent.lastName}<br>
-                <strong>Email:</strong> {parent.email}</p>
-            </div>
-
-            <div class="info-box">
-                <h3>Student Information</h3>
-                <p><strong>Name:</strong> {student.firstName} {student.lastName}<br>
-                <strong>Grade:</strong> {referral_request.grade}</p>
-            </div>
-
-            <div class="info-box">
-                <h3>Tutoring Details</h3>
-                <p><strong>Subject:</strong> {referral_request.subject}<br>
-                <strong>Service Type:</strong> {referral_request.service}<br>
-                <strong>City:</strong> {referral_request.city}</p>
-                {f'<p><strong>Additional Details:</strong> {referral_request.description}</p>' if referral_request.description else ''}
-            </div>
-
-            <div style="text-align: center;">
-                <a href="{approval_url}" class="button">Review and Respond</a>
-            </div>
-
-            <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                You can either accept or decline this request. If you accept, you will be paired with this student.
-                If you decline, the request will be made available to other tutors.
-            </p>
-        </div>
-        <div class="footer">
-            <p>Best regards,<br>The EGS Tutoring Team</p>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>New Referral Request!</h1>
     </div>
+    <div class="content">
+        <p>Dear {tutor.firstName},</p>
+        <p>Great news! A parent has requested you as their tutor using your referral code!</p>
+
+        <div class="info-box">
+            <h3>Parent Information</h3>
+            <p><strong>Name:</strong> {parent.firstName} {parent.lastName}<br>
+            <strong>Email:</strong> {parent.email}</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Student Information</h3>
+            <p><strong>Name:</strong> {student.firstName} {student.lastName}<br>
+            <strong>Grade:</strong> {referral_request.grade}</p>
+        </div>
+
+        <div class="info-box">
+            <h3>Tutoring Details</h3>
+            <p><strong>Subject:</strong> {referral_request.subject}<br>
+            <strong>Service Type:</strong> {referral_request.service}<br>
+            <strong>City:</strong> {referral_request.city}</p>
+            {f'<p><strong>Additional Details:</strong> {referral_request.description}</p>' if referral_request.description else ''}
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{approval_url}" class="button">Review and Respond</a>
+        </div>
+
+        <p style="margin-top: 20px; font-size: 14px; color: #666;">
+            You can either accept or decline this request. If you accept, you will be paired with this student.
+            If you decline, the request will be made available to other tutors.
+        </p>
+    </div>
+    <div class="footer">
+        <p>Best regards,<br>The EGS Tutoring Team</p>
+    </div>
+</div>
 </body>
 </html>
-                        """
+                    """
 
-                        # Plain text version for email clients that don't support HTML
-                        text_message = f"""
+                    # Plain text version for email clients that don't support HTML
+                    text_message = f"""
 Dear {tutor.firstName},
 
 Great news! A parent has requested you as their tutor using your referral code!
@@ -1760,74 +1803,74 @@ If you decline, the request will be made available to other tutors.
 
 Best regards,
 The EGS Tutoring Team
-                        """
+                    """
 
-                        send_mailgun_email(
-                            to_emails=[tutor.email],
-                            subject=subject,
-                            text_content=text_message.strip(),
-                            html_content=html_message
-                        )
-                        print(f"Sent referral notification email to tutor: {tutor.email}")
-                except Exception as e:
-                    print(f"Failed to send tutor notification email: {e}")
+                    send_mailgun_email(
+                        to_emails=[tutor.email],
+                        subject=subject,
+                        text_content=text_message.strip(),
+                        html_content=html_message
+                    )
+                    print(f"Sent referral notification email to tutor: {tutor.email}")
+            except Exception as e:
+                print(f"Failed to send tutor notification email: {e}")
 
-                # Send confirmation email to parent
-                try:
-                    from playground.email_utils import send_mailgun_email
-                    from django.conf import settings
+            # Send confirmation email to parent
+            try:
+                from playground.email_utils import send_mailgun_email
+                from django.conf import settings
 
-                    tutor_name = f"{tutor.firstName} {tutor.lastName}"
+                tutor_name = f"{tutor.firstName} {tutor.lastName}"
 
-                    if parent.email:
-                        subject = f"Referral Request Sent to {tutor_name}"
+                if parent.email:
+                    subject = f"Referral Request Sent to {tutor_name}"
 
-                        html_message = f"""
+                    html_message = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
-        .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
-        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
-    </style>
+<style>
+    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+    .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+    .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+    .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
+    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Request Sent Successfully!</h1>
-        </div>
-        <div class="content">
-            <p>Dear {parent.firstName} {parent.lastName},</p>
-            <p>Your tutoring request for <strong>{student.firstName} {student.lastName}</strong> has been sent to <strong>{tutor_name}</strong>.</p>
+<div class="container">
+    <div class="header">
+        <h1>Request Sent Successfully!</h1>
+    </div>
+    <div class="content">
+        <p>Dear {parent.firstName} {parent.lastName},</p>
+        <p>Your tutoring request for <strong>{student.firstName} {student.lastName}</strong> has been sent to <strong>{tutor_name}</strong>.</p>
 
-            <div class="info-box">
-                <h3>What Happens Next?</h3>
-                <p>We've notified {tutor_name} about your request. They will review it and respond shortly.
-                You'll receive an email notification once they respond.</p>
-                <p>If {tutor_name} declines, your request will automatically be made available to all our tutors.</p>
-            </div>
-
-            <div class="info-box">
-                <h3>Request Summary</h3>
-                <p><strong>Subject:</strong> {referral_request.subject}<br>
-                <strong>Grade:</strong> {referral_request.grade}<br>
-                <strong>Service Type:</strong> {referral_request.service}</p>
-            </div>
+        <div class="info-box">
+            <h3>What Happens Next?</h3>
+            <p>We've notified {tutor_name} about your request. They will review it and respond shortly.
+            You'll receive an email notification once they respond.</p>
+            <p>If {tutor_name} declines, your request will automatically be made available to all our tutors.</p>
         </div>
-        <div class="footer">
-            <p>Best regards,<br>The EGS Tutoring Team</p>
+
+        <div class="info-box">
+            <h3>Request Summary</h3>
+            <p><strong>Subject:</strong> {referral_request.subject}<br>
+            <strong>Grade:</strong> {referral_request.grade}<br>
+            <strong>Service Type:</strong> {referral_request.service}</p>
         </div>
     </div>
+    <div class="footer">
+        <p>Best regards,<br>The EGS Tutoring Team</p>
+    </div>
+</div>
 </body>
 </html>
-                        """
+                    """
 
-                        # Plain text version for email clients that don't support HTML
-                        text_message = f"""
+                    # Plain text version for email clients that don't support HTML
+                    text_message = f"""
 Dear {parent.firstName} {parent.lastName},
 
 Your tutoring request for {student.firstName} {student.lastName} has been sent to {tutor_name}.
@@ -1845,33 +1888,24 @@ Service Type: {referral_request.service}
 
 Best regards,
 The EGS Tutoring Team
-                        """
+                    """
 
-                        send_mailgun_email(
-                            to_emails=[parent.email],
-                            subject=subject,
-                            text_content=text_message.strip(),
-                            html_content=html_message
-                        )
-                        print(f"Sent confirmation email to parent: {parent.email}")
-                except Exception as e:
-                    print(f"Failed to send parent confirmation email: {e}")
-
-                # Return success response
-                from playground.serializers import TutorReferralRequestSerializer
-                serializer = TutorReferralRequestSerializer(referral_request)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-            except User.DoesNotExist:
-                # Invalid tutor code, proceed with normal request creation
-                print(f"Invalid tutor code: {tutor_code}")
-                pass
+                    send_mailgun_email(
+                        to_emails=[parent.email],
+                        subject=subject,
+                        text_content=text_message.strip(),
+                        html_content=html_message
+                    )
+                    print(f"Sent confirmation email to parent: {parent.email}")
             except Exception as e:
-                print(f"Error creating referral request: {e}")
-                # Proceed with normal request creation on any error
-                pass
+                print(f"Failed to send parent confirmation email: {e}")
 
-        # Normal request creation (no tutor code or invalid code)
+            # Return success response
+            from playground.serializers import TutorReferralRequestSerializer
+            serializer = TutorReferralRequestSerializer(referral_request)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Normal request creation (no tutor code provided)
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):

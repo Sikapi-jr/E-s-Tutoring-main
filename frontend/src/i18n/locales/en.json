@@ -532,6 +532,7 @@
     "enterTutorCode": "Enter 6-digit tutor code",
     "tutorCodeOptional": "Optional - Skip this if you don't have a code",
     "referralRequestSent": "Your request has been sent to the tutor! They will receive an email to review and respond. You will be notified once they respond.",
+    "requestCreated": "Your tutoring request has been created successfully! Tutors will be notified and you will receive replies shortly.",
     "confirmDelete": "Are you sure you want to delete this request?",
     "deleteWarning": "This action cannot be undone. All replies to this request will also be deleted.",
     "unassignDescription": "If you need to change tutors or end this tutoring relationship, you can unassign the current tutor. You will be able to choose whether to keep the request active for other tutors or delete it completely.",
