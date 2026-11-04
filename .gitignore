@@ -6,6 +6,9 @@ venv/
 .env.ec2
 env
 
+# Ignore SSH private keys (e.g. EC2 key pairs)
+*.pem
+
 # Ignore compiled files
 *.pyc
 __pycache__/
