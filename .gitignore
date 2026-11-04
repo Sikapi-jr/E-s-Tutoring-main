@@ -25,3 +25,6 @@ staticfiles/
 
 # Ignore media files (profile pictures, documents)
 media/
+
+# Ignore Celery beat's runtime schedule file
+celerybeat-schedule

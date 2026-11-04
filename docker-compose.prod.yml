@@ -1,4 +1,4 @@
-name: egstutoring
+name: egstutoring-prod
 
 # Production compose for a single EC2 instance.
 # - "web" builds the ROOT Dockerfile (multi-stage: builds the React frontend,
@@ -31,7 +31,7 @@ services:
 
   mq:
     image: rabbitmq:3.13.7-alpine
-    container_name: rabbitmq
+    container_name: egstutoring-prod-mq
     env_file: .env.ec2
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
@@ -47,7 +47,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: celery-worker
+    container_name: egstutoring-prod-worker
     command: sh -c "celery -A egstutorting worker -l INFO"
     env_file: .env.ec2
     environment:
@@ -63,7 +63,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: celery-beat
+    container_name: egstutoring-prod-beat
     command: sh -c "celery -A egstutorting beat -l INFO"
     env_file: .env.ec2
     environment:

@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, School, StudentSchoolCredit, EmailLog
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -32,8 +32,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
-from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer, HourDisputeSerializer
+from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
+from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer, UserDocumentSerializer, HourDisputeSerializer, SchoolSerializer, SchoolAdminSerializer, StudentSchoolCreditSerializer, EmailLogSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -215,7 +215,12 @@ class CreateUserView(generics.CreateAPIView):
             if role == 'tutor' and ref:
                 ref.referred = user
                 ref.save(update_fields=["referred"])
-                _apply_receiver_discount(user)    
+                # TODO: the referred tutor's own signup incentive was never
+                # implemented (no model field, no spec for the discount
+                # amount/mechanism) -- this used to call a nonexistent
+                # _apply_receiver_discount(user), which crashed every
+                # tutor-referral signup. Removed until the discount is
+                # actually designed. The referrer's reward below still works.
                 ref.referrer.pending_rewards = F("pending_rewards") + 1
                 ref.referrer.save(update_fields=["pending_rewards"])
 
@@ -1374,245 +1379,6 @@ class AnnouncementCreateView(APIView):
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class MonthlyReportCreateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        """Create or update a monthly report for a tutor-student pair"""
-        from datetime import datetime, timedelta
-
-        data = request.data.copy()
-        data['tutor'] = request.user.id
-
-        # Validate minimum hours (4+ hours required)
-        student_id = data.get('student')
-        month = int(data.get('month'))
-        year = int(data.get('year'))
-
-        # Calculate date range for the month
-        start_date = datetime(year, month, 1).date()
-        if month == 12:
-            end_date = datetime(year + 1, 1, 1).date()
-        else:
-            end_date = datetime(year, month + 1, 1).date()
-
-        # Get total hours for validation
-        hours = Hours.objects.filter(
-            tutor_id=request.user.id,
-            student_id=student_id,
-            date__gte=start_date,
-            date__lt=end_date,
-            status='Accepted'
-        )
-        total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-
-        if total_hours < 4:
-            return Response(
-                {"error": f"Insufficient hours. Need 4+ hours, but only {total_hours} hours logged."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check if report already exists
-        try:
-            existing_report = MonthlyReport.objects.get(
-                tutor_id=request.user.id,
-                student_id=student_id,
-                month=month,
-                year=year
-            )
-            # Update existing report
-            data['status'] = 'submitted'
-            data['submitted_at'] = timezone.now()
-            serializer = MonthlyReportSerializer(existing_report, data=data, partial=False)
-        except MonthlyReport.DoesNotExist:
-            # Create new report
-            data['status'] = 'submitted'
-            data['submitted_at'] = timezone.now()
-            # Calculate due date (1st of next month)
-            if month == 12:
-                due_date = datetime(year + 1, 1, 1).date()
-            else:
-                due_date = datetime(year, month + 1, 1).date()
-            data['due_date'] = due_date
-            serializer = MonthlyReportSerializer(data=data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class MonthlyReportListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Get monthly reports based on user role"""
-        user = request.user
-        
-        if user.roles == 'tutor':
-            # Tutors see reports they've created
-            reports = MonthlyReport.objects.filter(tutor=user).order_by('-year', '-month', '-created_at')
-        elif user.roles == 'parent':
-            # Parents see reports for their children
-            children = User.objects.filter(parent=user)
-            reports = MonthlyReport.objects.filter(student__in=children).order_by('-year', '-month', '-created_at')
-        else:
-            return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-        
-        serializer = MonthlyReportSerializer(reports, many=True)
-        return Response(serializer.data)
-
-
-class MonthlyReportDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, report_id):
-        """Get a specific monthly report"""
-        try:
-            report = MonthlyReport.objects.get(id=report_id)
-            user = request.user
-            
-            # Check permissions
-            if user.roles == 'tutor' and report.tutor != user:
-                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-            elif user.roles == 'parent' and report.student.parent != user:
-                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
-            
-            serializer = MonthlyReportSerializer(report)
-            return Response(serializer.data)
-            
-        except MonthlyReport.DoesNotExist:
-            return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-class TutorStudentHoursView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """Get tutoring hours for validation before report submission"""
-        tutor_id = request.query_params.get('tutor_id')
-        student_id = request.query_params.get('student_id')
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
-        
-        if not all([tutor_id, student_id, month, year]):
-            return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            month = int(month)
-            year = int(year)
-            
-            # Calculate date range for the month
-            from datetime import datetime
-            start_date = datetime(year, month, 1).date()
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1).date()
-            else:
-                end_date = datetime(year, month + 1, 1).date()
-            
-            # Get total hours for this tutor-student pair in the given month
-            hours = Hours.objects.filter(
-                tutor_id=tutor_id,
-                student_id=student_id,
-                date__gte=start_date,
-                date__lt=end_date,
-                status='Accepted'
-            )
-            
-            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-            
-            return Response({
-                'total_hours': float(total_hours),
-                'eligible_for_report': total_hours >= 4,
-                'sessions_count': hours.count(),
-                'month': month,
-                'year': year
-            })
-            
-        except ValueError:
-            return Response({"error": "Invalid month or year"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TutorStudentsReportStatusView(APIView):
-    """Get all students for a tutor with their monthly report statuses"""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        from datetime import datetime
-        from dateutil.relativedelta import relativedelta
-
-        tutor = request.user
-        if tutor.roles != 'tutor':
-            return Response({"error": "Only tutors can access this endpoint"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Get the previous month (reports are due for previous month on the 1st)
-        today = datetime.now().date()
-        previous_month_date = today - relativedelta(months=1)
-        target_month = previous_month_date.month
-        target_year = previous_month_date.year
-
-        # Get all students for this tutor
-        from .models import AcceptedTutor
-        accepted_tutors = AcceptedTutor.objects.filter(tutor=tutor, status='Accepted').select_related('student')
-
-        students_data = []
-        for at in accepted_tutors:
-            student = at.student
-
-            # Calculate date range for the previous month
-            start_date = datetime(target_year, target_month, 1).date()
-            if target_month == 12:
-                end_date = datetime(target_year + 1, 1, 1).date()
-            else:
-                end_date = datetime(target_year, target_month + 1, 1).date()
-
-            # Get total hours for this student in the previous month
-            hours = Hours.objects.filter(
-                tutor=tutor,
-                student=student,
-                date__gte=start_date,
-                date__lt=end_date,
-                status='Accepted'
-            )
-            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
-
-            # Check if report exists
-            try:
-                report = MonthlyReport.objects.get(
-                    tutor=tutor,
-                    student=student,
-                    month=target_month,
-                    year=target_year
-                )
-                report_status = report.status
-                report_id = report.id
-            except MonthlyReport.DoesNotExist:
-                # Report is needed if 4+ hours
-                if total_hours >= 4:
-                    report_status = 'pending'
-                else:
-                    report_status = 'not_required'
-                report_id = None
-
-            students_data.append({
-                'student_id': student.id,
-                'student_name': f"{student.firstName} {student.lastName}",
-                'student_username': student.username,
-                'hours_logged': float(total_hours),
-                'report_month': target_month,
-                'report_year': target_year,
-                'report_status': report_status,
-                'report_id': report_id,
-                'requires_report': total_hours >= 4
-            })
-
-        return Response({
-            'students': students_data,
-            'target_month': target_month,
-            'target_year': target_year,
-            'month_name': datetime(target_year, target_month, 1).strftime('%B %Y')
-        })
 
 
 class AnnouncementListView(APIView):
@@ -3721,52 +3487,6 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def create_chat_session(request):
-    ip_address = get_client_ip(request)
-    
-    # Check if IP has too many recent sessions
-    from django.utils import timezone
-    from datetime import timedelta
-    
-    recent_sessions = AiChatSession.objects.filter(
-        ip_address=ip_address,
-        created_at__gte=timezone.now() - timedelta(hours=1)
-    ).count()
-    
-    if recent_sessions >= 5:  # Max 5 sessions per hour per IP
-        return Response({
-            'error': 'Too many chat sessions. Please wait before starting a new session.'
-        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-    
-    session = AiChatSession.objects.create(ip_address=ip_address)
-    serializer = AiChatSessionSerializer(session)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-def chat_session(request, session_id):
-    session = get_object_or_404(AiChatSession, id=session_id)
-    serializer = AiChatSessionSerializer(session)
-
-    if request.method == 'POST':
-        message = request.data.get('message')
-        if not message:
-            return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            session.send(message)
-        except ValueError as e:
-            # Rate limiting error
-            return Response({
-                'error': str(e),
-                'rate_limited': True
-            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-    return Response(serializer.data)
-
 
 # API endpoint to serve media files as base64 or redirect
 @api_view(['GET'])
@@ -3803,6 +3523,211 @@ def get_media_file(request, path):
         })
     except Exception as e:
         return Response({'error': 'Error reading file'}, status=500)
+
+# School + School-Credit Views
+class SchoolListView(generics.ListAPIView):
+    """Public-facing active school list, for the student-creation dropdown."""
+    serializer_class = SchoolSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = School.objects.filter(is_active=True)
+
+
+def _require_school_admin(user):
+    return user.is_superuser or getattr(user, 'roles', None) == 'admin'
+
+
+class SchoolAdminListCreateView(generics.ListCreateAPIView):
+    """Admin School management: list every school (active + inactive) and create new ones."""
+    serializer_class = SchoolAdminSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = School.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().create(request, *args, **kwargs)
+
+
+class SchoolAdminDetailView(generics.RetrieveUpdateAPIView):
+    """Admin School management: retrieve + update a single school.
+    No delete endpoint -- schools are deactivated via is_active instead of
+    removed, since existing students may still reference them."""
+    serializer_class = SchoolAdminSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = School.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().update(request, *args, **kwargs)
+
+
+class AdminSchoolCreditQueueListView(generics.ListAPIView):
+    """Admin queue of StudentSchoolCredit requests, filterable by ?status=."""
+    serializer_class = StudentSchoolCreditSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = StudentSchoolCredit.objects.select_related('student', 'parent', 'school')
+        status_filter = self.request.query_params.get('status', 'pending')
+        if status_filter and status_filter != 'all':
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().list(request, *args, **kwargs)
+
+
+class AdminSchoolCreditManageView(APIView):
+    """Approve or decline a pending StudentSchoolCredit request.
+    On approval, the snapshot credit hours are added to the student's
+    credit_balance. An optional 'school' correction lets the admin fix a
+    misreported school before approving, re-snapshotting its credit hours."""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        if not _require_school_admin(request.user):
+            return Response({'error': 'Admin access required'}, status=403)
+
+        credit = get_object_or_404(StudentSchoolCredit, pk=pk)
+        if credit.status != 'pending':
+            return Response({'error': 'This request has already been reviewed.'}, status=400)
+
+        action = request.data.get('action')
+        if action not in ('approve', 'decline'):
+            return Response({'error': "action must be 'approve' or 'decline'."}, status=400)
+
+        school_correction_id = request.data.get('school')
+        if school_correction_id:
+            corrected_school = get_object_or_404(School, pk=school_correction_id)
+            credit.school = corrected_school
+            credit.credit_hours_snapshot = corrected_school.credit_hours
+
+        credit.admin_notes = request.data.get('admin_notes', credit.admin_notes)
+        credit.reviewed_by = request.user
+        credit.reviewed_at = timezone.now()
+
+        if action == 'approve':
+            credit.status = 'approved'
+            student = credit.student
+            student.credit_balance = (student.credit_balance or 0) + credit.credit_hours_snapshot
+            student.save(update_fields=['credit_balance'])
+        else:
+            credit.status = 'declined'
+
+        credit.save()
+        serializer = StudentSchoolCreditSerializer(credit)
+        return Response(serializer.data)
+
+
+# Admin Request Management View
+class AdminRequestManageView(APIView):
+    """Admin-only hide/unhide (PATCH) or permanently delete (DELETE) a
+    TutoringRequest, used by the Manage Stale Requests page."""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, request_id):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        tutoring_request = get_object_or_404(TutoringRequest, pk=request_id)
+        tutoring_request.hidden_from_dashboard = bool(request.data.get('hidden', False))
+        tutoring_request.save(update_fields=['hidden_from_dashboard'])
+        serializer = RequestSerializer(tutoring_request)
+        return Response(serializer.data)
+
+    def delete(self, request, request_id):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        tutoring_request = get_object_or_404(TutoringRequest, pk=request_id)
+        tutoring_request.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Admin Announcement Views
+class AnnouncementAdminListView(generics.ListAPIView):
+    """Admin-only: every announcement, unfiltered (unlike the public
+    AnnouncementListView, which filters by audience and caps results)."""
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Announcements.objects.all().order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().list(request, *args, **kwargs)
+
+
+class AnnouncementDeleteView(generics.DestroyAPIView):
+    """Admin-only announcement deletion."""
+    queryset = Announcements.objects.all()
+    lookup_url_kwarg = 'announcement_id'
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+        return super().delete(request, *args, **kwargs)
+
+
+# Admin Email Logs View
+class AdminEmailLogsView(APIView):
+    """Admin-only, paginated/filterable email log viewer."""
+    permission_classes = [IsAuthenticated]
+    PAGE_SIZE = 100
+
+    def get(self, request):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+
+        logs = EmailLog.objects.all()
+
+        search = request.query_params.get('search')
+        if search:
+            logs = logs.filter(
+                Q(recipient_email__icontains=search) |
+                Q(recipient_name__icontains=search) |
+                Q(subject__icontains=search)
+            )
+
+        email_type = request.query_params.get('email_type')
+        if email_type:
+            logs = logs.filter(email_type=email_type)
+
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            logs = logs.filter(status=status_filter)
+
+        date_from = request.query_params.get('date_from')
+        if date_from:
+            logs = logs.filter(sent_at__date__gte=date_from)
+
+        date_to = request.query_params.get('date_to')
+        if date_to:
+            logs = logs.filter(sent_at__date__lte=date_to)
+
+        total = logs.count()
+        try:
+            page = max(int(request.query_params.get('page', 1)), 1)
+        except (TypeError, ValueError):
+            page = 1
+        start = (page - 1) * self.PAGE_SIZE
+        end = start + self.PAGE_SIZE
+
+        serializer = EmailLogSerializer(logs[start:end], many=True)
+        return Response({'results': serializer.data, 'total': total})
+
 
 # Hour Dispute Views
 class HourDisputeCreateView(generics.CreateAPIView):
