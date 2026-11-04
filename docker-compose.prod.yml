@@ -1,0 +1,76 @@
+name: egstutoring
+
+# Production compose for a single EC2 instance.
+# - "web" builds the ROOT Dockerfile (multi-stage: builds the React frontend,
+#   then serves it + the Django API from one gunicorn process via whitenoise).
+# - "mq" is NOT published to the host (no "ports:") so RabbitMQ is only
+#   reachable from other containers on the compose network, never from the
+#   public internet.
+# - All secrets come from .env.ec2 (see that file) instead of being
+#   hardcoded, and MEDIA_ROOT is bind-mounted to a host folder so uploaded
+#   files (profile pictures, documents) survive container restarts/rebuilds.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: egstutoring-web
+    env_file: .env.ec2
+    environment:
+      - PORT=8000
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@mq:5672//
+    volumes:
+      - ./media:/app/media
+    ports:
+      - "80:8000"
+    depends_on:
+      mq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mq:
+    image: rabbitmq:3.13.7-alpine
+    container_name: rabbitmq
+    env_file: .env.ec2
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: celery-worker
+    command: sh -c "celery -A egstutorting worker -l INFO"
+    env_file: .env.ec2
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@mq:5672//
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      mq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: celery-beat
+    command: sh -c "celery -A egstutorting beat -l INFO"
+    env_file: .env.ec2
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@mq:5672//
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      mq:
+        condition: service_healthy
+    restart: unless-stopped

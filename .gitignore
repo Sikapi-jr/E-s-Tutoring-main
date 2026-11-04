@@ -3,6 +3,7 @@ venv/
 
 # Ignore sensitive configuration files
 .env
+.env.ec2
 env
 
 # Ignore compiled files
