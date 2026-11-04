@@ -1,5 +1,23 @@
 {
   "landing": {
+    "eyebrow": {
+      "goals": "Our Goals",
+      "about": "About Us",
+      "pricing": "Pricing",
+      "subjects": "Popular Subjects",
+      "serviceArea": "Where We Teach"
+    },
+    "nav": {
+      "menuLabel": "On This Page",
+      "about": "About",
+      "goals": "Goals",
+      "pricing": "Pricing",
+      "whyChooseUs": "Why Us",
+      "subjects": "Subjects",
+      "serviceArea": "Service Area",
+      "features": "Features",
+      "gettingStarted": "Getting Started"
+    },
     "title": "EGS Tutoring Portal",
     "subtitle": "Your home for simple, stress-free learning support",
     "allInOnePlace": "Everything You Need in One Place",
@@ -55,6 +73,143 @@
         "title": "Review Replies",
         "description": "Check the Current Requests page to see tutor responses, compare qualifications, and accept the best fit for your child."
       }
+    },
+    "about": {
+      "heading": "About EGS Tutoring",
+      "missionTitle": "Our Mission",
+      "mission": "At EGS Tutoring, we're dedicated to helping students in grades K-12 achieve academic success in both French and English, with personalized, one-on-one support that adapts to every child's unique learning style and goals.",
+      "approachTitle": "Our Approach",
+      "approach": "We recognize the advantages of growing up bilingual in a multicultural community, and we tailor every lesson to leverage those strengths. Rather than a one-size-fits-all model, our tutors celebrate and support each child's distinct talents and abilities.",
+      "formats": "We offer both online and in-person tutoring, so your family can choose whichever format fits your schedule and learning style best."
+    },
+    "pricing": {
+      "heading": "Simple, Transparent Pricing",
+      "intro": "Quality tutoring at a fair price, no hidden fees.",
+      "online": {
+        "title": "Online Tutoring",
+        "price": "$35",
+        "unit": "/hr",
+        "description": "Live one-on-one sessions from wherever your child is, with the same personalized attention as in person."
+      },
+      "inPerson": {
+        "title": "In-Person Tutoring",
+        "price": "$65",
+        "unit": "/hr",
+        "description": "A tutor comes to you for focused, face-to-face sessions tailored to your child's needs."
+      },
+      "group": {
+        "title": "Group Tutoring",
+        "badge": "Coming Soon",
+        "price": "Free",
+        "description": "Small-group sessions are launching soon, completely free while we roll them out."
+      }
+    },
+    "goals": {
+      "heading": "Our Goals",
+      "support": {
+        "title": "Personalized Support",
+        "description": "Provide the best support for your child as they navigate a bilingual environment."
+      },
+      "safety": {
+        "title": "A Safe Learning Environment",
+        "description": "A welcoming, safe learning experience for French speakers and English speakers alike."
+      },
+      "confidence": {
+        "title": "Confidence & Independence",
+        "description": "Build self-confidence and independence in children through personalized learning methods."
+      }
+    },
+    "whyChooseUs": {
+      "heading": "Why Choose EGS Tutoring?",
+      "intro": "Because every child's learning journey is unique, EGS Tutoring offers personalized plans that adapt to each student's strengths and challenges.",
+      "tutorsHeading": "Our Tutors...",
+      "tutors": {
+        "credentials": "Are equipped with certifications, bachelor's, and master's degrees",
+        "understanding": "Understand that every child is different, and adapt to your family's unique challenges",
+        "experience": "Have extensive experience working with children of all ages",
+        "bilingual": "Are fluent in both French and English, so you can communicate however you're most comfortable"
+      }
+    },
+    "subjects": {
+      "heading": "Subjects We Cover",
+      "coverage": {
+        "schoolClasses": {
+          "title": "School Classes",
+          "items": [
+            "Homework help",
+            "Test preparation",
+            "Subject-specific tutoring",
+            "Study skills development",
+            "Personalized study plans"
+          ]
+        },
+        "provincialExams": {
+          "title": "Ontario Provincial Exams",
+          "items": [
+            "OSSLT preparation",
+            "Grade 12 final exam preparation",
+            "Mock exams",
+            "Review sessions"
+          ]
+        },
+        "entranceExams": {
+          "title": "University & College Entrance Exams",
+          "items": [
+            "SAT & ACT preparation",
+            "Canadian university admission tests",
+            "Application & interview preparation"
+          ]
+        }
+      },
+      "categories": {
+        "math": {
+          "title": "Mathematics",
+          "items": [
+            "Grade 1-6 basic math",
+            "Middle & high school math",
+            "Advanced functions & pre-calculus",
+            "Physics & algebra (all levels)"
+          ]
+        },
+        "english": {
+          "title": "English",
+          "items": [
+            "Grammar & comprehension",
+            "Reading & writing practice",
+            "English conversation",
+            "English for business"
+          ]
+        },
+        "science": {
+          "title": "Science",
+          "items": [
+            "Elementary through high school science",
+            "Biology (all levels)",
+            "Chemistry (all levels)",
+            "AP Biology, Chemistry & Physics"
+          ]
+        },
+        "french": {
+          "title": "French",
+          "items": [
+            "Beginner to advanced grammar",
+            "French conversation",
+            "French tutoring (school)",
+            "EQAO French exam preparation",
+            "TCF & TEF exam preparation"
+          ]
+        }
+      }
+    },
+    "serviceArea": {
+      "heading": "Where We Tutor",
+      "intro": "We proudly support students and families across Toronto and the Durham Region, in person and online.",
+      "toronto": "Toronto",
+      "durham": "Durham Region"
+    },
+    "cta": {
+      "heading": "Ready to Get Started?",
+      "subtext": "Create your free account and request your first tutor in minutes."
     }
   },
   "common": {
@@ -1342,6 +1497,7 @@
     "pendingEnrollmentsMessage": "{{name}} has {{count}} enrollment(s) awaiting approval.",
     "checkEmailDiagnostic": "Please check your email for the diagnostic test link.",
     "diagnosticSubmitted": "The diagnostic test has been submitted and is being reviewed.",
+    "pendingApprovalMessage": "This enrollment is awaiting admin approval. We'll email you once a decision has been made.",
     "passed": "PASSED",
     "notPassed": "NOT PASSED",
     "completed": "COMPLETED",

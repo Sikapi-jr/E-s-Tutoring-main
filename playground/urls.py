@@ -164,6 +164,7 @@ urlpatterns = [
     path('group-tutoring/admin/files/<int:file_id>/', group_tutoring_views.admin_delete_class_file, name='admin-delete-class-file'),
     path('group-tutoring/admin/classes/<int:class_id>/sessions/', group_tutoring_views.admin_get_class_sessions, name='admin-class-sessions'),
     path('group-tutoring/admin/classes/<int:class_id>/attendance/<str:session_date>/', group_tutoring_views.admin_session_attendance, name='admin-session-attendance'),
+    path('group-tutoring/admin/classes/<int:class_id>/sessions/<str:session_date>/notes/', group_tutoring_views.session_notes, name='group-tutoring-session-notes'),
     path('group-tutoring/admin/classes/<int:class_id>/email-parents/', group_tutoring_views.admin_email_class_parents, name='admin-email-class-parents'),
     path('group-tutoring/admin/classes/<int:class_id>/update-schedule/', group_tutoring_views.admin_update_class_schedule, name='admin-update-class-schedule'),
     path('group-tutoring/admin/classes/<int:class_id>/sessions/<str:session_date>/', group_tutoring_views.admin_update_session, name='admin-update-session'),

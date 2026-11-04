@@ -14,7 +14,7 @@ import Register from "./pages/Register";
 import LandingPage from "./pages/LandingPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
-import UnauthNavbar from "./components/UnauthNavBar";
+import UnauthNavbar from "./components/UnauthNavbar";
 import Footer from "./components/Footer.jsx";
 
 // Lazy load all other components
@@ -100,6 +100,7 @@ function AppRoutes() {
     "/",
     "/login",
     "/register",
+    "/contact",
     "/password-reset",
     "/password-reset-confirm",
     "/verify-email",

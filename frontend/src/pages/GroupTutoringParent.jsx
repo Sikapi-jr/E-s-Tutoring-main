@@ -417,7 +417,7 @@ const GroupTutoringParent = () => {
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 2rem' }}>
 
         {/* Pending Enrollment Notice */}
-        {studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length > 0 && (
+        {studentEnrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'pending_approval'].includes(e.status)).length > 0 && (
           <div style={{
             backgroundColor: '#fff3cd',
             borderRadius: '8px',
@@ -427,9 +427,10 @@ const GroupTutoringParent = () => {
           }}>
             <h3 style={{ margin: '0 0 0.5rem 0', color: '#856404', fontSize: '1rem' }}>{t('groupTutoring.pendingEnrollments', { name: selectedStudentName })}</h3>
             <p style={{ margin: 0, color: '#856404', fontSize: '0.9rem' }}>
-              {t('groupTutoring.pendingEnrollmentsMessage', { name: selectedStudentName, count: studentEnrollments.filter(e => e.status === 'pending_diagnostic' || e.status === 'diagnostic_submitted').length })}
+              {t('groupTutoring.pendingEnrollmentsMessage', { name: selectedStudentName, count: studentEnrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'pending_approval'].includes(e.status)).length })}
               {studentEnrollments.some(e => e.status === 'pending_diagnostic') && ` ${t('groupTutoring.checkEmailDiagnostic')}`}
               {studentEnrollments.some(e => e.status === 'diagnostic_submitted') && ` ${t('groupTutoring.diagnosticSubmitted')}`}
+              {studentEnrollments.some(e => e.status === 'pending_approval') && ` ${t('groupTutoring.pendingApprovalMessage')}`}
             </p>
           </div>
         )}

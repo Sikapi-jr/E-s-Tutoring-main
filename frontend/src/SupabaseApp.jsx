@@ -16,7 +16,7 @@ import { useAuth } from "./hooks/useSupabaseAuth.jsx";
 
 // Import navigation components  
 import Navbar from "./components/Navbar";
-import UnauthNavbar from "./components/UnauthNavBar";
+import UnauthNavbar from "./components/UnauthNavbar";
 import Footer from "./components/Footer.jsx";
 
 // Lazy load all other components

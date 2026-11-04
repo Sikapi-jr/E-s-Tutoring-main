@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Q, Prefetch
-from django.core.mail import send_mail
 from django.conf import settings
 
 from .models import (
@@ -21,6 +20,57 @@ from .serializers import (
     ClassSessionSerializer, ClassAttendanceSerializer, ClassFileSerializer,
     QuizSerializer, QuizQuestionPublicSerializer, QuizSubmissionSerializer
 )
+from .email_utils import send_mailgun_email
+
+
+def _is_assigned_tutor(user, tutoring_class):
+    return user.roles == 'tutor' and tutoring_class.tutors.filter(id=user.id).exists()
+
+
+def _is_admin(user):
+    return user.roles == 'admin' or user.is_staff or user.is_superuser
+
+
+def _notify_enrollment_decision(enrollment, approved):
+    """Email the parent that their group tutoring enrollment request was approved or rejected."""
+    parent = enrollment.parent
+    student = enrollment.student
+    class_title = enrollment.tutoring_class.title
+
+    if approved:
+        subject = f"Enrollment Approved - {class_title}"
+        text_content = f"""
+Hello {parent.firstName},
+
+Great news! {student.firstName}'s enrollment in {class_title} has been approved.
+
+{student.firstName} is now officially enrolled. You can view the class schedule and materials from your parent dashboard.
+
+Best regards,
+EGS Tutoring Team
+        """
+    else:
+        reason = enrollment.admin_notes.strip() if enrollment.admin_notes else ''
+        reason_block = f"\nReason: {reason}\n" if reason else ''
+        subject = f"Enrollment Update - {class_title}"
+        text_content = f"""
+Hello {parent.firstName},
+
+We're writing to let you know that {student.firstName}'s enrollment request for {class_title} was not approved.
+{reason_block}
+If you have any questions, please contact us.
+
+Best regards,
+EGS Tutoring Team
+        """
+
+    send_mailgun_email(
+        to_emails=[parent.email],
+        subject=subject,
+        text_content=text_content,
+        email_type='group_tutoring_enrollment_decision',
+        recipient_name=f"{parent.firstName} {parent.lastName}",
+    )
 
 
 class GroupTutoringClassViewSet(viewsets.ModelViewSet):
@@ -239,25 +289,32 @@ class GroupEnrollmentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Determine if diagnostic is required
-        # Beginner classes don't require diagnostic
-        # Students who haven't enrolled in any class before require diagnostic
-        requires_diagnostic = (
-            tutoring_class.difficulty != 'beginner' and
-            not GroupEnrollment.objects.filter(student=student, status='enrolled').exists()
-        )
+        # Whether a diagnostic test is required is controlled per-class by the
+        # admin at class-creation time (the "requires diagnostic" checkbox).
+        requires_diagnostic = tutoring_class.requires_diagnostic
+
+        # Beginner classes never need admin approval - everything else does.
+        requires_approval = tutoring_class.difficulty != 'beginner'
+
+        if requires_diagnostic:
+            initial_status = 'pending_diagnostic'
+        elif requires_approval:
+            initial_status = 'pending_approval'
+        else:
+            initial_status = 'enrolled'
 
         # Create the enrollment
         enrollment = GroupEnrollment.objects.create(
             tutoring_class=tutoring_class,
             student=student,
             parent=user,
-            status='pending_diagnostic' if requires_diagnostic else 'approved',
-            requires_diagnostic=requires_diagnostic
+            status=initial_status,
+            requires_diagnostic=requires_diagnostic,
+            enrolled_at=timezone.now() if initial_status == 'enrolled' else None
         )
 
-        # If diagnostic is required, create the diagnostic test submission with token
         if requires_diagnostic:
+            # Create the diagnostic test submission with a one-time access token
             submission = DiagnosticTestSubmission.objects.create(
                 enrollment=enrollment,
                 token_expires_at=timezone.now() + timedelta(days=7)  # Token valid for 7 days
@@ -265,12 +322,11 @@ class GroupEnrollmentViewSet(viewsets.ModelViewSet):
             submission.generate_token()
             submission.save()
 
-            # Send email with diagnostic test link
             diagnostic_url = f"{settings.FRONTEND_URL}/diagnostic-test/{submission.access_token}"
-            try:
-                send_mail(
-                    subject='Complete Your Diagnostic Test - EGS Tutoring',
-                    message=f"""
+            send_mailgun_email(
+                to_emails=[user.email],
+                subject='Complete Your Diagnostic Test - EGS Tutoring',
+                text_content=f"""
 Hello {user.firstName},
 
 Thank you for enrolling {student.firstName} in {tutoring_class.title}!
@@ -282,13 +338,45 @@ Please click the link below to access the test (valid for 7 days):
 
 Best regards,
 EGS Tutoring Team
-                    """,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
-            except Exception as e:
-                print(f"Failed to send diagnostic email: {e}")
+                """,
+                email_type='group_tutoring_diagnostic',
+                recipient_name=f"{user.firstName} {user.lastName}",
+            )
+        elif initial_status == 'pending_approval':
+            send_mailgun_email(
+                to_emails=[user.email],
+                subject=f"Enrollment Request Received - {tutoring_class.title}",
+                text_content=f"""
+Hello {user.firstName},
+
+Thank you for signing up {student.firstName} for {tutoring_class.title}!
+
+This class requires admin approval before enrollment is confirmed. We'll email you as soon as a decision has been made.
+
+Best regards,
+EGS Tutoring Team
+                """,
+                email_type='group_tutoring_enrollment_decision',
+                recipient_name=f"{user.firstName} {user.lastName}",
+            )
+        else:
+            # Beginner class, no diagnostic required - enrolled immediately
+            send_mailgun_email(
+                to_emails=[user.email],
+                subject=f"You're Enrolled! - {tutoring_class.title}",
+                text_content=f"""
+Hello {user.firstName},
+
+{student.firstName} is now enrolled in {tutoring_class.title}! No further action is needed.
+
+You can view the class schedule and materials from your parent dashboard.
+
+Best regards,
+EGS Tutoring Team
+                """,
+                email_type='group_tutoring_enrollment_decision',
+                recipient_name=f"{user.firstName} {user.lastName}",
+            )
 
         serializer = self.get_serializer(enrollment)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -304,6 +392,8 @@ EGS Tutoring Team
         enrollment.enrolled_at = timezone.now()
         enrollment.save()
 
+        _notify_enrollment_decision(enrollment, approved=True)
+
         serializer = self.get_serializer(enrollment)
         return Response(serializer.data)
 
@@ -318,6 +408,8 @@ EGS Tutoring Team
         enrollment.status = 'rejected'
         enrollment.admin_notes = admin_notes
         enrollment.save()
+
+        _notify_enrollment_decision(enrollment, approved=False)
 
         serializer = self.get_serializer(enrollment)
         return Response(serializer.data)
@@ -391,11 +483,20 @@ def diagnostic_test(request, token):
 
         submission.save()
 
-        # Update enrollment status
+        # Update enrollment status. Beginner classes never need admin approval,
+        # so once the diagnostic is in, the student is enrolled immediately.
+        # Any other difficulty still needs an admin to review and decide.
         enrollment = submission.enrollment
-        enrollment.status = 'diagnostic_submitted'
         enrollment.diagnostic_score = submission.score
-        enrollment.save()
+
+        if enrollment.tutoring_class.difficulty == 'beginner':
+            enrollment.status = 'enrolled'
+            enrollment.enrolled_at = timezone.now()
+            enrollment.save()
+            _notify_enrollment_decision(enrollment, approved=True)
+        else:
+            enrollment.status = 'diagnostic_submitted'
+            enrollment.save()
 
         return Response({
             'message': 'Test submitted successfully',
@@ -782,19 +883,20 @@ def admin_delete_class_file(request, file_id):
 @permission_classes([IsAuthenticated])
 def admin_get_class_sessions(request, class_id):
     """
-    Admin endpoint to get all sessions for a class (including dynamically generated ones)
+    Get all sessions for a class (including dynamically generated ones).
+    Available to admins and to tutors assigned to teach the class.
     """
     from datetime import datetime, timedelta as td
 
     user = request.user
 
-    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
-        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
-
     try:
         tutoring_class = GroupTutoringClass.objects.get(id=class_id)
     except GroupTutoringClass.DoesNotExist:
         return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not (_is_admin(user) or _is_assigned_tutor(user, tutoring_class)):
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
 
     # Get or generate sessions
     sessions = []
@@ -850,21 +952,22 @@ def admin_get_class_sessions(request, class_id):
 @permission_classes([IsAuthenticated])
 def admin_session_attendance(request, class_id, session_date):
     """
-    Admin endpoint to view and mark attendance for a session
+    View and mark attendance for a session.
     GET: Get all enrolled students with their attendance status
     POST: Mark attendance for multiple students
+    Available to admins and to tutors assigned to teach the class.
     """
     from datetime import datetime
 
     user = request.user
 
-    if user.roles not in ['admin'] and not user.is_staff and not user.is_superuser:
-        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
-
     try:
         tutoring_class = GroupTutoringClass.objects.get(id=class_id)
     except GroupTutoringClass.DoesNotExist:
         return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not (_is_admin(user) or _is_assigned_tutor(user, tutoring_class)):
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
 
     # Parse session date
     try:
@@ -956,6 +1059,61 @@ def admin_session_attendance(request, class_id, session_date):
         return Response({'message': 'Attendance marked successfully'})
 
 
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def session_notes(request, class_id, session_date):
+    """
+    View or update the meeting notes for a specific class session.
+    GET: Return the session (including its current notes)
+    PATCH: Update the notes for the session
+    Available to admins and to tutors assigned to teach the class.
+    """
+    from datetime import datetime
+
+    user = request.user
+
+    try:
+        tutoring_class = GroupTutoringClass.objects.get(id=class_id)
+    except GroupTutoringClass.DoesNotExist:
+        return Response({'error': 'Class not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if not (_is_admin(user) or _is_assigned_tutor(user, tutoring_class)):
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        session_date_obj = datetime.strptime(session_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    resolved_time = tutoring_class.get_time_for_date(session_date_obj)
+    if not resolved_time:
+        return Response(
+            {'error': 'This class has no scheduled time configured for this session.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    session, created = ClassSession.objects.get_or_create(
+        tutoring_class=tutoring_class,
+        session_date=session_date_obj,
+        defaults={
+            'title': tutoring_class.title,
+            'start_time': resolved_time,
+            'end_time': (
+                datetime.combine(session_date_obj, resolved_time) +
+                timedelta(minutes=tutoring_class.duration_minutes)
+            ).time()
+        }
+    )
+
+    if request.method == 'PATCH':
+        session.notes = request.data.get('notes', session.notes)
+        session.notes_updated_at = timezone.now()
+        session.notes_updated_by = user
+        session.save()
+
+    return Response(ClassSessionSerializer(session).data)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_email_class_parents(request, class_id):
@@ -1014,17 +1172,16 @@ Best regards,
 EGS Tutoring Team
         """
 
-        try:
-            send_mail(
-                subject=f"{subject} - {tutoring_class.title}",
-                message=personalized_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-            )
+        sent = send_mailgun_email(
+            to_emails=[email],
+            subject=f"{subject} - {tutoring_class.title}",
+            text_content=personalized_message,
+            email_type='group_tutoring_class_announcement',
+            recipient_name=f"{parent.firstName} {parent.lastName}",
+        )
+        if sent:
             sent_count += 1
-        except Exception as e:
-            print(f"Failed to send email to {email}: {e}")
+        else:
             failed_count += 1
 
     return Response({
@@ -1157,17 +1314,15 @@ Best regards,
 EGS Tutoring Team
                 """
 
-                try:
-                    send_mail(
-                        subject=f"Schedule Change - {tutoring_class.title}",
-                        message=message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[email],
-                        fail_silently=True,
-                    )
+                sent = send_mailgun_email(
+                    to_emails=[email],
+                    subject=f"Schedule Change - {tutoring_class.title}",
+                    text_content=message,
+                    email_type='group_tutoring_schedule_change',
+                    recipient_name=f"{parent.firstName} {parent.lastName}",
+                )
+                if sent:
                     sent_count += 1
-                except Exception as e:
-                    print(f"Failed to send schedule notification to {email}: {e}")
 
             return Response({
                 'message': 'Schedule updated and parents notified',

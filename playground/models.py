@@ -932,6 +932,9 @@ class GroupTutoringClass(models.Model):
     # Quizzes and assessment
     num_quizzes = models.PositiveIntegerField(default=0, help_text="Number of quizzes planned for this class")
 
+    # Enrollment requirements
+    requires_diagnostic = models.BooleanField(default=True, help_text="Whether students must complete a diagnostic test before enrolling in this class")
+
     # Metadata
     is_active = models.BooleanField(default=True, help_text="Whether this class is currently accepting enrollments")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -985,6 +988,7 @@ class GroupEnrollment(models.Model):
     STATUS_CHOICES = [
         ('pending_diagnostic', 'Pending Diagnostic'),
         ('diagnostic_submitted', 'Diagnostic Submitted'),
+        ('pending_approval', 'Pending Admin Approval'),
         ('approved', 'Approved'),
         ('enrolled', 'Enrolled'),
         ('rejected', 'Rejected'),
@@ -1107,6 +1111,17 @@ class ClassSession(models.Model):
 
     title = models.CharField(max_length=200, blank=True, help_text="Session title/topic")
     description = models.TextField(blank=True, help_text="What will be covered in this session")
+
+    # Meeting notes added by the assigned tutor after/during the session
+    notes = models.TextField(blank=True, help_text="Tutor's notes about this session (e.g. what was covered, how students did)")
+    notes_updated_at = models.DateTimeField(null=True, blank=True)
+    notes_updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='class_session_notes_authored'
+    )
 
     # Session status
     is_cancelled = models.BooleanField(default=False)
@@ -1294,6 +1309,10 @@ class EmailLog(models.Model):
         ('bulk_custom',          'Bulk Custom Email'),
         ('hours_reminder',       'Hours Reminder'),
         ('school_credit_admin',  'School Credit Admin Alert'),
+        ('group_tutoring_diagnostic',          'Group Tutoring Diagnostic Test'),
+        ('group_tutoring_enrollment_decision',  'Group Tutoring Enrollment Decision'),
+        ('group_tutoring_schedule_change',      'Group Tutoring Schedule Change'),
+        ('group_tutoring_class_announcement',   'Group Tutoring Class Announcement'),
         ('test',                 'Test Email'),
         ('other',                'Other'),
     ]

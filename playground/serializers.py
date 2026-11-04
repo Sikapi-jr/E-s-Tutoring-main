@@ -545,7 +545,7 @@ class GroupTutoringClassSerializer(serializers.ModelSerializer):
             'start_date', 'end_date',
             'schedule_days', 'schedule_time', 'schedule_times', 'duration_minutes',
             'location', 'location_link',
-            'max_students', 'header_image', 'num_quizzes',
+            'max_students', 'header_image', 'num_quizzes', 'requires_diagnostic',
             'is_active', 'enrolled_count', 'is_full', 'created_at', 'updated_at'
         ]
         extra_kwargs = {
@@ -710,18 +710,27 @@ class DiagnosticTestSubmissionSerializer(serializers.ModelSerializer):
 class ClassSessionSerializer(serializers.ModelSerializer):
     """Serializer for ClassSession"""
     class_title = serializers.CharField(source='tutoring_class.title', read_only=True)
+    notes_updated_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassSession
         fields = [
             'id', 'tutoring_class', 'session_date', 'start_time', 'end_time',
             'title', 'description', 'is_cancelled', 'cancellation_reason',
+            'notes', 'notes_updated_at', 'notes_updated_by', 'notes_updated_by_name',
             'created_at', 'updated_at', 'class_title'
         ]
         extra_kwargs = {
             'created_at': {'read_only': True},
             'updated_at': {'read_only': True},
+            'notes_updated_at': {'read_only': True},
+            'notes_updated_by': {'read_only': True},
         }
+
+    def get_notes_updated_by_name(self, obj):
+        if obj.notes_updated_by:
+            return f"{obj.notes_updated_by.firstName} {obj.notes_updated_by.lastName}"
+        return None
 
 
 class ClassAttendanceSerializer(serializers.ModelSerializer):

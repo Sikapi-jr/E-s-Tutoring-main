@@ -16,8 +16,7 @@ html, body {
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 1000;
 }
 
@@ -51,7 +50,10 @@ html, body {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 0.5rem;
+  column-gap: 1.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -67,6 +69,97 @@ html, body {
 
 .nav-link:hover {
   color: #FFB31B;
+}
+
+/* home-page "jump to section" dropdown */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  background: none;
+  border: none;
+  font: inherit;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+}
+
+.nav-dropdown-trigger:hover {
+  color: #FFB31B;
+}
+
+.nav-dropdown-caret {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-dropdown.is-open .nav-dropdown-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-panel {
+  display: none;
+}
+
+/* home-page section anchors inside the dropdown */
+.nav-section-link {
+  font-size: 0.9rem;
+}
+
+@media (min-width: 769px) {
+  .nav-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 0.9rem);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+    padding: 1rem 1.5rem;
+    grid-template-columns: repeat(2, auto);
+    column-gap: 2.25rem;
+    min-width: 380px;
+    z-index: 2000;
+  }
+
+  .nav-dropdown.is-open .nav-dropdown-panel {
+    display: grid;
+  }
+
+  .nav-dropdown-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-dropdown-panel .nav-section-link {
+    color: #292929;
+    padding: 0.5rem 0;
+    white-space: nowrap;
+  }
+
+  .nav-dropdown-panel .nav-section-link:hover {
+    color: #192A88;
+  }
+}
+
+/* Mobile: flatten the dropdown into the existing hamburger list, no nested toggle */
+@media (max-width: 768px) {
+  .nav-dropdown {
+    display: contents;
+  }
+
+  .nav-dropdown-trigger {
+    display: none;
+  }
+
+  .nav-dropdown-panel,
+  .nav-dropdown-col {
+    display: contents;
+  }
 }
 
 /* register button */

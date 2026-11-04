@@ -1,43 +1,14 @@
 // src/pages/Contact.jsx
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import '../styles/Contact.css';
 
 export default function Contact() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   return (
     <div className="contact-wrapper">
       <div className="contact-container">
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            position: 'absolute',
-            top: '2rem',
-            left: '2rem',
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#192A88',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#0f1d5e'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = '#192A88'}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 19V14H14V19C14 19.55 14.45 20 15 20H18C18.55 20 19 19.55 19 19V12H20.7C21.16 12 21.38 11.43 21.03 11.13L12.67 3.6C12.29 3.26 11.71 3.26 11.33 3.6L2.97 11.13C2.63 11.43 2.84 12 3.3 12H5V19C5 19.55 5.45 20 6 20H9C9.55 20 10 19.55 10 19Z" fill="currentColor"/>
-          </svg>
-          {t('contact.home')}
-        </button>
         <h1 className="contact-title">{t('contact.title')}</h1>
         <p className="contact-subtitle">{t('contact.subtitle')}</p>
 

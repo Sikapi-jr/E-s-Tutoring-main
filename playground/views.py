@@ -2,7 +2,7 @@ from zoneinfo import ZoneInfo
 
 from django.dispatch import receiver
 from .models import UserDocument
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models.signals import post_save
 from django.shortcuts import render
 from django.db.models import Exists, OuterRef, Q
@@ -19,8 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, EmailLog, School, StudentSchoolCredit
-from .hours_utils import create_hours_with_credit_split
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, AiChatSession, MonthlyHours, Announcements, StripePayout, Referral, MonthlyReport, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -30,13 +29,11 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import json
 import logging
 from django.core.exceptions import ValidationError
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
-from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer, UserDocumentSerializer, HourDisputeSerializer
-from .serializers import SchoolSerializer, SchoolAdminSerializer, StudentSchoolCreditSerializer
+from .serializers import RequestSerializer, AiChatSessionSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
+from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer , MonthlyReportSerializer, UserDocumentSerializer, HourDisputeSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -144,6 +141,11 @@ def current_user_view(request):
             "rateInPerson": float(request.user.rateInPerson),
             "availableReferralCredit": float(request.user.available_referral_credit),
             "stripe_account_id": request.user.stripe_account_id,
+            "profile_picture": (
+                request.build_absolute_uri(request.user.profile_picture.url)
+                if request.user.profile_picture and hasattr(request.user.profile_picture, 'url')
+                else None
+            ),
             "tutor_referral_code": request.user.tutor_referral_code,
             "has_seen_tour": request.user.has_seen_tour
         }
@@ -176,18 +178,33 @@ class CreateUserView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         from django.db import transaction
-
+        from django.core.exceptions import ValidationError
+        
         role = serializer.validated_data.get('roles')
+        email = serializer.validated_data.get('email')
+        parent = serializer.validated_data.get('parent')
         ref_code = self.request.query_params.get("ref")
-
+        
         print("validated data", serializer.validated_data)
-
+        
+        # Pre-validate all data before creating anything
+        parentUser = None
         ref = None
+        
+        if role == 'student':
+            try:
+                parentUser = User.objects.get(email=email, username=parent)
+            except User.DoesNotExist:
+                raise ValidationError(f"Parent user with email {email} and username {parent} not found")
+        
         if ref_code:
             ref = Referral.objects.filter(code=ref_code, referred__isnull=True).first()
-
+        
         # Use atomic transaction to ensure all database operations succeed or none do
         with transaction.atomic():
+            if parentUser:
+                serializer.validated_data['parent'] = parentUser
+                
             user = serializer.save(is_active=False)
             
             # Set default rates based on user role
@@ -203,7 +220,7 @@ class CreateUserView(generics.CreateAPIView):
                 ref.referrer.save(update_fields=["pending_rewards"])
 
         # Post-creation actions (outside transaction to avoid rollback on email failures)
-        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_parent_registration_notification_async, send_tutor_registration_notification_async
+        from playground.tasks import send_verification_email_async, create_stripe_account_async, send_parent_registration_notification_async
         from kombu.exceptions import OperationalError
         from django.core.mail import send_mail
         
@@ -218,8 +235,26 @@ class CreateUserView(generics.CreateAPIView):
                 send_verification_email_async.delay(user.id, verify_url)
             except OperationalError:
                 # Fallback to synchronous email sending if Celery broker is unavailable
-                from playground.email_utils import send_verification_email_sync
-                send_verification_email_sync(user, verify_url, fail_silently=True)
+                subject = 'Verify Your EGS Tutoring Account'
+                message = f"""
+        Hello {user.firstName},
+        
+        Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+        
+        {verify_url}
+        
+        If you didn't create this account, please ignore this email.
+        
+        Best regards,
+        EGS Tutoring Team
+        """
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=True,  # Don't fail registration if email fails
+                )
         except Exception as e:
             # Log error but don't fail registration
             print(f"Email sending failed: {e}")
@@ -231,39 +266,27 @@ class CreateUserView(generics.CreateAPIView):
             except (OperationalError, Exception) as e:
                 # Log error but don't fail registration
                 print(f"Stripe account creation failed: {e}")
-
+        
         # Note: Stripe customers for parents are created on-demand during invoice generation
-
-        # Ping the admin inbox (egstutor@gmail.com) whenever a new account is
-        # created, so new customers/tutors don't go unnoticed (don't fail
-        # registration if this fails)
-        if role in ('parent', 'tutor'):
-            account_info = {
-                'firstName': user.firstName,
-                'lastName': user.lastName,
-                'username': user.username,
-                'email': user.email,
-                'phone': getattr(user, 'phone_number', 'N/A'),
-                'address': getattr(user, 'address', 'N/A'),
-                'city': getattr(user, 'city', 'N/A'),
-                'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A'
-            }
+        
+        # Send admin notification when parent registers (don't fail if this fails)
+        if role == 'parent':
             try:
-                if role == 'parent':
-                    send_parent_registration_notification_async.delay(account_info)
-                else:
-                    send_tutor_registration_notification_async.delay(account_info)
-            except OperationalError:
-                # Fallback to synchronous send if the Celery broker is
-                # unavailable, so the admin ping is never silently dropped
-                try:
-                    from playground.tasks import send_new_account_notification_sync
-                    send_new_account_notification_sync(role, account_info)
-                except Exception as fallback_error:
-                    print(f"{role.capitalize()} registration notification fallback failed: {fallback_error}")
-            except Exception as e:
+                # Prepare complete parent information for admin notification
+                parent_info = {
+                    'firstName': user.firstName,
+                    'lastName': user.lastName,
+                    'username': user.username,
+                    'email': user.email,
+                    'phone': getattr(user, 'phone', 'N/A'),
+                    'address': getattr(user, 'address', 'N/A'),
+                    'city': getattr(user, 'city', 'N/A'),
+                    'date_joined': user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A'
+                }
+                send_parent_registration_notification_async.delay(parent_info)
+            except (OperationalError, Exception) as e:
                 # Log error but don't fail registration
-                print(f"{role.capitalize()} registration notification failed: {e}")
+                print(f"Parent registration notification failed: {e}")
 
     
 
@@ -296,13 +319,7 @@ def change_settings_parent(request, pk):
         return Response({"error": "Only parents can change these settings."}, status=403)
 
     if not requester.is_superuser and requester.id != pk:
-        # Parents may also edit the profiles of their own children
-        is_own_child = (
-            requester.roles == "parent"
-            and User.objects.filter(pk=pk, parent_id=requester.id, roles="student").exists()
-        )
-        if not is_own_child:
-            return Response({"error": "Cannot edit another user's profile."}, status=403)
+        return Response({"error": "Cannot edit another user's profile."}, status=403)
 
     profile = get_object_or_404(User, pk=pk)
 
@@ -314,12 +331,26 @@ def change_settings_parent(request, pk):
                 setattr(profile, attr, new_val)
                 update_fields.append(attr)
 
+    if "profile_picture" in request.FILES:
+        new_picture = request.FILES["profile_picture"]
+        if profile.profile_picture != new_picture:
+            profile.profile_picture = new_picture
+            update_fields.append("profile_picture")
+
     if not update_fields:
         return Response({"message": "Nothing to update."}, status=200)
 
     profile.save(update_fields=update_fields)
-
-    return Response({"message": "Settings updated successfully."}, status=200)
+    
+    # Return updated user data including profile picture URL
+    response_data = {"message": "Settings updated successfully."}
+    if "profile_picture" in update_fields:
+        if profile.profile_picture:
+            response_data["profile_picture"] = request.build_absolute_uri(profile.profile_picture.url)
+        else:
+            response_data["profile_picture"] = None
+    
+    return Response(response_data, status=200)
 
 
 @api_view(['POST'])
@@ -1099,16 +1130,16 @@ class ResendVerificationView(APIView):
             # Generate new verification token and send email
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
+            domain = get_current_site(request).domain
             verify_url = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
-
-            from playground.tasks import send_verification_email_async
-            from kombu.exceptions import OperationalError
-            try:
-                send_verification_email_async.delay(user.id, verify_url)
-            except OperationalError:
-                from playground.email_utils import send_verification_email_sync
-                send_verification_email_sync(user, verify_url, fail_silently=True)
-
+            
+            send_mail(
+                "Verify your EGS Tutoring Account",
+                f"Click the link to verify your account: {verify_url}",
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email]
+            )
+            
             return Response({"message": "Verification email resent successfully"}, status=200)
             
         except User.DoesNotExist:
@@ -1159,8 +1190,9 @@ class AdminResendVerificationView(APIView):
                     
             except OperationalError:
                 # Fallback to direct email sending if Celery is unavailable
+                from django.core.mail import send_mail
+                
                 if user.roles == 'tutor':
-                    from django.core.mail import send_mail
                     subject = 'Welcome to EGS Tutoring - Verify Your Account'
                     message = f"""Hello {user.firstName},
 
@@ -1170,19 +1202,55 @@ Welcome to EGS Tutoring! Please click the link below to verify your email addres
 
 Best regards,
 EGS Tutoring Team"""
-                    send_mail(
-                        subject,
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
-                    )
+                elif user.roles == 'parent':
+                    subject = 'Verify Your EGS Tutoring Account'
+                    message = f"""Hello {user.firstName},
+
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+
+{verify_url}
+
+📋 GETTING STARTED - PARENT ONBOARDING GUIDE:
+
+Welcome to EGS Tutoring! Here's how to get started as a parent:
+
+1. REGISTER YOUR CHILDREN
+   Visit the registration page to create accounts for your children:
+   {settings.FRONTEND_URL}/register
+
+2. SUBMIT A TUTORING REQUEST
+   Once verified, submit a request specifying your child's tutoring needs:
+   {settings.FRONTEND_URL}/request
+
+3. REVIEW TUTORING REPLIES
+   Check and accept tutor responses to your requests:
+   {settings.FRONTEND_URL}/request-reply
+
+Additional Resources:
+• Access your dashboard: {settings.FRONTEND_URL}/home
+• View invoices and billing: {settings.FRONTEND_URL}/viewinvoices
+• Manage your profile: {settings.FRONTEND_URL}/profile
+
+Best regards,
+EGS Tutoring Team"""
                 else:
-                    # Parents and students get the shared HTML+text builder so
-                    # every link (verification link, and the parent onboarding
-                    # links) renders as a real clickable hyperlink.
-                    from playground.email_utils import send_verification_email_sync
-                    send_verification_email_sync(user, verify_url, fail_silently=False)
+                    subject = 'Verify Your EGS Tutoring Account'
+                    message = f"""Hello {user.firstName},
+
+Thank you for registering with EGS Tutoring! Please click the link below to verify your email address:
+
+{verify_url}
+
+Best regards,
+EGS Tutoring Team"""
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
             
             return Response({
                 "message": f"Verification email resent successfully to {user.email}",
@@ -1228,55 +1296,43 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
             for student in all_students:
                 # Find if this student has an accepted tutor
                 tutor_relation = accepted_tutors.filter(student=student.id).first()
-                student_data = {
-                    'id': student.id,
-                    'student_firstName': student.firstName,
-                    'student_lastName': student.lastName,
-                    'lives_with_parent': student.lives_with_parent,
-                    'birth_year': student.birth_year,
-                    'address': student.address,
-                    'city': student.city,
-                    'has_tutor': bool(tutor_relation),
-                    'tutor_firstName': tutor_relation.tutor.firstName if tutor_relation else None,
-                    'tutor_lastName': tutor_relation.tutor.lastName if tutor_relation else None,
-                    'credit_balance': student.credit_balance,
-                    'school_name': student.school.name if student.school_id else (student.school_other_name or None),
-                }
-                students_with_tutors.append(student_data)
-
+                if tutor_relation:
+                    students_with_tutors.append({
+                        'id': student.id,
+                        'student_firstName': student.firstName,
+                        'student_lastName': student.lastName,
+                        'tutor_firstName': tutor_relation.tutor.firstName,
+                        'tutor_lastName': tutor_relation.tutor.lastName,
+                        'has_tutor': True
+                    })
+                else:
+                    students_with_tutors.append({
+                        'id': student.id,
+                        'student_firstName': student.firstName,
+                        'student_lastName': student.lastName,
+                        'tutor_firstName': None,
+                        'tutor_lastName': None,
+                        'has_tutor': False
+                    })
+            
             hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
             responseHours = HoursSerializer(hours, many=True, context={'request': request}).data
+            
+            # Get invoices from Stripe if customer exists
+            resultStripe = stripe.Customer.list(email=user_email)
+            if not resultStripe.data:
+                # If no Stripe customer, return empty invoices but include students and hours
+                return Response({
+                    "invoices": [],
+                    "students": students_with_tutors,
+                    "hours": responseHours
+                })
 
-            # Get invoices from Stripe if a customer exists. Stripe failures
-            # shouldn't prevent the parent's student/hours list from loading.
-            # A parent's email can match more than one Stripe Customer record
-            # (e.g. re-onboarding created a new one) - aggregate invoices
-            # across all of them so older invoices aren't dropped.
-            # Build plain dicts rather than returning SDK objects directly -
-            # their JSON-serializability isn't guaranteed across stripe versions.
-            invoicesData = []
-            try:
-                resultStripe = stripe.Customer.list(email=user_email, limit=100)
-                for customer in resultStripe.data:
-                    customer_invoices = stripe.Invoice.list(customer=customer.id, limit=100)
-                    for invoice in customer_invoices.auto_paging_iter():
-                        invoicesData.append({
-                            'id': invoice.id,
-                            'status': invoice.status,
-                            'amount_due': invoice.amount_due,
-                            'amount_paid': invoice.amount_paid,
-                            'amount_remaining': invoice.amount_remaining,
-                            'created': invoice.created,
-                            'due_date': invoice.due_date,
-                            'invoice_pdf': invoice.invoice_pdf,
-                            'hosted_invoice_url': invoice.hosted_invoice_url,
-                        })
-                invoicesData.sort(key=lambda inv: inv['created'], reverse=True)
-            except Exception as e:
-                logger.error(f"Stripe invoice lookup failed for user {user_id}: {e}")
+            customer = resultStripe.data[0]
+            invoices = stripe.Invoice.list(customer=customer.id, limit=55)
 
             return Response({
-                "invoices": invoicesData,
+                "invoices": invoices.data,
                 "students": students_with_tutors,
                 "hours": responseHours
             })
@@ -1319,65 +1375,269 @@ class AnnouncementCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class MonthlyReportCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Create or update a monthly report for a tutor-student pair"""
+        from datetime import datetime, timedelta
+
+        data = request.data.copy()
+        data['tutor'] = request.user.id
+
+        # Validate minimum hours (4+ hours required)
+        student_id = data.get('student')
+        month = int(data.get('month'))
+        year = int(data.get('year'))
+
+        # Calculate date range for the month
+        start_date = datetime(year, month, 1).date()
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1).date()
+        else:
+            end_date = datetime(year, month + 1, 1).date()
+
+        # Get total hours for validation
+        hours = Hours.objects.filter(
+            tutor_id=request.user.id,
+            student_id=student_id,
+            date__gte=start_date,
+            date__lt=end_date,
+            status='Accepted'
+        )
+        total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
+
+        if total_hours < 4:
+            return Response(
+                {"error": f"Insufficient hours. Need 4+ hours, but only {total_hours} hours logged."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if report already exists
+        try:
+            existing_report = MonthlyReport.objects.get(
+                tutor_id=request.user.id,
+                student_id=student_id,
+                month=month,
+                year=year
+            )
+            # Update existing report
+            data['status'] = 'submitted'
+            data['submitted_at'] = timezone.now()
+            serializer = MonthlyReportSerializer(existing_report, data=data, partial=False)
+        except MonthlyReport.DoesNotExist:
+            # Create new report
+            data['status'] = 'submitted'
+            data['submitted_at'] = timezone.now()
+            # Calculate due date (1st of next month)
+            if month == 12:
+                due_date = datetime(year + 1, 1, 1).date()
+            else:
+                due_date = datetime(year, month + 1, 1).date()
+            data['due_date'] = due_date
+            serializer = MonthlyReportSerializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MonthlyReportListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get monthly reports based on user role"""
+        user = request.user
+        
+        if user.roles == 'tutor':
+            # Tutors see reports they've created
+            reports = MonthlyReport.objects.filter(tutor=user).order_by('-year', '-month', '-created_at')
+        elif user.roles == 'parent':
+            # Parents see reports for their children
+            children = User.objects.filter(parent=user)
+            reports = MonthlyReport.objects.filter(student__in=children).order_by('-year', '-month', '-created_at')
+        else:
+            return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = MonthlyReportSerializer(reports, many=True)
+        return Response(serializer.data)
+
+
+class MonthlyReportDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, report_id):
+        """Get a specific monthly report"""
+        try:
+            report = MonthlyReport.objects.get(id=report_id)
+            user = request.user
+            
+            # Check permissions
+            if user.roles == 'tutor' and report.tutor != user:
+                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
+            elif user.roles == 'parent' and report.student.parent != user:
+                return Response({"error": "Access denied"}, status=status.HTTP_403_FORBIDDEN)
+            
+            serializer = MonthlyReportSerializer(report)
+            return Response(serializer.data)
+            
+        except MonthlyReport.DoesNotExist:
+            return Response({"error": "Report not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class TutorStudentHoursView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get tutoring hours for validation before report submission"""
+        tutor_id = request.query_params.get('tutor_id')
+        student_id = request.query_params.get('student_id')
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        
+        if not all([tutor_id, student_id, month, year]):
+            return Response({"error": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            month = int(month)
+            year = int(year)
+            
+            # Calculate date range for the month
+            from datetime import datetime
+            start_date = datetime(year, month, 1).date()
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1).date()
+            else:
+                end_date = datetime(year, month + 1, 1).date()
+            
+            # Get total hours for this tutor-student pair in the given month
+            hours = Hours.objects.filter(
+                tutor_id=tutor_id,
+                student_id=student_id,
+                date__gte=start_date,
+                date__lt=end_date,
+                status='Accepted'
+            )
+            
+            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
+            
+            return Response({
+                'total_hours': float(total_hours),
+                'eligible_for_report': total_hours >= 4,
+                'sessions_count': hours.count(),
+                'month': month,
+                'year': year
+            })
+            
+        except ValueError:
+            return Response({"error": "Invalid month or year"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TutorStudentsReportStatusView(APIView):
+    """Get all students for a tutor with their monthly report statuses"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from datetime import datetime
+        from dateutil.relativedelta import relativedelta
+
+        tutor = request.user
+        if tutor.roles != 'tutor':
+            return Response({"error": "Only tutors can access this endpoint"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get the previous month (reports are due for previous month on the 1st)
+        today = datetime.now().date()
+        previous_month_date = today - relativedelta(months=1)
+        target_month = previous_month_date.month
+        target_year = previous_month_date.year
+
+        # Get all students for this tutor
+        from .models import AcceptedTutor
+        accepted_tutors = AcceptedTutor.objects.filter(tutor=tutor, status='Accepted').select_related('student')
+
+        students_data = []
+        for at in accepted_tutors:
+            student = at.student
+
+            # Calculate date range for the previous month
+            start_date = datetime(target_year, target_month, 1).date()
+            if target_month == 12:
+                end_date = datetime(target_year + 1, 1, 1).date()
+            else:
+                end_date = datetime(target_year, target_month + 1, 1).date()
+
+            # Get total hours for this student in the previous month
+            hours = Hours.objects.filter(
+                tutor=tutor,
+                student=student,
+                date__gte=start_date,
+                date__lt=end_date,
+                status='Accepted'
+            )
+            total_hours = hours.aggregate(total=Sum('totalTime'))['total'] or 0
+
+            # Check if report exists
+            try:
+                report = MonthlyReport.objects.get(
+                    tutor=tutor,
+                    student=student,
+                    month=target_month,
+                    year=target_year
+                )
+                report_status = report.status
+                report_id = report.id
+            except MonthlyReport.DoesNotExist:
+                # Report is needed if 4+ hours
+                if total_hours >= 4:
+                    report_status = 'pending'
+                else:
+                    report_status = 'not_required'
+                report_id = None
+
+            students_data.append({
+                'student_id': student.id,
+                'student_name': f"{student.firstName} {student.lastName}",
+                'student_username': student.username,
+                'hours_logged': float(total_hours),
+                'report_month': target_month,
+                'report_year': target_year,
+                'report_status': report_status,
+                'report_id': report_id,
+                'requires_report': total_hours >= 4
+            })
+
+        return Response({
+            'students': students_data,
+            'target_month': target_month,
+            'target_year': target_year,
+            'month_name': datetime(target_year, target_month, 1).strftime('%B %Y')
+        })
+
+
 class AnnouncementListView(APIView):
     permission_classes=[AllowAny]
     def get(self, request):
         user_id = request.query_params.get('id', None)
         user_role = None
-        is_superuser = False
         try:
-            lookup_user = User.objects.get(id=user_id)
-            user_role = lookup_user.roles
-            is_superuser = lookup_user.is_superuser
+            user_role = User.objects.get(id=user_id).roles
         except User.DoesNotExist:
             user_role = None
 
-        # Get all non-expired announcements first
-        all_announcements = Announcements.objects.filter(
-            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
-        ).order_by('-created_at')[:20]  # Get more to filter
+        # Get all announcements first
+        all_announcements = Announcements.objects.all().order_by('-created_at')[:20]  # Get more to filter
 
         # Filter announcements based on user role using the model method
         visible_announcements = []
         for announcement in all_announcements:
-            if announcement.is_visible_to_role(user_role or 'guest', is_superuser=is_superuser):
+            if announcement.is_visible_to_role(user_role or 'guest'):
                 visible_announcements.append(announcement)
                 if len(visible_announcements) >= 7:  # Limit to 7 results
                     break
 
         serializer = AnnouncementSerializer(visible_announcements, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class AnnouncementAdminListView(APIView):
-    """Admin view of ALL announcements (past, expired, or upcoming),
-    unfiltered by audience/expiry - used by the announcement management page."""
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            return Response({'error': 'Admin access required'}, status=403)
-
-        announcements = Announcements.objects.all().order_by('-created_at')
-        serializer = AnnouncementSerializer(announcements, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class AnnouncementDeleteView(APIView):
-    """Admin-only delete for a single announcement."""
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, announcement_id):
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            return Response({'error': 'Admin access required'}, status=403)
-
-        try:
-            announcement = Announcements.objects.get(id=announcement_id)
-        except Announcements.DoesNotExist:
-            return Response({'error': 'Announcement not found'}, status=404)
-
-        announcement.delete()
-        return Response({'message': 'Announcement deleted'}, status=status.HTTP_200_OK)
 
 
 class PopupCreateView(APIView):
@@ -1437,7 +1697,7 @@ class PopupListView(APIView):
         # Filter by user role
         visible_popups = []
         for popup in active_popups:
-            if popup.is_visible_to_role(user_role, is_superuser=user.is_superuser):
+            if popup.is_visible_to_role(user_role):
                 # Check if user has dismissed this popup
                 has_dismissed = PopupDismissal.objects.filter(
                     popup=popup,
@@ -1600,183 +1860,121 @@ class RequestListCreateView(generics.ListCreateAPIView):
 
         if tutor_code:
             # Handle tutor referral - create TutoringRequest AND TutorReferralRequest
-            tutor_code = str(tutor_code).strip().upper()
-
-            # Find the tutor with this referral code. Do NOT silently fall
-            # back to a public request here - a parent who typed a code
-            # expects their request to go ONLY to that tutor, so an invalid
-            # code must be reported back to them instead of quietly posting
-            # the request to the general dashboard.
             try:
-                tutor = User.objects.get(tutor_referral_code=tutor_code, roles='tutor')
-            except User.DoesNotExist:
-                return Response(
-                    {"error": f"We couldn't find a tutor with the code \"{tutor_code}\". Please double-check the code with your tutor, or leave the field blank to send your request to all available tutors."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                # Find the tutor with this referral code
+                tutor = User.objects.get(tutor_referral_code=tutor_code.upper(), roles='tutor')
 
-            try:
+                # Generate unique token for approval link
+                import secrets
+                token = secrets.token_urlsafe(32)
+
                 parent = User.objects.get(id=request.data.get('parent'))
-            except (User.DoesNotExist, ValueError, TypeError):
-                return Response(
-                    {"error": "We couldn't verify your parent account. Please log out and back in, then try again."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            try:
                 student = User.objects.get(id=request.data.get('student'))
-            except (User.DoesNotExist, ValueError, TypeError):
-                return Response(
-                    {"error": "Please select a student before submitting your request."},
-                    status=status.HTTP_400_BAD_REQUEST
+
+                # FIRST: Create the TutoringRequest
+                from playground.models import TutoringRequest, TutorReferralRequest
+
+                tutoring_request = TutoringRequest.objects.create(
+                    parent=parent,
+                    student=student,
+                    subject=request.data.get('subject'),
+                    grade=request.data.get('grade'),
+                    service=request.data.get('service'),
+                    city=request.data.get('city'),
+                    description=request.data.get('description'),
+                    is_accepted='Not Accepted'  # Will be changed to Accepted if tutor accepts
                 )
 
-            # Create the TutoringRequest and the linked TutorReferralRequest
-            # together, atomically. If anything fails partway through, the
-            # whole thing is rolled back - otherwise a partial failure could
-            # leave behind a TutoringRequest with no linked referral, which
-            # would immediately (and incorrectly) show up on the public
-            # dashboard for every tutor instead of only the one referenced
-            # by the code.
-            try:
-                with transaction.atomic():
-                    # Generate unique token for approval link
-                    import secrets
-                    token = secrets.token_urlsafe(32)
-
-                    from playground.models import TutoringRequest, TutorReferralRequest
-
-                    tutoring_request = TutoringRequest.objects.create(
-                        parent=parent,
-                        student=student,
-                        subject=request.data.get('subject'),
-                        grade=request.data.get('grade'),
-                        service=request.data.get('service'),
-                        city=request.data.get('city'),
-                        description=request.data.get('description'),
-                        is_accepted='Not Accepted'  # Will be changed to Accepted if tutor accepts
-                    )
-
-                    # Create TutorReferralRequest linked to the TutoringRequest
-                    referral_request = TutorReferralRequest.objects.create(
-                        parent=parent,
-                        student=student,
-                        tutor=tutor,
-                        subject=request.data.get('subject'),
-                        grade=request.data.get('grade'),
-                        service=request.data.get('service'),
-                        city=request.data.get('city'),
-                        description=request.data.get('description'),
-                        referral_code_used=tutor_code,
-                        status='pending',
-                        token=token,
-                        tutoring_request=tutoring_request  # Link to the TutoringRequest
-                    )
-            except Exception as e:
-                logger.error(f"Error creating referral request for tutor code {tutor_code}: {e}")
-                return Response(
-                    {"error": "Something went wrong while sending your request to the tutor. Please try again in a moment."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                # SECOND: Create TutorReferralRequest linked to the TutoringRequest
+                referral_request = TutorReferralRequest.objects.create(
+                    parent=parent,
+                    student=student,
+                    tutor=tutor,
+                    subject=request.data.get('subject'),
+                    grade=request.data.get('grade'),
+                    service=request.data.get('service'),
+                    city=request.data.get('city'),
+                    description=request.data.get('description'),
+                    referral_code_used=tutor_code.upper(),
+                    status='pending',
+                    token=token,
+                    tutoring_request=tutoring_request  # Link to the TutoringRequest
                 )
 
-            # From here on, the request has been created and is safely
-            # hidden from the public dashboard (see RequestListView). The
-            # remaining steps are best-effort notifications - failures here
-            # must never undo the request or surface as a scary 500 to the
-            # parent, since their request already succeeded.
-            # Notify admin that a tutoring request was created (tutor-code path)
-            try:
-                from playground.email_backends import send_admin_new_request_notification
-                send_admin_new_request_notification(
-                    admin_email='egstutor@gmail.com',
-                    parent_name=f"{parent.firstName} {parent.lastName}",
-                    parent_email=parent.email,
-                    student_name=f"{student.firstName} {student.lastName}",
-                    subject=referral_request.subject,
-                    grade=referral_request.grade,
-                    service=referral_request.service,
-                    city=referral_request.city,
-                    description=referral_request.description,
-                    tutor_code=tutor_code.upper(),
-                    referred_tutor_name=f"{tutor.firstName} {tutor.lastName}",
-                )
-            except Exception as e:
-                print(f"Failed to send admin new-request notification: {e}")
+                # Send email notification to tutor with approval link
+                try:
+                    from playground.email_utils import send_mailgun_email
+                    from django.conf import settings
 
-            # Send email notification to tutor with approval link
-            try:
-                from playground.email_utils import send_mailgun_email
-                from django.conf import settings
+                    if tutor.email:
+                        # Create approval URL
+                        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+                        approval_url = f"{frontend_url}/tutor-referral-approval/{token}"
 
-                if tutor.email:
-                    # Create approval URL
-                    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
-                    approval_url = f"{frontend_url}/tutor-referral-approval/{token}"
+                        subject = f"New Referral Request: {student.firstName} {student.lastName}"
 
-                    subject = f"New Referral Request: {student.firstName} {student.lastName}"
-
-                    html_message = f"""
+                        html_message = f"""
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-    .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-    .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
-    .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
-    .button {{ display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
-    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
-</style>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
+        .button {{ display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
+        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+    </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>New Referral Request!</h1>
+    <div class="container">
+        <div class="header">
+            <h1>New Referral Request!</h1>
+        </div>
+        <div class="content">
+            <p>Dear {tutor.firstName},</p>
+            <p>Great news! A parent has requested you as their tutor using your referral code!</p>
+
+            <div class="info-box">
+                <h3>Parent Information</h3>
+                <p><strong>Name:</strong> {parent.firstName} {parent.lastName}<br>
+                <strong>Email:</strong> {parent.email}</p>
+            </div>
+
+            <div class="info-box">
+                <h3>Student Information</h3>
+                <p><strong>Name:</strong> {student.firstName} {student.lastName}<br>
+                <strong>Grade:</strong> {referral_request.grade}</p>
+            </div>
+
+            <div class="info-box">
+                <h3>Tutoring Details</h3>
+                <p><strong>Subject:</strong> {referral_request.subject}<br>
+                <strong>Service Type:</strong> {referral_request.service}<br>
+                <strong>City:</strong> {referral_request.city}</p>
+                {f'<p><strong>Additional Details:</strong> {referral_request.description}</p>' if referral_request.description else ''}
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{approval_url}" class="button">Review and Respond</a>
+            </div>
+
+            <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                You can either accept or decline this request. If you accept, you will be paired with this student.
+                If you decline, the request will be made available to other tutors.
+            </p>
+        </div>
+        <div class="footer">
+            <p>Best regards,<br>The EGS Tutoring Team</p>
+        </div>
     </div>
-    <div class="content">
-        <p>Dear {tutor.firstName},</p>
-        <p>Great news! A parent has requested you as their tutor using your referral code!</p>
-
-        <div class="info-box">
-            <h3>Parent Information</h3>
-            <p><strong>Name:</strong> {parent.firstName} {parent.lastName}<br>
-            <strong>Email:</strong> {parent.email}</p>
-        </div>
-
-        <div class="info-box">
-            <h3>Student Information</h3>
-            <p><strong>Name:</strong> {student.firstName} {student.lastName}<br>
-            <strong>Grade:</strong> {referral_request.grade}</p>
-        </div>
-
-        <div class="info-box">
-            <h3>Tutoring Details</h3>
-            <p><strong>Subject:</strong> {referral_request.subject}<br>
-            <strong>Service Type:</strong> {referral_request.service}<br>
-            <strong>City:</strong> {referral_request.city}</p>
-            {f'<p><strong>Additional Details:</strong> {referral_request.description}</p>' if referral_request.description else ''}
-        </div>
-
-        <div style="text-align: center;">
-            <a href="{approval_url}" class="button">Review and Respond</a>
-        </div>
-
-        <p style="margin-top: 20px; font-size: 14px; color: #666;">
-            You can either accept or decline this request. If you accept, you will be paired with this student.
-            If you decline, the request will be made available to other tutors.
-        </p>
-    </div>
-    <div class="footer">
-        <p>Best regards,<br>The EGS Tutoring Team</p>
-    </div>
-</div>
 </body>
 </html>
-                    """
+                        """
 
-                    # Plain text version for email clients that don't support HTML
-                    text_message = f"""
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
 Dear {tutor.firstName},
 
 Great news! A parent has requested you as their tutor using your referral code!
@@ -1803,74 +2001,74 @@ If you decline, the request will be made available to other tutors.
 
 Best regards,
 The EGS Tutoring Team
-                    """
+                        """
 
-                    send_mailgun_email(
-                        to_emails=[tutor.email],
-                        subject=subject,
-                        text_content=text_message.strip(),
-                        html_content=html_message
-                    )
-                    print(f"Sent referral notification email to tutor: {tutor.email}")
-            except Exception as e:
-                print(f"Failed to send tutor notification email: {e}")
+                        send_mailgun_email(
+                            to_emails=[tutor.email],
+                            subject=subject,
+                            text_content=text_message.strip(),
+                            html_content=html_message
+                        )
+                        print(f"Sent referral notification email to tutor: {tutor.email}")
+                except Exception as e:
+                    print(f"Failed to send tutor notification email: {e}")
 
-            # Send confirmation email to parent
-            try:
-                from playground.email_utils import send_mailgun_email
-                from django.conf import settings
+                # Send confirmation email to parent
+                try:
+                    from playground.email_utils import send_mailgun_email
+                    from django.conf import settings
 
-                tutor_name = f"{tutor.firstName} {tutor.lastName}"
+                    tutor_name = f"{tutor.firstName} {tutor.lastName}"
 
-                if parent.email:
-                    subject = f"Referral Request Sent to {tutor_name}"
+                    if parent.email:
+                        subject = f"Referral Request Sent to {tutor_name}"
 
-                    html_message = f"""
+                        html_message = f"""
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-    .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-    .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
-    .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
-    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
-</style>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #192A88 0%, #1e3a8a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .info-box {{ background: white; padding: 20px; margin: 15px 0; border-left: 4px solid #192A88; border-radius: 5px; }}
+        .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+    </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>Request Sent Successfully!</h1>
-    </div>
-    <div class="content">
-        <p>Dear {parent.firstName} {parent.lastName},</p>
-        <p>Your tutoring request for <strong>{student.firstName} {student.lastName}</strong> has been sent to <strong>{tutor_name}</strong>.</p>
-
-        <div class="info-box">
-            <h3>What Happens Next?</h3>
-            <p>We've notified {tutor_name} about your request. They will review it and respond shortly.
-            You'll receive an email notification once they respond.</p>
-            <p>If {tutor_name} declines, your request will automatically be made available to all our tutors.</p>
+    <div class="container">
+        <div class="header">
+            <h1>Request Sent Successfully!</h1>
         </div>
+        <div class="content">
+            <p>Dear {parent.firstName} {parent.lastName},</p>
+            <p>Your tutoring request for <strong>{student.firstName} {student.lastName}</strong> has been sent to <strong>{tutor_name}</strong>.</p>
 
-        <div class="info-box">
-            <h3>Request Summary</h3>
-            <p><strong>Subject:</strong> {referral_request.subject}<br>
-            <strong>Grade:</strong> {referral_request.grade}<br>
-            <strong>Service Type:</strong> {referral_request.service}</p>
+            <div class="info-box">
+                <h3>What Happens Next?</h3>
+                <p>We've notified {tutor_name} about your request. They will review it and respond shortly.
+                You'll receive an email notification once they respond.</p>
+                <p>If {tutor_name} declines, your request will automatically be made available to all our tutors.</p>
+            </div>
+
+            <div class="info-box">
+                <h3>Request Summary</h3>
+                <p><strong>Subject:</strong> {referral_request.subject}<br>
+                <strong>Grade:</strong> {referral_request.grade}<br>
+                <strong>Service Type:</strong> {referral_request.service}</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Best regards,<br>The EGS Tutoring Team</p>
         </div>
     </div>
-    <div class="footer">
-        <p>Best regards,<br>The EGS Tutoring Team</p>
-    </div>
-</div>
 </body>
 </html>
-                    """
+                        """
 
-                    # Plain text version for email clients that don't support HTML
-                    text_message = f"""
+                        # Plain text version for email clients that don't support HTML
+                        text_message = f"""
 Dear {parent.firstName} {parent.lastName},
 
 Your tutoring request for {student.firstName} {student.lastName} has been sent to {tutor_name}.
@@ -1888,47 +2086,38 @@ Service Type: {referral_request.service}
 
 Best regards,
 The EGS Tutoring Team
-                    """
+                        """
 
-                    send_mailgun_email(
-                        to_emails=[parent.email],
-                        subject=subject,
-                        text_content=text_message.strip(),
-                        html_content=html_message
-                    )
-                    print(f"Sent confirmation email to parent: {parent.email}")
+                        send_mailgun_email(
+                            to_emails=[parent.email],
+                            subject=subject,
+                            text_content=text_message.strip(),
+                            html_content=html_message
+                        )
+                        print(f"Sent confirmation email to parent: {parent.email}")
+                except Exception as e:
+                    print(f"Failed to send parent confirmation email: {e}")
+
+                # Return success response
+                from playground.serializers import TutorReferralRequestSerializer
+                serializer = TutorReferralRequestSerializer(referral_request)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            except User.DoesNotExist:
+                # Invalid tutor code, proceed with normal request creation
+                print(f"Invalid tutor code: {tutor_code}")
+                pass
             except Exception as e:
-                print(f"Failed to send parent confirmation email: {e}")
+                print(f"Error creating referral request: {e}")
+                # Proceed with normal request creation on any error
+                pass
 
-            # Return success response
-            from playground.serializers import TutorReferralRequestSerializer
-            serializer = TutorReferralRequestSerializer(referral_request)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        # Normal request creation (no tutor code provided)
+        # Normal request creation (no tutor code or invalid code)
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         # Normal request creation
         request_obj = serializer.save()
-
-        # Notify admin that a tutoring request was created (regular path,
-        # no tutor code)
-        try:
-            from playground.email_backends import send_admin_new_request_notification
-            send_admin_new_request_notification(
-                admin_email='egstutor@gmail.com',
-                parent_name=f"{request_obj.parent.firstName} {request_obj.parent.lastName}",
-                parent_email=request_obj.parent.email,
-                student_name=f"{request_obj.student.firstName} {request_obj.student.lastName}",
-                subject=request_obj.subject,
-                grade=request_obj.grade,
-                service=request_obj.service,
-                city=request_obj.city,
-                description=request_obj.description,
-            )
-        except Exception as e:
-            print(f"Failed to send admin new-request notification: {e}")
 
         # Send email notifications to tutors about new requests
         try:
@@ -2014,167 +2203,73 @@ class RequestResponseCreateView(generics.ListCreateAPIView):
         )
 
 class StudentsListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        requester = request.user
         parent_id = request.query_params.get('parent', None)
-        is_admin = requester.is_superuser or requester.roles == 'admin'
-
-        if parent_id:
-            if not is_admin and str(requester.id) != str(parent_id):
-                return Response({"error": "You don't have permission to view these students."}, status=403)
-            students = User.objects.filter(roles='student', parent_id=parent_id)
-        elif is_admin:
-            # Admins with no parent filter see every student
-            students = User.objects.filter(roles='student')
-        else:
+        if not parent_id:
             return Response({"error": "Missing 'parent' query parameter."}, status=400)
 
-        students = students.order_by('firstName', 'lastName')
-        serializer = UserSerializer(students, many=True, context={'request': request})
-        data = serializer.data
-
-        # Attach each student's accepted tutors in one query instead of
-        # making a separate per-student request.
-        student_ids = [entry['id'] for entry in data]
-        accepted_tutors = AcceptedTutor.objects.filter(
-            student_id__in=student_ids, status='Accepted'
-        ).select_related('tutor', 'request')
-
-        tutors_by_student = {}
-        for at in accepted_tutors:
-            tutors_by_student.setdefault(at.student_id, []).append({
-                'tutor_id': at.tutor.id,
-                'firstName': at.tutor.firstName,
-                'lastName': at.tutor.lastName,
-                'email': at.tutor.email,
-                'phone_number': at.tutor.phone_number,
-                'subject': at.request.subject,
-                'accepted_at': at.accepted_at,
-            })
-
-        for entry in data:
-            student_tutors = tutors_by_student.get(entry['id'], [])
-            entry['tutors'] = student_tutors
-            entry['has_tutor'] = len(student_tutors) > 0
-
-        return Response(data)
+        students = User.objects.filter(roles='student', parent=parent_id)
+        serializer = UserSerializer(students, many=True)
+        return Response(serializer.data)
 
 
 class StudentCreateView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        import re
-
         # Only parents can create students
         if request.user.roles != 'parent':
             return Response({"error": "Only parents can create student accounts."}, status=403)
 
         # Extract data from request
-        first_name = (request.data.get('firstName') or '').strip()
-        last_name = (request.data.get('lastName') or '').strip()
-        lives_with_parent_raw = request.data.get('livesWithParent', True)
-        city = (request.data.get('city') or '').strip()
-        birth_year_raw = request.data.get('birthYear')
-        school_id_raw = (request.data.get('school_id') or '').strip()
-        school_other_name = (request.data.get('school_other_name') or '').strip()
+        first_name = request.data.get('firstName', '').strip()
+        last_name = request.data.get('lastName', '').strip()
+        username = request.data.get('username', '').strip()
+        password = request.data.get('password', '')
+        profile_picture = request.FILES.get('profile_picture', None)
 
         # Validation
         if not first_name or not last_name:
             return Response({"error": "First name and last name are required."}, status=400)
 
-        if isinstance(lives_with_parent_raw, str):
-            lives_with_parent = lives_with_parent_raw.strip().lower() in ('true', '1', 'yes')
-        else:
-            lives_with_parent = bool(lives_with_parent_raw)
+        if not username or len(username) < 3:
+            return Response({"error": "Username must be at least 3 characters."}, status=400)
 
-        if not lives_with_parent:
-            valid_cities = dict(User.CITY_CHOICES)
-            if not city:
-                return Response({"error": "Please specify which city the student lives in."}, status=400)
-            if city not in valid_cities:
-                return Response({"error": "Please select a valid city."}, status=400)
+        if not password or len(password) < 6:
+            return Response({"error": "Password must be at least 6 characters."}, status=400)
 
-        if birth_year_raw in (None, ''):
-            return Response({"error": "Birth year is required."}, status=400)
-        try:
-            birth_year = int(birth_year_raw)
-        except (TypeError, ValueError):
-            return Response({"error": "Birth year must be a valid number."}, status=400)
-
-        current_year = timezone.now().year
-        if birth_year < current_year - 100 or birth_year > current_year:
-            return Response({"error": "Please provide a valid birth year."}, status=400)
-
-        # School validation
-        selected_school = None
-        if not school_id_raw:
-            return Response({"error": "Please select the student's school."}, status=400)
-        if school_id_raw == 'other':
-            school_other_name = school_other_name[:200]
-            if not school_other_name:
-                return Response({"error": "Please enter the student's school name."}, status=400)
-        else:
-            try:
-                selected_school = School.objects.get(id=school_id_raw, is_active=True)
-            except (School.DoesNotExist, ValueError):
-                return Response({"error": "Please select a valid school."}, status=400)
-            school_other_name = ''
-
-        # Students no longer pick their own username/password - generate a unique one
-        base_username = re.sub(r'[^a-zA-Z0-9]', '', f"{first_name}{last_name}").lower() or "student"
-        username = base_username
-        suffix = 1
-        while User.objects.filter(username=username).exists():
-            suffix += 1
-            username = f"{base_username}{suffix}"
-
-        # Address is the parent's own address when living together, otherwise the given city
-        student_address = request.user.address if lives_with_parent else city
-        student_city = request.user.city if lives_with_parent else city
+        # Check username uniqueness
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already exists. Please choose another."}, status=400)
 
         try:
             # Create student account with parent's information auto-filled
             student = User.objects.create_user(
                 username=username,
-                password=None,
+                password=password,
                 firstName=first_name,
                 lastName=last_name,
                 roles='student',
                 parent=request.user,
-                lives_with_parent=lives_with_parent,
-                birth_year=birth_year,
-                address=student_address,
-                city=student_city,
+                # Auto-fill from parent
+                address=request.user.address,
+                city=request.user.city,
                 phone_number=request.user.phone_number,
                 email='',  # Email is not unique, so leave blank for students
                 is_active=True,  # Students created by parents are immediately active
             )
 
+            # Handle profile picture if provided
+            if profile_picture:
+                student.profile_picture = profile_picture
+                student.save()
+
             # Set default rates for student (should be 0)
             student.set_default_rates_by_role()
-
-            # Assign school and, if it grants credit hours, queue the student
-            # for admin verification before any credit balance is applied.
-            student.school = selected_school
-            student.school_other_name = school_other_name
             student.save()
-
-            if selected_school and selected_school.gives_credits and selected_school.credit_hours > 0:
-                try:
-                    credit_request = StudentSchoolCredit.objects.create(
-                        student=student,
-                        parent=request.user,
-                        school=selected_school,
-                        credit_hours_snapshot=selected_school.credit_hours,
-                    )
-                    from playground.tasks import send_school_credit_admin_alert_async
-                    send_school_credit_admin_alert_async.delay(credit_request.id)
-                except Exception as credit_error:
-                    logger.error(f"Failed to queue school credit request: {credit_error}")
 
             # Send confirmation email to parent
             try:
@@ -2197,11 +2292,6 @@ class StudentCreateView(APIView):
                     "username": student.username,
                     "firstName": student.firstName,
                     "lastName": student.lastName,
-                    "livesWithParent": student.lives_with_parent,
-                    "city": student.city,
-                    "birthYear": student.birth_year,
-                    "school": student.school_id,
-                    "schoolOtherName": student.school_other_name,
                 }
             }, status=201)
 
@@ -2227,115 +2317,6 @@ class TutorStudentsListView(APIView):
         return Response(serializer.data)
 
 
-class SchoolListView(generics.ListAPIView):
-    """Public (any authenticated user) minimal school list, for the
-    student-creation dropdowns. Excludes gives_credits/credit_hours."""
-    serializer_class = SchoolSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return School.objects.filter(is_active=True).order_by('name')
-
-
-class SchoolAdminListCreateView(generics.ListCreateAPIView):
-    """Admin CRUD (list all + create) for the school management page."""
-    serializer_class = SchoolAdminSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return School.objects.all().order_by('name')
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            raise PermissionDenied('Admin access required')
-
-
-class SchoolAdminDetailView(generics.RetrieveUpdateAPIView):
-    """Admin edit for a single school. No delete route - schools are
-    soft-deleted via is_active so existing student references stay intact."""
-    serializer_class = SchoolAdminSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = School.objects.all()
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            raise PermissionDenied('Admin access required')
-
-
-class AdminSchoolCreditQueueListView(generics.ListAPIView):
-    """Admin's school-credit verification queue."""
-    serializer_class = StudentSchoolCreditSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        status_filter = self.request.query_params.get('status', 'pending')
-        qs = StudentSchoolCredit.objects.select_related('student', 'parent', 'school')
-        if status_filter and status_filter != 'all':
-            qs = qs.filter(status=status_filter)
-        return qs
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            raise PermissionDenied('Admin access required')
-
-
-class AdminSchoolCreditManageView(generics.RetrieveUpdateAPIView):
-    """Approve/decline a pending school-credit request, with an optional
-    school correction applied first (per admin's judgment before deciding)."""
-    serializer_class = StudentSchoolCreditSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = StudentSchoolCredit.objects.select_related('student', 'parent', 'school')
-
-    def initial(self, request, *args, **kwargs):
-        super().initial(request, *args, **kwargs)
-        if not request.user.is_superuser and request.user.roles != 'admin':
-            raise PermissionDenied('Admin access required')
-
-    @transaction.atomic
-    def patch(self, request, *args, **kwargs):
-        credit = self.get_object()
-        action = request.data.get('action')
-        new_school_id = request.data.get('school')
-        admin_notes = request.data.get('admin_notes', credit.admin_notes)
-
-        if action not in ('approve', 'decline'):
-            return Response({'error': "action must be 'approve' or 'decline'"}, status=400)
-        if credit.status != 'pending':
-            return Response({'error': f'This request has already been {credit.status}.'}, status=400)
-
-        # Optional school correction before deciding
-        if new_school_id and str(new_school_id) != str(credit.school_id):
-            try:
-                new_school = School.objects.get(id=new_school_id)
-            except School.DoesNotExist:
-                return Response({'error': 'Invalid school selected.'}, status=400)
-            credit.school = new_school
-            credit.credit_hours_snapshot = new_school.credit_hours
-            # Reflect the correction on the student's live record too
-            student = User.objects.select_for_update().get(pk=credit.student_id)
-            student.school = new_school
-            student.save(update_fields=['school'])
-
-        credit.admin_notes = admin_notes
-        credit.reviewed_by = request.user
-        credit.reviewed_at = timezone.now()
-
-        if action == 'approve':
-            student = User.objects.select_for_update().get(pk=credit.student_id)
-            student.credit_balance = (student.credit_balance or Decimal('0')) + credit.credit_hours_snapshot
-            student.save(update_fields=['credit_balance'])
-            credit.status = 'approved'
-        else:
-            credit.status = 'declined'
-
-        credit.save()
-        serializer = self.get_serializer(credit)
-        return Response(serializer.data)
-
-
 class PersonalRequestListView(APIView):
     permission_classes = [AllowAny]
 
@@ -2345,15 +2326,31 @@ class PersonalRequestListView(APIView):
         if not parent_id:
             return Response({"error": "Missing 'parent_id' or 'parent' query parameter."}, status=400)
 
-        # Get all requests for this parent. Tutor-code-targeted requests are
-        # hidden from the general marketplace while pending (see
-        # RequestListView), but the parent who made the request should
-        # always see it in their own list regardless of its referral status.
+        # Get all requests for this parent
         request_qs = TutoringRequest.objects.filter(
             parent=parent_id
         ).order_by('-created_at')
 
-        serializer = RequestSerializer(request_qs, many=True)
+        # Filter out tutor-specific requests that are still pending
+        # (waiting for tutor to accept/decline via email)
+        # Only show if: no referral_request OR referral_request status is 'declined' or 'accepted'
+        filtered_requests = []
+        for tutoring_request in request_qs:
+            # Check if this request has a related tutor referral request
+            referral_request = TutorReferralRequest.objects.filter(
+                tutoring_request=tutoring_request
+            ).first()
+
+            if referral_request is None:
+                # Regular request (not tutor-specific) - always show
+                filtered_requests.append(tutoring_request)
+            elif referral_request.status != 'pending':
+                # Tutor-specific request where tutor has responded - show it
+                # (Either 'declined' so parent can see rejection, or 'accepted' meaning it's linked)
+                filtered_requests.append(tutoring_request)
+            # If status is 'pending', don't add to filtered_requests (hide from parent)
+
+        serializer = RequestSerializer(filtered_requests, many=True)
         return Response(serializer.data)
     
     def delete(self, request):
@@ -2434,20 +2431,6 @@ class RequestListView(APIView):
         # everyone else: only "not accepted"
         qs = qs.filter(Q(is_accepted=False) | Q(is_accepted="Not Accepted"))
 
-        # Admin-hidden requests stay off the general dashboard entirely -
-        # the request itself is untouched, it's just not shown to tutors
-        # browsing for open requests.
-        qs = qs.filter(hidden_from_dashboard=False)
-
-        # Requests made with a tutor's referral code are meant exclusively
-        # for that tutor to review via their private approval link - keep
-        # them off the general dashboard until that tutor declines, at
-        # which point they open up to every tutor like a normal request.
-        active_referral = TutorReferralRequest.objects.filter(
-            tutoring_request=OuterRef("pk")
-        ).exclude(status='declined')
-        qs = qs.annotate(has_active_referral=Exists(active_referral)).filter(has_active_referral=False)
-
         # tutor: exclude requests already replied to by THIS tutor
         if user.is_authenticated and getattr(user, "roles", None) == "tutor":
             replies_by_me = TutorResponse.objects.filter(
@@ -2459,67 +2442,6 @@ class RequestListView(APIView):
         serializer = RequestSerializer(qs, many=True, context={"request": request})
         return Response(serializer.data)
 
-
-class AdminRequestManageView(APIView):
-    """
-    Admin-only management of a single TutoringRequest from the Stale
-    Requests page:
-      - PATCH: toggle hidden_from_dashboard (hides it from the general
-        tutor dashboard without touching the request, any replies, hours,
-        or tutor-parent pairing tied to it).
-      - DELETE: permanently remove the request. Refuses if an AcceptedTutor
-        pairing exists for it, since AcceptedTutor.request cascades on
-        delete and deleting it would silently break that tutor-parent
-        relationship. Hours never reference TutoringRequest directly, so
-        logged hours are never affected either way.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def _check_admin(self, request):
-        return request.user.is_authenticated and (request.user.is_superuser or getattr(request.user, "roles", None) == "admin")
-
-    def get_object(self, request_id):
-        try:
-            return TutoringRequest.objects.get(id=request_id)
-        except TutoringRequest.DoesNotExist:
-            return None
-
-    def patch(self, request, request_id):
-        if not self._check_admin(request):
-            return Response({"error": "Admin access required"}, status=403)
-
-        tutoring_request = self.get_object(request_id)
-        if tutoring_request is None:
-            return Response({"error": "Request not found"}, status=404)
-
-        hidden = request.data.get('hidden')
-        if hidden is None:
-            return Response({"error": "Missing 'hidden' field"}, status=400)
-
-        tutoring_request.hidden_from_dashboard = bool(hidden)
-        tutoring_request.save(update_fields=['hidden_from_dashboard'])
-
-        serializer = RequestSerializer(tutoring_request, context={"request": request})
-        return Response(serializer.data, status=200)
-
-    def delete(self, request, request_id):
-        if not self._check_admin(request):
-            return Response({"error": "Admin access required"}, status=403)
-
-        tutoring_request = self.get_object(request_id)
-        if tutoring_request is None:
-            return Response({"error": "Request not found"}, status=404)
-
-        # Never delete a request that already has an accepted tutor pairing -
-        # AcceptedTutor.request cascades on delete, which would silently
-        # sever that parent/tutor relationship.
-        if AcceptedTutor.objects.filter(request=tutoring_request).exists():
-            return Response({
-                "error": "This request has an active tutor pairing and can't be deleted. Hide it instead, or remove the pairing separately first."
-            }, status=400)
-
-        tutoring_request.delete()
-        return Response({"message": "Request deleted successfully."}, status=200)
 
 
 class AcceptReplyCreateView(generics.CreateAPIView):
@@ -2682,35 +2604,21 @@ class LogHoursCreateView(APIView):
         # Set eligibility status based on current week
         is_eligible = cur_ws <= session_date <= cur_we
         eligible_status = "Eligible" if is_eligible else "Late"
+            
+        data.update({
+            "parent": parent,
+            "student": student_id,
+            "eligible": eligible_status,
+            "date": date_str,
+            "startTime": start_time_str,
+            "endTime": end_time_str
+        })
 
-        total_time_raw = data.get("totalTime")
-        if not total_time_raw:
-            raise ValidationError("Missing 'totalTime' field")
-        try:
-            total_time = Decimal(str(total_time_raw))
-        except (InvalidOperation, ValueError):
-            raise ValidationError("Invalid 'totalTime' value")
-
-        # Consumes any remaining school-credit balance, splitting into a
-        # 'credited' + 'normal' pair of Hours rows if the balance only
-        # partially covers this session. Invisible to the tutor - the
-        # business process is identical either way.
-        created_hours = create_hours_with_credit_split(
-            student_id=student_id,
-            parent_id=parent,
-            tutor_id=tutor_id,
-            date=session_date,
-            start_time=start_time,
-            end_time=end_time,
-            total_time=total_time,
-            location=data.get("location"),
-            subject=data.get("subject"),
-            notes=data.get("notes"),
-            eligible=eligible_status,
-        )
-        serializer = self.serializer_class(created_hours, many=True)
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=201)
-
+    
 @receiver(post_save, sender=Hours)
 def maybe_issue_referral_credit(sender, instance, created, **kwargs):
     if instance.status not in ("Accepted", "accepted"):
@@ -2770,28 +2678,17 @@ class ParentHoursListView(APIView):
             return Response({"error": "User not found"}, status=404)
         
         # Filter hours based on user role
-        base_qs = (
-            Hours.objects
-            .select_related('student', 'tutor', 'parent')
-            .prefetch_related('disputes')
-        )
         if user.roles == 'parent':
-            records = base_qs.filter(parent=user).order_by('-created_at')
+            records = Hours.objects.filter(parent=user).order_by('-created_at')
         elif user.roles == 'student':
-            records = base_qs.filter(student=user).order_by('-created_at')
+            records = Hours.objects.filter(student=user).order_by('-created_at')
         elif user.roles == 'tutor':
-            records = base_qs.filter(tutor=user).order_by('-created_at')
+            records = Hours.objects.filter(tutor=user).order_by('-created_at')
         else:
             records = Hours.objects.none()  # Return empty queryset for unknown roles
             
         serializer = HoursSerializer(records, many=True, context={'request': request})
-        data = serializer.data
-        if user.roles == 'tutor':
-            # Tutors must never see/interact with the credited/normal billing
-            # split - strip it so their hours list looks like it always has.
-            for row in data:
-                row.pop('billing_status', None)
-        return Response(data)
+        return Response(serializer.data)
 
 class EditHoursView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2954,12 +2851,11 @@ class WeeklyHoursListView(APIView):
 
         # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
         # Late hours can only be created by admins via batch add
-        # Credited hours are excluded - they're paid by school credit, not the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        ).exclude(billing_status='credited').order_by('date')
+        ).order_by('date')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -3032,181 +2928,48 @@ class WeeklyHoursListView(APIView):
                     print(f"WeeklyHours overlap detected for parent {parent_id} in week {week_start} to {week_end}")
 
             # Send email notifications for all created entries
-            invoice_results = []
             if created_entries:
-                invoice_results = self._send_weekly_hours_emails(created_entries)
+                self._send_weekly_hours_emails(created_entries)
 
         except Exception as e:
             print(f"Error in WeeklyHoursListView.post: {e}")
             return Response({"error": str(e)}, status=500)
 
         if created:
-            return Response({"status": "created", "invoice_results": invoice_results}, status=201)
+            return Response({"status": "created"}, status=201)
         else:
             return Response({"status": "Not Created, Duplicate"}, status=301)
 
     def _send_weekly_hours_emails(self, created_entries):
-        """Send email notifications to parents with their weekly hours breakdown and Stripe invoice link"""
+        """Send email notifications to parents with their weekly hours breakdown"""
         from .email_utils import send_mailgun_email
         from collections import defaultdict
-        import time as _time
 
         # Group entries by parent
         parent_entries = defaultdict(list)
         for entry in created_entries:
             parent_entries[entry['parent']].append(entry)
 
-        all_results = []
-
         # Send email to each parent
         for parent, entries in parent_entries.items():
-            parent_result = {
-                'parent_email': parent.email,
-                'parent_name': f"{parent.firstName} {parent.lastName}",
-                'stripe_created': False,
-                'stripe_invoice_id': None,
-                'stripe_error': None,
-                'email_sent': False,
-                'email_error': None,
-                'hours_updated': 0,
-            }
             try:
+                # Get all hours details for this parent within the date range
                 date_obj = entries[0]['date']
                 from datetime import timedelta
                 week_start = date_obj - timedelta(days=date_obj.weekday())
                 week_end = week_start + timedelta(days=6)
 
                 # Fetch detailed hours for this parent within the week (only pending, not yet invoiced)
-                # Credited hours excluded - not billed to the parent.
+                # Include both Eligible and Late hours (Late hours are admin-added via batch add)
                 hours_details = Hours.objects.filter(
                     parent=parent,
                     date__range=[week_start, week_end],
                     eligible__in=['Eligible', 'Late'],
                     invoice_status='pending'
-                ).exclude(billing_status='credited').order_by('date', 'startTime')
-
-                # Summary totals
-                total_online = sum(float(e['online_hours']) for e in entries)
-                total_inperson = sum(float(e['inperson_hours']) for e in entries)
-                total_cost = sum(float(e['total']) for e in entries)
-
-                # Generate a Stripe invoice for this specific parent and get their payment link
-                stripe_invoice_url = None
-                stripe_invoice_id = None
-                try:
-                    # Find or create this parent's Stripe customer (keyed to their email only)
-                    stripe_result = stripe.Customer.list(email=parent.email)
-                    if stripe_result and stripe_result.data:
-                        customer = stripe_result.data[0]
-                    else:
-                        customer = stripe.Customer.create(
-                            email=parent.email,
-                            name=f"{parent.firstName} {parent.lastName}",
-                            description="Parent account for tutoring services",
-                        )
-
-                    week_str = f"{week_start.strftime('%Y-%m-%d')} to {week_end.strftime('%Y-%m-%d')}"
-                    due_date_ts = int(_time.time()) + (14 * 24 * 60 * 60)
-
-                    hour_ids = list(hours_details.values_list('id', flat=True))
-                    hour_ids_key = '-'.join(str(h) for h in sorted(hour_ids))
-                    idempotency_key = f"invoice-{customer.id}-{hour_ids_key}"
-
-                    # Create the invoice for this parent
-                    invoice_obj = stripe.Invoice.create(
-                        customer=customer.id,
-                        currency='cad',
-                        due_date=due_date_ts,
-                        collection_method='send_invoice',
-                        auto_advance=False,
-                        idempotency_key=idempotency_key,
-                    )
-
-                    # Add the invoice line item
-                    amount_cents = int(total_cost * 100)
-                    invoice_item = stripe.InvoiceItem.create(
-                        customer=customer.id,
-                        invoice=invoice_obj.id,
-                        amount=amount_cents,
-                        currency='cad',
-                        description=f'Tutoring Sessions ({week_str})',
-                        idempotency_key=f"{idempotency_key}-item",
-                    )
-
-                    # Apply 13% CAD tax
-                    try:
-                        tax_rates = stripe.TaxRate.list(limit=100)
-                        cad_tax_rate = None
-                        for rate in tax_rates.data:
-                            if rate.display_name == "CAD Tax 13%" and rate.percentage == 13.0:
-                                cad_tax_rate = rate
-                                break
-                        if not cad_tax_rate:
-                            cad_tax_rate = stripe.TaxRate.create(
-                                display_name="CAD Tax 13%",
-                                description="13% tax for Canadian services",
-                                jurisdiction="CA",
-                                percentage=13.0,
-                                inclusive=False,
-                            )
-                        stripe.InvoiceItem.modify(invoice_item.id, tax_rates=[cad_tax_rate.id])
-                    except Exception as tax_error:
-                        print(f"Could not apply tax to invoice {invoice_obj.id}: {tax_error}")
-
-                    # Finalize the invoice — this is what generates hosted_invoice_url
-                    invoice_obj = stripe.Invoice.finalize_invoice(invoice_obj.id)
-
-                    # Capture URL and ID immediately after finalization before any further calls
-                    stripe_invoice_url = invoice_obj.hosted_invoice_url
-                    stripe_invoice_id = invoice_obj.id
-
-                    if not stripe_invoice_url:
-                        print(f"WARNING: Stripe returned no hosted_invoice_url for invoice {stripe_invoice_id} — parent {parent.email}")
-
-                    # Mark as sent in Stripe (non-fatal — if this fails we still have the URL)
-                    try:
-                        stripe.Invoice.send_invoice(stripe_invoice_id)
-                    except Exception as send_err:
-                        print(f"Stripe send_invoice failed for {stripe_invoice_id} (non-fatal): {send_err}")
-
-                    # Mark all hours for this parent as invoiced
-                    hour_ids = list(hours_details.values_list('id', flat=True))
-                    if hour_ids:
-                        Hours.objects.filter(id__in=hour_ids).update(
-                            invoice_status='invoiced',
-                            invoice_id=stripe_invoice_id,
-                        )
-                        parent_result['hours_updated'] = len(hour_ids)
-
-                    parent_result['stripe_created'] = True
-                    parent_result['stripe_invoice_id'] = stripe_invoice_id
-                    print(f"Stripe invoice {stripe_invoice_id} created for {parent.email} | URL: {stripe_invoice_url}")
-
-                except Exception as stripe_error:
-                    parent_result['stripe_error'] = str(stripe_error)
-                    print(f"Error generating Stripe invoice for {parent.email}: {stripe_error}")
+                ).order_by('date', 'startTime')
 
                 # Build email content
                 subject = f"Weekly Tutoring Hours Summary - Week of {week_start.strftime('%B %d, %Y')}"
-
-                # Payment button section — only shown when a Stripe URL was successfully obtained
-                if stripe_invoice_url:
-                    payment_html_block = f"""
-                        <div style="margin-top: 30px; text-align: center;">
-                            <a href="{stripe_invoice_url}"
-                               style="display: inline-block; background-color: #FFB31B; color: #192A88;
-                                      padding: 14px 32px; border-radius: 6px; font-size: 1.1em;
-                                      font-weight: bold; text-decoration: none;">
-                                View &amp; Pay Invoice
-                            </a>
-                            <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
-                                Payment is due within 14 days.
-                            </p>
-                        </div>"""
-                    payment_text_block = f"\nPay your invoice here: {stripe_invoice_url}\nPayment is due within 14 days.\n"
-                else:
-                    payment_html_block = ""
-                    payment_text_block = ""
 
                 # Build HTML content
                 html_content = f"""
@@ -3248,6 +3011,11 @@ class WeeklyHoursListView(APIView):
                                 </tr>
                     """
 
+                # Summary totals
+                total_online = sum(float(e['online_hours']) for e in entries)
+                total_inperson = sum(float(e['inperson_hours']) for e in entries)
+                total_cost = sum(float(e['total']) for e in entries)
+
                 html_content += f"""
                             </tbody>
                         </table>
@@ -3259,7 +3027,7 @@ class WeeklyHoursListView(APIView):
                             <p style="margin: 5px 0;"><strong>Total Hours:</strong> {total_online + total_inperson:.2f}</p>
                             <p style="margin: 5px 0; font-size: 1.1em;"><strong>Total Amount:</strong> <span style="color: #192A88;">${total_cost:.2f}</span></p>
                         </div>
-                        {payment_html_block}
+
                         <p style="margin-top: 30px;">If you have any questions or concerns about these hours, please don't hesitate to contact us.</p>
 
                         <p style="margin-top: 20px;">Best regards,<br>
@@ -3294,7 +3062,8 @@ Summary:
 - In-Person Hours: {total_inperson:.2f}
 - Total Hours: {total_online + total_inperson:.2f}
 - Total Amount: ${total_cost:.2f}
-{payment_text_block}
+- Payment Link: ${total_cost:.2f}
+
 If you have any questions or concerns about these hours, please don't hesitate to contact us.
 
 Best regards,
@@ -3302,29 +3071,16 @@ EGS Tutoring Team
                 """
 
                 # Send the email
-                try:
-                    send_mailgun_email(
-                        to_emails=[parent.email],
-                        subject=subject,
-                        text_content=text_content,
-                        html_content=html_content,
-                        email_type='weekly_hours',
-                        recipient_name=f"{parent.firstName} {parent.lastName}",
-                    )
-                    parent_result['email_sent'] = True
-                    print(f"Weekly hours email sent to {parent.email}")
-                except Exception as email_err:
-                    parent_result['email_error'] = str(email_err)
-                    print(f"Error sending email to {parent.email}: {email_err}")
+                send_mailgun_email(
+                    to_emails=[parent.email],
+                    subject=subject,
+                    text_content=text_content,
+                    html_content=html_content
+                )
+                print(f"Weekly hours email sent to {parent.email}")
 
             except Exception as e:
-                if not parent_result['stripe_error'] and not parent_result['email_error']:
-                    parent_result['stripe_error'] = str(e)
-                print(f"Error processing weekly hours for {parent.email}: {e}")
-            finally:
-                all_results.append(parent_result)
-
-        return all_results
+                print(f"Error sending email to {parent.email}: {e}")
 
 class calculateTotal(APIView):
     permission_classes = [AllowAny]
@@ -3344,12 +3100,11 @@ class calculateTotal(APIView):
 
         # Fetch all unbilled hours (both Eligible and Late) to include admin-added hours
         # Late hours can only be created by admins via batch add
-        # Credited hours excluded - not billed to the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        ).exclude(billing_status='credited')
+        )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
         rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson')
@@ -3425,21 +3180,19 @@ class CreateInvoiceView(APIView):
         # Calculate totals from actual hours data (same logic as calculateTotal view)
         # Include both Eligible and Late hours (Late hours are admin-added via batch add)
         # Only include hours that haven't been invoiced yet to prevent duplicates
-        # Credited hours are NEVER invoiced - they're covered by school credit, not the parent.
         weekly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        ).exclude(billing_status='credited')
+        )
         parents = set(weekly_hours.values_list('parent', flat=True))
 
-        rate_data = list(User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email', 'firstName', 'lastName'))
-        print(f"Rate data query result: {rate_data}")
-
+        rate_data = User.objects.filter(id__in=parents, roles='parent', is_active=True).values('id', 'rateOnline', 'rateInPerson', 'email')
+        print(f"Rate data query result: {list(rate_data)}")
+        
         online_rate_dict = {item['id']: Decimal(item['rateOnline'] or 0) for item in rate_data}
         inperson_rate_dict = {item['id']: Decimal(item['rateInPerson'] or 0) for item in rate_data}
         parent_email_dict = {item['id']: item['email'] for item in rate_data}
-        parent_name_dict = {item['id']: f"{item['firstName']} {item['lastName']}".strip() for item in rate_data}
         
         print(f"Online rate dict: {online_rate_dict}")
         print(f"In-person rate dict: {inperson_rate_dict}")
@@ -3497,9 +3250,7 @@ class CreateInvoiceView(APIView):
                         'customer_id': customer.id,
                         'amount': amount_cents,
                         'description': f'Tutoring Sessions ({start_date_raw} to {end_date_raw})',
-                        'hour_ids': parent_hour_ids,  # Include hour IDs for status update
-                        'parent_email': email_str,
-                        'parent_name': parent_name_dict.get(parent_id, ''),
+                        'hour_ids': parent_hour_ids  # Include hour IDs for status update
                     })
 
         if customer_data_list:
@@ -3524,31 +3275,28 @@ class InvoiceListView(APIView):
         if not customer_email:
             return Response({"error": "Missing 'email' query parameter"}, status=400)
 
-        # A customer's email can match more than one Stripe Customer record
-        # (e.g. re-onboarding created a new one) - aggregate invoices across
-        # all of them so older invoices aren't dropped.
-        result = stripe.Customer.list(email=customer_email, limit=100)
+        result = stripe.Customer.list(email=customer_email)
         if not result.data:
             # Return empty list instead of 404 error - customer may not have invoices yet
             return Response([])
 
+        customer = result.data[0]
+        invoices = stripe.Invoice.list(customer=customer.id, limit=55)
+
         response = []
-        for customer in result.data:
-            invoices = stripe.Invoice.list(customer=customer.id, limit=100)
-            for invoice in invoices.auto_paging_iter():
-                created_dt = datetime.fromtimestamp(invoice.created)
-                due_dt = datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None
+        for invoice in invoices.auto_paging_iter():
+            created_dt = datetime.fromtimestamp(invoice.created)
+            due_dt = datetime.fromtimestamp(invoice.due_date) if invoice.due_date else None
 
-                response.append({
-                    "id": invoice.id,
-                    "date": created_dt,
-                    "amount": invoice.amount_due,
-                    "due_date": due_dt,
-                    "status": invoice.status,
-                    "link": invoice.hosted_invoice_url,
-                })
+            response.append({
+                "id": invoice.id,
+                "date": created_dt,
+                "amount": invoice.amount_due,
+                "due_date": due_dt,
+                "status": invoice.status,
+                "link": invoice.hosted_invoice_url,
+            })
 
-        response.sort(key=lambda inv: inv["date"], reverse=True)
         return Response(response)
 
 
@@ -3567,8 +3315,6 @@ class MonthlyHoursListView(APIView):
 
         # Include both Eligible and Late hours for tutor payouts
         # Late hours can only be created by admins via batch add
-        # Credited hours are intentionally NOT excluded here - tutors are
-        # still paid in full for credited sessions, only the parent isn't billed.
         monthly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late']
@@ -3682,9 +3428,6 @@ class MonthlyHoursListView(APIView):
 
             try:
                 # Fetch detailed hours for this tutor within the date range
-                # Not filtered on billing_status - credited sessions are still
-                # paid out in full to the tutor and appear here like any other
-                # session (no 'credited' label is ever shown to the tutor).
                 hours_details = Hours.objects.filter(
                     tutor=tutor,
                     date__range=[start_date, end_date],
@@ -3969,6 +3712,62 @@ class BatchMonthlyHoursPayoutView(APIView):
                 "skipped": skipped
             })
     
+def get_client_ip(request):
+    """Get the client's IP address from request headers"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_chat_session(request):
+    ip_address = get_client_ip(request)
+    
+    # Check if IP has too many recent sessions
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    recent_sessions = AiChatSession.objects.filter(
+        ip_address=ip_address,
+        created_at__gte=timezone.now() - timedelta(hours=1)
+    ).count()
+    
+    if recent_sessions >= 5:  # Max 5 sessions per hour per IP
+        return Response({
+            'error': 'Too many chat sessions. Please wait before starting a new session.'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    session = AiChatSession.objects.create(ip_address=ip_address)
+    serializer = AiChatSessionSerializer(session)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def chat_session(request, session_id):
+    session = get_object_or_404(AiChatSession, id=session_id)
+    serializer = AiChatSessionSerializer(session)
+
+    if request.method == 'POST':
+        message = request.data.get('message')
+        if not message:
+            return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            session.send(message)
+        except ValueError as e:
+            # Rate limiting error
+            return Response({
+                'error': str(e),
+                'rate_limited': True
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    return Response(serializer.data)
+
+
 # API endpoint to serve media files as base64 or redirect
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -4182,8 +3981,20 @@ class StudentTutorsDetailView(APIView):
             return Response({'error': 'Student not found'}, status=404)
 
         # If user is a parent, verify they are the parent of this student
-        if request.user.roles == 'parent' and student.parent_id != request.user.id:
-            return Response({'error': 'Access denied'}, status=403)
+        if request.user.roles == 'parent':
+            # Check if this parent has this student
+            try:
+                from django.db.models import Q
+                # Check if student exists with this parent's email
+                parent_students = User.objects.filter(
+                    roles='student',
+                    parent_email=request.user.email,
+                    id=student_id
+                )
+                if not parent_students.exists():
+                    return Response({'error': 'Access denied'}, status=403)
+            except:
+                return Response({'error': 'Access denied'}, status=403)
 
         # Get all accepted tutors for this student
         accepted_tutors = AcceptedTutor.objects.filter(
@@ -4875,12 +4686,11 @@ class AdminUserHoursView(APIView):
             'is_active': user.is_active,
             'is_superuser': user.is_superuser,
             'last_login': user.last_login,
+            'profile_picture': user.profile_picture.url if user.profile_picture else None,
             'stripe_account_id': user.stripe_account_id if user.roles == 'tutor' else None,
             'tutor_referral_code': user.tutor_referral_code if user.roles == 'tutor' else None,
             'parent_id': user.parent.id if user.parent else None,
             'parent_name': f"{user.parent.firstName} {user.parent.lastName}" if user.parent else None,
-            'school_name': (user.school.name if user.school_id else (user.school_other_name or None)) if user.roles == 'student' else None,
-            'credit_balance': user.credit_balance if user.roles == 'student' else None,
         }
 
         # Add Google Calendar status for non-students
@@ -4893,14 +4703,10 @@ class AdminUserHoursView(APIView):
 
         user_info['google_calendar_connected'] = google_connected
 
-        # Get all hours where user is involved (as student, parent, or tutor).
-        # select_related/prefetch_related avoid a query per row for the
-        # serializer's student/parent/tutor name fields and dispute lookup -
-        # without them, a user with hundreds of logged sessions could turn
-        # this into thousands of queries and time out the admin page.
+        # Get all hours where user is involved (as student, parent, or tutor)
         hours = Hours.objects.filter(
             Q(student=user) | Q(parent=user) | Q(tutor=user)
-        ).select_related('student', 'parent', 'tutor').prefetch_related('disputes').order_by('-date', '-startTime')
+        ).order_by('-date', '-startTime')
 
         # Use the existing HoursSerializer to get formatted data with names
         serializer = HoursSerializer(hours, many=True, context={'request': request})
@@ -4972,100 +4778,73 @@ class AdminUserHoursView(APIView):
                 for child in children
             ]
 
-        # Get user documents. UserDocument only has user/file/uploaded_at -
-        # there's no title or document_type field on the model - derive a
-        # display name from the uploaded filename instead.
+        # Get user documents
         documents = UserDocument.objects.filter(user=user).order_by('-uploaded_at')
         user_documents = [
             {
                 'id': doc.id,
-                'title': doc.file.name.split('/')[-1] if doc.file else 'Document',
-                'file_url': doc.file.url if doc.file else None,
+                'title': doc.title,
+                'document_type': doc.document_type,
+                'file_url': doc.document.url if doc.document else None,
                 'uploaded_at': doc.uploaded_at,
-                'file_name': doc.file.name.split('/')[-1] if doc.file else None
+                'file_name': doc.document.name.split('/')[-1] if doc.document else None
             }
             for doc in documents
         ]
 
-        # Get current tutoring requests based on role.
-        #
-        # All three branches below batch-fetch replies/accepted-tutor rows
-        # for every relevant request in a couple of queries up front
-        # (_bulk_replies_and_accepted), instead of issuing two extra
-        # queries per request inside the loop. That per-request pattern
-        # used to mean 1000+ queries and multi-second responses for a
-        # user with a large request history - long enough to blow past
-        # the frontend's request timeout and show up as "failed to load"
-        # for exactly the busiest/longest-tenured tutors.
-        def _bulk_replies_and_accepted(request_ids):
-            replies_by_request = {}
-            accepted_by_request = {}
-            if not request_ids:
-                return replies_by_request, accepted_by_request
-
-            all_replies = TutorResponse.objects.filter(
-                request_id__in=request_ids, rejected=False
-            ).select_related('tutor').order_by('request_id', '-created_at')
-            for reply in all_replies:
-                replies_by_request.setdefault(reply.request_id, []).append({
-                    'id': reply.id,
-                    'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
-                    'tutor_id': reply.tutor.id,
-                    'message': reply.message,
-                    'created_at': reply.created_at
-                })
-
-            all_accepted = AcceptedTutor.objects.filter(
-                request_id__in=request_ids
-            ).select_related('tutor').order_by('request_id', '-accepted_at')
-            for accepted in all_accepted:
-                # Keep the most recently accepted row if a request somehow
-                # ended up with more than one (e.g. after a tutor swap).
-                accepted_by_request.setdefault(accepted.request_id, accepted)
-
-            return replies_by_request, accepted_by_request
-
+        # Get current tutoring requests based on role
         current_requests = []
         seen_request_ids = set()  # Track all request IDs to avoid duplicates
 
         # For parents: get their tutoring requests + referral requests
         if user.roles == 'parent':
             # Regular tutoring requests
-            parent_requests = list(TutoringRequest.objects.filter(parent=user).select_related('student').order_by('-created_at'))
-            replies_by_request, accepted_by_request = _bulk_replies_and_accepted([r.id for r in parent_requests])
-
+            parent_requests = TutoringRequest.objects.filter(parent=user).order_by('-created_at')
             for request in parent_requests:
-                if request.id in seen_request_ids:
-                    continue
-                seen_request_ids.add(request.id)
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
 
-                replies_list = replies_by_request.get(request.id, [])
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
 
-                accepted_tutor_info = None
-                accepted_for_request = accepted_by_request.get(request.id)
-                if accepted_for_request:
-                    accepted_tutor_info = {
-                        'id': accepted_for_request.tutor.id,
-                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
-                        'email': accepted_for_request.tutor.email,
-                        'accepted_at': accepted_for_request.accepted_at
-                    }
+                    # Get accepted tutor if exists
+                    accepted_tutor_info = None
+                    try:
+                        accepted = AcceptedTutor.objects.get(request=request)
+                        accepted_tutor_info = {
+                            'id': accepted.tutor.id,
+                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                            'email': accepted.tutor.email,
+                            'accepted_at': accepted.accepted_at
+                        }
+                    except AcceptedTutor.DoesNotExist:
+                        pass
 
-                current_requests.append({
-                    'id': request.id,
-                    'type': 'regular',
-                    'student_name': f"{request.student.firstName} {request.student.lastName}",
-                    'subject': request.subject,
-                    'grade': request.grade,
-                    'service': request.service,
-                    'city': request.city,
-                    'status': request.is_accepted,
-                    'reply_count': len(replies_list),
-                    'replies': replies_list,
-                    'accepted_tutor': accepted_tutor_info,
-                    'created_at': request.created_at,
-                    'description': request.description
-                })
+                    current_requests.append({
+                        'id': request.id,
+                        'type': 'regular',
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': request.is_accepted,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
+                        'created_at': request.created_at,
+                        'description': request.description
+                    })
 
             # Referral requests sent by this parent
             referral_requests = TutorReferralRequest.objects.filter(parent=user).select_related('tutor', 'student', 'tutoring_request').order_by('-created_at')
@@ -5088,59 +4867,58 @@ class AdminUserHoursView(APIView):
 
         # For tutors: get requests they've responded to, referral requests, and accepted requests
         elif user.roles == 'tutor':
-            # Track entries by request id (not just a seen-set) so step 3
-            # can upgrade an entry already added in step 1 in place, instead
-            # of being skipped - previously an accepted reply stayed
-            # labeled as a plain 'response' forever and never showed the
-            # ACCEPTED badge or relationship details.
-            entries_by_request_id = {}
-
-            tutor_responses = list(TutorResponse.objects.filter(tutor=user).select_related('request', 'request__student', 'request__parent'))
-            accepted_tutors = list(AcceptedTutor.objects.filter(tutor=user).select_related('request', 'request__student', 'request__parent', 'tutor'))
-
-            all_request_ids = {r.request_id for r in tutor_responses} | {a.request_id for a in accepted_tutors}
-            replies_by_request, accepted_by_request = _bulk_replies_and_accepted(all_request_ids)
-
             # 1. Get requests the tutor has responded to
+            tutor_responses = TutorResponse.objects.filter(tutor=user).select_related('request')
             for response in tutor_responses:
                 request = response.request
-                if request.id in seen_request_ids:
-                    continue
-                seen_request_ids.add(request.id)
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
 
-                replies_list = replies_by_request.get(request.id, [])
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
 
-                accepted_tutor_info = None
-                accepted_for_request = accepted_by_request.get(request.id)
-                if accepted_for_request:
-                    accepted_tutor_info = {
-                        'id': accepted_for_request.tutor.id,
-                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
-                        'email': accepted_for_request.tutor.email,
-                        'accepted_at': accepted_for_request.accepted_at
-                    }
+                    # Get accepted tutor if exists
+                    accepted_tutor_info = None
+                    try:
+                        accepted = AcceptedTutor.objects.get(request=request)
+                        accepted_tutor_info = {
+                            'id': accepted.tutor.id,
+                            'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                            'email': accepted.tutor.email,
+                            'accepted_at': accepted.accepted_at
+                        }
+                    except AcceptedTutor.DoesNotExist:
+                        pass
 
-                entry = {
-                    'id': request.id,
-                    'type': 'response',
-                    'student_name': f"{request.student.firstName} {request.student.lastName}",
-                    'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
-                    'subject': request.subject,
-                    'grade': request.grade,
-                    'service': request.service,
-                    'city': request.city,
-                    'status': request.is_accepted,
-                    'reply_count': len(replies_list),
-                    'replies': replies_list,
-                    'accepted_tutor': accepted_tutor_info,
-                    'created_at': request.created_at,
-                    'description': request.description,
-                    'tutor_response': response.message,
-                    'response_date': response.created_at,
-                    'response_rejected': response.rejected
-                }
-                current_requests.append(entry)
-                entries_by_request_id[request.id] = entry
+                    current_requests.append({
+                        'id': request.id,
+                        'type': 'response',
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': request.is_accepted,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
+                        'created_at': request.created_at,
+                        'description': request.description,
+                        'tutor_response': response.message,
+                        'response_date': response.created_at,
+                        'response_rejected': response.rejected
+                    })
 
             # 2. Get referral requests received by this tutor
             referral_requests = TutorReferralRequest.objects.filter(tutor=user).select_related('parent', 'student', 'tutoring_request').order_by('-created_at')
@@ -5162,72 +4940,81 @@ class AdminUserHoursView(APIView):
                 })
 
             # 3. Get accepted tutoring relationships (requests that were accepted)
+            accepted_tutors = AcceptedTutor.objects.filter(tutor=user).select_related('request', 'student', 'parent')
             for accepted in accepted_tutors:
                 request = accepted.request
+                if request.id not in seen_request_ids:
+                    seen_request_ids.add(request.id)
 
-                # Accepted tutor info (this tutor)
-                accepted_tutor_info = {
-                    'id': accepted.tutor.id,
-                    'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
-                    'email': accepted.tutor.email,
-                    'accepted_at': accepted.accepted_at
-                }
+                    # Get all replies for this specific request
+                    tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                    replies_list = [
+                        {
+                            'id': reply.id,
+                            'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                            'tutor_id': reply.tutor.id,
+                            'message': reply.message,
+                            'created_at': reply.created_at
+                        }
+                        for reply in tutor_replies
+                    ]
 
-                existing_entry = entries_by_request_id.get(request.id)
-                if existing_entry is not None:
-                    # Upgrade the entry already added in step 1 so it shows
-                    # as accepted, without losing its reply details.
-                    existing_entry['type'] = 'accepted'
-                    existing_entry['status'] = 'Accepted'
-                    existing_entry['accepted_status'] = accepted.status
-                    existing_entry['accepted_tutor'] = accepted_tutor_info
-                    existing_entry['accepted_at'] = accepted.accepted_at
-                    continue
+                    # Accepted tutor info (this tutor)
+                    accepted_tutor_info = {
+                        'id': accepted.tutor.id,
+                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                        'email': accepted.tutor.email,
+                        'accepted_at': accepted.accepted_at
+                    }
 
-                if request.id in seen_request_ids:
-                    continue
-                seen_request_ids.add(request.id)
-
-                replies_list = replies_by_request.get(request.id, [])
-
-                entry = {
-                    'id': request.id,
-                    'type': 'accepted',
-                    'student_name': f"{request.student.firstName} {request.student.lastName}",
-                    'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
-                    'subject': request.subject,
-                    'grade': request.grade,
-                    'service': request.service,
-                    'city': request.city,
-                    'status': 'Accepted',
-                    'accepted_status': accepted.status,
-                    'reply_count': len(replies_list),
-                    'replies': replies_list,
-                    'accepted_tutor': accepted_tutor_info,
-                    'created_at': request.created_at,
-                    'accepted_at': accepted.accepted_at,
-                    'description': request.description
-                }
-                current_requests.append(entry)
-                entries_by_request_id[request.id] = entry
+                    current_requests.append({
+                        'id': request.id,
+                        'type': 'accepted',
+                        'student_name': f"{request.student.firstName} {request.student.lastName}",
+                        'parent_name': f"{request.parent.firstName} {request.parent.lastName}",
+                        'subject': request.subject,
+                        'grade': request.grade,
+                        'service': request.service,
+                        'city': request.city,
+                        'status': 'Accepted',
+                        'accepted_status': accepted.status,
+                        'reply_count': len(replies_list),
+                        'replies': replies_list,
+                        'accepted_tutor': accepted_tutor_info,
+                        'created_at': request.created_at,
+                        'accepted_at': accepted.accepted_at,
+                        'description': request.description
+                    })
 
         # For students: get requests made for them
         elif user.roles == 'student':
-            student_requests = list(TutoringRequest.objects.filter(student=user).select_related('parent').order_by('-created_at'))
-            replies_by_request, accepted_by_request = _bulk_replies_and_accepted([r.id for r in student_requests])
-
+            student_requests = TutoringRequest.objects.filter(student=user).order_by('-created_at')
             for request in student_requests:
-                replies_list = replies_by_request.get(request.id, [])
-
-                accepted_tutor_info = None
-                accepted_for_request = accepted_by_request.get(request.id)
-                if accepted_for_request:
-                    accepted_tutor_info = {
-                        'id': accepted_for_request.tutor.id,
-                        'name': f"{accepted_for_request.tutor.firstName} {accepted_for_request.tutor.lastName}",
-                        'email': accepted_for_request.tutor.email,
-                        'accepted_at': accepted_for_request.accepted_at
+                # Get all replies for this specific request
+                tutor_replies = TutorResponse.objects.filter(request=request, rejected=False).select_related('tutor').order_by('-created_at')
+                replies_list = [
+                    {
+                        'id': reply.id,
+                        'tutor_name': f"{reply.tutor.firstName} {reply.tutor.lastName}",
+                        'tutor_id': reply.tutor.id,
+                        'message': reply.message,
+                        'created_at': reply.created_at
                     }
+                    for reply in tutor_replies
+                ]
+
+                # Get accepted tutor if exists
+                accepted_tutor_info = None
+                try:
+                    accepted = AcceptedTutor.objects.get(request=request)
+                    accepted_tutor_info = {
+                        'id': accepted.tutor.id,
+                        'name': f"{accepted.tutor.firstName} {accepted.tutor.lastName}",
+                        'email': accepted.tutor.email,
+                        'accepted_at': accepted.accepted_at
+                    }
+                except AcceptedTutor.DoesNotExist:
+                    pass
 
                 current_requests.append({
                     'id': request.id,
@@ -5264,20 +5051,13 @@ class AdminRecentUsersView(APIView):
             return Response({'error': 'Admin access required'}, status=403)
 
         role = request.GET.get('role', '').lower()
-        limit_param = request.GET.get('limit', 'all')
+        limit = int(request.GET.get('limit', 10))
 
         if role not in ['tutor', 'parent', 'student']:
             return Response({'error': 'Invalid role. Must be tutor, parent, or student.'}, status=400)
 
-        # Get users by role, newest first. 'all' (the default) returns every
-        # matching user - pass a numeric limit to cap the result instead.
-        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')
-        if str(limit_param).lower() != 'all':
-            try:
-                limit = int(limit_param)
-            except (TypeError, ValueError):
-                return Response({'error': "'limit' must be an integer or 'all'"}, status=400)
-            users = users[:limit]
+        # Get recent users by role - check both lowercase and as-is
+        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')[:limit]
 
         print(f"Searching for role: {role}, found {users.count()} users")
 
@@ -5695,35 +5475,31 @@ class AdminBatchAddHoursView(APIView):
                 is_within_current_week = cur_ws <= session_date <= cur_we
                 eligible_status = "Eligible" if is_within_current_week else "Late"
 
-                # Create the hours entry - consumes any remaining school-credit
-                # balance the student has, splitting into 'credited' + 'normal'
-                # rows if the balance only partially covers this session.
-                created_hours = create_hours_with_credit_split(
-                    student_id=student.id,
-                    parent_id=parent.id,
-                    tutor_id=tutor.id,
+                # Create the hours entry
+                hours_obj = Hours.objects.create(
+                    tutor=tutor,
+                    student=student,
+                    parent=parent,
                     date=session_date,
-                    start_time=start_time,
-                    end_time=end_time,
-                    total_time=total_time_decimal,
+                    startTime=start_time,
+                    endTime=end_time,
+                    totalTime=total_time_decimal,
                     location=location,
                     subject=subject,
                     notes=notes,
                     status='Accepted',  # Admin-added hours are auto-accepted
-                    eligible=eligible_status,
+                    eligible=eligible_status
                 )
 
-                for hours_obj in created_hours:
-                    results['successful'].append({
-                        'index': idx,
-                        'hour_id': hours_obj.id,
-                        'tutor': f"{tutor.firstName} {tutor.lastName}",
-                        'student': f"{student.firstName} {student.lastName}",
-                        'date': date_str,
-                        'total_time': str(hours_obj.totalTime),
-                        'billing_status': hours_obj.billing_status,
-                        'eligible': eligible_status
-                    })
+                results['successful'].append({
+                    'index': idx,
+                    'hour_id': hours_obj.id,
+                    'tutor': f"{tutor.firstName} {tutor.lastName}",
+                    'student': f"{student.firstName} {student.lastName}",
+                    'date': date_str,
+                    'total_time': str(total_time_decimal),
+                    'eligible': eligible_status
+                })
 
             except Exception as e:
                 results['failed'].append({
@@ -5778,7 +5554,6 @@ class AdminAllHoursView(APIView):
         late_hours = hours.filter(eligible='Late').count()
         pending_hours = hours.filter(invoice_status='pending').count()
         invoiced_hours = hours.filter(invoice_status='invoiced').count()
-        credited_hours = hours.filter(billing_status='credited').count()
 
         return Response({
             'hours': serializer.data,
@@ -5787,8 +5562,7 @@ class AdminAllHoursView(APIView):
                 'eligible': eligible_hours,
                 'late': late_hours,
                 'pending': pending_hours,
-                'invoiced': invoiced_hours,
-                'credited': credited_hours
+                'invoiced': invoiced_hours
             }
         })
 
@@ -6786,58 +6560,4 @@ support@egstutoring.ca
         return Response({
             'error': f'Error sending reminders: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class AdminEmailLogsView(APIView):
-    """Read-only list of all emails sent by the system, with optional filtering."""
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        from .serializers import EmailLogSerializer
-
-        qs = EmailLog.objects.all()
-
-        email_type = request.query_params.get('email_type')
-        status_filter = request.query_params.get('status')
-        search = request.query_params.get('search', '').strip()
-        date_from = request.query_params.get('date_from')
-        date_to = request.query_params.get('date_to')
-
-        if email_type:
-            qs = qs.filter(email_type=email_type)
-        if status_filter:
-            qs = qs.filter(status=status_filter)
-        if search:
-            qs = qs.filter(
-                Q(recipient_email__icontains=search) |
-                Q(recipient_name__icontains=search) |
-                Q(subject__icontains=search)
-            )
-        if date_from:
-            try:
-                from datetime import datetime
-                qs = qs.filter(sent_at__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date())
-            except ValueError:
-                pass
-        if date_to:
-            try:
-                from datetime import datetime
-                qs = qs.filter(sent_at__date__lte=datetime.strptime(date_to, '%Y-%m-%d').date())
-            except ValueError:
-                pass
-
-        total = qs.count()
-        # Page by 100 so we don't send huge payloads
-        page = int(request.query_params.get('page', 1))
-        page_size = 100
-        offset = (page - 1) * page_size
-        qs = qs[offset: offset + page_size]
-
-        serializer = EmailLogSerializer(qs, many=True)
-        return Response({
-            'total': total,
-            'page': page,
-            'page_size': page_size,
-            'results': serializer.data,
-        })
 

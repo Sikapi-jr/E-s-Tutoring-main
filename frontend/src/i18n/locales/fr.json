@@ -1,5 +1,23 @@
 {
   "landing": {
+    "eyebrow": {
+      "goals": "Nos objectifs",
+      "about": "À propos de nous",
+      "pricing": "Tarifs",
+      "subjects": "Matières populaires",
+      "serviceArea": "Où nous enseignons"
+    },
+    "nav": {
+      "menuLabel": "Sur cette page",
+      "about": "À propos",
+      "goals": "Objectifs",
+      "pricing": "Tarifs",
+      "whyChooseUs": "Pourquoi nous",
+      "subjects": "Matières",
+      "serviceArea": "Zone desservie",
+      "features": "Fonctionnalités",
+      "gettingStarted": "Commencer"
+    },
     "title": "Portail de Tutorat EGS",
     "subtitle": "Votre espace pour un apprentissage simple et sans stress",
     "allInOnePlace": "Tout ce dont vous avez besoin en un seul endroit",
@@ -55,6 +73,143 @@
       "secure": "Gestion sécurisée des données avec communications chiffrées",
       "mobile": "Design adaptatif mobile pour un accès partout, à tout moment",
       "efficient": "Flux de travail rationalisés qui économisent du temps et réduisent la charge administrative"
+    },
+    "about": {
+      "heading": "À propos d'EGS Tutoring",
+      "missionTitle": "Notre mission",
+      "mission": "Chez EGS Tutoring, nous aidons les élèves de la maternelle à la 12e année à réussir sur le plan scolaire, en français comme en anglais, grâce à un accompagnement personnalisé et individuel, adapté au style d'apprentissage et aux objectifs de chaque enfant.",
+      "approachTitle": "Notre approche",
+      "approach": "Nous reconnaissons les avantages de grandir bilingue dans une communauté multiculturelle, et nous adaptons chaque leçon pour en tirer parti. Plutôt qu'un modèle uniforme, nos tuteurs valorisent et soutiennent les talents et les capacités propres à chaque enfant.",
+      "formats": "Nous offrons du tutorat en ligne et en personne, afin que votre famille puisse choisir la formule qui convient le mieux à votre horaire et au style d'apprentissage de votre enfant."
+    },
+    "pricing": {
+      "heading": "Des tarifs simples et transparents",
+      "intro": "Un tutorat de qualité à prix juste, sans frais cachés.",
+      "online": {
+        "title": "Tutorat en ligne",
+        "price": "35 $",
+        "unit": "/h",
+        "description": "Des séances individuelles en direct, où que soit votre enfant, avec la même attention personnalisée qu'en personne."
+      },
+      "inPerson": {
+        "title": "Tutorat en personne",
+        "price": "65 $",
+        "unit": "/h",
+        "description": "Un tuteur se déplace chez vous pour des séances individuelles et adaptées aux besoins de votre enfant."
+      },
+      "group": {
+        "title": "Tutorat de groupe",
+        "badge": "Bientôt disponible",
+        "price": "Gratuit",
+        "description": "Les séances en petits groupes arrivent bientôt, entièrement gratuites pendant leur lancement."
+      }
+    },
+    "goals": {
+      "heading": "Nos objectifs",
+      "support": {
+        "title": "Un accompagnement personnalisé",
+        "description": "Offrir le meilleur soutien à votre enfant alors qu'il évolue dans un environnement bilingue."
+      },
+      "safety": {
+        "title": "Un environnement d'apprentissage sécuritaire",
+        "description": "Une expérience d'apprentissage accueillante et sécuritaire, autant pour les francophones que pour les anglophones."
+      },
+      "confidence": {
+        "title": "Confiance et autonomie",
+        "description": "Développer la confiance en soi et l'autonomie des enfants grâce à des méthodes d'apprentissage personnalisées."
+      }
+    },
+    "whyChooseUs": {
+      "heading": "Pourquoi choisir EGS Tutoring?",
+      "intro": "Parce que le parcours d'apprentissage de chaque enfant est unique, EGS Tutoring propose des plans personnalisés adaptés aux forces et aux défis de chaque élève.",
+      "tutorsHeading": "Nos tuteurs...",
+      "tutors": {
+        "credentials": "Possèdent des certifications, des baccalauréats et des maîtrises",
+        "understanding": "Comprennent que chaque enfant est différent et s'adaptent aux défis propres à votre famille",
+        "experience": "Ont une vaste expérience de travail auprès des enfants de tous âges",
+        "bilingual": "Sont parfaitement bilingues (français et anglais), communiquez dans la langue de votre choix"
+      }
+    },
+    "subjects": {
+      "heading": "Matières offertes",
+      "coverage": {
+        "schoolClasses": {
+          "title": "Cours scolaires",
+          "items": [
+            "Aide aux devoirs",
+            "Préparation aux examens",
+            "Tutorat par matière",
+            "Développement de méthodes de travail",
+            "Plans d'étude personnalisés"
+          ]
+        },
+        "provincialExams": {
+          "title": "Examens provinciaux de l'Ontario",
+          "items": [
+            "Préparation au TPCL (OSSLT)",
+            "Préparation aux examens finaux de 12e année",
+            "Examens blancs",
+            "Séances de révision"
+          ]
+        },
+        "entranceExams": {
+          "title": "Examens d'admission universitaire et collégiale",
+          "items": [
+            "Préparation au SAT et à l'ACT",
+            "Tests d'admission des universités canadiennes",
+            "Préparation aux candidatures et aux entrevues"
+          ]
+        }
+      },
+      "categories": {
+        "math": {
+          "title": "Mathématiques",
+          "items": [
+            "Mathématiques de base (1re à 6e année)",
+            "Mathématiques du secondaire",
+            "Fonctions avancées et précalcul",
+            "Physique et algèbre (tous niveaux)"
+          ]
+        },
+        "english": {
+          "title": "Anglais",
+          "items": [
+            "Grammaire et compréhension",
+            "Pratique de lecture et d'écriture",
+            "Conversation en anglais",
+            "Anglais des affaires"
+          ]
+        },
+        "science": {
+          "title": "Sciences",
+          "items": [
+            "Sciences du primaire au secondaire",
+            "Biologie (tous niveaux)",
+            "Chimie (tous niveaux)",
+            "Biologie, chimie et physique AP"
+          ]
+        },
+        "french": {
+          "title": "Français",
+          "items": [
+            "Grammaire débutant à avancé",
+            "Conversation en français",
+            "Tutorat scolaire en français",
+            "Préparation à l'examen de français EQAO",
+            "Préparation aux examens TCF et TEF"
+          ]
+        }
+      }
+    },
+    "serviceArea": {
+      "heading": "Où nous offrons du tutorat",
+      "intro": "Nous accompagnons fièrement les élèves et les familles de Toronto et de la région de Durham, en personne comme en ligne.",
+      "toronto": "Toronto",
+      "durham": "Région de Durham"
+    },
+    "cta": {
+      "heading": "Prêt à commencer?",
+      "subtext": "Créez votre compte gratuit et faites votre première demande de tuteur en quelques minutes."
     }
   },
   "common": {
@@ -1323,6 +1478,7 @@
     "pendingEnrollmentsMessage": "{{name}} a {{count}} inscription(s) en attente d'approbation.",
     "checkEmailDiagnostic": "Veuillez consulter votre courriel pour le lien du test diagnostique.",
     "diagnosticSubmitted": "Le test diagnostique a été soumis et est en cours de révision.",
+    "pendingApprovalMessage": "Cette inscription est en attente d'approbation par l'administrateur. Nous vous enverrons un courriel dès qu'une décision aura été prise.",
     "passed": "RÉUSSI",
     "notPassed": "NON RÉUSSI",
     "completed": "TERMINÉ",

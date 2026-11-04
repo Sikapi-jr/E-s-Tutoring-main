@@ -12,6 +12,7 @@ const GroupTutoringTutor = () => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [classFiles, setClassFiles] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
+  const [classSessions, setClassSessions] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadData, setUploadData] = useState({
     title: '',
@@ -20,6 +21,13 @@ const GroupTutoringTutor = () => {
     is_current: false
   });
   const [error, setError] = useState('');
+
+  // Session management (attendance + meeting notes)
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [sessionModalLoading, setSessionModalLoading] = useState(false);
 
   useEffect(() => {
     fetchClasses();
@@ -49,12 +57,14 @@ const GroupTutoringTutor = () => {
 
   const fetchClassDetails = async (classId) => {
     try {
-      const [filesRes, enrollmentsRes] = await Promise.all([
+      const [filesRes, enrollmentsRes, sessionsRes] = await Promise.all([
         api.get(`/api/group-tutoring/classes/${classId}/files/`),
-        api.get(`/api/group-tutoring/classes/${classId}/enrollments/`)
+        api.get(`/api/group-tutoring/classes/${classId}/enrollments/`),
+        api.get(`/api/group-tutoring/admin/classes/${classId}/sessions/`)
       ]);
       setClassFiles(filesRes.data);
       setEnrollments(enrollmentsRes.data.filter(e => e.status === 'enrolled'));
+      setClassSessions(sessionsRes.data);
     } catch (err) {
       console.error('Error fetching class details:', err);
     }
@@ -89,6 +99,72 @@ const GroupTutoringTutor = () => {
     } catch (err) {
       console.error('Error uploading file:', err);
       alert('Failed to upload file: ' + (err.response?.data?.error || 'Unknown error'));
+    }
+  };
+
+  // ========== Session (Attendance + Meeting Notes) Handlers ==========
+  const handleOpenSessionModal = async (session) => {
+    setSelectedSession(session);
+    setAttendanceData([]);
+    setSessionNotes('');
+    setShowSessionModal(true);
+    setSessionModalLoading(true);
+
+    try {
+      const [attendanceRes, notesRes] = await Promise.all([
+        api.get(`/api/group-tutoring/admin/classes/${selectedClass.id}/attendance/${session.session_date}/`),
+        api.get(`/api/group-tutoring/admin/classes/${selectedClass.id}/sessions/${session.session_date}/notes/`)
+      ]);
+      setAttendanceData(attendanceRes.data.attendance || []);
+      setSessionNotes(notesRes.data.notes || '');
+    } catch (err) {
+      console.error('Error fetching session details:', err);
+    } finally {
+      setSessionModalLoading(false);
+    }
+  };
+
+  const handleAttendanceChange = (enrollmentId, field, value) => {
+    setAttendanceData(prev => prev.map(a =>
+      a.enrollment_id === enrollmentId ? { ...a, [field]: value } : a
+    ));
+  };
+
+  const handleSaveAttendance = async () => {
+    if (!selectedSession) return;
+
+    setSessionModalLoading(true);
+    try {
+      await api.post(`/api/group-tutoring/admin/classes/${selectedClass.id}/attendance/${selectedSession.session_date}/`, {
+        attendance: attendanceData.map(a => ({
+          enrollment_id: a.enrollment_id,
+          status: a.status || 'attended',
+          notes: a.notes || ''
+        }))
+      });
+      alert('Attendance saved successfully!');
+    } catch (err) {
+      console.error('Error saving attendance:', err);
+      alert('Failed to save attendance');
+    } finally {
+      setSessionModalLoading(false);
+    }
+  };
+
+  const handleSaveSessionNotes = async () => {
+    if (!selectedSession) return;
+
+    setSessionModalLoading(true);
+    try {
+      await api.patch(`/api/group-tutoring/admin/classes/${selectedClass.id}/sessions/${selectedSession.session_date}/notes/`, {
+        notes: sessionNotes
+      });
+      alert('Meeting notes saved successfully!');
+    } catch (err) {
+      console.error('Error saving meeting notes:', err);
+      alert('Failed to save meeting notes');
+    } finally {
+      setSessionModalLoading(false);
     }
   };
 
@@ -203,6 +279,68 @@ const GroupTutoringTutor = () => {
                   </div>
                 ) : (
                   <p style={{ color: '#666' }}>No students enrolled yet.</p>
+                )}
+              </div>
+
+              {/* Sessions - Attendance & Meeting Notes */}
+              <div style={{
+                backgroundColor: 'white',
+                padding: '1.5rem',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                marginBottom: '2rem'
+              }}>
+                <h3 style={{ marginTop: 0 }}>Class Sessions</h3>
+                <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '-0.5rem' }}>
+                  Click a session to mark attendance or add meeting notes.
+                </p>
+
+                {classSessions.length > 0 ? (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #ddd' }}>
+                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Date</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Time</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Status</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {classSessions.map(session => (
+                        <tr key={session.id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                          <td style={{ padding: '0.75rem' }}>
+                            {new Date(session.session_date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>{session.start_time?.substring(0, 5)}</td>
+                          <td style={{ padding: '0.75rem' }}>
+                            {session.is_cancelled ? (
+                              <span style={{ color: '#dc3545', fontWeight: 'bold' }}>Cancelled</span>
+                            ) : (
+                              <span style={{ color: '#28a745' }}>Scheduled</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <button
+                              onClick={() => handleOpenSessionModal(session)}
+                              style={{
+                                padding: '0.4rem 0.8rem',
+                                backgroundColor: '#192A88',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              Attendance &amp; Notes
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p style={{ color: '#666' }}>No sessions scheduled yet.</p>
                 )}
               </div>
 
@@ -421,6 +559,153 @@ const GroupTutoringTutor = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance & Meeting Notes Modal */}
+      {showSessionModal && selectedSession && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            margin: '2rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>
+                {new Date(selectedSession.session_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </h2>
+              <button
+                onClick={() => setShowSessionModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {sessionModalLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <>
+                {/* Attendance */}
+                <div style={{ marginBottom: '2rem' }}>
+                  <h3 style={{ marginBottom: '0.75rem' }}>Attendance</h3>
+                  {attendanceData.length === 0 ? (
+                    <p style={{ color: '#666' }}>No enrolled students found for this class.</p>
+                  ) : (
+                    <>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student</th>
+                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Status</th>
+                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {attendanceData.map(record => (
+                            <tr key={record.enrollment_id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                              <td style={{ padding: '0.75rem' }}>{record.student_name}</td>
+                              <td style={{ padding: '0.75rem' }}>
+                                <select
+                                  value={record.status || 'attended'}
+                                  onChange={(e) => handleAttendanceChange(record.enrollment_id, 'status', e.target.value)}
+                                  style={{ padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                >
+                                  <option value="attended">Attended</option>
+                                  <option value="absent">Absent</option>
+                                  <option value="cancelled_advance">Cancelled in Advance</option>
+                                </select>
+                              </td>
+                              <td style={{ padding: '0.75rem' }}>
+                                <input
+                                  type="text"
+                                  value={record.notes || ''}
+                                  onChange={(e) => handleAttendanceChange(record.enrollment_id, 'notes', e.target.value)}
+                                  placeholder="Optional notes..."
+                                  style={{ width: '100%', padding: '0.4rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <button
+                        onClick={handleSaveAttendance}
+                        disabled={sessionModalLoading}
+                        style={{
+                          padding: '0.75rem 1.5rem',
+                          backgroundColor: sessionModalLoading ? '#ccc' : '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: sessionModalLoading ? 'not-allowed' : 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Save Attendance
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Meeting Notes */}
+                <div>
+                  <h3 style={{ marginBottom: '0.75rem' }}>Meeting Notes</h3>
+                  <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
+                    Record what was covered, how the class went, or anything relevant for next time.
+                  </p>
+                  <textarea
+                    value={sessionNotes}
+                    onChange={(e) => setSessionNotes(e.target.value)}
+                    rows={6}
+                    placeholder="Write your meeting notes here..."
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      marginBottom: '1rem'
+                    }}
+                  />
+                  <button
+                    onClick={handleSaveSessionNotes}
+                    disabled={sessionModalLoading}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: sessionModalLoading ? '#ccc' : '#192A88',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: sessionModalLoading ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Save Notes
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

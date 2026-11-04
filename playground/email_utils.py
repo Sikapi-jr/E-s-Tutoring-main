@@ -76,7 +76,7 @@ EGS Tutoring Team
                     <ol style="padding-left: 1.2em; margin-bottom: 0.5em;">
                         <li style="margin-bottom: 10px;">
                             <strong>Add your children</strong><br>
-                            Once verified, visit the <a href="{base_url}/students" style="color: #192A88;">Students page</a> to create accounts for your children.
+                            Once verified, visit the <a href="{base_url}/students" style="color: #192A88;">Students page</a> to create profiles for your children.
                         </li>
                         <li style="margin-bottom: 10px;">
                             <strong>Submit a tutoring request</strong><br>

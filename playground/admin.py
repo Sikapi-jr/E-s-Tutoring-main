@@ -48,8 +48,8 @@ class QuizQuestionInline(admin.TabularInline):
 
 @admin.register(GroupTutoringClass)
 class GroupTutoringClassAdmin(admin.ModelAdmin):
-    list_display = ('title', 'difficulty', 'subject', 'location', 'start_date', 'end_date', 'enrolled_count', 'max_students', 'is_active')
-    list_filter = ('difficulty', 'subject', 'is_active', 'tutors')
+    list_display = ('title', 'difficulty', 'subject', 'location', 'start_date', 'end_date', 'enrolled_count', 'max_students', 'requires_diagnostic', 'is_active')
+    list_filter = ('difficulty', 'subject', 'is_active', 'requires_diagnostic', 'tutors')
     search_fields = ('title', 'description', 'location')
     filter_horizontal = ('tutors',)
     inlines = [DiagnosticTestInline, ClassSessionInline, ClassFileInline]
@@ -62,7 +62,7 @@ class GroupTutoringClassAdmin(admin.ModelAdmin):
             'fields': ('start_date', 'end_date', 'schedule_days', 'schedule_time', 'schedule_times', 'duration_minutes', 'location', 'location_link')
         }),
         ('Capacity & Assessment', {
-            'fields': ('max_students', 'num_quizzes', 'is_active')
+            'fields': ('max_students', 'num_quizzes', 'requires_diagnostic', 'is_active')
         }),
         ('Metadata', {
             'fields': ('enrolled_count', 'created_at', 'updated_at'),
@@ -88,8 +88,8 @@ class DiagnosticTestSubmissionAdmin(admin.ModelAdmin):
 class ClassSessionAdmin(admin.ModelAdmin):
     list_display = ('tutoring_class', 'session_date', 'start_time', 'end_time', 'title', 'is_cancelled')
     list_filter = ('tutoring_class', 'is_cancelled', 'session_date')
-    search_fields = ('title', 'description')
-    readonly_fields = ('created_at', 'updated_at')
+    search_fields = ('title', 'description', 'notes')
+    readonly_fields = ('created_at', 'updated_at', 'notes_updated_at', 'notes_updated_by')
 
 @admin.register(ClassAttendance)
 class ClassAttendanceAdmin(admin.ModelAdmin):

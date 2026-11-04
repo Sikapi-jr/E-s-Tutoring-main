@@ -58,6 +58,7 @@ const GroupTutoringAdmin = () => {
     location_link: '',
     max_students: 20,
     num_quizzes: 0,
+    requires_diagnostic: true,
     is_active: true,
     header_image: null
   });
@@ -257,6 +258,7 @@ const GroupTutoringAdmin = () => {
       location_link: '',
       max_students: 20,
       num_quizzes: 0,
+      requires_diagnostic: true,
       is_active: true,
       header_image: null
     });
@@ -1039,7 +1041,7 @@ const GroupTutoringAdmin = () => {
             </thead>
             <tbody>
               {enrollments
-                .filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'approved'].includes(e.status))
+                .filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'pending_approval', 'approved'].includes(e.status))
                 .map(enrollment => (
                   <tr key={enrollment.id} style={{ borderBottom: '1px solid #dee2e6' }}>
                     <td style={{ padding: '1rem' }}>{enrollment.student_name}</td>
@@ -1050,10 +1052,10 @@ const GroupTutoringAdmin = () => {
                         padding: '0.25rem 0.5rem',
                         borderRadius: '4px',
                         fontSize: '0.85rem',
-                        backgroundColor: enrollment.status === 'diagnostic_submitted' || enrollment.status === 'approved' ? '#ffc107' : '#6c757d',
+                        backgroundColor: ['diagnostic_submitted', 'approved', 'pending_approval'].includes(enrollment.status) ? '#ffc107' : '#6c757d',
                         color: 'white'
                       }}>
-                        {enrollment.status.replace('_', ' ').toUpperCase()}
+                        {enrollment.status.replace(/_/g, ' ').toUpperCase()}
                       </span>
                     </td>
                     <td style={{ padding: '1rem' }}>
@@ -1063,7 +1065,7 @@ const GroupTutoringAdmin = () => {
                       {new Date(enrollment.created_at).toLocaleDateString()}
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      {(enrollment.status === 'diagnostic_submitted' || enrollment.status === 'approved') && (
+                      {['diagnostic_submitted', 'approved', 'pending_approval'].includes(enrollment.status) && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button
                             onClick={() => handleApproveEnrollment(enrollment.id)}
@@ -1107,7 +1109,7 @@ const GroupTutoringAdmin = () => {
           </table>
         </div>
 
-        {enrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'approved'].includes(e.status)).length === 0 && (
+        {enrollments.filter(e => ['pending_diagnostic', 'diagnostic_submitted', 'pending_approval', 'approved'].includes(e.status)).length === 0 && (
           <p style={{ color: '#666', textAlign: 'center', padding: '2rem', backgroundColor: 'white' }}>
             No pending enrollments.
           </p>
@@ -1574,6 +1576,21 @@ const GroupTutoringAdmin = () => {
                     />
                     <span style={{ fontWeight: 'bold' }}>Class is Active (accepting enrollments)</span>
                   </label>
+                </div>
+
+                <div style={{ marginTop: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.requires_diagnostic}
+                      onChange={(e) => handleFormChange('requires_diagnostic', e.target.checked)}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    <span style={{ fontWeight: 'bold' }}>Require diagnostic test for sign-up</span>
+                  </label>
+                  <small style={{ color: '#666', display: 'block', marginLeft: '1.5rem' }}>
+                    If unchecked, students can sign up without taking a diagnostic test first. Note: classes above Beginner difficulty still require admin approval before enrollment is confirmed.
+                  </small>
                 </div>
 
                 {/* Header Image Upload */}
