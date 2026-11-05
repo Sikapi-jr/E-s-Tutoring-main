@@ -3804,8 +3804,9 @@ Time: {event_start_time} - {event_end_time}
 Description: {event_description}
 """
         
-        # Backend URL for the link
-        backend_url = os.getenv('BACKEND_URL', 'https://egstutoring.ca')
+        # Backend URL for the link (settings.BACKEND_URL is already
+        # trailing-slash-normalized, unlike re-reading the raw env var here)
+        backend_url = settings.BACKEND_URL
         scheduled_sessions_link = f"{backend_url}/events"
         
         # Email subject and body

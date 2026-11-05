@@ -343,8 +343,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 
 # URL Configuration
-BACKEND_URL = os.getenv("BACKEND_URL", "https://egstutoring.ca")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egstutoring.ca")
+# .rstrip('/') guards against a stray trailing slash in the env var producing
+# double slashes (e.g. "https://egstutoring.ca//verify-email/...") everywhere
+# these are concatenated with a path that starts with its own '/' -- this
+# exact bug broke email verification links in production.
+BACKEND_URL = os.getenv("BACKEND_URL", "https://egstutoring.ca").rstrip("/")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egstutoring.ca").rstrip("/")
 
 # Email Configuration
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@egstutoring.ca")
