@@ -1027,7 +1027,7 @@ The {canceller_role} has cancelled the following tutoring session:
 
 Session: {event_title}
 Date: {formatted_date}
-Cancelled by: {cancelling_user.first_name} {cancelling_user.last_name} ({cancelling_user.email})
+Cancelled by: {cancelling_user.firstName} {cancelling_user.lastName} ({cancelling_user.email})
 Reason: {cancel_reason}
 
 Please contact the {canceller_role} if you need to reschedule or have any questions.
@@ -1969,14 +1969,26 @@ class RequestResponseCreateView(generics.ListCreateAPIView):
         )
 
 class StudentsListView(APIView):
-    permission_classes = [AllowAny]
+    """List students for a parent, or every student for an admin.
+    Non-admin callers can only ever see their own children -- the 'parent'
+    query param is ignored for them and forced to their own id, so a
+    logged-in parent can't read another family's children by passing a
+    different id."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        parent_id = request.query_params.get('parent', None)
-        if not parent_id:
-            return Response({"error": "Missing 'parent' query parameter."}, status=400)
+        is_admin = request.user.is_superuser or request.user.roles == 'admin'
 
-        students = User.objects.filter(roles='student', parent=parent_id)
+        if is_admin:
+            parent_id = request.query_params.get('parent', None)
+            students = (
+                User.objects.filter(roles='student', parent=parent_id)
+                if parent_id else
+                User.objects.filter(roles='student')
+            )
+        else:
+            students = User.objects.filter(roles='student', parent=request.user.id)
+
         serializer = UserSerializer(students, many=True)
         return Response(serializer.data)
 
@@ -4976,13 +4988,22 @@ class AdminRecentUsersView(APIView):
             return Response({'error': 'Admin access required'}, status=403)
 
         role = request.GET.get('role', '').lower()
-        limit = int(request.GET.get('limit', 10))
 
         if role not in ['tutor', 'parent', 'student']:
             return Response({'error': 'Invalid role. Must be tutor, parent, or student.'}, status=400)
 
         # Get recent users by role - check both lowercase and as-is
-        users = User.objects.filter(roles__iexact=role).order_by('-date_joined')[:limit]
+        users_qs = User.objects.filter(roles__iexact=role).order_by('-date_joined')
+
+        limit_param = request.GET.get('limit', '10')
+        if limit_param == 'all':
+            users = users_qs
+        else:
+            try:
+                limit = int(limit_param)
+            except ValueError:
+                limit = 10
+            users = users_qs[:limit]
 
         print(f"Searching for role: {role}, found {users.count()} users")
 

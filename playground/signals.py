@@ -81,6 +81,14 @@ def geocode_and_map_user(sender, instance, created, **kwargs):
     - On creation: geocode if tutor/parent with address
     - On update: regeocode if address/city changed
     """
+    # Disabled: migration 0041 removed User.latitude/longitude/geocoded_address,
+    # but this signal (and mapulus_service.py) were never updated to match --
+    # every tutor/parent save was silently hitting an AttributeError here
+    # (caught below, so it never broke registration, just logged noise and
+    # did nothing). MAPULUS_API_KEY was also never actually configured.
+    # Re-enable only after restoring those model fields with a real migration.
+    return
+
     # Only process tutors and parents
     if instance.roles not in ['tutor', 'parent']:
         return
