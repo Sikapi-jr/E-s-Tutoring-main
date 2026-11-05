@@ -1339,7 +1339,7 @@ Hello {tutor.firstName},
 This is your weekly reminder to log your tutoring hours for the past week.
 
 Please visit the hour logging page to record your sessions:
-https://egstutoring-portal.ca/log
+https://egstutoring.ca/log
 
 📝 Don't forget to include:
 - Date and time of each session

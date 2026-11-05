@@ -3805,7 +3805,7 @@ Description: {event_description}
 """
         
         # Backend URL for the link
-        backend_url = os.getenv('BACKEND_URL', 'https://egstutoring-portal.ca')
+        backend_url = os.getenv('BACKEND_URL', 'https://egstutoring.ca')
         scheduled_sessions_link = f"{backend_url}/events"
         
         # Email subject and body
@@ -5692,7 +5692,7 @@ def send_unpaid_invoice_reminders(request):
         subject = "Reminder: Outstanding Invoice Payment - EGS Tutoring"
 
         # Get the site domain
-        site_domain = settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://egstutoring-portal.ca'
+        site_domain = settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://egstutoring.ca'
         invoices_url = f"{site_domain}/ViewInvoices"
 
         # HTML email template
