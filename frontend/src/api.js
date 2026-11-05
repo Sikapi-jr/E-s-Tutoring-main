@@ -11,14 +11,26 @@ console.log('API Configuration:', {
   REFRESH_ENDPOINT: REFRESH_ENDPOINT
 });
 
-// Paths that should NOT send a bearer token or trigger token refresh
+// Paths that should NOT send a bearer token or trigger token refresh.
+// These are all AllowAny endpoints used by logged-out/not-yet-verified
+// users -- without this, a stale/invalid token left in localStorage from
+// an earlier session gets attached, JWT auth rejects it with 401 *before*
+// the view's AllowAny permission class ever runs, and the response
+// interceptor then cascades into retrying with an equally-stale refresh
+// token. This exact bug broke email verification in production: the
+// request interceptor attached a stale token to /api/verifyEmail/, which
+// otherwise has permission_classes = [AllowAny] and should never require
+// or even look at a token.
 const PUBLIC_PATHS = [
   /\/login\/?$/i,
   /\/register\/?$/i,
   /\/api\/token\/?$/i,
   /\/api\/token\/refresh\/?$/i,
   /\/api\/user\/register\/?$/i,
-  /\/api\/tutor-referral-approval\//i
+  /\/api\/tutor-referral-approval\//i,
+  /\/api\/verifyEmail\/?$/i,
+  /\/api\/resendVerification\/?$/i,
+  /\/api\/password[-_]reset/i
 ];
 
 const api = axios.create({
