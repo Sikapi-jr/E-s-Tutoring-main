@@ -83,20 +83,20 @@ function LoginForm() {
 
   if (isInitialLoading) {
     return (
-      <div className="form-container" style={{ textAlign: 'center', padding: '4rem' }}>
+      <div className="authform-container" style={{ textAlign: 'center', padding: '4rem' }}>
         <p>{t("common.loading")}...</p>
       </div>
     );
   }
 
   return (
-    <div className="form-container">
+    <div className="authform-container">
       <h1>{t("auth.loginTitle")}</h1>
 
       <div className="form-section">
         <form onSubmit={handleSubmit}>
           <input
-            className="form-input"
+            className="authform-input"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -104,7 +104,7 @@ function LoginForm() {
             required
           />
           <input
-            className="form-input"
+            className="authform-input"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -112,7 +112,7 @@ function LoginForm() {
             required
           />
           <button
-            className={`form-button${clicked ? " clicked" : ""}`}
+            className={`authform-button${clicked ? " clicked" : ""}`}
             type="submit"
             disabled={loading}
           >
@@ -122,7 +122,7 @@ function LoginForm() {
       </div>
 
       <button
-        className="form-button"
+        className="authform-button"
         onClick={handleReset}
       >
         {t("auth.forgotPassword")}
@@ -136,13 +136,13 @@ function LoginForm() {
       </p>
 
       {error && <p className="error-message">{error}</p>}
-      
+
       {showResendVerification && (
         <div className="resend-verification-section">
           <h3>{t("auth.resendVerificationTitle")}</h3>
           <form onSubmit={handleResendVerification}>
             <input
-              className="form-input"
+              className="authform-input"
               type="email"
               value={resendEmail}
               onChange={(e) => setResendEmail(e.target.value)}
@@ -150,7 +150,7 @@ function LoginForm() {
               required
             />
             <button
-              className="form-button"
+              className="authform-button"
               type="submit"
               disabled={loading}
             >
@@ -158,7 +158,7 @@ function LoginForm() {
             </button>
           </form>
           <button
-            className="form-button secondary"
+            className="authform-button secondary"
             onClick={() => setShowResendVerification(false)}
           >
             {t("common.cancel")}

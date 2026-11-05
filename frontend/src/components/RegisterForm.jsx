@@ -150,7 +150,7 @@ function RegisterForm() {
   };
 
   return (
-    <div className="form-container">
+    <div className="authform-container">
       <h1>
         {t('auth.registerAsParent')}
       </h1>
@@ -159,7 +159,7 @@ function RegisterForm() {
         <div className="form-section">
           <form onSubmit={handleSubmit}>
             <input
-              className="form-input"
+              className="authform-input"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -167,7 +167,7 @@ function RegisterForm() {
               required
             />
             <input
-              className="form-input"
+              className="authform-input"
               type="password"
               value={password}
               onChange={handlePasswordChange}
@@ -176,7 +176,7 @@ function RegisterForm() {
             />
             {passwordError && <p className="password-error">{passwordError}</p>}
             <input
-              className="form-input"
+              className="authform-input"
               type="password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
@@ -185,7 +185,7 @@ function RegisterForm() {
             />
             {confirmPasswordError && <p className="password-error">{confirmPasswordError}</p>}
             <input
-              className="form-input"
+              className="authform-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -193,7 +193,7 @@ function RegisterForm() {
               required
             />
             <input
-              className="form-input"
+              className="authform-input"
               type="tel"
               value={phone_number}
               onChange={(e) => setPhone_number(e.target.value)}
@@ -204,7 +204,7 @@ function RegisterForm() {
             <h2 style={{ textAlign: 'center' }}>{t('auth.privateInformation')}</h2>
 
             <input
-              className="form-input"
+              className="authform-input"
               type="text"
               value={firstName}
               onChange={(e) => setFname(e.target.value)}
@@ -212,7 +212,7 @@ function RegisterForm() {
               required
             />
             <input
-              className="form-input"
+              className="authform-input"
               type="text"
               value={lastName}
               onChange={(e) => setLname(e.target.value)}
@@ -220,7 +220,7 @@ function RegisterForm() {
               required
             />
             <input
-              className="form-input"
+              className="authform-input"
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -228,7 +228,7 @@ function RegisterForm() {
               required
             />
             <select
-              className="form-input"
+              className="authform-input"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               required
@@ -240,7 +240,7 @@ function RegisterForm() {
             </select>
 
             <button
-              className={`form-button${clicked ? " clicked" : ""}`}
+              className={`authform-button${clicked ? " clicked" : ""}`}
               type="submit"
               disabled={loading}
             >
