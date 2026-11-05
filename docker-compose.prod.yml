@@ -23,7 +23,10 @@ services:
     volumes:
       - ./media:/app/media
     ports:
-      - "80:8000"
+      # Bound to loopback only, on a non-80 port -- nginx takes port 80
+      # and reverse-proxies to this. Not reachable directly from outside
+      # the box even if the security group were misconfigured.
+      - "127.0.0.1:8000:8000"
     depends_on:
       mq:
         condition: service_healthy

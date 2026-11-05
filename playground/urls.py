@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from playground.views import stripe_reauth_token, create_event, google_status, list_egs_tutoring_events, list_egs_tutoring_events_unfiltered, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
+from playground.views import stripe_reauth_token, upload_tutor_document, get_tutor_documents, delete_tutor_document, change_settings_parent
 from playground import group_tutoring_views
 
 # Router for group tutoring viewsets
@@ -69,14 +69,7 @@ urlpatterns = [
     path('popups/', views.PopupListView.as_view(), name='popup-list'),
     path('popups/dismiss/', views.PopupDismissView.as_view(), name='popup-dismiss'),
 
-    path('google/oauth/init', views.GoogleOAuthInitView.as_view()),
-    path('google/oauth2callback', views.GoogleOAuthCallbackView.as_view()),
     path('errorTicket/', views.ErrorView.as_view()),
-    path('google/update-rsvp/', views.UpdateEventRsvpView.as_view(), name='update-rsvp'),
-    path('create-event/', create_event),
-    path('google/events/', list_egs_tutoring_events),
-    path('google/events/all/', list_egs_tutoring_events_unfiltered),
-    path('google/status/', google_status),
     path('tutor/upload-document/', upload_tutor_document, name='tutor-upload-document'),
     path('tutor/documents/', get_tutor_documents, name='get-tutor-documents'),
     path('tutor/documents/<int:document_id>/', delete_tutor_document, name='delete-tutor-document'),

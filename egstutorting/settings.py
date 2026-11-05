@@ -104,9 +104,6 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URL = os.getenv('GOOGLE_REDIRECT_URL', "https://egstutoring-portal.ca/api/google/oauth2callback")
 FERNET_SECRET = os.getenv('FERNET_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -119,8 +116,8 @@ if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
     ALLOWED_HOSTS = [
         os.getenv('RAILWAY_PUBLIC_DOMAIN', ''),
         '*.railway.app',
-        'egstutoring-portal.ca',
-        'www.egstutoring-portal.ca',
+        'egstutoring.ca',
+        'www.egstutoring.ca',
         'localhost',
         '127.0.0.1'
     ]
@@ -177,8 +174,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5175",
     "http://127.0.0.1:5176", 
     "http://127.0.0.1:5177",
-    "https://egstutoring-portal.ca",
-    "https://www.egstutoring-portal.ca",
+    "https://egstutoring.ca",
+    "https://www.egstutoring.ca",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -193,6 +190,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5175",
     "http://127.0.0.1:5176",
     "http://127.0.0.1:5177",
+    "https://egstutoring.ca",
+    "https://www.egstutoring.ca",
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -344,11 +343,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 
 # URL Configuration
-BACKEND_URL = os.getenv("BACKEND_URL", "https://egstutoring-portal.ca")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egstutoring-portal.ca")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://egstutoring.ca")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://egstutoring.ca")
 
 # Email Configuration
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@egstutoring-portal.ca")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@egstutoring.ca")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "info@egstutoring.ca")
 
 # Mailgun API Configuration

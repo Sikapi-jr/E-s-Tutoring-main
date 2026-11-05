@@ -3,7 +3,6 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.forms.models import model_to_dict
-from cryptography.fernet import Fernet
 
 
 class User(AbstractUser):
@@ -125,43 +124,6 @@ class User(AbstractUser):
     # Tutor referral code and onboarding tour
     tutor_referral_code = models.CharField(max_length=6, blank=True, null=True, unique=True, help_text="6-digit referral code for tutors")
     has_seen_tour = models.BooleanField(default=False, help_text="Whether user has completed the onboarding tour")
-
-    _encrypted_google_access_token = models.TextField(blank=True, null=True)
-    _encrypted_google_refresh_token = models.TextField(blank=True, null=True)
-    google_token_expiry = models.DateTimeField(null=True, blank=True)
-
-    def _get_fernet(self):
-        return Fernet(settings.FERNET_SECRET)
-
-    @property
-    def access_token(self):
-        if self._encrypted_google_access_token:
-            try:
-                # Try to decrypt (new tokens)
-                return self._get_fernet().decrypt(self._encrypted_google_access_token.encode()).decode()
-            except Exception:
-                # If decryption fails, assume it's plain (legacy or during migration)
-                return self._encrypted_google_access_token
-        return None
-
-    @access_token.setter
-    def access_token(self, value):
-        if value:
-            self._encrypted_google_access_token = self._get_fernet().encrypt(value.encode()).decode()
-
-    @property
-    def refresh_token(self):
-        if self._encrypted_google_refresh_token:
-            try:
-                return self._get_fernet().decrypt(self._encrypted_google_refresh_token.encode()).decode()
-            except Exception:
-                return self._encrypted_google_refresh_token
-        return None
-
-    @refresh_token.setter
-    def refresh_token(self, value):
-        if value:
-            self._encrypted_google_refresh_token = self._get_fernet().encrypt(value.encode()).decode()
 
     def set_default_rates_by_role(self):
         """Set default rates based on user role"""
