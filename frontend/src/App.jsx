@@ -137,6 +137,20 @@ function AppRoutes() {
     }
   }, [showUnauthNavbar, isNoNavbarPage]);
 
+  // GA4's gtag snippet in index.html only fires a pageview on the initial
+  // full page load. React Router navigates client-side without a reload,
+  // so without this, Analytics would only ever see one pageview per visit
+  // no matter how many pages a user actually views.
+  useEffect(() => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "page_view", {
+        page_path: location.pathname + location.search,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
+  }, [location.pathname, location.search]);
+
   return (
     <div className="page-wrapper">
       {!isNoNavbarPage && (showUnauthNavbar ? <UnauthNavbar /> : <Navbar />)}

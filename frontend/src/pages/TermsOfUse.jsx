@@ -1,11 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import SEOHead from '../components/SEOHead';
+import { getSEOData } from '../config/seoConfig';
 import '../styles/LegalPages.css';
 
 const TermsOfUse = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const seoData = getSEOData('termsOfUse');
 
   const termsContent = `TERMS & CONDITIONS
 Updated at August 23rd, 2025
@@ -42,7 +45,7 @@ To help explain things as clearly as possible in this Terms & Conditions, every 
 
 • Third-party service: refers to advertisers, contest sponsors, promotional and marketing partners, and others who provide our content or whose products or services we think may interest you.
 
-• Website: EGS Tutoring Portal's site, which can be accessed via this URL: egstutoring-portal.ca
+• Website: EGS Tutoring Portal's site, which can be accessed via this URL: egstutoring.ca
 
 • You: a person or entity that is registered with EGS Tutoring Portal to use the Services.
 
@@ -228,12 +231,18 @@ Don't hesitate to contact us if you have any questions.
 
 • Via Email: support@egstutoring.ca
 • Via Phone Number: 2894238434
-• Via this Link: egstutoring-portal.ca
+• Via this Link: egstutoring.ca
 
 Powered by TCPDF (www.tcpdf.org)`;
 
   return (
     <div className="legal-page">
+      <SEOHead
+        title={seoData.title}
+        description={seoData.description}
+        keywords={seoData.keywords}
+        canonical={seoData.canonical}
+      />
       <div className="legal-container">
         <button
           className="back-button"

@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "../components/UserProvider";
 import { ONTARIO_CITIES } from "../constants";
 import api from "../api";
@@ -20,6 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 export default function Settings() {
   const { t } = useTranslation();
   const { user, setUser } = useUser();
+  const navigate = useNavigate();
 
   // Early return if user is not loaded yet
   if (!user) {
@@ -407,9 +408,9 @@ export default function Settings() {
         <p style={{ color: '#666', marginBottom: '1rem' }}>
           {t('settings.passwordResetDescription')}
         </p>
-        <button 
+        <button
           className="form-button"
-          onClick={() => window.open('https://egstutoring-portal.ca/password-reset', '_blank')}
+          onClick={() => navigate('/password-reset')}
         >
           {t('settings.resetPassword')}
         </button>

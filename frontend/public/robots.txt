@@ -16,7 +16,9 @@ Disallow: /request-reply
 # Allow public pages
 Allow: /
 Allow: /register
-Allow: /request
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms-of-use
 
 # Sitemap location
 Sitemap: https://egstutoring.ca/sitemap.xml

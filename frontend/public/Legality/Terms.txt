@@ -40,7 +40,7 @@ be used to visit EGS Tutoring Portal and use the services.
 available) and on this platform.
 ● Third-party service: refers to advertisers, contest sponsors, promotional and marketing partners, and
 others who provide our content or whose products or services we think may interest you.
-● Website: EGS Tutoring Portal’s site, which can be accessed via this URL: egstutoring-portal.ca
+● Website: EGS Tutoring Portal’s site, which can be accessed via this URL: egstutoring.ca
 ● You: a person or entity that is registered with EGS Tutoring Portal to use the Services.
 This Terms & Conditions were created with Termify.
 Restrictions
@@ -324,5 +324,5 @@ Contact Us
 Don't hesitate to contact us if you have any questions.
 ● Via Email: support@egstutoring.ca
 ● Via Phone Number: 2894238434
-● Via this Link: egstutoring-portal.ca
+● Via this Link: egstutoring.ca
 Powered by TCPDF (www.tcpdf.org)

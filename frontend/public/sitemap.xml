@@ -3,27 +3,43 @@
   <!-- Homepage -->
   <url>
     <loc>https://egstutoring.ca/</loc>
-    <lastmod>2025-01-14</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  
+
   <!-- Public Registration Page -->
   <url>
     <loc>https://egstutoring.ca/register</loc>
-    <lastmod>2025-01-14</lastmod>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
-  <!-- Public Request Page -->
+
+  <!-- Contact Page -->
   <url>
-    <loc>https://egstutoring.ca/request</loc>
-    <lastmod>2025-01-14</lastmod>
+    <loc>https://egstutoring.ca/contact</loc>
+    <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
-  
-  <!-- Note: Private pages like dashboard, profile, etc. are not included 
-       as they require authentication and should not be indexed -->
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://egstutoring.ca/privacy-policy</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Terms of Use -->
+  <url>
+    <loc>https://egstutoring.ca/terms-of-use</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Note: Private/authenticated pages (login, dashboard, profile, request-reply,
+       settings, etc.) are intentionally excluded, matching robots.txt -->
 </urlset>

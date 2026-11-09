@@ -9,12 +9,24 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
+
+    <!-- Google Search Console verification (URL-prefix: https://egstutoring.ca/) -->
+    <meta name="google-site-verification" content="vLSPuAR9NMOrMzgYK24brfErfkMo4HpHhOBJB4g0I4k" />
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GN6R3MM6HG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GN6R3MM6HG');
+    </script>
+
     <!-- Primary Meta Tags -->
-    <title>EGS Tutoring - Professional Online & In-Person Tutoring Services Canada</title>
-    <meta name="title" content="EGS Tutoring - Professional Online & In-Person Tutoring Services Canada" />
-    <meta name="description" content="Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Plan sessions, track progress, and improve grades with our comprehensive tutoring platform." />
-    <meta name="keywords" content="tutoring, online tutoring, in-person tutoring, Canada tutors, math tutoring, science tutoring, homework help, academic support, qualified tutors, student progress tracking" />
+    <title>EGS Tutoring - Online & In-Person Tutoring in Toronto & Durham Region</title>
+    <meta name="title" content="EGS Tutoring - Online & In-Person Tutoring in Toronto & Durham Region" />
+    <meta name="description" content="Connect with qualified tutors in Toronto and the Durham Region. EGS Tutoring offers personalized online and in-person tutoring in English and French for all grades and subjects." />
+    <meta name="keywords" content="tutoring Toronto, tutoring Durham Region, Oshawa tutor, Whitby tutor, online tutoring, in-person tutoring, math tutoring, French tutoring, homework help, academic support, qualified tutors" />
     <meta name="author" content="EGS Tutoring" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://egstutoring.ca" />
@@ -22,18 +34,18 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://egstutoring.ca" />
-    <meta property="og:title" content="EGS Tutoring - Professional Online & In-Person Tutoring Services Canada" />
-    <meta property="og:description" content="Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Plan sessions, track progress, and improve grades with our comprehensive tutoring platform." />
-    <meta property="og:image" content="https://egstutoring-portal.ca/og-image.jpg" />
+    <meta property="og:title" content="EGS Tutoring - Online & In-Person Tutoring in Toronto & Durham Region" />
+    <meta property="og:description" content="Connect with qualified tutors in Toronto and the Durham Region. EGS Tutoring offers personalized online and in-person tutoring in English and French for all grades and subjects." />
+    <meta property="og:image" content="https://egstutoring.ca/og-image.jpg" />
     <meta property="og:site_name" content="EGS Tutoring" />
     <meta property="og:locale" content="en_CA" />
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://egstutoring.ca" />
-    <meta property="twitter:title" content="EGS Tutoring - Professional Online & In-Person Tutoring Services Canada" />
-    <meta property="twitter:description" content="Connect with qualified tutors across Canada. EGS Tutoring offers personalized online and in-person tutoring for all grades and subjects. Plan sessions, track progress, and improve grades with our comprehensive tutoring platform." />
-    <meta property="twitter:image" content="https://egstutoring-portal.ca/og-image.jpg" />
+    <meta property="twitter:title" content="EGS Tutoring - Online & In-Person Tutoring in Toronto & Durham Region" />
+    <meta property="twitter:description" content="Connect with qualified tutors in Toronto and the Durham Region. EGS Tutoring offers personalized online and in-person tutoring in English and French for all grades and subjects." />
+    <meta property="twitter:image" content="https://egstutoring.ca/og-image.jpg" />
     
     <!-- Additional SEO Meta Tags -->
     <meta name="format-detection" content="telephone=no" />
@@ -56,7 +68,7 @@
     
     <!-- Resource hints for better performance -->
     <link rel="prefetch" href="/register" />
-    <link rel="prefetch" href="/request" />
+    <link rel="prefetch" href="/request-reply" />
     
     <!-- Security headers -->
     <!-- X-Content-Type-Options and X-Frame-Options are not honoured from a
@@ -67,16 +79,17 @@
     <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     
-    <!-- Multi-language support -->
-    <link rel="alternate" hreflang="en-ca" href="https://egstutoring.ca/" />
-    <link rel="alternate" hreflang="fr-ca" href="https://egstutoring.ca/fr/" />
-    <link rel="alternate" hreflang="x-default" href="https://egstutoring.ca/" />
-    
-    <!-- Geographic targeting -->
-    <meta name="geo.region" content="CA" />
-    <meta name="geo.placename" content="Canada" />
-    <meta name="ICBM" content="56.1304, -106.3468" />
-    <meta name="geo.position" content="56.1304;-106.3468" />
+    <!-- Note: no hreflang alternates are declared here. The French/English
+         toggle is a client-side i18next switch, not separate URLs per
+         locale, so there is no distinct French page to point hreflang at
+         (a hreflang pointing back at the same English URL is meaningless
+         and can confuse search engines about which language that URL is). -->
+
+    <!-- Geographic targeting (Toronto + Durham Region, the actual service area) -->
+    <meta name="geo.region" content="CA-ON" />
+    <meta name="geo.placename" content="Toronto, Ontario" />
+    <meta name="ICBM" content="43.7417, -79.0002" />
+    <meta name="geo.position" content="43.7417;-79.0002" />
     
     <!-- Copyright and ownership -->
     <meta name="copyright" content="EGS Tutoring" />
@@ -90,19 +103,27 @@
       "@context": "https://schema.org",
       "@type": "EducationalOrganization",
       "name": "EGS Tutoring",
-      "description": "Professional online and in-person tutoring services across Canada",
+      "description": "Online and in-person tutoring services in Toronto and the Durham Region",
       "url": "https://egstutoring.ca",
-      "logo": "https://egstutoring-portal.ca/favicon.png",
+      "logo": "https://egstutoring.ca/favicon.png",
       "address": {
         "@type": "PostalAddress",
-        "addressCountry": "CA"
+        "addressCountry": "CA",
+        "addressRegion": "ON"
       },
+      "areaServed": [
+        { "@type": "City", "name": "Toronto" },
+        { "@type": "AdministrativeArea", "name": "Durham Region" }
+      ],
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer service",
+        "telephone": "+1-289-423-8434",
         "email": "egstutor@gmail.com"
       },
-      "sameAs": [],
+      "sameAs": [
+        "https://www.instagram.com/egstutoring"
+      ],
       "offers": {
         "@type": "Offer",
         "description": "Online and in-person tutoring services",

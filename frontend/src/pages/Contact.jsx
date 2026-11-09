@@ -1,13 +1,22 @@
 // src/pages/Contact.jsx
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import SEOHead from '../components/SEOHead';
+import { getSEOData } from '../config/seoConfig';
 import '../styles/Contact.css';
 
 export default function Contact() {
   const { t } = useTranslation();
+  const seoData = getSEOData('contact');
 
   return (
     <div className="contact-wrapper">
+      <SEOHead
+        title={seoData.title}
+        description={seoData.description}
+        keywords={seoData.keywords}
+        canonical={seoData.canonical}
+      />
       <div className="contact-container">
         <h1 className="contact-title">{t('contact.title')}</h1>
         <p className="contact-subtitle">{t('contact.subtitle')}</p>
