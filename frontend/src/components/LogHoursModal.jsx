@@ -73,9 +73,13 @@ export default function LogHoursModal({ isOpen, onClose, onSuccess }) {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
+        // Use local Y/M/D formatting, not toISOString() -- toISOString()
+        // converts to UTC, which in Toronto (behind UTC) rolls the date
+        // forward during evening hours and silently excludes "today" from
+        // the date picker's selectable range.
         return {
-            min: startOfWeek.toISOString().split('T')[0],
-            max: endOfWeek.toISOString().split('T')[0]
+            min: formatDate(startOfWeek),
+            max: formatDate(endOfWeek)
         };
     }, []);
 
