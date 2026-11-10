@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SEOHead from '../components/SEOHead';
+import GoogleReviewsButton from '../components/GoogleReviewsButton';
 import { getSEOData } from '../config/seoConfig';
 import '../styles/LandingPage.css';
 
@@ -149,6 +150,7 @@ const LandingPage = () => {
         canonical={seoData.canonical}
         structuredData={seoData.structuredData}
       />
+      <GoogleReviewsButton />
       <div className="landing-page">
 
         {/* HERO: diagonal split, full-bleed image on the right */}

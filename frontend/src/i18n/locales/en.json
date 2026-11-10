@@ -210,6 +210,11 @@
     "cta": {
       "heading": "Ready to Get Started?",
       "subtext": "Create your free account and request your first tutor in minutes."
+    },
+    "googleReviews": {
+      "buttonLabel": "Google Reviews - 4.9 ★",
+      "modalTitle": "Google Reviews",
+      "close": "Close"
     }
   },
   "common": {

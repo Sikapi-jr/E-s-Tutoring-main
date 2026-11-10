@@ -210,6 +210,11 @@
     "cta": {
       "heading": "Prêt à commencer?",
       "subtext": "Créez votre compte gratuit et faites votre première demande de tuteur en quelques minutes."
+    },
+    "googleReviews": {
+      "buttonLabel": "Avis Google - 4.9 ★",
+      "modalTitle": "Avis Google",
+      "close": "Fermer"
     }
   },
   "common": {

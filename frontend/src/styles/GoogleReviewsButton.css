@@ -1,0 +1,101 @@
+.grb-button {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--egs-navy, #192A88);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.grb-button:hover,
+.grb-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.grb-star {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--egs-yellow, #FFB31B);
+}
+
+@media (max-width: 640px) {
+  .grb-button {
+    bottom: 16px;
+    left: 16px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+  }
+}
+
+.grb-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.grb-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.grb-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: #fff;
+}
+
+.grb-modal-header h2 {
+  margin: 0;
+  color: var(--egs-navy, #192A88);
+  font-size: 1.25rem;
+}
+
+.grb-close {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.grb-close:hover {
+  color: var(--egs-navy, #192A88);
+}
+
+.grb-modal-body {
+  padding: 1.5rem;
+  min-height: 200px;
+}
