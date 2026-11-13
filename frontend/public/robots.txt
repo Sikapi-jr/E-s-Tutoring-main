@@ -17,6 +17,7 @@ Disallow: /request-reply
 Allow: /
 Allow: /register
 Allow: /contact
+Allow: /mailing-list
 Allow: /privacy-policy
 Allow: /terms-of-use
 

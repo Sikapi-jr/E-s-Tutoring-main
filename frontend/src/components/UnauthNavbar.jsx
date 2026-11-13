@@ -24,6 +24,7 @@ export default function UnauthNavbar() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isContactPage = location.pathname === "/contact";
+  const isMailingListPage = location.pathname === "/mailing-list";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const navRef = useRef(null);
@@ -109,7 +110,7 @@ export default function UnauthNavbar() {
         <li className="nav-language-desktop-wrapper">
           <LanguageSwitcher className="nav-language-switcher nav-language-desktop" />
         </li>
-        {isContactPage ? (
+        {isContactPage || isMailingListPage ? (
           <li>
             <NavLink
               to="/"

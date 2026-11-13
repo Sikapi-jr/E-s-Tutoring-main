@@ -313,6 +313,14 @@ export const seoConfig = {
     noIndex: true
   },
 
+  // Mailing list signup page SEO
+  mailingList: {
+    title: "Join Our Mailing List - EGS Tutoring Toronto & Durham Region",
+    description: "Sign up for the EGS Tutoring mailing list to get tutoring tips, promotions, and updates for Toronto and the Durham Region delivered to your inbox.",
+    keywords: "EGS Tutoring mailing list, tutoring newsletter, tutoring updates, subscribe tutoring Toronto",
+    canonical: "https://egstutoring.ca/mailing-list"
+  },
+
   // Contact page SEO
   contact: {
     title: "Contact Us - EGS Tutoring Toronto & Durham Region",

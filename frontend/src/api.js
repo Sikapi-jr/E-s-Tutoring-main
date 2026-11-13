@@ -30,7 +30,8 @@ const PUBLIC_PATHS = [
   /\/api\/tutor-referral-approval\//i,
   /\/api\/verifyEmail\/?$/i,
   /\/api\/resendVerification\/?$/i,
-  /\/api\/password[-_]reset/i
+  /\/api\/password[-_]reset/i,
+  /\/api\/mailing-list\/subscribe\/?$/i
 ];
 
 const api = axios.create({

@@ -65,6 +65,7 @@ export default function Footer() {
             <ul>
               <li><a href="https://egstutoring.ca/home" target="_blank" rel="noopener noreferrer">{t('footer.faq')}</a></li>
               <li><a href="/contact">{t('footer.contact')}</a></li>
+              <li><a href="/mailing-list">{t('footer.mailingList')}</a></li>
             </ul>
           </div>
 

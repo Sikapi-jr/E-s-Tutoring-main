@@ -61,6 +61,11 @@ export default function Contact() {
                 </a>
               </li>
               <li>
+                <a href="/mailing-list" className="quick-link">
+                  {t('footer.mailingList')}
+                </a>
+              </li>
+              <li>
                 <a href="/terms-of-use.pdf" download className="quick-link">
                   {t('contact.termsOfUse')}
                 </a>

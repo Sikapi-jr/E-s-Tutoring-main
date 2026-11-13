@@ -257,6 +257,16 @@ class ErrorTicket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     file = models.FileField(upload_to='user_error/')
 
+class MailingListSubscriber(models.Model):
+    """Public, unauthenticated mailing-list signup (egstutoring.ca/mailing-list)."""
+    email = models.EmailField(unique=True)
+    language = models.CharField(max_length=5, blank=True, default='en')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+
 class Announcements(models.Model):
     name = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
@@ -1276,6 +1286,7 @@ class EmailLog(models.Model):
         ('group_tutoring_schedule_change',      'Group Tutoring Schedule Change'),
         ('group_tutoring_class_announcement',   'Group Tutoring Class Announcement'),
         ('test',                 'Test Email'),
+        ('mailing_list_confirmation', 'Mailing List Confirmation'),
         ('other',                'Other'),
     ]
 

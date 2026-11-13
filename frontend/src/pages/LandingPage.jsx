@@ -414,6 +414,11 @@ const LandingPage = () => {
                   </button>
                 </li>
                 <li>
+                  <button className="lw-footer-link" onClick={() => navigate('/mailing-list')}>
+                    {t('footer.mailingList')}
+                  </button>
+                </li>
+                <li>
                   <button className="lw-footer-link" onClick={() => navigate('/privacy-policy')}>
                     {t('legal.privacyPolicy')}
                   </button>

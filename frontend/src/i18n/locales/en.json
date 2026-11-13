@@ -922,6 +922,7 @@
     "dispute": "Dispute",
     "faq": "FAQ",
     "contact": "Contact",
+    "mailingList": "Mailing List",
     "aboutUs": "About Us",
     "terms": "Terms of Use",
     "privacy": "Privacy Policy",
@@ -940,6 +941,21 @@
     "faq": "FAQ",
     "termsOfUse": "Terms of Use",
     "privacyPolicy": "Privacy Policy"
+  },
+  "mailingList": {
+    "title": "Join Our Mailing List",
+    "subtitle": "Sign up to receive tutoring tips, promotions, and updates from EGS Tutoring straight to your inbox.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "you@example.com",
+    "submitButton": "Subscribe",
+    "submitting": "Subscribing...",
+    "successTitle": "You're subscribed!",
+    "successMessage": "Thanks for joining our mailing list. Check your inbox for a confirmation email.",
+    "alreadySubscribedMessage": "This email is already on our mailing list.",
+    "errorInvalidEmail": "Please enter a valid email address.",
+    "errorGeneric": "Something went wrong. Please try again later.",
+    "privacyNote": "We respect your privacy. Unsubscribe at any time.",
+    "backToHome": "Back to Home"
   },
   "stripe": {
     "setupPayment": "Setup Payment",

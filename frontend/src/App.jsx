@@ -46,6 +46,7 @@ const AdminReferrals = lazy(() => import("./pages/AdminReferrals"));
 const AdminSchools = lazy(() => import("./pages/AdminSchools"));
 const AdminSchoolCredits = lazy(() => import("./pages/AdminSchoolCredits"));
 const Contact = lazy(() => import("./pages/Contact"));
+const MailingList = lazy(() => import("./pages/MailingList"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const ParentRequestDetail = lazy(() => import("./pages/ParentRequestDetail"));
@@ -101,6 +102,7 @@ function AppRoutes() {
     "/login",
     "/register",
     "/contact",
+    "/mailing-list",
     "/password-reset",
     "/password-reset-confirm",
     "/verify-email",
@@ -201,6 +203,7 @@ function AppRoutes() {
             <Route path="/logout" element={<Logout />} />
             <Route path="/register" element={<Register />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/mailing-list" element={<MailingList />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-use" element={<TermsOfUse />} />
             <Route path="/password-reset" element={<PasswordReset />} />

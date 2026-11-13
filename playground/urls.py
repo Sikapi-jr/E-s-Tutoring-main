@@ -70,6 +70,7 @@ urlpatterns = [
     path('popups/dismiss/', views.PopupDismissView.as_view(), name='popup-dismiss'),
 
     path('errorTicket/', views.ErrorView.as_view()),
+    path('mailing-list/subscribe/', views.MailingListSubscribeView.as_view(), name='mailing-list-subscribe'),
     path('tutor/upload-document/', upload_tutor_document, name='tutor-upload-document'),
     path('tutor/documents/', get_tutor_documents, name='get-tutor-documents'),
     path('tutor/documents/<int:document_id>/', delete_tutor_document, name='delete-tutor-document'),

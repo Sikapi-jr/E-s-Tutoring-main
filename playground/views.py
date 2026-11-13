@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponseRedirect
-from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, School, StudentSchoolCredit, EmailLog
+from .models import TutoringRequest, TutorResponse, AcceptedTutor, Hours, WeeklyHours, MonthlyHours, Announcements, StripePayout, Referral, HourDispute, TutorComplaint, Popup, PopupDismissal, TutorReferralRequest, School, StudentSchoolCredit, EmailLog, MailingListSubscriber
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -32,7 +32,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from django.views.generic.edit import UpdateView
 from rest_framework.response import Response
-from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer
+from .serializers import RequestSerializer, AnnouncementSerializer, ReferralSerializer, ErrorSerializer, PopupSerializer, PopupDismissalSerializer, MailingListSubscriberSerializer
 from .serializers import RequestReplySerializer, AcceptedTutorSerializer, HoursSerializer, WeeklyHoursSerializer, UserDocumentSerializer, HourDisputeSerializer, SchoolSerializer, SchoolAdminSerializer, StudentSchoolCreditSerializer, EmailLogSerializer
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
@@ -718,7 +718,37 @@ class ErrorView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+class MailingListSubscribeView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = MailingListSubscriberSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data['email']
+        language = serializer.validated_data.get('language') or 'en'
+
+        existing = MailingListSubscriber.objects.filter(email=email).first()
+        if existing:
+            if not existing.is_active:
+                existing.is_active = True
+                existing.save(update_fields=['is_active'])
+            # Already subscribed -- treat as success so repeat signups don't look like errors.
+            return Response({"detail": "already_subscribed"}, status=status.HTTP_200_OK)
+
+        subscriber = MailingListSubscriber.objects.create(email=email, language=language)
+
+        from playground.tasks import send_mailing_list_confirmation_email_async
+        send_mailing_list_confirmation_email_async.delay(email, language)
+
+        return Response(
+            MailingListSubscriberSerializer(subscriber).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
 class AnnouncementCreateView(APIView):
     permission_classes=[AllowAny]
     parser_classes = (MultiPartParser, FormParser)

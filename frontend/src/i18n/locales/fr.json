@@ -914,6 +914,7 @@
     "dispute": "Litige",
     "faq": "FAQ",
     "contact": "Contact",
+    "mailingList": "Liste de diffusion",
     "aboutUs": "À propos",
     "terms": "Conditions d'utilisation",
     "privacy": "Politique de confidentialité",
@@ -921,6 +922,21 @@
     "screenshotTip": "Utilisez Windows + Shift + S pour faire une capture d'écran",
     "ticketSubmitted": "Ticket soumis !",
     "errorSubmittingTicket": "Erreur lors de la soumission du ticket"
+  },
+  "mailingList": {
+    "title": "Inscrivez-vous à notre liste de diffusion",
+    "subtitle": "Inscrivez-vous pour recevoir des conseils de tutorat, des promotions et des mises à jour d'EGS Tutoring directement dans votre boîte de réception.",
+    "emailLabel": "Adresse courriel",
+    "emailPlaceholder": "vous@exemple.com",
+    "submitButton": "S'inscrire",
+    "submitting": "Inscription en cours...",
+    "successTitle": "Vous êtes inscrit !",
+    "successMessage": "Merci de vous être inscrit à notre liste de diffusion. Vérifiez votre boîte de réception pour un courriel de confirmation.",
+    "alreadySubscribedMessage": "Cette adresse courriel est déjà inscrite à notre liste de diffusion.",
+    "errorInvalidEmail": "Veuillez entrer une adresse courriel valide.",
+    "errorGeneric": "Une erreur s'est produite. Veuillez réessayer plus tard.",
+    "privacyNote": "Nous respectons votre vie privée. Désabonnez-vous à tout moment.",
+    "backToHome": "Retour à l'accueil"
   },
   "stripe": {
     "setupPayment": "Configurer le paiement",

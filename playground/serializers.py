@@ -14,7 +14,7 @@ from .models import (
     Popup, PopupDismissal, DiscountRegistration,
     GroupTutoringClass, GroupEnrollment, DiagnosticTest, DiagnosticTestSubmission,
     ClassSession, ClassAttendance, ClassFile, Quiz, QuizQuestion, QuizSubmission,
-    EmailLog, School, StudentSchoolCredit,
+    EmailLog, School, StudentSchoolCredit, MailingListSubscriber,
 )
 from datetime import datetime, timedelta
 
@@ -222,7 +222,16 @@ class ErrorSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return ErrorTicket.objects.create(**validated_data)
-    
+
+class MailingListSubscriberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MailingListSubscriber
+        fields = ['id', 'email', 'language', 'created_at']
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcements

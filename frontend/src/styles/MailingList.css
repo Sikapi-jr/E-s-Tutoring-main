@@ -1,0 +1,138 @@
+/* src/styles/MailingList.css */
+
+.mailing-list-wrapper {
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mailing-list-container {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem 2rem;
+}
+
+.mailing-list-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #292929;
+  margin: 0 0 0.75rem;
+}
+
+.mailing-list-subtitle {
+  text-align: center;
+  font-size: 1.05rem;
+  color: #666;
+  margin: 0 0 2rem;
+}
+
+.mailing-list-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mailing-list-label {
+  font-weight: 600;
+  color: #292929;
+  font-size: 0.95rem;
+}
+
+.mailing-list-input {
+  padding: 0.85rem 1rem;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.mailing-list-input:focus {
+  outline: none;
+  border-color: #192A88;
+}
+
+.mailing-list-error {
+  color: #c0392b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.mailing-list-submit-btn {
+  margin-top: 0.5rem;
+  padding: 0.9rem 1.5rem;
+  background: #192A88;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.mailing-list-submit-btn:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+}
+
+.mailing-list-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mailing-list-privacy-note {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0.75rem 0 0;
+}
+
+.mailing-list-success {
+  text-align: center;
+}
+
+.mailing-list-success h2 {
+  color: #192A88;
+  margin: 0 0 0.75rem;
+}
+
+.mailing-list-success p {
+  color: #555;
+  margin: 0 0 1.5rem;
+}
+
+.mailing-list-back-btn {
+  padding: 0.75rem 1.5rem;
+  background: #192A88;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.mailing-list-back-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .mailing-list-container {
+    padding: 2rem 1.25rem;
+  }
+
+  .mailing-list-title {
+    font-size: 1.6rem;
+  }
+}

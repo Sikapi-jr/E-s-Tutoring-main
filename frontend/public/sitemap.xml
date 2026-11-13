@@ -24,6 +24,14 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Mailing List Signup Page -->
+  <url>
+    <loc>https://egstutoring.ca/mailing-list</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
   <!-- Privacy Policy -->
   <url>
     <loc>https://egstutoring.ca/privacy-policy</loc>

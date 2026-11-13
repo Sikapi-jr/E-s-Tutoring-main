@@ -21,6 +21,7 @@ from .models import (
     QuizSubmission,
     School,
     StudentSchoolCredit,
+    MailingListSubscriber,
 )
 
 # If you want to customize admin interface per model, you can define ModelAdmin classes here.
@@ -124,6 +125,13 @@ class StudentSchoolCreditAdmin(admin.ModelAdmin):
     list_display = ('student', 'school', 'credit_hours_snapshot', 'status', 'reviewed_by', 'created_at')
     list_filter = ('status', 'school')
     search_fields = ('student__firstName', 'student__lastName', 'parent__firstName', 'parent__lastName')
+    readonly_fields = ('created_at',)
+
+@admin.register(MailingListSubscriber)
+class MailingListSubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'language', 'is_active', 'created_at')
+    list_filter = ('is_active', 'language')
+    search_fields = ('email',)
     readonly_fields = ('created_at',)
 
 admin.site.register(User)

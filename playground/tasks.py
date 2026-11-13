@@ -374,6 +374,54 @@ def send_referral_email_async(self, sender_name, sender_email, receiver_email):
         logger.error(f"Error sending referral email from {sender_email} to {receiver_email}: {str(e)}")
         raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_mailing_list_confirmation_email_async(self, email, language='en'):
+    """
+    Send a confirmation email to a new mailing-list subscriber asynchronously
+    """
+    try:
+        if language == 'fr':
+            subject = 'Confirmation d\'inscription – EGS Tutoring'
+            message = f"""
+            Bonjour,
+
+            Merci de vous être inscrit à la liste de diffusion d'EGS Tutoring !
+            Vous recevrez désormais nos actualités, promotions et mises à jour.
+
+            Si vous n'êtes pas à l'origine de cette inscription, vous pouvez simplement ignorer ce courriel.
+
+            Cordialement,
+            L'équipe EGS Tutoring
+            """
+        else:
+            subject = 'You\'re subscribed – EGS Tutoring'
+            message = f"""
+            Hello,
+
+            Thanks for subscribing to the EGS Tutoring mailing list!
+            You'll now receive our news, promotions, and updates.
+
+            If you didn't sign up for this, you can safely ignore this email.
+
+            Best regards,
+            EGS Tutoring Team
+            """
+
+        send_mailgun_email(
+            to_emails=[email],
+            subject=subject,
+            text_content=message,
+            email_type='mailing_list_confirmation',
+            recipient_name=email
+        )
+
+        logger.info(f"Mailing list confirmation email sent to {email}")
+        return {'success': True, 'email': email}
+
+    except Exception as e:
+        logger.error(f"Error sending mailing list confirmation email to {email}: {str(e)}")
+        raise self.retry(exc=e, countdown=30 * (self.request.retries + 1))
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=120)
 def bulk_invoice_generation_async(self, customer_data_list, invoice_metadata=None):
     """
