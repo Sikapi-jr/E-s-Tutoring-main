@@ -5,7 +5,8 @@
       "about": "About Us",
       "pricing": "Pricing",
       "subjects": "Popular Subjects",
-      "serviceArea": "Where We Teach"
+      "serviceArea": "Where We Teach",
+      "mailingList": "Stay in the Loop"
     },
     "nav": {
       "menuLabel": "On This Page",
@@ -1253,6 +1254,7 @@
     "manageStaleRequests": "Manage Stale Requests",
     "testEmail": "Test Email",
     "bulkEmails": "Bulk Emails",
+    "mailingList": "Mailing List",
     "testEmailTool": "Admin Test Email Tool",
     "testEmailDescription": "Send a test email to any recipient with optional file attachments. A copy will also be sent to elvissikapi@gmail.com.",
     "recipientEmail": "Recipient Email",

@@ -59,6 +59,7 @@ const TutorReferralApproval = lazy(() => import("./pages/TutorReferralApproval")
 const AdminDiscountRegistration = lazy(() => import("./pages/AdminDiscountRegistration"));
 const AdminBulkEmails = lazy(() => import("./pages/AdminBulkEmails"));
 const AdminEmailLogs  = lazy(() => import("./pages/AdminEmailLogs"));
+const AdminMailingList = lazy(() => import("./pages/AdminMailingList"));
 
 // Loading component
 const LoadingSpinner = () => {
@@ -195,6 +196,7 @@ function AppRoutes() {
             <Route path="/admin-discount-registration" element={<ProtectedRoute><AdminDiscountRegistration /></ProtectedRoute>} />
             <Route path="/admin-bulk-emails" element={<ProtectedRoute><AdminBulkEmails /></ProtectedRoute>} />
             <Route path="/admin-email-logs" element={<ProtectedRoute><AdminEmailLogs /></ProtectedRoute>} />
+            <Route path="/admin-mailing-list" element={<ProtectedRoute><AdminMailingList /></ProtectedRoute>} />
             <Route path="/parent-request/:requestId" element={<ProtectedRoute><ParentRequestDetail /></ProtectedRoute>} />
             <Route path="/admin-request-detail/:requestId" element={<ProtectedRoute><AdminRequestDetail /></ProtectedRoute>} />
 

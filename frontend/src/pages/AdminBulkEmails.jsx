@@ -11,6 +11,7 @@ const AdminBulkEmails = () => {
   const [showParentModal, setShowParentModal] = useState(false);
   const [showTutorModal, setShowTutorModal] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showMailingListModal, setShowMailingListModal] = useState(false);
   const [parentEmailData, setParentEmailData] = useState({
     parentCount: 0,
     subject: '',
@@ -27,6 +28,13 @@ const AdminBulkEmails = () => {
   });
   const [customEmailData, setCustomEmailData] = useState({
     emailList: '',
+    subject: '',
+    messageBody: '',
+    bccEmails: '',
+    files: []
+  });
+  const [mailingListEmailData, setMailingListEmailData] = useState({
+    mailingListCount: 0,
     subject: '',
     messageBody: '',
     bccEmails: '',
@@ -50,9 +58,10 @@ const AdminBulkEmails = () => {
   // Fetch parent and tutor email counts
   const fetchEmailCounts = async () => {
     try {
-      const [parentResponse, tutorResponse] = await Promise.all([
+      const [parentResponse, tutorResponse, mailingListResponse] = await Promise.all([
         api.get('/api/admin/send-parent-emails/'),
-        api.get('/api/admin/send-tutor-emails/')
+        api.get('/api/admin/send-tutor-emails/'),
+        api.get('/api/admin/send-mailing-list-emails/')
       ]);
 
       setParentEmailData(prev => ({
@@ -63,6 +72,11 @@ const AdminBulkEmails = () => {
       setTutorEmailData(prev => ({
         ...prev,
         tutorCount: tutorResponse.data.count
+      }));
+
+      setMailingListEmailData(prev => ({
+        ...prev,
+        mailingListCount: mailingListResponse.data.count
       }));
     } catch (error) {
       console.error('Error fetching email counts:', error);
@@ -92,6 +106,11 @@ const AdminBulkEmails = () => {
     setResult(null);
   };
 
+  const handleOpenMailingListModal = () => {
+    setShowMailingListModal(true);
+    setResult(null);
+  };
+
   const handleCloseParentModal = () => {
     setShowParentModal(false);
   };
@@ -102,6 +121,10 @@ const AdminBulkEmails = () => {
 
   const handleCloseCustomModal = () => {
     setShowCustomModal(false);
+  };
+
+  const handleCloseMailingListModal = () => {
+    setShowMailingListModal(false);
   };
 
   const handleFileChange = (e) => {
@@ -366,6 +389,90 @@ const AdminBulkEmails = () => {
     }));
   };
 
+  const handleMailingListFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setMailingListEmailData(prev => ({
+      ...prev,
+      files: files
+    }));
+  };
+
+  const removeMailingListFile = (indexToRemove) => {
+    setMailingListEmailData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const handleSendMailingListEmails = async () => {
+    if (!mailingListEmailData.subject.trim() || !mailingListEmailData.messageBody.trim()) {
+      setResult({
+        type: 'error',
+        message: 'Subject and body are required'
+      });
+      return;
+    }
+
+    setSending(true);
+    setResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('subject', mailingListEmailData.subject);
+      formData.append('message_body', mailingListEmailData.messageBody);
+      formData.append('bcc_emails', mailingListEmailData.bccEmails);
+
+      // Add files
+      mailingListEmailData.files.forEach((file, index) => {
+        formData.append(`file_${index}`, file);
+      });
+
+      const response = await api.post('/api/admin/send-mailing-list-emails/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const { sent_count, failed_count, failed_emails } = response.data;
+      let message = response.data.detail || `Emails sent to ${sent_count} mailing list subscribers`;
+
+      if (failed_count > 0) {
+        message += `\n\nFailed to send to ${failed_count} recipients`;
+        if (failed_emails && failed_emails.length > 0) {
+          message += `:\n${failed_emails.join(', ')}`;
+        }
+      }
+
+      setResult({
+        type: failed_count > 0 ? 'warning' : 'success',
+        message: message
+      });
+
+      setTimeout(() => {
+        if (failed_count === 0) {
+          handleCloseMailingListModal();
+          // Reset form
+          setMailingListEmailData(prev => ({
+            ...prev,
+            subject: '',
+            messageBody: '',
+            bccEmails: '',
+            files: []
+          }));
+        }
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error sending mailing list emails:', error);
+      setResult({
+        type: 'error',
+        message: error.response?.data?.error || 'Failed to send mailing list emails'
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const handleSendUnpaidInvoiceReminders = async () => {
     if (!confirm('Are you sure you want to send invoice reminders to all parents with unpaid invoices? This will send emails via BCC to protect privacy.')) {
       return;
@@ -458,6 +565,25 @@ const AdminBulkEmails = () => {
             style={{ width: '100%' }}
           >
             Send Custom List Emails
+          </button>
+        </div>
+
+        {/* Mailing List Email Button */}
+        <div style={{ flex: '1', minWidth: '300px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          <h3>Send to Mailing List</h3>
+          <p>Send an email to all {mailingListEmailData.mailingListCount} mailing list subscribers</p>
+          <ul style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+            <li>Everyone who signed up at egstutoring.ca/mailing-list</li>
+            <li>Custom subject and body</li>
+            <li>Attach files (optional)</li>
+            <li>Add BCC recipients (optional)</li>
+          </ul>
+          <button
+            onClick={handleOpenMailingListModal}
+            className="form-button"
+            style={{ width: '100%' }}
+          >
+            Send Mailing List Emails ({mailingListEmailData.mailingListCount} recipients)
           </button>
         </div>
 
@@ -891,6 +1017,139 @@ const AdminBulkEmails = () => {
                 disabled={sending}
               >
                 {sending ? 'Sending...' : 'Send Emails'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mailing List Email Modal */}
+      {showMailingListModal && (
+        <div className="modal-overlay" onClick={handleCloseMailingListModal}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Send Email to Mailing List</h2>
+              <button className="modal-close" onClick={handleCloseMailingListModal}>×</button>
+            </div>
+
+            <div className="modal-body">
+              {result && (
+                <div className={`form-message ${result.type === 'error' ? 'error' : 'success'}`}>
+                  {result.message}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Recipients: {mailingListEmailData.mailingListCount} mailing list subscribers</label>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="mailingListSubject">
+                  Subject *
+                </label>
+                <input
+                  type="text"
+                  id="mailingListSubject"
+                  value={mailingListEmailData.subject}
+                  onChange={(e) => setMailingListEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Enter email subject"
+                  disabled={sending}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="mailingListBody">
+                  Email Message *
+                </label>
+                <textarea
+                  id="mailingListBody"
+                  value={mailingListEmailData.messageBody}
+                  onChange={(e) => setMailingListEmailData(prev => ({ ...prev, messageBody: e.target.value }))}
+                  rows={10}
+                  disabled={sending}
+                  placeholder="Write your message here. Line breaks will be preserved in the email."
+                  required
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Your message will be formatted with the EGS logo and contact information
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="mailingListFiles">
+                  Attachments (optional)
+                </label>
+                <input
+                  type="file"
+                  id="mailingListFiles"
+                  multiple
+                  onChange={handleMailingListFileChange}
+                  disabled={sending}
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.xlsx,.xls,.ppt,.pptx"
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Supported formats: PDF, DOC, images, ZIP, etc.
+                </small>
+              </div>
+
+              {mailingListEmailData.files.length > 0 && (
+                <div className="form-group">
+                  <label>Selected Files:</label>
+                  <div className="file-list">
+                    {mailingListEmailData.files.map((file, index) => (
+                      <div key={index} className="file-item">
+                        <span className="file-name">{file.name}</span>
+                        <span className="file-size">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeMailingListFile(index)}
+                          className="file-remove-btn"
+                          disabled={sending}
+                          title="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="mailingListBcc">
+                  BCC Emails (optional)
+                </label>
+                <input
+                  type="text"
+                  id="mailingListBcc"
+                  value={mailingListEmailData.bccEmails}
+                  onChange={(e) => setMailingListEmailData(prev => ({ ...prev, bccEmails: e.target.value }))}
+                  placeholder="email1@example.com, email2@example.com"
+                  disabled={sending}
+                />
+                <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                  Separate multiple emails with commas
+                </small>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={handleCloseMailingListModal}
+                className="modal-button cancel"
+                disabled={sending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendMailingListEmails}
+                className="modal-button confirm"
+                disabled={sending}
+              >
+                {sending ? 'Sending...' : `Send to ${mailingListEmailData.mailingListCount} Subscribers`}
               </button>
             </div>
           </div>

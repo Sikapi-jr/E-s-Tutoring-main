@@ -30,6 +30,8 @@ const TYPE_LABELS = {
   bulk_parent:         'Bulk (Parents)',
   bulk_tutor:          'Bulk (Tutors)',
   bulk_custom:         'Bulk (Custom)',
+  bulk_mailing_list:   'Bulk (Mailing List)',
+  mailing_list_confirmation: 'Mailing List Confirmation',
   hours_reminder:      'Hours Reminder',
   school_credit_admin: 'School Credit (Admin)',
   test:                'Test',

@@ -226,7 +226,7 @@ class ErrorSerializer(serializers.ModelSerializer):
 class MailingListSubscriberSerializer(serializers.ModelSerializer):
     class Meta:
         model = MailingListSubscriber
-        fields = ['id', 'email', 'language', 'created_at']
+        fields = ['id', 'email', 'language', 'is_active', 'created_at']
 
     def validate_email(self, value):
         return value.strip().lower()

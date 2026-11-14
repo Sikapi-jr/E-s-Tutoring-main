@@ -1252,6 +1252,22 @@ export default function Home() {
                     {t('admin.manageSchools', 'Manage Schools')}
                   </button>
                   <button
+                    onClick={() => window.location.href = '/admin-mailing-list'}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#0dcaf0",
+                      color: "#212529",
+                      border: "none",
+                      padding: "0.75rem",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem"
+                    }}
+                  >
+                    {t('admin.mailingList', 'Mailing List')}
+                  </button>
+                  <button
                     onClick={() => window.location.href = '/admin-school-credits'}
                     style={{
                       width: "100%",

@@ -141,7 +141,12 @@ urlpatterns = [
     path('admin/send-parent-emails/', views.AdminSendParentEmailsView.as_view(), name='admin-send-parent-emails'),
     path('admin/send-tutor-emails/', views.AdminSendTutorEmailsView.as_view(), name='admin-send-tutor-emails'),
     path('admin/send-custom-emails/', views.AdminSendCustomEmailsView.as_view(), name='admin-send-custom-emails'),
+    path('admin/send-mailing-list-emails/', views.AdminSendMailingListEmailsView.as_view(), name='admin-send-mailing-list-emails'),
     path('admin/send-unpaid-invoice-reminders/', views.send_unpaid_invoice_reminders, name='send-unpaid-invoice-reminders'),
+
+    # Admin mailing list management
+    path('admin/mailing-list/', views.AdminMailingListView.as_view(), name='admin-mailing-list'),
+    path('admin/mailing-list/<int:pk>/', views.AdminMailingListSubscriberDetailView.as_view(), name='admin-mailing-list-detail'),
 
     # Group Tutoring endpoints
     path('', include(router.urls)),  # Include router URLs

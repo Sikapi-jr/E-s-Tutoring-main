@@ -48,6 +48,7 @@ const getRoutes = (t) => ({
   DiscountReg: { to: "/admin-discount-registration", label: t('admin.discountRegistration', '10% Discount') },
   BulkEmails: { to: "/admin-bulk-emails", label: t('admin.bulkEmails', 'Bulk Emails') },
   EmailLogs:  { to: "/admin-email-logs",  label: 'Email Logs' },
+  MailingList: { to: "/admin-mailing-list", label: t('admin.mailingList', 'Mailing List') },
   Schools: { to: "/admin-schools", label: t('admin.schools', 'Schools') },
   SchoolCredits: { to: "/admin-school-credits", label: t('admin.schoolCredits', 'School Credits') },
   Inv:     { to: "/ViewInvoices",      label: t('navigation.invoices') },
@@ -64,7 +65,7 @@ const getRoleConfig = (BASE) => ({
     main:   [BASE.Home, BASE.Dash, BASE.Hours, BASE.Students, BASE.Replies, BASE.Weekly, BASE.Monthly, BASE.Ann],
     tutor:  [],
     sessions: [],
-    single: [BASE.Inv, BASE.GroupTutoring, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg, BASE.BulkEmails, BASE.EmailLogs, BASE.Schools, BASE.SchoolCredits],
+    single: [BASE.Inv, BASE.GroupTutoring, BASE.Complaints, BASE.UserSearch, BASE.BatchAddHours, BASE.HoursOverview, BASE.TestEmail, BASE.DiscountReg, BASE.BulkEmails, BASE.EmailLogs, BASE.MailingList, BASE.Schools, BASE.SchoolCredits],
   },
   parent: {
     main:   [BASE.Home, BASE.Students, BASE.Replies, BASE.Hours, BASE.Inv],

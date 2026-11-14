@@ -1279,6 +1279,7 @@ class EmailLog(models.Model):
         ('bulk_parent',          'Bulk Parent Email'),
         ('bulk_tutor',           'Bulk Tutor Email'),
         ('bulk_custom',          'Bulk Custom Email'),
+        ('bulk_mailing_list',    'Bulk Mailing List Email'),
         ('hours_reminder',       'Hours Reminder'),
         ('school_credit_admin',  'School Credit Admin Alert'),
         ('group_tutoring_diagnostic',          'Group Tutoring Diagnostic Test'),

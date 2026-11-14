@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SEOHead from '../components/SEOHead';
 import GoogleReviewsButton from '../components/GoogleReviewsButton';
 import { getSEOData } from '../config/seoConfig';
+import api from '../api';
 import '../styles/LandingPage.css';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const DURHAM_MUNICIPALITIES = [
   'Oshawa', 'Whitby', 'Ajax', 'Pickering', 'Clarington', 'Uxbridge', 'Scugog', 'Brock'
@@ -110,9 +113,41 @@ const PRICING_ICONS = [OnlineIcon, InPersonIcon, GroupIcon];
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const seoData = getSEOData('home');
+
+  const [mailingListEmail, setMailingListEmail] = useState('');
+  const [mailingListStatus, setMailingListStatus] = useState('idle'); // idle | submitting | success | already | error
+  const [mailingListError, setMailingListError] = useState('');
+
+  const handleMailingListSubmit = async (e) => {
+    e.preventDefault();
+
+    const trimmedEmail = mailingListEmail.trim();
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setMailingListStatus('error');
+      setMailingListError(t('mailingList.errorInvalidEmail'));
+      return;
+    }
+
+    setMailingListStatus('submitting');
+    setMailingListError('');
+
+    try {
+      const response = await api.post('/api/mailing-list/subscribe/', {
+        email: trimmedEmail,
+        language: i18n.language?.startsWith('fr') ? 'fr' : 'en',
+      });
+
+      setMailingListStatus(response.data?.detail === 'already_subscribed' ? 'already' : 'success');
+      setMailingListEmail('');
+    } catch (err) {
+      console.error('Mailing list subscription failed:', err);
+      setMailingListStatus('error');
+      setMailingListError(t('mailingList.errorGeneric'));
+    }
+  };
 
   // Coverage (exam-prep/course categories) sit on their own centered row;
   // the 4 subject categories (math, english, science, french) form the
@@ -394,6 +429,59 @@ const LandingPage = () => {
             </div>
           </section>
         </main>
+
+        {/* MAILING LIST SIGNUP */}
+        <section className="lw-section lw-section--light" id="mailing-list-signup">
+          <div className="lw-container" style={{ maxWidth: '640px', textAlign: 'center' }}>
+            <p className="lw-eyebrow" style={{ textAlign: 'center' }}>{t('landing.eyebrow.mailingList')}</p>
+            <h2 className="lw-h2" style={{ textAlign: 'center' }}>{t('mailingList.title')}</h2>
+            <p className="lw-section-text lw-section-text--center">{t('mailingList.subtitle')}</p>
+
+            {(mailingListStatus === 'success' || mailingListStatus === 'already') ? (
+              <p style={{ fontWeight: 600, color: 'var(--egs-navy)', marginTop: '1.5rem' }}>
+                {mailingListStatus === 'already'
+                  ? t('mailingList.alreadySubscribedMessage')
+                  : t('mailingList.successMessage')}
+              </p>
+            ) : (
+              <form
+                onSubmit={handleMailingListSubmit}
+                style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1.5rem' }}
+              >
+                <input
+                  type="email"
+                  value={mailingListEmail}
+                  onChange={(e) => setMailingListEmail(e.target.value)}
+                  placeholder={t('mailingList.emailPlaceholder')}
+                  disabled={mailingListStatus === 'submitting'}
+                  required
+                  aria-label={t('mailingList.emailLabel')}
+                  style={{
+                    flex: '1 1 280px',
+                    maxWidth: '360px',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ccc',
+                    fontSize: '1rem',
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="lw-btn lw-btn--navy"
+                  disabled={mailingListStatus === 'submitting'}
+                >
+                  {mailingListStatus === 'submitting' ? t('mailingList.submitting') : t('mailingList.submitButton')}
+                </button>
+              </form>
+            )}
+
+            {mailingListStatus === 'error' && (
+              <p role="alert" style={{ color: '#c0392b', marginTop: '0.75rem' }}>{mailingListError}</p>
+            )}
+
+            <p style={{ fontSize: '0.85rem', color: '#777', marginTop: '0.75rem' }}>{t('mailingList.privacyNote')}</p>
+          </div>
+        </section>
 
         {/* FOOTER */}
         <footer className="lw-section lw-section--black" style={{ paddingBottom: '2rem' }}>

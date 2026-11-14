@@ -5651,6 +5651,196 @@ class AdminSendCustomEmailsView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class AdminMailingListView(APIView):
+    """Admin-only, paginated/searchable viewer for public mailing-list signups."""
+    permission_classes = [IsAuthenticated]
+    PAGE_SIZE = 100
+
+    def get(self, request):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+
+        subscribers = MailingListSubscriber.objects.all().order_by('-created_at')
+
+        search = request.query_params.get('search')
+        if search:
+            subscribers = subscribers.filter(email__icontains=search)
+
+        active_filter = request.query_params.get('is_active')
+        if active_filter in ('true', 'false'):
+            subscribers = subscribers.filter(is_active=(active_filter == 'true'))
+
+        total = subscribers.count()
+        try:
+            page = max(int(request.query_params.get('page', 1)), 1)
+        except (TypeError, ValueError):
+            page = 1
+        start = (page - 1) * self.PAGE_SIZE
+        end = start + self.PAGE_SIZE
+
+        serializer = MailingListSubscriberSerializer(subscribers[start:end], many=True)
+        return Response({'results': serializer.data, 'total': total})
+
+
+class AdminMailingListSubscriberDetailView(APIView):
+    """Admin-only: remove a mailing list subscriber."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        if not request.user.is_superuser:
+            return Response({'error': 'Admin access required'}, status=403)
+
+        try:
+            subscriber = MailingListSubscriber.objects.get(pk=pk)
+        except MailingListSubscriber.DoesNotExist:
+            return Response({'error': 'Subscriber not found'}, status=404)
+
+        subscriber.delete()
+        return Response({'detail': 'Subscriber removed'}, status=status.HTTP_200_OK)
+
+
+class AdminSendMailingListEmailsView(APIView):
+    """
+    Admin endpoint to send bulk emails to everyone signed up on the public
+    mailing list (egstutoring.ca/mailing-list).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get count of active mailing list subscribers"""
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        count = MailingListSubscriber.objects.filter(is_active=True).count()
+        return Response({'count': count}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Send an email to every active mailing list subscriber"""
+        # Only allow superusers/admins
+        if not request.user.is_superuser and request.user.roles != 'admin':
+            return Response({"error": "Admin access required"}, status=403)
+
+        try:
+            # Get parameters from request
+            subject = request.data.get('subject', '')
+            message_body = request.data.get('message_body', '')
+            bcc_emails = request.data.get('bcc_emails', '')
+
+            if not subject or not message_body:
+                return Response({
+                    'error': 'Subject and body are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Wrap plain text message in HTML template
+            html_body = wrap_message_in_html_template(message_body)
+
+            recipients = list(
+                MailingListSubscriber.objects.filter(is_active=True).values_list('email', flat=True)
+            )
+
+            if not recipients:
+                return Response({
+                    'error': 'No active mailing list subscribers found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Parse BCC emails if provided
+            bcc_list = []
+            if bcc_emails:
+                bcc_list = [email.strip() for email in bcc_emails.split(',') if email.strip()]
+
+            # Prepare attachments from uploaded files
+            files_data = []
+            for key in request.FILES:
+                uploaded_file = request.FILES[key]
+                file_content = uploaded_file.read()
+                files_data.append((uploaded_file.name, file_content, uploaded_file.content_type))
+
+            from_email = "EGS Tutoring <info@egstutoring-portal.ca>"
+
+            # Send individual emails to each subscriber
+            sent_count = 0
+            failed_count = 0
+            failed_emails = []
+
+            for email_address in recipients:
+                try:
+                    data = {
+                        "from": from_email,
+                        "to": [email_address],
+                        "subject": subject,
+                        "html": html_body,
+                        "h:Reply-To": "info@egstutoring.ca",
+                    }
+
+                    if bcc_list:
+                        data["bcc"] = bcc_list
+
+                    files_for_request = []
+                    if files_data:
+                        for file_name, file_content, content_type in files_data:
+                            files_for_request.append(('attachment', (file_name, file_content, content_type)))
+
+                    response = requests.post(
+                        settings.MAILGUN_API_URL,
+                        auth=("api", settings.MAILGUN_API_KEY),
+                        data=data,
+                        files=files_for_request if files_for_request else None,
+                        timeout=30
+                    )
+
+                    if response.status_code == 200:
+                        sent_count += 1
+                        EmailLog.objects.create(
+                            recipient_email=email_address,
+                            subject=subject,
+                            email_type='bulk_mailing_list',
+                            status='sent',
+                            from_email=from_email,
+                        )
+                    else:
+                        failed_count += 1
+                        failed_emails.append(email_address)
+                        logger.error(f"Failed to send to {email_address}: {response.status_code} - {response.text}")
+                        EmailLog.objects.create(
+                            recipient_email=email_address,
+                            subject=subject,
+                            email_type='bulk_mailing_list',
+                            status='failed',
+                            from_email=from_email,
+                            error_message=f"{response.status_code}: {response.text[:500]}",
+                        )
+
+                except Exception as e:
+                    failed_count += 1
+                    failed_emails.append(email_address)
+                    logger.error(f"Exception sending to {email_address}: {e}")
+                    EmailLog.objects.create(
+                        recipient_email=email_address,
+                        subject=subject,
+                        email_type='bulk_mailing_list',
+                        status='failed',
+                        from_email=from_email,
+                        error_message=str(e)[:500],
+                    )
+
+            logger.info(f"Mailing list emails: {sent_count} sent, {failed_count} failed by admin {request.user.email}")
+
+            return Response({
+                'detail': f'Emails sent to {sent_count} mailing list subscribers, {failed_count} failed',
+                'sent_count': sent_count,
+                'failed_count': failed_count,
+                'failed_emails': failed_emails,
+                'attachments_count': len(files_data),
+                'bcc_count': len(bcc_list) if bcc_list else 0
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error sending mailing list emails: {e}")
+            return Response({
+                'error': f'Error sending mailing list emails: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_unpaid_invoice_reminders(request):
