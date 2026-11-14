@@ -1369,7 +1369,20 @@ def send_weekly_tutor_hour_reminders(self):
     Runs every Sunday at 6pm Toronto time
     """
     try:
-        from playground.models import User
+        from django.utils import timezone
+        from datetime import timedelta
+        from playground.models import User, EmailLog
+
+        # Celery Beat's persistent scheduler fires a crontab job immediately
+        # on startup if it missed its last scheduled run while beat was down
+        # (e.g. every local/dev container restart) -- without this guard that
+        # meant every docker restart re-sent this reminder to every tutor.
+        # A DB-backed "already sent recently" check is robust to that restart
+        # behavior regardless of why beat re-queued the task.
+        recent_cutoff = timezone.now() - timedelta(days=6)
+        if EmailLog.objects.filter(email_type='hours_reminder', sent_at__gte=recent_cutoff).exists():
+            logger.info("Weekly tutor hour reminders already sent within the last 6 days; skipping duplicate run.")
+            return {'success': True, 'skipped': True, 'reason': 'already_sent_recently'}
 
         # Get all active tutors
         tutors = User.objects.filter(roles='tutor', is_active=True).exclude(email='')

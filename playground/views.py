@@ -683,7 +683,7 @@ class ParentHomeCreateView(generics.ListCreateAPIView):
                         'has_tutor': False
                     })
             
-            hours = Hours.objects.filter(parent=user_id).order_by('-created_at')
+            hours = Hours.objects.filter(parent=user_id).order_by('-created_at').select_related('student', 'tutor', 'parent').prefetch_related('disputes')
             responseHours = HoursSerializer(hours, many=True, context={'request': request}).data
             
             # Get invoices from Stripe if customer exists
@@ -1857,7 +1857,12 @@ class ParentHoursListView(APIView):
             records = Hours.objects.filter(tutor=user).order_by('-created_at')
         else:
             records = Hours.objects.none()  # Return empty queryset for unknown roles
-            
+
+        # select_related/prefetch_related avoid N+1 queries in HoursSerializer
+        # (student/tutor/parent name fields + disputes lookup) -- without this,
+        # a user with hundreds/thousands of logged hours turns one request into
+        # thousands of queries and times out the whole request.
+        records = records.select_related('student', 'tutor', 'parent').prefetch_related('disputes')
         serializer = HoursSerializer(records, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -2026,7 +2031,7 @@ class WeeklyHoursListView(APIView):
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late'],
             invoice_status='pending'
-        ).order_by('date')
+        ).order_by('date').select_related('student', 'tutor', 'parent').prefetch_related('disputes')
         serializer = HoursSerializer(weekly_hours, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -2489,7 +2494,7 @@ class MonthlyHoursListView(APIView):
         monthly_hours = Hours.objects.filter(
             date__range=(start_date, end_date),
             eligible__in=['Eligible', 'Late']
-        ).order_by('date')
+        ).order_by('date').select_related('student', 'tutor', 'parent').prefetch_related('disputes')
         print(f"MonthlyHoursListView found {monthly_hours.count()} hours")
         serializer = HoursSerializer(monthly_hours, many=True, context={'request': request})
         print(f"MonthlyHoursListView serialized {len(serializer.data)} hours")
@@ -4028,7 +4033,7 @@ class AdminUserHoursView(APIView):
         # Get all hours where user is involved (as student, parent, or tutor)
         hours = Hours.objects.filter(
             Q(student=user) | Q(parent=user) | Q(tutor=user)
-        ).order_by('-date', '-startTime')
+        ).order_by('-date', '-startTime').select_related('student', 'tutor', 'parent').prefetch_related('disputes')
 
         # Use the existing HoursSerializer to get formatted data with names
         serializer = HoursSerializer(hours, many=True, context={'request': request})
@@ -4874,7 +4879,7 @@ class AdminAllHoursView(APIView):
                 return Response({"error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
         # Order by most recent first
-        hours = hours_query.order_by('-date', '-created_at')
+        hours = hours_query.order_by('-date', '-created_at').select_related('student', 'tutor', 'parent').prefetch_related('disputes')
 
         # Serialize the hours
         serializer = HoursSerializer(hours, many=True, context={'request': request})
